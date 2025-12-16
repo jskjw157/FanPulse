@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  FanPulse_iOS
+//  FanPulse
 //
 //  Created by 김송 on 12/16/25.
 //
