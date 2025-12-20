@@ -8,11 +8,16 @@
 import SwiftUI
 
 struct LoginView: View {
+    @State private var email = ""
+    @State private var password = ""
+    @State private var isLoginSelected = true
+    
     var body: some View {
         ZStack {
+            // 배경 그라데이션
             FadeToBackgroundView(
-                backgroundColor: Color(hex: "#EC4899"),
-                fadeColor: Color(hex: "#7E22CE"),
+                backgroundColor: Color(hex: "#7E22CE"),
+                fadeColor: Color(hex: "#EC4899"),
                 startPoint: UnitPoint(x: 0, y: 0.4),
                 endPoint: UnitPoint(x: 1, y: 0.6)
             )
@@ -22,6 +27,7 @@ struct LoginView: View {
                 Spacer()
                     .frame(height: 80)
                 
+                // 타이틀
                 VStack(spacing: 8) {
                     Text("Welcome to FanPulse")
                         .font(.system(size: 28, weight: .bold))
@@ -33,16 +39,131 @@ struct LoginView: View {
                 }
                 .padding(.bottom, 40)
                 
-                VStack {
-                    // TODO: 로그인  . . .
+                // 로그인 폼 카드
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        Button(action: {
+                            isLoginSelected = true
+                        }) {
+                            Text("로그인")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(isLoginSelected ? .white : .gray)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(
+                                    isLoginSelected ? Color(hex: "#7E22CE") : Color.clear
+                                )
+                                .cornerRadius(25)
+                        }
+                        
+                        Button(action: {
+                            isLoginSelected = false
+                        }) {
+                            Text("회원가입")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(!isLoginSelected ? .white : .gray)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(
+                                    !isLoginSelected ? Color(hex: "#7E22CE") : Color.clear
+                                )
+                                .cornerRadius(25)
+                        }
+                    }
+                    .padding(4)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(25)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+                    
+                    VStack(spacing: 16) {
+                        Button(action: {
+                            
+                        }) {
+                            HStack {
+                                Image("googleLoginBtn")
+                                    .resizable()
+                                    .scaledToFill()
+                            }
+                        }
+                        
+                        HStack {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(height: 1)
+                            Text("또는")
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                                .padding(.horizontal, 12)
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(height: 1)
+                        }
+                        .padding(.vertical, 8)
+                        
+                        // 이메일 입력
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("이메일")
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                            
+                            TextField("", text: $email)
+                                .padding()
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(12)
+                                .autocapitalization(.none)
+                                .keyboardType(.emailAddress)
+                        }
+                        
+                        // 비밀번호 입력
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("비밀번호")
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                            
+                            SecureField("", text: $password)
+                                .padding()
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(12)
+                        }
+                        
+                        // 로그인 버튼
+                        Button(action: {
+                            
+                        }) {
+                            Text("로그인")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color(hex: "#EC4899"), Color(hex: "#9333EA")],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(25)
+                        }
+                        .padding(.top, 8)
+                        
+                        // 비밀번호 찾기
+                        Button(action: {
+                            
+                        }) {
+                            Text("비밀번호를 잊으셨나요?")
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 24)
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: 450)
                 .background(Color.white)
                 .cornerRadius(30)
                 .padding(.horizontal, 24)
                 
-                Spacer()
+                Spacer(minLength: 100)
             }
         }
     }
