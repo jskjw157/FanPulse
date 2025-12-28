@@ -6,41 +6,59 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3415585C2F00F9E300BB0752 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3415585B2F00F9E300BB0752 /* SnapKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
-		34D602E62EF19E4E00E2F814 /* FanPulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FanPulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		341558412F00F85100BB0752 /* FanPulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FanPulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		341558532F00F85300BB0752 /* Exceptions for "FanPulse" folder in "FanPulse" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 341558402F00F85100BB0752 /* FanPulse */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		34D602E82EF19E4E00E2F814 /* FanPulse */ = {
+		341558432F00F85100BB0752 /* FanPulse */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				341558532F00F85300BB0752 /* Exceptions for "FanPulse" folder in "FanPulse" target */,
+			);
 			path = FanPulse;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		34D602E32EF19E4E00E2F814 /* Frameworks */ = {
+		3415583E2F00F85100BB0752 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3415585C2F00F9E300BB0752 /* SnapKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		34D602DD2EF19E4E00E2F814 = {
+		341558382F00F85100BB0752 = {
 			isa = PBXGroup;
 			children = (
-				34D602E82EF19E4E00E2F814 /* FanPulse */,
-				34D602E72EF19E4E00E2F814 /* Products */,
+				341558432F00F85100BB0752 /* FanPulse */,
+				341558422F00F85100BB0752 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		34D602E72EF19E4E00E2F814 /* Products */ = {
+		341558422F00F85100BB0752 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				34D602E62EF19E4E00E2F814 /* FanPulse.app */,
+				341558412F00F85100BB0752 /* FanPulse.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,64 +66,68 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		34D602E52EF19E4E00E2F814 /* FanPulse */ = {
+		341558402F00F85100BB0752 /* FanPulse */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 34D602F42EF19E5000E2F814 /* Build configuration list for PBXNativeTarget "FanPulse" */;
+			buildConfigurationList = 341558542F00F85300BB0752 /* Build configuration list for PBXNativeTarget "FanPulse" */;
 			buildPhases = (
-				34D602E22EF19E4E00E2F814 /* Sources */,
-				34D602E32EF19E4E00E2F814 /* Frameworks */,
-				34D602E42EF19E4E00E2F814 /* Resources */,
+				3415583D2F00F85100BB0752 /* Sources */,
+				3415583E2F00F85100BB0752 /* Frameworks */,
+				3415583F2F00F85100BB0752 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				34D602E82EF19E4E00E2F814 /* FanPulse */,
+				341558432F00F85100BB0752 /* FanPulse */,
 			);
 			name = FanPulse;
 			packageProductDependencies = (
+				3415585B2F00F9E300BB0752 /* SnapKit */,
 			);
 			productName = FanPulse;
-			productReference = 34D602E62EF19E4E00E2F814 /* FanPulse.app */;
+			productReference = 341558412F00F85100BB0752 /* FanPulse.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		34D602DE2EF19E4E00E2F814 /* Project object */ = {
+		341558392F00F85100BB0752 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
-					34D602E52EF19E4E00E2F814 = {
+					341558402F00F85100BB0752 = {
 						CreatedOnToolsVersion = 16.0;
 					};
 				};
 			};
-			buildConfigurationList = 34D602E12EF19E4E00E2F814 /* Build configuration list for PBXProject "FanPulse" */;
+			buildConfigurationList = 3415583C2F00F85100BB0752 /* Build configuration list for PBXProject "FanPulse" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = 34D602DD2EF19E4E00E2F814;
+			mainGroup = 341558382F00F85100BB0752;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3415585A2F00F9E300BB0752 /* XCRemoteSwiftPackageReference "SnapKit" */,
+			);
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 34D602E72EF19E4E00E2F814 /* Products */;
+			productRefGroup = 341558422F00F85100BB0752 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				34D602E52EF19E4E00E2F814 /* FanPulse */,
+				341558402F00F85100BB0752 /* FanPulse */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		34D602E42EF19E4E00E2F814 /* Resources */ = {
+		3415583F2F00F85100BB0752 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -115,7 +137,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		34D602E22EF19E4E00E2F814 /* Sources */ = {
+		3415583D2F00F85100BB0752 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -125,7 +147,69 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		34D602F22EF19E5000E2F814 /* Debug */ = {
+		341558552F00F85300BB0752 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FanPulse/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = kr.ios.FanPulse;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		341558562F00F85300BB0752 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FanPulse/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = kr.ios.FanPulse;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		341558572F00F85300BB0752 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -188,7 +272,7 @@
 			};
 			name = Debug;
 		};
-		34D602F32EF19E5000E2F814 /* Release */ = {
+		341558582F00F85300BB0752 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -244,92 +328,47 @@
 			};
 			name = Release;
 		};
-		34D602F52EF19E5000E2F814 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"FanPulse/Preview Content\"";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = kr.ios.FanPulse;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		34D602F62EF19E5000E2F814 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"FanPulse/Preview Content\"";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = kr.ios.FanPulse;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		34D602E12EF19E4E00E2F814 /* Build configuration list for PBXProject "FanPulse" */ = {
+		3415583C2F00F85100BB0752 /* Build configuration list for PBXProject "FanPulse" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				34D602F22EF19E5000E2F814 /* Debug */,
-				34D602F32EF19E5000E2F814 /* Release */,
+				341558572F00F85300BB0752 /* Debug */,
+				341558582F00F85300BB0752 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		34D602F42EF19E5000E2F814 /* Build configuration list for PBXNativeTarget "FanPulse" */ = {
+		341558542F00F85300BB0752 /* Build configuration list for PBXNativeTarget "FanPulse" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				34D602F52EF19E5000E2F814 /* Debug */,
-				34D602F62EF19E5000E2F814 /* Release */,
+				341558552F00F85300BB0752 /* Debug */,
+				341558562F00F85300BB0752 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3415585A2F00F9E300BB0752 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3415585B2F00F9E300BB0752 /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3415585A2F00F9E300BB0752 /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 34D602DE2EF19E4E00E2F814 /* Project object */;
+	rootObject = 341558392F00F85100BB0752 /* Project object */;
 }
