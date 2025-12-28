@@ -114,6 +114,8 @@
 
 본 문서는 **FanPulse 프로젝트의 크롤링(Web Crawling & Data Pipeline) 작업을 GitHub Issue & Milestone**으로 체계적으로 관리하기 위한 문서입니다. 크롤링해야 할 데이터, 개발 진행 순서, GitHub Issue 생성 예시 등을 포함합니다.
 
+> **비고**: 크롤링 구현은 별도 워커/서비스(예: Python 크롤러)로 진행할 수 있으며, 수집 데이터는 PostgreSQL의 `crawled_*` 테이블에 적재합니다.
+
 ---
 
 ## 2. 크롤링 목표 데이터
@@ -122,7 +124,8 @@
 | ------------ | --------------------------------- | ------------------------------ | ---------------------------------------- |
 | 뉴스 데이터  | 최신 K-POP 뉴스 크롤링            | Naver, Google News, Reddit     | H001 (메인 화면), H011 (뉴스 상세)       |
 | 차트 순위    | K-POP 실시간 음악 차트            | Melon, Bugs, Billboard         | H001 (메인 화면), H005 (차트 순위)       |
-| 콘서트 일정  | K-POP 공연 일정 및 티켓 정보      | Ticketmaster, Interpark        | H007 (콘서트 일정), H015 (상세 공연 정보) |
+| 콘서트 일정  | K-POP 공연 일정 및 티켓 정보      | Ticketmaster, Interpark, Yes24 | **H007 (콘서트 일정)**, H015 (상세 공연정보) |
+| 라이브 메타  | YouTube/V LIVE 스트림 정보        | YouTube API, V LIVE API        | H006 (라이브 & 이벤트), H019 (라이브 상세) |
 | 광고 데이터  | 광고 시청을 통한 포인트 적립      | Ktown4u, Weverse Shop          | H008 (광고 & 리워드), H016 (마이페이지)  |
 
 ---
@@ -150,7 +153,7 @@
 -   **Issue 1**: Naver 뉴스 크롤러 개발 (`feature/crawling-naver-news`)
     -   `requests`, `BeautifulSoup` 사용하여 뉴스 목록 수집
     -   기사 제목, 링크, 내용, 작성 날짜 수집
-    -   `MongoDB`에 저장
+    -   `PostgreSQL`에 저장 (`crawled_news`)
 
 -   **Issue 2**: Google News RSS 크롤러 개발 (`feature/crawling-google-news`)
     -   Google News API 활용
@@ -245,16 +248,16 @@
 
 ### 3. 데이터 정제 및 저장
 
--   **완료 목표**: 중복 제거 및 정규화된 데이터를 MongoDB에 저장
+-   **완료 목표**: 중복 제거 및 정규화된 데이터를 PostgreSQL에 저장 (`crawled_*` 테이블)
 -   **작업**: 각 Epic 내 "데이터 정제" Issue 포함
 -   **DB 구조** (데이터베이스 정의서 기준):
-    -   뉴스 (crawled_news): {title, url, content, source, published_at}
-    -   차트 (crawled_charts): {rank, song, artist, chart_source, updated_at}
-    -   콘서트 (crawled_concerts): {event_name, artist, venue, date, ticket_link}
-    -   광고: {product, price, event_link} (⚠️ DB 테이블 추후 추가 예정)
+    -   뉴스 (crawled_news): {title, content, url, source, published_at, created_at}
+    -   차트 (crawled_charts): {chart_source, chart_period, as_of, rank, previous_rank, rank_delta, artist, song, updated_at}
+    -   차트 히스토리 (crawled_charts_history): {chart_source, chart_period, as_of, rank, artist, song, crawled_at}
+    -   콘서트 (crawled_concerts): {event_name, artist, venue, date, ticket_link, created_at}
+    -   광고 (crawled_ads): {product_name, description, price, image_url, source, product_url, is_event, crawled_at}
 
 ### 4. 스케줄링 및 자동화 구축
 
 -   **완료 목표**: 모든 크롤러를 Celery로 자동화하고 Airflow로 관리
 -   **작업**: 각 Epic 내 "스케줄링" Issue 포함
-
