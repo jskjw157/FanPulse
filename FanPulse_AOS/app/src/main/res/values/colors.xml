@@ -5,4 +5,8 @@
 
     <color name="color_1">#9333EA</color>
     <color name="color_2">#F3F4F6</color>
+    <color name="color_text_1">#374151</color>
+    <color name="color_text_2">#F9FAFB</color>
+    <color name="color_text_3">#6B7280</color>
+
 </resources>
