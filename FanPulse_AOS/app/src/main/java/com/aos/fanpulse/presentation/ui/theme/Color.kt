@@ -1,4 +1,4 @@
-package com.aos.fanpulse.ui.theme
+package com.aos.fanpulse.presentation.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
