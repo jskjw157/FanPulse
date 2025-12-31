@@ -10,23 +10,6 @@ trigger: always_on
 - Token efficiency via: internal-first, one-doc-tool-first, stop early.
 - Avoid redundant MCP calls and repeated file reads.
 
-## Proactive Rule Authoring (Consent-Gated)
-- If creating or updating a workspace rule would reduce repeated explanations, prevent recurring mistakes, or improve token efficiency, the agent MAY propose generating rules.
-- The agent MUST obtain explicit user consent before:
-  - creating any new rule file, or
-  - modifying any existing rule file.
-- Consent prompt must include:
-  - which rule(s) will be created/updated (file names),
-  - what scope they will cover,
-  - expected benefit (e.g., fewer doc calls, fewer repeated fixes).
-- Default action: propose first, then run `/fetch-rule` or `/setup-rules` only after consent.
-
-
-## Task Groups (Hard Separation)
-- TG.API: Cafe24 OAuth/API/app integration, backend/client logic
-- TG.DESIGN: Cafe24 skin/homepage customization, HTML/CSS, product detail pages
-If a request spans both, split reasoning and output by task group.
-
 ## Source-of-Truth Priority
 1) Internal codebase (our repo)
 2) Public/official docs (docfork/context7)
@@ -35,8 +18,9 @@ If a request spans both, split reasoning and output by task group.
 5) Web search/browsing — only with explicit user permission (confirm scope + budget first)
 
 ## Router (Hard Guardrails)
-### Internal codebase questions
-- Use deepcontext first to locate entry points and relevant modules.
+### Internal codebase questions, CREATE, REFACTOR, & REVIEW requests
+- Use deepcontext,docfork first to locate entry points and relevant modules.
+- FOR REFACTOR/REVIEW: YOU MUST USE deepcontext,docfork FIRST.
 - Only then read minimal sections needed.
 
 ### External documentation questions
@@ -47,12 +31,6 @@ If a request spans both, split reasoning and output by task group.
 ### GitHub MCP
 - Use only for upstream issues/PRs/releases/examples when needed.
 - Never as a substitute for internal search.
-
-### Sequential Thinking
-- Use only for large/ambiguous tasks requiring decomposition.
-
- ### Sequential Thinking
- - Use only for large/ambiguous tasks requiring decomposition.
 
 ### Web Content (crawl4ai)
 - Consent Gate:
@@ -72,8 +50,6 @@ If exceeded: split into smaller steps and confirm priorities (TG.API vs TG.DESIG
 ## Workflow Binding (Procedural Standard)
 When applicable, follow these workflow files:
 - External docs lookup → workflows/WF.DOCS_LADDER.md
-- Cafe24 API/OAuth tasks → workflows/WF.CAFE24.API.md
-- Cafe24 skin/UI customization → workflows/WF.CAFE24.SKIN.md
 - Detail page generation → workflows/WF.DETAIL_PAGE_FACTORY.md
 - Upstream verification → workflows/WF.GITHUB.UPSTREAM.md
 - Web research (consent-gated crawl4ai) → workflows/WF.WEB_RESEARCH.md
