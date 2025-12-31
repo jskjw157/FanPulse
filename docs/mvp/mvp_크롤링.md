@@ -1,4 +1,4 @@
-# 🕷️ FanPulse MVP 라이브 데이터 적재(4주)
+# 🕷️ FanPulse MVP 데이터 적재(4주) (Live/News)
 
 > 원본 전체 문서: `크롤링.md`  
 > MVP는 “라이브 기능”을 위해 필요한 **최소 적재 방식**만 정의합니다.
@@ -18,6 +18,15 @@
 - 핵심은 **임베드 재생 가능한 URL(`stream_url`)** 을 저장해두고, 앱은 `GET /live`, `GET /live/{id}`로 이를 받아서 화면을 구성합니다.
 
 > 참고: `docs/mvp/mvp_데이터베이스_정의서.md`의 `streaming_events`, `docs/mvp/mvp_API_계약.md`의 `GET /live/{id}` 응답 필드(`streamUrl`)
+
+---
+
+## 1.2 MVP 크롤링(적재) 범위가 “작은” 이유
+
+- MVP는 “크롤링 기술” 자체가 목표가 아니라, **H001/H006/H019/H011에서 사용자에게 보여줄 데이터가 끊기지 않게** 만드는 게 목표입니다.
+- 그래서 4주 MVP에선 불안정/변동이 큰 자동 크롤링(셀레니움/플레이wright/다중 사이트 파싱) 대신,
+  - **운영 가능한 seed(큐레이션) → DB upsert**로 “항상 데이터가 있는 상태”를 먼저 보장합니다.
+- 이 방향은 `docs/mvp/mvp_기획서.md`의 “seed 기반 적재” 결정과 동일합니다.
 
 ---
 
@@ -92,6 +101,49 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
 
 ---
 
+## 2.3 `seed_news` 포맷(권장)
+
+### JSON 파일 예시 (`seed_news.json`)
+```json
+[
+  {
+    "title": "아티스트 컴백 소식",
+    "content": "요약(또는 1~2문장 발췌)",
+    "url": "https://example.com/news/123",
+    "source": "Google News",
+    "publishedAt": "2025-01-15T09:00:00Z"
+  }
+]
+```
+
+> DB 매핑 예: `publishedAt` → `published_at`
+
+### Upsert 키(최소 규칙)
+- `url`을 유니크 키처럼 취급해서 upsert 권장(같은 기사면 업데이트)
+
+---
+
+## 2.4 MVP “확장(Stretch)” (Week 4 포함): 자동 수집을 조금만 더 넣는다
+
+아래는 MVP 범위를 크게 넓히지 않으면서(= 화면/기능 추가 없음) 데이터 운영 부담을 줄이는 범위이며, **Week 4에 MVP 포함**으로 진행합니다.
+
+### Stretch A: Google News RSS → `crawled_news` upsert
+- 장점: 구현이 단순하고, “완전 수동 seed”보다 운영 부담이 낮음
+- 범위: RSS 파싱 + 중복 제거(url 기준) + 최신 N개 유지
+- 주의: 요약/NLP/정제 파이프라인(코어NLP/KoNLPy 등)은 MVP 제외
+
+### Stretch B: YouTube 메타데이터 “보강”만 자동화
+- 범위: seed로 받은 `streamUrl(=VIDEO_ID)`에 대해 썸네일/제목을 보강하거나 상태를 갱신
+- 주의: YouTube Data API 키/쿼터/에러처리까지 포함되면 일정 리스크가 커서, **Week 4에서 Stretch A 완료 후** 착수 권장
+
+---
+
 ## 3. API 요구사항(요약)
 - 클라이언트는 `GET /live`, `GET /live/{id}`, `GET /news`, `GET /news/{id}`로 화면 구현 가능해야 함
 - 라이브 상세는 `stream_url`만으로 임베드 재생 가능해야 함(= MVP에서는 YouTube embed URL 권장)
+
+---
+
+## 4. MVP 완료 기준(적재 관점)
+- seed로 `streaming_events` / `crawled_news`가 채워지고, `GET /live`, `GET /news`에 **항상 0개 이상** 내려올 수 있다
+- 운영 플로우(누가/어디서/어떤 포맷으로/얼마나 자주 업데이트하는지)가 문서화되어 있다

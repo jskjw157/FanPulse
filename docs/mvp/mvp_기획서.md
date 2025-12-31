@@ -24,7 +24,7 @@
   - 외부 플랫폼(YouTube/V LIVE 등) **임베드 시청**
   - 채팅/하트/투표/리워드 등은 제외
 - **News**: 뉴스 목록/상세(H001/H011)
-  - MVP는 seed 기반 적재(큐레이션)로 시작
+  - MVP는 seed 기반 적재(큐레이션)로 시작 + **Week 4에 Google News RSS(Stretch)로 운영 부담 완화**
 - **Search**: 검색(H018)
   - MVP 범위: Live/News 통합 검색
 - **Local Only**: 즐겨찾기(북마크), 최근 검색어
@@ -80,10 +80,11 @@
 
 ### Week 4 — QA/릴리즈
 - 공통: 로깅/에러처리/성능, 회귀 테스트, 릴리즈 체크리스트
+- (Stretch) Google News RSS → `crawled_news` 자동 upsert(일 1회) + 최신 N개 유지
 - 배포: Web preview + iOS TestFlight + Android 내부테스트
 
 ---
 
 ## 5. 리스크/의사결정(반드시 선결)
 - **로그인 방식**: 이메일/비밀번호 + Google 로그인(1종)까지만 지원(그 외 소셜은 다음)
-- **데이터 소스**: Live/News 모두 “큐레이션(seed)→DB upsert”로 시작하고, 외부 API 자동갱신은 다음 반복에서 확장
+- **데이터 소스**: Live/News 모두 “큐레이션(seed)→DB upsert”로 시작하되, **Week 4에 Google News RSS(Stretch)** 를 추가해 운영 부담을 낮춘다
