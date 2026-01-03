@@ -12,7 +12,7 @@
 - [백엔드: 정지원] `Identity/Live/Content` 컨텍스트 분리 + OpenAPI v1 초안
 
 ### iOS(김송) / Android(나유성) / Web(이승구/정지원)
-- 라우팅: `/login` → `/` → `/live-detail` → `/news-detail` → `/search` → `/mypage` → `/settings`
+- 라우팅: `/login` → `/` → `/live/:id` → `/news/:id` → `/search` → `/mypage` → `/settings`
 - 더미 데이터로 Home/Live/News/Search/My/Settings UI 데모
 - 로컬 저장: 최근 검색어/즐겨찾기 스키마만 잡기(구현은 후순위 가능)
 - 공통 에러 처리 UX: 실패 시 `/error` 화면 전환(더미로라도 플로우 연결)
@@ -71,7 +71,7 @@
 - (Stretch B) YouTube 메타데이터 보강(가능하면): 제목/썸네일 업데이트 또는 상태 갱신
 
 ### 클라이언트
-- 로컬 즐겨찾기(북마크) + 최근 검색어 저장/삭제
+- 로컬 저장(저장한 게시물) + 최근 검색어 저장/삭제
 - 상태(로딩/에러/빈) 마감 정리
 - 설정(H010): 로그아웃/앱 정보 등 “마감” 항목 확정 및 반영
 

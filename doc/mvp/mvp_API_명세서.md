@@ -1,4 +1,4 @@
-# 🔌 FanPulse MVP API 계약
+# 🔌 FanPulse MVP API 명세서
 
 > 대상: iOS / Android / Responsive Web 공통
 > 버전: v1.0 (MVP)
@@ -296,6 +296,7 @@ GET /live?status=LIVE&limit=20&cursor=xxx
       {
         "id": "550e8400-e29b-41d4-a716-446655440001",
         "title": "2025 신년 팬미팅 라이브",
+        "artistId": "550e8400-e29b-41d4-a716-446655440099",
         "artistName": "아티스트명",
         "thumbnailUrl": "https://cdn.fanpulse.app/thumbnails/xxx.jpg",
         "status": "LIVE",
@@ -314,7 +315,8 @@ GET /live?status=LIVE&limit=20&cursor=xxx
 |------|------|------|
 | id | string (UUID) | 라이브 ID |
 | title | string | 라이브 제목 |
-| artistName | string | 아티스트명 |
+| artistId | string (UUID) | 아티스트 ID |
+| artistName | string | 아티스트명 (`artists.name`) |
 | thumbnailUrl | string | 썸네일 이미지 URL |
 | status | string | 상태 (`SCHEDULED` / `LIVE` / `ENDED`) |
 | scheduledAt | string (ISO8601) | 예정 시간 |
@@ -335,6 +337,7 @@ GET /live?status=LIVE&limit=20&cursor=xxx
     "id": "550e8400-e29b-41d4-a716-446655440001",
     "title": "2025 신년 팬미팅 라이브",
     "description": "새해를 맞아 팬들과 함께하는 특별한 시간",
+    "artistId": "550e8400-e29b-41d4-a716-446655440099",
     "artistName": "아티스트명",
     "thumbnailUrl": "https://cdn.fanpulse.app/thumbnails/xxx.jpg",
     "streamUrl": "https://www.youtube.com/embed/VIDEO_ID",
@@ -350,9 +353,28 @@ GET /live?status=LIVE&limit=20&cursor=xxx
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| streamUrl | string | 임베드 플레이어 URL (YouTube 등) |
+| streamUrl | string | YouTube 임베드 URL (아래 상세 참조) |
 | description | string? | 라이브 상세 설명 |
 | endedAt | string? (ISO8601) | 종료 시간 (ENDED만) |
+
+#### streamUrl 상세
+
+YouTube 임베드용 URL을 반환합니다. 클라이언트는 이 URL을 그대로 사용하여 플레이어를 렌더링합니다.
+
+| 항목 | 값 |
+|------|-----|
+| **URL 형식** | `https://www.youtube.com/embed/{VIDEO_ID}?rel=0&modestbranding=1&playsinline=1` |
+| **VIDEO_ID** | YouTube 영상 고유 ID (11자) |
+
+**클라이언트 구현 가이드**
+
+| 플랫폼 | 구현 방식 |
+|--------|----------|
+| Web | `<iframe src="{streamUrl}" ...>` |
+| iOS | WKWebView에 streamUrl 로드 |
+| Android | WebView에 streamUrl 로드 |
+
+> **주의**: URL 파라미터(`rel`, `modestbranding`, `playsinline`)는 서버에서 포함하여 반환하므로, 클라이언트는 추가 파라미터 없이 그대로 사용
 
 **에러 케이스**
 | 상황 | HTTP | 코드 |
@@ -402,7 +424,7 @@ GET /news?limit=20&cursor=xxx
 |------|------|------|
 | id | string (UUID) | 뉴스 ID |
 | title | string | 뉴스 제목 |
-| summary | string | 요약 (최대 100자) |
+| summary | string | 요약 (최대 100자, MVP는 `crawled_news.content` 기반) |
 | thumbnailUrl | string? | 썸네일 이미지 URL |
 | source | string | 출처 |
 | publishedAt | string (ISO8601) | 게시일 |
@@ -432,7 +454,7 @@ GET /news?limit=20&cursor=xxx
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| content | string | 뉴스 전체 본문 |
+| content | string | 뉴스 본문 또는 요약 (MVP는 요약 텍스트) |
 | sourceUrl | string | 원문 링크 |
 
 **에러 케이스**
@@ -468,6 +490,7 @@ GET /search?q=아티스트&limit=10
         {
           "id": "...",
           "title": "아티스트 팬미팅 라이브",
+          "artistId": "...",
           "artistName": "아티스트",
           "thumbnailUrl": "...",
           "status": "SCHEDULED",
@@ -511,7 +534,8 @@ GET /search?q=아티스트&limit=10
 
 - `POST /auth/apple` - Apple 로그인
 - `POST /auth/kakao` - Kakao 로그인
-- `PUT /me` - 프로필 수정
+- `POST /auth/refresh` - 토큰 갱신
+- `PATCH /me` - 프로필 수정
 - `GET /community/*` - 커뮤니티 API
 - `GET /rewards/*` - 리워드/포인트 API
 - `WS /live/{id}/chat` - 실시간 채팅

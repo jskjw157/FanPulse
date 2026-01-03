@@ -17,7 +17,7 @@
 - `streaming_events`는 MVP에서 **라이브 화면(H006/H019)** 에서 보여줄 “라이브 방송(예정/진행/종료)”의 **메타데이터**를 담는 테이블입니다.
 - 핵심은 **임베드 재생 가능한 URL(`stream_url`)** 을 저장해두고, 앱은 `GET /live`, `GET /live/{id}`로 이를 받아서 화면을 구성합니다.
 
-> 참고: `docs/mvp/mvp_데이터베이스_정의서.md`의 `streaming_events`, `docs/mvp/mvp_API_계약.md`의 `GET /live/{id}` 응답 필드(`streamUrl`)
+> 참고: `doc/mvp/mvp_데이터베이스_정의서.md`의 `streaming_events`, `doc/mvp/mvp_API_명세서.md`의 `GET /live/{id}` 응답 필드(`streamUrl`)
 
 ---
 
@@ -26,7 +26,7 @@
 - MVP는 “크롤링 기술” 자체가 목표가 아니라, **H001/H006/H019/H011에서 사용자에게 보여줄 데이터가 끊기지 않게** 만드는 게 목표입니다.
 - 그래서 4주 MVP에선 불안정/변동이 큰 자동 크롤링(셀레니움/플레이wright/다중 사이트 파싱) 대신,
   - **운영 가능한 seed(큐레이션) → DB upsert**로 “항상 데이터가 있는 상태”를 먼저 보장합니다.
-- 이 방향은 `docs/mvp/mvp_기획서.md`의 “seed 기반 적재” 결정과 동일합니다.
+- 이 방향은 `doc/mvp/mvp_기획서.md`의 “seed 기반 적재” 결정과 동일합니다.
 
 ---
 
@@ -52,14 +52,15 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
 
 ### MVP 권장(고정): YouTube만 지원
 - MVP의 `stream_url`은 **YouTube embed URL**(예: `https://www.youtube.com/embed/VIDEO_ID`)을 사용합니다.
-- Weverse/VLIVE 등은 임베드/재생 제약이 자주 있어서 **MVP에서는 제외(Next)** 로 두는 게 안전합니다.
+- Weverse Live 등은 임베드/재생 제약이 자주 있어서 **MVP에서는 제외(Next)** 로 두는 게 안전합니다.
 
 ### 수집 방법(가장 단순한 운영 플로우)
-1. “대상 채널 리스트”를 만든다 (아티스트/소속사/방송사 공식 채널)
-2. 각 채널의 예정/진행 라이브를 확인한다(YouTube Live 탭/홈)
-3. 라이브 링크에서 `VIDEO_ID`를 추출한다
+1. `seed_artists.json`으로 아티스트를 먼저 등록한다
+2. “대상 채널 리스트”를 만든다 (아티스트/소속사/방송사 공식 채널)
+3. 각 채널의 예정/진행 라이브를 확인한다(YouTube Live 탭/홈)
+4. 라이브 링크에서 `VIDEO_ID`를 추출한다
    - `https://www.youtube.com/watch?v=VIDEO_ID` 형태
-4. seed에 아래 필드를 채워 넣고 DB로 upsert한다
+5. seed에 아래 필드를 채워 넣고 DB로 upsert한다
 
 ---
 
@@ -72,7 +73,7 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
   {
     "title": "2025 신년 팬미팅 라이브",
     "description": "새해를 맞아 팬들과 함께하는 특별한 시간",
-    "artistName": "아티스트명",
+    "artistId": "550e8400-e29b-41d4-a716-446655440099",
     "streamUrl": "https://www.youtube.com/embed/VIDEO_ID",
     "thumbnailUrl": "https://img.youtube.com/vi/VIDEO_ID/hqdefault.jpg",
     "status": "SCHEDULED",
@@ -81,11 +82,31 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
 ]
 ```
 
-> DB 매핑 예: `streamUrl` → `stream_url`, `thumbnailUrl` → `thumbnail_url`
+> DB 매핑 예: `streamUrl` → `stream_url`, `thumbnailUrl` → `thumbnail_url`, `artistId` → `artist_id`
+> 선행 조건: `artists` 테이블에 아티스트를 먼저 upsert하고, `artistId`로 참조합니다.
 
-### (B) 구글 시트 컬럼 예시(Export → JSON/CSV → upsert)
+### (B) JSON 파일 예시 (`seed_artists.json`)
+
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440099",
+    "name": "아티스트명",
+    "agency": "소속사",
+    "genre": "K-POP",
+    "fandomName": "팬덤명",
+    "profileImageUrl": "https://cdn.fanpulse.app/artists/profile.jpg",
+    "description": "아티스트 소개",
+    "debutDate": "2013-06-13"
+  }
+]
+```
+
+> DB 매핑 예: `profileImageUrl` → `profile_image_url`, `fandomName` → `fandom_name`, `debutDate` → `debut_date`
+
+### (C) 구글 시트 컬럼 예시(Export → JSON/CSV → upsert)
 - `title` (필수)
-- `artistName` (필수)
+- `artistId` (필수: `artists.id`)
 - `streamUrl` (필수: YouTube embed URL)
 - `thumbnailUrl` (선택)
 - `status` (필수: `SCHEDULED`/`LIVE`/`ENDED`)
@@ -109,6 +130,7 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
   {
     "title": "아티스트 컴백 소식",
     "content": "요약(또는 1~2문장 발췌)",
+    "thumbnailUrl": "https://cdn.fanpulse.app/news/thumbnail.jpg",
     "url": "https://example.com/news/123",
     "source": "Google News",
     "publishedAt": "2025-01-15T09:00:00Z"
@@ -116,7 +138,7 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
 ]
 ```
 
-> DB 매핑 예: `publishedAt` → `published_at`
+> DB 매핑 예: `publishedAt` → `published_at`, `thumbnailUrl` → `thumbnail_url`
 
 ### Upsert 키(최소 규칙)
 - `url`을 유니크 키처럼 취급해서 upsert 권장(같은 기사면 업데이트)

@@ -54,17 +54,22 @@
 
 ## 3. API-화면 매핑 (MVP)
 
-| API 엔드포인트 | 담당 화면 |
-|----------------|-----------|
-| POST /auth/signup | H002-1 |
-| POST /auth/login | H002 |
-| POST /auth/google | H002 |
-| GET /me | H016 |
-| GET /live | H006 |
-| GET /live/{id} | H019 |
-| GET /news | H001 |
-| GET /news/{id} | H011 |
-| GET /search | H018 |
+> **참조 문서**: `doc/mvp/mvp_API_명세서.md`
+
+| API 엔드포인트 | 담당 화면 | 설명 |
+|----------------|-----------|------|
+| POST /auth/signup | H002-1 | 회원가입 |
+| POST /auth/login | H002 | 로그인 |
+| POST /auth/google | H002 | 구글 소셜 로그인 |
+| POST /auth/logout | H010 | 로그아웃 |
+| GET /me | H016 | 내 정보 조회 |
+| GET /live | H006 | 라이브 목록 |
+| GET /live/{id} | H019 | 라이브 상세 |
+| GET /news | H001 | 뉴스 목록 |
+| GET /news/{id} | H011 | 뉴스 상세 |
+| GET /search | H018 | 검색 |
+
+> **Note**: API 명세서가 업데이트되면 이 매핑도 함께 갱신해야 합니다.
 
 ## 4. 용어 사전
 
@@ -102,6 +107,75 @@
 
 ## 6. 검증 제외 항목
 
-- MVP 제외 기능 (API 계약서 "MVP에서 제외" 섹션)
+- MVP 제외 기능 (API 명세서 "MVP에서 제외" 섹션)
 - 크롤링 관련 내부 테이블 (crawled_* 중 화면 노출 없는 것)
 - 시스템 내부 테이블 (auth_tokens 등)
+
+## 7. DDD-구현 문서 매핑
+
+### Bounded Context-화면 매핑
+
+> **참조 문서**: `doc/ddd/bounded-contexts/`
+
+| Bounded Context | 담당 화면 | 핵심 Aggregate |
+|-----------------|-----------|----------------|
+| Identity & Access | H002, H002-1, H010, H016 | User, AuthToken |
+| Community | H003, H012, H013 | Post, Comment |
+| Live Streaming | H006, H019 | StreamingEvent, ChatMessage |
+| Voting | H004 | Poll, Vote |
+| Concert & Ticket | H007, H015, H022 | Concert, Reservation |
+| Points & Rewards | H008 | Point, Reward |
+| Membership | H009 | Membership |
+| Content Aggregation | H001, H005, H011 | News, Chart |
+
+### Domain Model-DB 매핑
+
+| Domain Entity | DB 테이블 | 비고 |
+|---------------|-----------|------|
+| User | users | Identity Context |
+| Post | posts (MongoDB) | Community Context |
+| Comment | comments (MongoDB) | Community Context |
+| StreamingEvent | streaming_events | Live Context |
+| Poll | polls | Voting Context |
+| Vote | votes | Voting Context |
+| Concert | crawled_concerts | Concert Context (외부 데이터) |
+| Point | points, point_transactions | Rewards Context |
+
+### Ubiquitous Language 검증
+
+> **참조 문서**: `doc/ddd/ubiquitous-language.md`
+
+검증 시 다음 용어가 문서 간 일관되게 사용되는지 확인:
+
+| 도메인 용어 | 화면 표시 | DB 필드 | API 필드 |
+|-------------|-----------|---------|----------|
+| Fan (팬) | 사용자/팬 | users.role | user.role |
+| Artist (아티스트) | 아티스트 | artists | artist |
+| Post (게시글) | 게시글/포스트 | posts | post |
+| Poll (투표) | 투표 | polls | poll |
+| Heart (하트) | 하트/좋아요 | live_hearts | heart |
+
+## 8. IA-화면 구조 매핑
+
+> **참조 문서**: `doc/mvp/mvp_IA.md`
+
+### 네비게이션 구조 검증
+
+| IA 메뉴 | 화면 ID | 하위 화면 |
+|---------|---------|-----------|
+| 홈 | H001 | H011 (뉴스 상세) |
+| 라이브 | H006 | H019 (라이브 상세) |
+| 검색 | H018 | - |
+| 마이페이지 | H016 | H020, H021, H022 |
+| 설정 | H010 | H023 (고객센터) |
+
+### User Journey 검증
+
+> **참조 문서**: `doc/mvp/mvp_user_journey.md`
+
+주요 사용자 여정이 화면 흐름과 일치하는지 확인:
+
+1. **신규 가입 플로우**: H002 → H002-1 → H001
+2. **콘텐츠 소비 플로우**: H001 → H011 / H006 → H019
+3. **커뮤니티 참여 플로우**: H003 → H012 → H013
+4. **투표 참여 플로우**: H004

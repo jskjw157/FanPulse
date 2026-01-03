@@ -28,3 +28,7 @@ node_modules/
 # tasks.json
 # tasks/ 
 *.skill
+validation-report.md
+doc/mvp/GitHub_이슈_분석.md
+doc/mvp/GitHub_이슈_정리_실행.md
+GitHub_이슈_분석.md
