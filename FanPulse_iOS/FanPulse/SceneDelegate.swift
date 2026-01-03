@@ -6,47 +6,67 @@
 //
 
 import UIKit
+import GoogleSignIn
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
-    
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        guard let windowScene = (scene as? UIWindowScene) else { return }
-        window = UIWindow(windowScene: windowScene)
-        let mainVC = AuthViewController()
-        window?.rootViewController = mainVC
-        window?.makeKeyAndVisible()
+
+    func scene(
+        _ scene: UIScene,
+        willConnectTo session: UISceneSession,
+        options connectionOptions: UIScene.ConnectionOptions
+    ) {
+        guard let windowScene = scene as? UIWindowScene else { return }
+
+        let window = UIWindow(windowScene: windowScene)
+        self.window = window
+
+        if KeychainManager.shared.isLoggedIn() {
+            restorePreviousSignIn()
+        } else {
+            showLoginScreen()
+        }
+
+        window.makeKeyAndVisible()
     }
 
-    func sceneDidDisconnect(_ scene: UIScene) {
-        // Called as the scene is being released by the system.
-        // This occurs shortly after the scene enters the background, or when its session is discarded.
-        // Release any resources associated with this scene that can be re-created the next time the scene connects.
-        // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
+    // MARK: - Login Restore
+
+    private func restorePreviousSignIn() {
+        GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
+            if let error = error {
+                print("자동 로그인 실패: \(error.localizedDescription)")
+                self.showLoginScreen()
+                return
+            }
+
+            if let user = user {
+                print("자동 로그인 성공: \(user.profile?.email ?? "")")
+            }
+
+            self.showMainScreen()
+        }
     }
 
-    func sceneDidBecomeActive(_ scene: UIScene) {
-        // Called when the scene has moved from an inactive state to an active state.
-        // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+    // MARK: - Root Switch
+
+    private func showLoginScreen() {
+        DispatchQueue.main.async {
+            let loginVC = AuthViewController()
+            let nav = UINavigationController(rootViewController: loginVC)
+            self.window?.rootViewController = nav
+        }
     }
 
-    func sceneWillResignActive(_ scene: UIScene) {
-        // Called when the scene will move from an active state to an inactive state.
-        // This may occur due to temporary interruptions (ex. an incoming phone call).
+    private func showMainScreen() {
+        DispatchQueue.main.async {
+            print("📱 메인 화면 표시")
+
+            let mainVC = ViewController()
+            let nav = UINavigationController(rootViewController: mainVC)
+
+            self.window?.rootViewController = nav
+        }
     }
-
-    func sceneWillEnterForeground(_ scene: UIScene) {
-        // Called as the scene transitions from the background to the foreground.
-        // Use this method to undo the changes made on entering the background.
-    }
-
-    func sceneDidEnterBackground(_ scene: UIScene) {
-        // Called as the scene transitions from the foreground to the background.
-        // Use this method to save data, release shared resources, and store enough scene-specific state information
-        // to restore the scene back to its current state.
-    }
-
-
 }
-
