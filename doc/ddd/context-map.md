@@ -42,7 +42,7 @@
 graph TB
     subgraph External["External Systems"]
         GOOGLE[Google OAuth]
-        YOUTUBE[YouTube/V LIVE]
+        YOUTUBE[YouTube/Weverse Live]
         NEWS_SOURCE[News Sources]
         CHART_SOURCE[Chart Sources]
         CONCERT_SOURCE[Concert Sources]
@@ -268,7 +268,7 @@ class NewsAclTranslator {
 | External (Chart) | Content | ACL | Crawling |
 | External (Concert) | Concert | ACL | Crawling |
 | External (Google) | Identity | ACL | OAuth |
-| External (YouTube) | Streaming | ACL | Embed URL |
+| External (YouTube/Weverse Live) | Streaming | ACL | Embed URL |
 
 ## 이벤트 흐름
 

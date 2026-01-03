@@ -21,13 +21,14 @@
 - **Home**: 메인(H001)
   - Live Now/Upcoming, 최신 뉴스 섹션(요약 카드) 중심
 - **Live**: 라이브 & 이벤트(H006), 라이브 상세(H019)
-  - 외부 플랫폼(YouTube/V LIVE 등) **임베드 시청**
+  - 외부 플랫폼(YouTube Live) **임베드 시청**
   - 채팅/하트/투표/리워드 등은 제외
+  - **임베드 방식**: Web은 iframe, 앱은 WebView 사용 (상세: `mvp_화면_정의서.md` H019 참조)
 - **News**: 뉴스 목록/상세(H001/H011)
   - MVP는 seed 기반 적재(큐레이션)로 시작 + **Week 4에 Google News RSS(Stretch)로 운영 부담 완화**
 - **Search**: 검색(H018)
   - MVP 범위: Live/News 통합 검색
-- **Local Only**: 즐겨찾기(북마크), 최근 검색어
+- **Local Only**: 저장한 게시물, 최근 검색어
   - 계정 동기화는 다음(Next)
 - **My/Settings**: 마이페이지(H016), 설정(H010)
   - 최소 기능: 프로필 요약 + 로그아웃 + 앱 정보/테마(선택)

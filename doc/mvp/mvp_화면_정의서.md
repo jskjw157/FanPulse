@@ -14,10 +14,10 @@
 | H002-1 | 회원가입         | `/login`       | 이메일 기반 회원가입           |
 | H010   | 설정             | `/settings`    | 로그아웃/앱 정보(최소)         |
 | H006   | 라이브 & 이벤트  | `/live`        | 라이브 목록/상태/썸네일         |
-| H011   | 뉴스 상세        | `/news-detail` | 뉴스 상세 보기                 |
+| H011   | 뉴스 상세        | `/news/:id`    | 뉴스 상세 보기                 |
 | H016   | 마이페이지       | `/mypage`      | 프로필 요약 + 메뉴(최소)       |
 | H018   | 검색             | `/search`      | Live/News 통합 검색            |
-| H019   | 라이브 상세      | `/live-detail` | 임베드 플레이어로 라이브 시청  |
+| H019   | 라이브 상세      | `/live/:id`    | 임베드 플레이어로 라이브 시청  |
 | H024   | 에러 페이지      | `/error`       | 오류 안내(네트워크/권한/404 등) |
 
 ---
@@ -62,6 +62,36 @@ flowchart TD;
 ### 3.4 라이브 상세 (H019)
 - 임베드 플레이어(YouTube 등) + 메타데이터
 - 채팅/하트 등 인터랙션은 MVP 제외
+
+#### YouTube 임베드 스펙
+
+| 항목 | 값 |
+|------|-----|
+| **URL 형식** | `https://www.youtube.com/embed/{VIDEO_ID}` |
+| **비율** | 16:9 (반응형) |
+| **URL 파라미터** | `?rel=0&modestbranding=1&playsinline=1` |
+
+**플랫폼별 구현 방식**
+
+| 플랫폼 | 방식 | 비고 |
+|--------|------|------|
+| **Web** | `<iframe>` | `allowfullscreen`, `allow="autoplay; encrypted-media"` |
+| **iOS** | WKWebView | `allowsInlineMediaPlayback=true` 설정 |
+| **Android** | WebView | `setJavaScriptEnabled(true)`, 하드웨어 가속 활성화 |
+
+**iframe 예시 (Web)**
+```html
+<iframe
+  src="https://www.youtube.com/embed/VIDEO_ID?rel=0&modestbranding=1&playsinline=1"
+  width="100%"
+  style="aspect-ratio: 16/9;"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>
+```
+
+> **참고**: YouTube IFrame Player API를 사용하면 재생 상태 감지, 자동재생 제어 등 추가 기능 구현 가능 (MVP 이후 검토)
 
 ### 3.5 홈 (H001)
 - Live Now/Upcoming 요약 카드(라이브로 이동)
