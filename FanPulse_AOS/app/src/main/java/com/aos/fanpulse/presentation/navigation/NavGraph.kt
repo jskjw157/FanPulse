@@ -7,7 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.aos.fanpulse.presentation.Auth.AuthScreen
+import com.aos.fanpulse.presentation.auth.AuthScreen
 
 @Composable
 fun NavGraph(
