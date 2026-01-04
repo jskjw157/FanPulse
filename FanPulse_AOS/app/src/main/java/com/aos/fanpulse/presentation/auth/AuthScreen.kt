@@ -1,4 +1,4 @@
-package com.aos.fanpulse.presentation.Auth
+package com.aos.fanpulse.presentation.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

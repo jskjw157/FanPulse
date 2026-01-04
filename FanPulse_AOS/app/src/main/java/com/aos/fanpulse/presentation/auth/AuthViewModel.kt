@@ -1,4 +1,4 @@
-package com.aos.fanpulse.presentation.Auth
+package com.aos.fanpulse.presentation.auth
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
