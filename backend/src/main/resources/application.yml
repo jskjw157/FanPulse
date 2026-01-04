@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: fanpulse-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/fanpulse
+    username: ${DB_USERNAME:fanpulse}
+    password: ${DB_PASSWORD:fanpulse}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+fanpulse:
+  youtube:
+    oembed:
+      base-url: https://www.youtube.com/oembed
+      timeout-ms: 5000
+      retry:
+        max-attempts: 3
+        delay-ms: 1000
+
+  scheduler:
+    metadata-refresh:
+      enabled: true
+      live-cron: "0 0 * * * *"
+      all-cron: "0 0 0 * * *"
+      batch-size: 50
+      batch-delay-ms: 1000
+
+logging:
+  level:
+    com.fanpulse: DEBUG
+    org.springframework.web: INFO
