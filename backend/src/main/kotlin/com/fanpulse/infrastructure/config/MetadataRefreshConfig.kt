@@ -2,9 +2,9 @@ package com.fanpulse.infrastructure.config
 
 import com.fanpulse.application.service.MetadataRefreshService
 import com.fanpulse.application.service.MetadataRefreshServiceImpl
-import com.fanpulse.domain.streaming.StreamingEventRepository
-import com.fanpulse.infrastructure.external.youtube.YouTubeOEmbedClient
-import com.fanpulse.infrastructure.external.youtube.YouTubeVideoIdExtractor
+import com.fanpulse.application.service.TransactionalMetadataUpdater
+import com.fanpulse.domain.streaming.port.StreamingEventPort
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -20,14 +20,14 @@ class MetadataRefreshConfig {
 
     @Bean
     fun metadataRefreshService(
-        repository: StreamingEventRepository,
-        oEmbedClient: YouTubeOEmbedClient,
-        videoIdExtractor: YouTubeVideoIdExtractor
+        eventPort: StreamingEventPort,
+        metadataUpdater: TransactionalMetadataUpdater,
+        meterRegistry: MeterRegistry
     ): MetadataRefreshService {
         return MetadataRefreshServiceImpl(
-            repository = repository,
-            oEmbedClient = oEmbedClient,
-            videoIdExtractor = videoIdExtractor,
+            eventPort = eventPort,
+            metadataUpdater = metadataUpdater,
+            meterRegistry = meterRegistry,
             batchSize = batchSize,
             batchDelayMs = batchDelayMs
         )

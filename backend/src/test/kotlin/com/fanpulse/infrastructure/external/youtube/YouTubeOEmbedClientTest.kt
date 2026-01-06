@@ -23,7 +23,7 @@ class YouTubeOEmbedClientTest {
             .build()
 
         client = YouTubeOEmbedClientImpl(
-            webClient = webClient,
+            youTubeWebClient = webClient,
             timeoutMs = 3000,
             maxRetries = 2,
             retryDelayMs = 100
@@ -132,8 +132,8 @@ class YouTubeOEmbedClientTest {
         }
 
         @Test
-        @DisplayName("should return null when server error occurs (500)")
-        fun shouldReturnNullWhenServerError() {
+        @DisplayName("should throw exception when server error occurs (500) for Circuit Breaker")
+        fun shouldThrowExceptionWhenServerError() {
             // given
             val videoId = "anyVideoId"
 
@@ -147,11 +147,10 @@ class YouTubeOEmbedClientTest {
                     )
             )
 
-            // when
-            val metadata = client.fetchMetadata(videoId)
-
-            // then
-            assertNull(metadata)
+            // when/then - throws exception to trigger Circuit Breaker
+            assertThrows<Exception> {
+                client.fetchMetadata(videoId)
+            }
         }
 
         @Test
@@ -200,8 +199,8 @@ class YouTubeOEmbedClientTest {
         }
 
         @Test
-        @DisplayName("should handle malformed JSON response")
-        fun shouldHandleMalformedJsonResponse() {
+        @DisplayName("should throw exception for malformed JSON response for Circuit Breaker")
+        fun shouldThrowExceptionForMalformedJsonResponse() {
             // given
             val videoId = "malformedJson"
 
@@ -216,11 +215,10 @@ class YouTubeOEmbedClientTest {
                     )
             )
 
-            // when
-            val metadata = client.fetchMetadata(videoId)
-
-            // then
-            assertNull(metadata)
+            // when/then - throws exception to trigger Circuit Breaker
+            assertThrows<Exception> {
+                client.fetchMetadata(videoId)
+            }
         }
     }
 }
