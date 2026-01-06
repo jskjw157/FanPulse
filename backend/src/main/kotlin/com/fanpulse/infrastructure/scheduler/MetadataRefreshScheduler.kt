@@ -1,6 +1,7 @@
 package com.fanpulse.infrastructure.scheduler
 
 import com.fanpulse.application.service.MetadataRefreshService
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
@@ -35,7 +36,7 @@ class MetadataRefreshScheduler(
         logger.info { "Starting scheduled LIVE metadata refresh at $startTime" }
 
         try {
-            val result = metadataRefreshService.refreshLiveEvents()
+            val result = runBlocking { metadataRefreshService.refreshLiveEvents() }
             val duration = java.time.Duration.between(startTime, Instant.now())
 
             logger.info {
@@ -61,7 +62,7 @@ class MetadataRefreshScheduler(
         logger.info { "Starting scheduled ALL metadata refresh at $startTime" }
 
         try {
-            val result = metadataRefreshService.refreshAllEvents()
+            val result = runBlocking { metadataRefreshService.refreshAllEvents() }
             val duration = java.time.Duration.between(startTime, Instant.now())
 
             logger.info {

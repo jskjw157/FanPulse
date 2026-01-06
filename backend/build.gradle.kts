@@ -26,10 +26,22 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // Resilience4j
+    implementation("io.github.resilience4j:resilience4j-spring-boot3:2.2.0")
+    implementation("io.github.resilience4j:resilience4j-kotlin:2.2.0")
+
+    // Micrometer
+    implementation("io.micrometer:micrometer-registry-prometheus")
 
     // Kotlin
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+    // Kotlin Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.7.3")
 
     // Database
     runtimeOnly("org.postgresql:postgresql")
@@ -46,6 +58,9 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers:1.19.4")
     testImplementation("org.testcontainers:postgresql:1.19.4")
     testImplementation("org.testcontainers:junit-jupiter:1.19.4")
+
+    // Kotlin Coroutines Test
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
     // H2 for tests
     testRuntimeOnly("com.h2database:h2")

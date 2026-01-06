@@ -7,6 +7,7 @@ import com.fanpulse.domain.streaming.StreamingStatus
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired
@@ -96,7 +97,7 @@ class MetadataRefreshIntegrationTest {
         )
 
         // when
-        val result = metadataRefreshService.refreshLiveEvents()
+        val result = runBlocking { metadataRefreshService.refreshLiveEvents() }
 
         // then
         assertEquals(1, result.total)
@@ -134,7 +135,7 @@ class MetadataRefreshIntegrationTest {
         )
 
         // when
-        val result = metadataRefreshService.refreshLiveEvents()
+        val result = runBlocking { metadataRefreshService.refreshLiveEvents() }
 
         // then
         assertEquals(1, result.total)
@@ -162,7 +163,7 @@ class MetadataRefreshIntegrationTest {
         // No stub for ended - should not be called
 
         // when
-        val result = metadataRefreshService.refreshAllEvents()
+        val result = runBlocking { metadataRefreshService.refreshAllEvents() }
 
         // then
         assertEquals(2, result.total) // Only LIVE and SCHEDULED

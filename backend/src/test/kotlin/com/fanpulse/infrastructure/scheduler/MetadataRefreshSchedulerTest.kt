@@ -33,7 +33,7 @@ class MetadataRefreshSchedulerTest {
         @DisplayName("should call service.refreshLiveEvents()")
         fun shouldCallServiceRefreshLiveEvents() {
             // given
-            every { metadataRefreshService.refreshLiveEvents() } returns RefreshResult(
+            coEvery { metadataRefreshService.refreshLiveEvents() } returns RefreshResult(
                 total = 10,
                 updated = 8,
                 failed = 2
@@ -43,20 +43,20 @@ class MetadataRefreshSchedulerTest {
             scheduler.refreshLiveMetadata()
 
             // then
-            verify(exactly = 1) { metadataRefreshService.refreshLiveEvents() }
+            coVerify(exactly = 1) { metadataRefreshService.refreshLiveEvents() }
         }
 
         @Test
         @DisplayName("should handle exception gracefully")
         fun shouldHandleExceptionGracefully() {
             // given
-            every { metadataRefreshService.refreshLiveEvents() } throws RuntimeException("Test error")
+            coEvery { metadataRefreshService.refreshLiveEvents() } throws RuntimeException("Test error")
 
             // when - should not throw
             scheduler.refreshLiveMetadata()
 
             // then
-            verify(exactly = 1) { metadataRefreshService.refreshLiveEvents() }
+            coVerify(exactly = 1) { metadataRefreshService.refreshLiveEvents() }
         }
     }
 
@@ -68,7 +68,7 @@ class MetadataRefreshSchedulerTest {
         @DisplayName("should call service.refreshAllEvents()")
         fun shouldCallServiceRefreshAllEvents() {
             // given
-            every { metadataRefreshService.refreshAllEvents() } returns RefreshResult(
+            coEvery { metadataRefreshService.refreshAllEvents() } returns RefreshResult(
                 total = 50,
                 updated = 45,
                 failed = 5
@@ -78,20 +78,20 @@ class MetadataRefreshSchedulerTest {
             scheduler.refreshAllMetadata()
 
             // then
-            verify(exactly = 1) { metadataRefreshService.refreshAllEvents() }
+            coVerify(exactly = 1) { metadataRefreshService.refreshAllEvents() }
         }
 
         @Test
         @DisplayName("should handle exception gracefully")
         fun shouldHandleExceptionGracefully() {
             // given
-            every { metadataRefreshService.refreshAllEvents() } throws RuntimeException("Test error")
+            coEvery { metadataRefreshService.refreshAllEvents() } throws RuntimeException("Test error")
 
             // when - should not throw
             scheduler.refreshAllMetadata()
 
             // then
-            verify(exactly = 1) { metadataRefreshService.refreshAllEvents() }
+            coVerify(exactly = 1) { metadataRefreshService.refreshAllEvents() }
         }
     }
 }

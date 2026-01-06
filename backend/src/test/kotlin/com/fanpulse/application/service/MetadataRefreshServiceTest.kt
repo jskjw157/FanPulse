@@ -1,15 +1,13 @@
 package com.fanpulse.application.service
 
 import com.fanpulse.domain.streaming.StreamingEvent
-import com.fanpulse.domain.streaming.StreamingEventRepository
 import com.fanpulse.domain.streaming.StreamingStatus
-import com.fanpulse.infrastructure.external.youtube.YouTubeMetadata
-import com.fanpulse.infrastructure.external.youtube.YouTubeOEmbedClient
-import com.fanpulse.infrastructure.external.youtube.YouTubeVideoIdExtractor
+import com.fanpulse.domain.streaming.port.StreamingEventPort
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.*
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.extension.ExtendWith
@@ -21,22 +19,21 @@ import java.util.*
 class MetadataRefreshServiceTest {
 
     @MockK
-    private lateinit var repository: StreamingEventRepository
+    private lateinit var eventPort: StreamingEventPort
 
     @MockK
-    private lateinit var oEmbedClient: YouTubeOEmbedClient
+    private lateinit var metadataUpdater: TransactionalMetadataUpdater
 
-    @MockK
-    private lateinit var videoIdExtractor: YouTubeVideoIdExtractor
+    private val meterRegistry = SimpleMeterRegistry()
 
     private lateinit var service: MetadataRefreshService
 
     @BeforeEach
     fun setUp() {
         service = MetadataRefreshServiceImpl(
-            repository = repository,
-            oEmbedClient = oEmbedClient,
-            videoIdExtractor = videoIdExtractor,
+            eventPort = eventPort,
+            metadataUpdater = metadataUpdater,
+            meterRegistry = meterRegistry,
             batchSize = 10,
             batchDelayMs = 0
         )
@@ -48,7 +45,7 @@ class MetadataRefreshServiceTest {
 
         @Test
         @DisplayName("should refresh metadata for LIVE events only")
-        fun shouldRefreshMetadataForLiveEventsOnly() {
+        fun shouldRefreshMetadataForLiveEventsOnly() = runTest {
             // given
             val liveEvent = createStreamingEvent(
                 id = UUID.randomUUID(),
@@ -57,15 +54,8 @@ class MetadataRefreshServiceTest {
                 streamUrl = "https://www.youtube.com/embed/abc123xyz"
             )
 
-            every { repository.findByStatus(StreamingStatus.LIVE) } returns listOf(liveEvent)
-            every { videoIdExtractor.extractVideoId(any()) } returns "abc123xyz"
-            every { oEmbedClient.fetchMetadata("abc123xyz") } returns YouTubeMetadata(
-                title = "New Title",
-                thumbnailUrl = "https://i.ytimg.com/vi/abc123xyz/hqdefault.jpg",
-                authorName = "Channel",
-                providerName = "YouTube"
-            )
-            every { repository.save(any()) } answers { firstArg() }
+            every { eventPort.findByStatus(StreamingStatus.LIVE) } returns listOf(liveEvent)
+            every { metadataUpdater.updateEventMetadata(any()) } returns true
 
             // when
             val result = service.refreshLiveEvents()
@@ -75,13 +65,13 @@ class MetadataRefreshServiceTest {
             assertEquals(1, result.updated)
             assertEquals(0, result.failed)
 
-            verify(exactly = 1) { repository.findByStatus(StreamingStatus.LIVE) }
-            verify(exactly = 1) { repository.save(match { it.title == "New Title" }) }
+            verify(exactly = 1) { eventPort.findByStatus(StreamingStatus.LIVE) }
+            verify(exactly = 1) { metadataUpdater.updateEventMetadata(liveEvent) }
         }
 
         @Test
-        @DisplayName("should count failed events when oEmbed returns null")
-        fun shouldCountFailedEventsWhenOEmbedReturnsNull() {
+        @DisplayName("should count failed events when metadata update fails")
+        fun shouldCountFailedEventsWhenMetadataUpdateFails() = runTest {
             // given
             val event = createStreamingEvent(
                 id = UUID.randomUUID(),
@@ -90,9 +80,8 @@ class MetadataRefreshServiceTest {
                 streamUrl = "https://www.youtube.com/embed/deletedVideo"
             )
 
-            every { repository.findByStatus(StreamingStatus.LIVE) } returns listOf(event)
-            every { videoIdExtractor.extractVideoId(any()) } returns "deletedVideo"
-            every { oEmbedClient.fetchMetadata("deletedVideo") } returns null
+            every { eventPort.findByStatus(StreamingStatus.LIVE) } returns listOf(event)
+            every { metadataUpdater.updateEventMetadata(any()) } returns false
 
             // when
             val result = service.refreshLiveEvents()
@@ -105,8 +94,8 @@ class MetadataRefreshServiceTest {
         }
 
         @Test
-        @DisplayName("should skip event when video ID cannot be extracted")
-        fun shouldSkipEventWhenVideoIdCannotBeExtracted() {
+        @DisplayName("should count failed events when exception is thrown")
+        fun shouldCountFailedEventsWhenExceptionIsThrown() = runTest {
             // given
             val event = createStreamingEvent(
                 id = UUID.randomUUID(),
@@ -115,8 +104,8 @@ class MetadataRefreshServiceTest {
                 streamUrl = "invalid-url"
             )
 
-            every { repository.findByStatus(StreamingStatus.LIVE) } returns listOf(event)
-            every { videoIdExtractor.extractVideoId("invalid-url") } returns null
+            every { eventPort.findByStatus(StreamingStatus.LIVE) } returns listOf(event)
+            every { metadataUpdater.updateEventMetadata(any()) } throws RuntimeException("Test error")
 
             // when
             val result = service.refreshLiveEvents()
@@ -125,15 +114,14 @@ class MetadataRefreshServiceTest {
             assertEquals(1, result.total)
             assertEquals(0, result.updated)
             assertEquals(1, result.failed)
-
-            verify(exactly = 0) { oEmbedClient.fetchMetadata(any()) }
+            assertTrue(result.errors.isNotEmpty())
         }
 
         @Test
         @DisplayName("should handle empty list of live events")
-        fun shouldHandleEmptyListOfLiveEvents() {
+        fun shouldHandleEmptyListOfLiveEvents() = runTest {
             // given
-            every { repository.findByStatus(StreamingStatus.LIVE) } returns emptyList()
+            every { eventPort.findByStatus(StreamingStatus.LIVE) } returns emptyList()
 
             // when
             val result = service.refreshLiveEvents()
@@ -151,7 +139,7 @@ class MetadataRefreshServiceTest {
 
         @Test
         @DisplayName("should refresh metadata for all non-ENDED events")
-        fun shouldRefreshMetadataForAllNonEndedEvents() {
+        fun shouldRefreshMetadataForAllNonEndedEvents() = runTest {
             // given
             val liveEvent = createStreamingEvent(
                 id = UUID.randomUUID(),
@@ -166,21 +154,8 @@ class MetadataRefreshServiceTest {
                 streamUrl = "https://www.youtube.com/embed/scheduled123"
             )
 
-            every { repository.findByStatusNot(StreamingStatus.ENDED) } returns listOf(liveEvent, scheduledEvent)
-            every { videoIdExtractor.extractVideoId(any()) } answers {
-                val url = firstArg<String>()
-                if (url.contains("live123")) "live123" else "scheduled123"
-            }
-            every { oEmbedClient.fetchMetadata(any()) } answers {
-                val videoId = firstArg<String>()
-                YouTubeMetadata(
-                    title = "Updated $videoId",
-                    thumbnailUrl = "https://i.ytimg.com/vi/$videoId/hqdefault.jpg",
-                    authorName = "Channel",
-                    providerName = "YouTube"
-                )
-            }
-            every { repository.save(any()) } answers { firstArg() }
+            every { eventPort.findByStatusNot(StreamingStatus.ENDED) } returns listOf(liveEvent, scheduledEvent)
+            every { metadataUpdater.updateEventMetadata(any()) } returns true
 
             // when
             val result = service.refreshAllEvents()
@@ -190,12 +165,12 @@ class MetadataRefreshServiceTest {
             assertEquals(2, result.updated)
             assertEquals(0, result.failed)
 
-            verify(exactly = 2) { repository.save(any()) }
+            verify(exactly = 2) { metadataUpdater.updateEventMetadata(any()) }
         }
 
         @Test
         @DisplayName("should continue processing when one event fails")
-        fun shouldContinueProcessingWhenOneEventFails() {
+        fun shouldContinueProcessingWhenOneEventFails() = runTest {
             // given
             val event1 = createStreamingEvent(
                 id = UUID.randomUUID(),
@@ -210,19 +185,9 @@ class MetadataRefreshServiceTest {
                 streamUrl = "https://www.youtube.com/embed/video2"
             )
 
-            every { repository.findByStatusNot(StreamingStatus.ENDED) } returns listOf(event1, event2)
-            every { videoIdExtractor.extractVideoId(any()) } answers {
-                val url = firstArg<String>()
-                if (url.contains("video1")) "video1" else "video2"
-            }
-            every { oEmbedClient.fetchMetadata("video1") } returns null // fails
-            every { oEmbedClient.fetchMetadata("video2") } returns YouTubeMetadata(
-                title = "Updated Event 2",
-                thumbnailUrl = "https://i.ytimg.com/vi/video2/hqdefault.jpg",
-                authorName = "Channel",
-                providerName = "YouTube"
-            )
-            every { repository.save(any()) } answers { firstArg() }
+            every { eventPort.findByStatusNot(StreamingStatus.ENDED) } returns listOf(event1, event2)
+            every { metadataUpdater.updateEventMetadata(event1) } returns false // fails
+            every { metadataUpdater.updateEventMetadata(event2) } returns true
 
             // when
             val result = service.refreshAllEvents()
@@ -232,7 +197,7 @@ class MetadataRefreshServiceTest {
             assertEquals(1, result.updated)
             assertEquals(1, result.failed)
 
-            verify(exactly = 1) { repository.save(any()) }
+            verify(exactly = 2) { metadataUpdater.updateEventMetadata(any()) }
         }
     }
 
@@ -242,7 +207,7 @@ class MetadataRefreshServiceTest {
 
         @Test
         @DisplayName("should refresh single event by ID")
-        fun shouldRefreshSingleEventById() {
+        fun shouldRefreshSingleEventById() = runTest {
             // given
             val eventId = UUID.randomUUID()
             val event = createStreamingEvent(
@@ -252,43 +217,36 @@ class MetadataRefreshServiceTest {
                 streamUrl = "https://www.youtube.com/embed/singleVideo"
             )
 
-            every { repository.findById(eventId) } returns Optional.of(event)
-            every { videoIdExtractor.extractVideoId(any()) } returns "singleVideo"
-            every { oEmbedClient.fetchMetadata("singleVideo") } returns YouTubeMetadata(
-                title = "New Title",
-                thumbnailUrl = "https://i.ytimg.com/vi/singleVideo/hqdefault.jpg",
-                authorName = "Channel",
-                providerName = "YouTube"
-            )
-            every { repository.save(any()) } answers { firstArg() }
+            every { eventPort.findEventById(eventId) } returns event
+            every { metadataUpdater.updateEventMetadata(event) } returns true
 
             // when
             val result = service.refreshEvent(eventId)
 
             // then
             assertTrue(result)
-            verify(exactly = 1) { repository.save(match { it.title == "New Title" }) }
+            verify(exactly = 1) { metadataUpdater.updateEventMetadata(event) }
         }
 
         @Test
         @DisplayName("should return false when event not found")
-        fun shouldReturnFalseWhenEventNotFound() {
+        fun shouldReturnFalseWhenEventNotFound() = runTest {
             // given
             val eventId = UUID.randomUUID()
 
-            every { repository.findById(eventId) } returns Optional.empty()
+            every { eventPort.findEventById(eventId) } returns null
 
             // when
             val result = service.refreshEvent(eventId)
 
             // then
             assertFalse(result)
-            verify(exactly = 0) { oEmbedClient.fetchMetadata(any()) }
+            verify(exactly = 0) { metadataUpdater.updateEventMetadata(any()) }
         }
 
         @Test
-        @DisplayName("should return false when video ID extraction fails")
-        fun shouldReturnFalseWhenVideoIdExtractionFails() {
+        @DisplayName("should return false when metadata update fails")
+        fun shouldReturnFalseWhenMetadataUpdateFails() = runTest {
             // given
             val eventId = UUID.randomUUID()
             val event = createStreamingEvent(
@@ -298,20 +256,19 @@ class MetadataRefreshServiceTest {
                 streamUrl = "invalid-url"
             )
 
-            every { repository.findById(eventId) } returns Optional.of(event)
-            every { videoIdExtractor.extractVideoId("invalid-url") } returns null
+            every { eventPort.findEventById(eventId) } returns event
+            every { metadataUpdater.updateEventMetadata(event) } returns false
 
             // when
             val result = service.refreshEvent(eventId)
 
             // then
             assertFalse(result)
-            verify(exactly = 0) { oEmbedClient.fetchMetadata(any()) }
         }
 
         @Test
-        @DisplayName("should return false when oEmbed returns null")
-        fun shouldReturnFalseWhenOEmbedReturnsNull() {
+        @DisplayName("should return false when exception is thrown")
+        fun shouldReturnFalseWhenExceptionIsThrown() = runTest {
             // given
             val eventId = UUID.randomUUID()
             val event = createStreamingEvent(
@@ -321,16 +278,14 @@ class MetadataRefreshServiceTest {
                 streamUrl = "https://www.youtube.com/embed/deletedVideo"
             )
 
-            every { repository.findById(eventId) } returns Optional.of(event)
-            every { videoIdExtractor.extractVideoId(any()) } returns "deletedVideo"
-            every { oEmbedClient.fetchMetadata("deletedVideo") } returns null
+            every { eventPort.findEventById(eventId) } returns event
+            every { metadataUpdater.updateEventMetadata(event) } throws RuntimeException("Test error")
 
             // when
             val result = service.refreshEvent(eventId)
 
             // then
             assertFalse(result)
-            verify(exactly = 0) { repository.save(any()) }
         }
     }
 

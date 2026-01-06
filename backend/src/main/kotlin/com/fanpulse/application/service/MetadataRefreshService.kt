@@ -4,6 +4,7 @@ import java.util.*
 
 /**
  * Service for refreshing YouTube streaming event metadata.
+ * Uses coroutines for non-blocking batch delays.
  */
 interface MetadataRefreshService {
 
@@ -13,7 +14,7 @@ interface MetadataRefreshService {
      *
      * @return RefreshResult with statistics
      */
-    fun refreshLiveEvents(): RefreshResult
+    suspend fun refreshLiveEvents(): RefreshResult
 
     /**
      * Refresh metadata for all non-ENDED events.
@@ -21,7 +22,7 @@ interface MetadataRefreshService {
      *
      * @return RefreshResult with statistics
      */
-    fun refreshAllEvents(): RefreshResult
+    suspend fun refreshAllEvents(): RefreshResult
 
     /**
      * Refresh metadata for a single event.
@@ -29,7 +30,7 @@ interface MetadataRefreshService {
      * @param eventId UUID of the streaming event
      * @return true if refresh was successful, false otherwise
      */
-    fun refreshEvent(eventId: UUID): Boolean
+    suspend fun refreshEvent(eventId: UUID): Boolean
 }
 
 /**
