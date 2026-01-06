@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: fanpulse-backend-test
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+fanpulse:
+  youtube:
+    oembed:
+      base-url: http://localhost:8089/oembed
+      timeout-ms: 3000
+      retry:
+        max-attempts: 2
+        delay-ms: 500
+
+  scheduler:
+    metadata-refresh:
+      enabled: false
+      live-cron: "0 0 * * * *"
+      all-cron: "0 0 0 * * *"
+      batch-size: 10
+      batch-delay-ms: 100
+
+# Resilience4j - disabled for tests
+resilience4j:
+  circuitbreaker:
+    instances:
+      youtubeOEmbed:
+        registerHealthIndicator: false
+        slidingWindowSize: 100
+        minimumNumberOfCalls: 100
+        failureRateThreshold: 100
+        waitDurationInOpenState: 1s
+
+logging:
+  level:
+    com.fanpulse: DEBUG

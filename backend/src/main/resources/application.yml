@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: fanpulse-backend
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fanpulse}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+fanpulse:
+  youtube:
+    oembed:
+      base-url: https://www.youtube.com/oembed
+      timeout-ms: 5000
+      retry:
+        max-attempts: 3
+        delay-ms: 1000
+
+  scheduler:
+    metadata-refresh:
+      enabled: true
+      live-cron: "0 0 * * * *"
+      all-cron: "0 0 0 * * *"
+      batch-size: 50
+      batch-delay-ms: 1000
+
+# Resilience4j Circuit Breaker
+resilience4j:
+  circuitbreaker:
+    instances:
+      youtubeOEmbed:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException.ServiceUnavailable
+          - org.springframework.web.reactive.function.client.WebClientResponseException.GatewayTimeout
+        ignoreExceptions:
+          - com.fanpulse.infrastructure.external.youtube.VideoNotFoundException
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,circuitbreakers,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+logging:
+  level:
+    com.fanpulse: DEBUG
+    org.springframework.web: INFO
