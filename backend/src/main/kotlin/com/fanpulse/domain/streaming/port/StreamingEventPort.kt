@@ -1,6 +1,7 @@
 package com.fanpulse.domain.streaming.port
 
 import com.fanpulse.domain.streaming.StreamingEvent
+import com.fanpulse.domain.streaming.StreamingPlatform
 import com.fanpulse.domain.streaming.StreamingStatus
 import java.util.*
 
@@ -10,12 +11,9 @@ import java.util.*
  * without any infrastructure dependencies.
  */
 interface StreamingEventPort {
-
     fun findEventById(id: UUID): StreamingEvent?
-
     fun findByStatus(status: StreamingStatus): List<StreamingEvent>
-
     fun findByStatusNot(status: StreamingStatus): List<StreamingEvent>
-
+    fun findByPlatformAndExternalId(platform: StreamingPlatform, externalId: String): StreamingEvent?
     fun save(event: StreamingEvent): StreamingEvent
 }

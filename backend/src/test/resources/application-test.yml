@@ -25,6 +25,13 @@ fanpulse:
         max-attempts: 2
         delay-ms: 500
 
+  discovery:
+    ytdlp:
+      command: yt-dlp
+      timeout-ms: 2000
+      playlist-limit: 5
+      extract-flat: false
+
   scheduler:
     metadata-refresh:
       enabled: false
@@ -32,6 +39,10 @@ fanpulse:
       all-cron: "0 0 0 * * *"
       batch-size: 10
       batch-delay-ms: 100
+    live-discovery:
+      enabled: false
+      cron: "0 0 * * * *"
+      channel-delay-ms: 0
 
 # Resilience4j - disabled for tests
 resilience4j:

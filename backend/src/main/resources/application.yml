@@ -26,6 +26,13 @@ fanpulse:
         max-attempts: 3
         delay-ms: 1000
 
+  discovery:
+    ytdlp:
+      command: yt-dlp
+      timeout-ms: 20000
+      playlist-limit: 30
+      extract-flat: false
+
   scheduler:
     metadata-refresh:
       enabled: true
@@ -33,6 +40,10 @@ fanpulse:
       all-cron: "0 0 0 * * *"
       batch-size: 50
       batch-delay-ms: 1000
+    live-discovery:
+      enabled: true
+      cron: "0 0 * * * *"
+      channel-delay-ms: 500
 
 # Resilience4j Circuit Breaker
 resilience4j:
