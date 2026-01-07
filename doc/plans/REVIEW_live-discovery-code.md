@@ -9,6 +9,7 @@
 - `backend/src/main/kotlin/com/fanpulse/domain/streaming/StreamingEventRepository.kt`
 - `backend/src/main/kotlin/com/fanpulse/infrastructure/scheduler/LiveDiscoveryScheduler.kt`
 - `backend/src/main/resources/application.yml`
+- `backend/src/test/resources/application-test.yml`
 - `backend/src/test/kotlin/com/fanpulse/infrastructure/external/youtube/YtDlpOutputParserTest.kt`
 - `script/live_concert_collector.py`, `script/query_concerts.py`
 
@@ -60,4 +61,3 @@
 1. `live_status` null 대응 로직 개선 + 테스트 추가
 2. yt-dlp stdout 읽기 방식 개선으로 프로세스 안정성 확보
 3. 초기 마이그레이션 동안 `stream_url` fallback 매칭 또는 백필 계획 명시
-
