@@ -2,7 +2,7 @@
 
 ## Phase 1: Project Initialization
 - [x] Task: Initialize Next.js project with Tailwind CSS & Framer Motion ad9f90d
-- [ ] Task: Set up folder structure based on App Router (src/app, src/components, src/hooks)
+- [x] Task: Set up folder structure based on App Router (src/app, src/components, src/hooks) 9765d1a
 - [ ] Task: Configure i18next for localization based on reference mockup
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Project Initialization' (Protocol in workflow.md)
 
