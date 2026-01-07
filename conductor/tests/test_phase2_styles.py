@@ -1,0 +1,19 @@
+import os
+import unittest
+
+class TestGlobalStyles(unittest.TestCase):
+    def test_globals_css_exists(self):
+        self.assertTrue(os.path.exists("web/src/app/globals.css"), "globals.css should exist")
+
+    def test_layout_includes_remixicon(self):
+        with open("web/src/app/layout.tsx", "r", encoding='utf-8') as f:
+            content = f.read()
+            self.assertIn("remixicon.css", content, "Layout should include Remix Icon CDN")
+
+    def test_layout_includes_pacifico_font(self):
+        with open("web/src/app/layout.tsx", "r", encoding='utf-8') as f:
+            content = f.read()
+            self.assertIn("Pacifico", content, "Layout should include Pacifico font")
+
+if __name__ == "__main__":
+    unittest.main()
