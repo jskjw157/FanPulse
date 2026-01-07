@@ -19,5 +19,5 @@
 
 ## Phase 4: Foundational Pages
 - [x] Task: Implement Home page skeleton with Hero Banner and News Ticker a8e874a
-- [ ] Task: Implement basic Error and NotFound pages
+- [x] Task: Implement basic Error and NotFound pages 1f2a5a1
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Foundational Pages' (Protocol in workflow.md)
