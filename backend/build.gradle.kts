@@ -46,6 +46,9 @@ dependencies {
     // Database
     runtimeOnly("org.postgresql:postgresql")
 
+    // Flyway Migration (Spring Boot managed version)
+    implementation("org.flywaydb:flyway-core")
+
     // Logging
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
 

@@ -1,23 +1,31 @@
 spring:
   application:
-    name: fanpulse-backend-test
+    name: fanpulse-backend-integration-test
 
+  # DataSource will be overridden by Testcontainers @DynamicPropertySource
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: jdbc:postgresql://localhost:5432/fanpulse_test
+    username: test
+    password: test
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   flyway:
-    enabled: false  # Disable Flyway for H2-based tests (use integration-test profile for Flyway tests)
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    out-of-order: false
+    clean-disabled: false  # Allow clean in test environment
 
 fanpulse:
   youtube:
@@ -50,3 +58,4 @@ resilience4j:
 logging:
   level:
     com.fanpulse: DEBUG
+    org.flywaydb: INFO
