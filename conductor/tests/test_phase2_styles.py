@@ -15,5 +15,10 @@ class TestGlobalStyles(unittest.TestCase):
             content = f.read()
             self.assertIn("Pacifico", content, "Layout should include Pacifico font")
 
+    def test_globals_css_includes_brand_color(self):
+        with open("web/src/app/globals.css", "r", encoding='utf-8') as f:
+            content = f.read()
+            self.assertIn("--color-brand: #FF2D55", content, "globals.css should include brand color")
+
 if __name__ == "__main__":
     unittest.main()
