@@ -18,6 +18,6 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Core UI Components' (Protocol in workflow.md) [checkpoint: 082e903]
 
 ## Phase 4: Foundational Pages
-- [ ] Task: Implement Home page skeleton with Hero Banner and News Ticker
+- [x] Task: Implement Home page skeleton with Hero Banner and News Ticker a8e874a
 - [ ] Task: Implement basic Error and NotFound pages
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Foundational Pages' (Protocol in workflow.md)
