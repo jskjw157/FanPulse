@@ -7,7 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.aos.fanpulse.presentation.auth.AuthScreen
+import com.aos.fanpulse.presentation.login.LoginScreen
 
 @Composable
 fun NavGraph(
@@ -21,6 +21,6 @@ fun NavGraph(
         startDestination = startDestination,
         modifier = modifier
     ){
-        composable(Screen.Auth.route) { AuthScreen() }
+        composable(Screen.Auth.route) { LoginScreen() }
     }
 }

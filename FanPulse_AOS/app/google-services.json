@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "151654212848",
+    "project_id": "fanpulse-eeb45",
+    "storage_bucket": "fanpulse-eeb45.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:151654212848:android:fbd6279c82e06e25764e35",
+        "android_client_info": {
+          "package_name": "com.aos.fanpulse"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "151654212848-0j0pgh5glnqlc64s5r13imndt49jc76c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aos.fanpulse",
+            "certificate_hash": "18ba376b71c5e07dfc684e2c591e510e579ad5e9"
+          }
+        },
+        {
+          "client_id": "151654212848-r232ktursl2g8pl54hsdg56taugj1iup.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-Js56VlL48kBMZOSlXg4SFQg1wdOXlIc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "151654212848-r232ktursl2g8pl54hsdg56taugj1iup.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

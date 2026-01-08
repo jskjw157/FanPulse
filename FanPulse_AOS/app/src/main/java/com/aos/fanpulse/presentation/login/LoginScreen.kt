@@ -1,4 +1,4 @@
-package com.aos.fanpulse.presentation.auth
+package com.aos.fanpulse.presentation.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -45,17 +45,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aos.fanpulse.R
 
-enum class AuthState {
+enum class LoginState {
     LOGIN, SIGNUP
 }
 
 @Composable
-fun AuthScreen () {
+fun LoginScreen (
+    viewModel: LoginViewModel = hiltViewModel()
+) {
 
     var selectedTab by rememberSaveable {
-        mutableStateOf(AuthState.LOGIN)
+        mutableStateOf(LoginState.LOGIN)
     }
 
     Box(
@@ -119,14 +122,14 @@ fun AuthScreen () {
                         divider = {}
                     ) {
                         AuthTab(
-                            selected = selectedTab == AuthState.LOGIN,
-                            onClick = { selectedTab = AuthState.LOGIN },
+                            selected = selectedTab == LoginState.LOGIN,
+                            onClick = { selectedTab = LoginState.LOGIN },
                             text = "로그인"
                         )
 
                         AuthTab(
-                            selected = selectedTab == AuthState.SIGNUP,
-                            onClick = { selectedTab = AuthState.SIGNUP },
+                            selected = selectedTab == LoginState.SIGNUP,
+                            onClick = { selectedTab = LoginState.SIGNUP },
                             text = "회원가입"
                         )
                     }
@@ -179,7 +182,7 @@ fun AuthTab(
 
 @Composable
 fun AuthComponent(
-    authState: AuthState
+    authState: LoginState
 ){
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -189,7 +192,7 @@ fun AuthComponent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        AuthGoogleButton(authState)
+        LoginGoogleButton(authState)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -203,20 +206,20 @@ fun AuthComponent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        AuthTextField(
+        LoginTextField(
             value = email,
             onValueChange = { email = it },
             label = "이메일"
         )
 
-        AuthTextField(
+        LoginTextField(
             value = password,
             onValueChange = { password = it },
             label = "비밀번호"
         )
 
-        if (authState == AuthState.SIGNUP) {
-            AuthTextField(
+        if (authState == LoginState.SIGNUP) {
+            LoginTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 label = "비밀번호 확인"
@@ -225,11 +228,11 @@ fun AuthComponent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        AuthButton(authState)
+        LoginButton(authState)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (authState == AuthState.LOGIN) {
+        if (authState == LoginState.LOGIN) {
             Text(
                 modifier = Modifier.clickable { },
                 text = "비밀번호를 잊으셨나요?",
@@ -241,7 +244,7 @@ fun AuthComponent(
 }
 
 @Composable
-fun AuthGoogleButton(authState: AuthState) {
+fun LoginGoogleButton(authState: LoginState) {
     Button(
         onClick = {},
         modifier = Modifier
@@ -263,7 +266,7 @@ fun AuthGoogleButton(authState: AuthState) {
         Spacer(modifier = Modifier.width(12.dp))
 
         Text(
-            if (authState == AuthState.LOGIN)
+            if (authState == LoginState.LOGIN)
                 "Google로 로그인"
             else
                 "Google로 가입하기"
@@ -272,7 +275,7 @@ fun AuthGoogleButton(authState: AuthState) {
 }
 
 @Composable
-fun AuthTextField(
+fun LoginTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String
@@ -294,7 +297,7 @@ fun AuthTextField(
 }
 
 @Composable
-fun AuthButton(authState: AuthState) {
+fun LoginButton(loginState: LoginState) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -311,7 +314,7 @@ fun AuthButton(authState: AuthState) {
             .wrapContentSize(Alignment.Center)
     ) {
         Text(
-            text = if (authState == AuthState.LOGIN) "로그인" else "회원가입",
+            text = if (loginState == LoginState.LOGIN) "로그인" else "회원가입",
             color = Color.White,
             fontSize = 14.sp
         )
@@ -321,5 +324,5 @@ fun AuthButton(authState: AuthState) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    AuthScreen()
+    LoginScreen()
 }
