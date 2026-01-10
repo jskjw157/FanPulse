@@ -1,5 +1,5 @@
 //
-//  AuthViewController.swift
+//  LoginViewController.swift
 //  FanPulse
 //
 //  Created by 김송 on 12/28/25.
@@ -9,7 +9,7 @@ import UIKit
 import SnapKit
 import GoogleSignIn
 
-class AuthViewController: UIViewController {
+class LoginViewController: UIViewController {
     
     private lazy var backgroundGradientView: FadeToBackgroundGradientView = {
         let view = FadeToBackgroundGradientView(
@@ -163,7 +163,7 @@ class AuthViewController: UIViewController {
     
     // 메인 화면으로 이동
     private func navigateToMainScreen() {
-        let mainVC = ViewController()
+        let mainVC = MainTabBarController()
         
         if let window = self.view.window {
             UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve) {
