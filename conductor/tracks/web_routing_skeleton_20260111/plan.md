@@ -2,12 +2,12 @@
 
 이 계획은 `conductor/workflow.md`의 TDD 원칙과 `product-guidelines.md`의 디자인 원칙을 준수합니다.
 
-## Phase 1: Routing Foundation & Reference Analysis
+## Phase 1: Routing Foundation & Reference Analysis [checkpoint: 1b15f83]
 기본 라우팅 구조를 설정하고 `web/reference` 소스를 분석하여 공통 스타일 가이드를 추출합니다.
 
 - [x] Task: Project Analysis - `web/reference` 소스 코드 분석 및 재사용 가능 컴포넌트 식별
 - [x] Task: Setup - 공통 와이어프레임 컴포넌트(Skeleton Card, Header, Wrapper) 구현
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Content Listing Pages (List-view Skeletons)
 목록 형태의 정보를 제공하는 페이지들을 구현합니다. TDD 방식에 따라 테스트를 먼저 작성합니다.
