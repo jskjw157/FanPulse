@@ -205,17 +205,21 @@ User → API Gateway → Auth Service
 ```bash
 # 저장소 클론
 git clone https://github.com/your-org/fanpulse.git
-cd fanpulse/backend
+cd fanpulse
 
 # 환경 변수 설정
 cp .env.example .env
+set -a; source .env; set +a
 
-# Docker로 데이터베이스 실행
-docker-compose up -d postgres mongodb redis
+# Docker로 PostgreSQL 실행
+docker compose up -d postgres
 
 # Spring Boot 애플리케이션 실행
+cd backend
 ./gradlew bootRun
 ```
+
+MongoDB와 Redis는 별도 설치/실행이 필요합니다.
 
 ### 프론트엔드 실행
 
