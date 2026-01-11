@@ -15,9 +15,9 @@
 - [x] Task: Live List Page - `/live` 경로 구현 9f02b68
     - [x] Sub-task: `/live/page.test.tsx` 작성 (라우팅 및 기본 UI 요소 검증)
     - [x] Sub-task: `/live/page.tsx` 구현 (Live 카드 목록 스켈레톤, Framer Motion 적용)
-- [ ] Task: Community Page - `/community` 경로 구현
-    - [ ] Sub-task: `/community/page.test.tsx` 작성
-    - [ ] Sub-task: `/community/page.tsx` 구현 (게시글 목록 스켈레톤)
+- [x] Task: Community Page - `/community` 경로 구현 560b978
+    - [x] Sub-task: `/community/page.test.tsx` 작성
+    - [x] Sub-task: `/community/page.tsx` 구현 (게시글 목록 스켈레톤)
 - [ ] Task: Chart & Concert Pages - `/chart`, `/concert` 경로 구현
     - [ ] Sub-task: 각 페이지 테스트 작성
     - [ ] Sub-task: 차트 순위 및 공연 일정 목록 스켈레톤 구현
