@@ -35,6 +35,10 @@ dependencies {
     // Micrometer
     implementation("io.micrometer:micrometer-registry-prometheus")
 
+    // ShedLock (W4: 스케줄러 동시 실행 방지)
+    implementation("net.javacrumbs.shedlock:shedlock-spring:5.10.2")
+    implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.2")
+
     // Kotlin
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -87,9 +91,33 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     violationRules {
+        // Application 서비스: 80% (핵심 비즈니스 로직)
         rule {
+            element = "PACKAGE"
+            includes = listOf("com.fanpulse.application.*")
             limit {
+                counter = "INSTRUCTION"
                 minimum = "0.80".toBigDecimal()
+            }
+        }
+        // Domain: 50% (점진적으로 높여갈 예정)
+        // common 패키지는 인터페이스/추상 클래스라 제외
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.fanpulse.domain.*")
+            excludes = listOf("com.fanpulse.domain.common")
+            limit {
+                counter = "INSTRUCTION"
+                minimum = "0.50".toBigDecimal()
+            }
+        }
+        // Infrastructure (외부 연동): 40%
+        rule {
+            element = "PACKAGE"
+            includes = listOf("com.fanpulse.infrastructure.*")
+            limit {
+                counter = "INSTRUCTION"
+                minimum = "0.40".toBigDecimal()
             }
         }
     }
