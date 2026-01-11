@@ -2,6 +2,7 @@
 
 글로벌 K-POP 팬들을 위한 인터랙티브 플랫폼
 - notion: https://www.notion.so/oduckprogrammer/FanPulse-1979da8ee78480939281ee7ebf60256e?source=copy_link
+- mockup: https://mpycns.readdy.co/community
 
 ## 📌 프로젝트 개요
 
@@ -299,8 +300,8 @@ This project is licensed under the MIT License
 
 ## 👥 팀
 
--   **Backend**: 정지원
 -   **PM**: 정지원
+-   **Backend**: 정지원
 -   **기획**: 정지원, 이승구
 -   **디자인**: 정지원(AI)
 -   **Android**: 나유성
