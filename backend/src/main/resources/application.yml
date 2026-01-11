@@ -26,6 +26,13 @@ fanpulse:
         max-attempts: 3
         delay-ms: 1000
 
+  discovery:
+    ytdlp:
+      command: yt-dlp
+      timeout-ms: 20000
+      playlist-limit: 30
+      extract-flat: false
+
   scheduler:
     metadata-refresh:
       enabled: true
@@ -33,6 +40,11 @@ fanpulse:
       all-cron: "0 0 0 * * *"
       batch-size: 50
       batch-delay-ms: 1000
+    live-discovery:
+      enabled: true
+      cron: "0 0 * * * *"
+      channel-delay-ms: 500
+      max-concurrency: 5
 
 # Resilience4j Circuit Breaker
 resilience4j:
@@ -57,6 +69,33 @@ resilience4j:
         ignoreExceptions:
           - com.fanpulse.infrastructure.external.youtube.VideoNotFoundException
           - com.fanpulse.infrastructure.external.youtube.RateLimitExceededException
+
+      # P0-2: yt-dlp Circuit Breaker 설정
+      ytdlp:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 60s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.lang.IllegalStateException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+
+  # P0-2: Retry 설정
+  retry:
+    instances:
+      ytdlp:
+        maxAttempts: 3
+        waitDuration: 2s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - java.lang.IllegalStateException
+          - java.io.IOException
 
 management:
   endpoints:

@@ -16,5 +16,9 @@ interface StreamingEventRepository : JpaRepository<StreamingEvent, UUID>, Stream
 
     override fun findByStatusNot(status: StreamingStatus): List<StreamingEvent>
 
+    override fun findByPlatformAndExternalId(platform: StreamingPlatform, externalId: String): StreamingEvent?
+
+    override fun findByStreamUrl(streamUrl: String): StreamingEvent?
+
     override fun findEventById(id: UUID): StreamingEvent? = findById(id).orElse(null)
 }
