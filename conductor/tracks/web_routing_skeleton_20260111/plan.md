@@ -42,7 +42,7 @@
     - [x] Sub-task: 안내 레이아웃 및 CTA 버튼 스켈레톤 구현
 - [x] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
 
-## Phase 5: Final Navigation Integration
+## Phase 5: Final Navigation Integration [checkpoint: f7fc653]
 메인 페이지의 모든 링크가 정상 동작하는지 최종 검증합니다.
 
 - [x] Task: Integration Test - `app/page.tsx`에서 모든 생성된 페이지로의 네비게이션 테스트 73269b6
