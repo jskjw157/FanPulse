@@ -32,3 +32,7 @@ validation-report.md
 doc/mvp/GitHub_이슈_분석.md
 doc/mvp/GitHub_이슈_정리_실행.md
 GitHub_이슈_분석.md
+# Python
+__pycache__/
+*.pyc
+*.pyo
