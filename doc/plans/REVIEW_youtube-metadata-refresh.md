@@ -189,9 +189,9 @@ class StreamingEvent {
 |---|------|------|------|------|
 | 4 | Domain/Infrastructure 레이어 분리 | Architecture | Backend | ✅ 완료 |
 | 5 | Aggregate 불변식 보호 (캡슐화) | DDD | Backend | ✅ 완료 |
-| 6 | 분산 락 추가 (ShedLock) | Architecture | Backend | ⏸️ 보류 |
+| 6 | 분산 락 추가 (ShedLock) | Architecture | Backend | ✅ 완료 |
 | 7 | `Thread.sleep()` → 코루틴 변경 | Code Review | Backend | ✅ 완료 |
-| 8 | streaming.md Bounded Context 문서 | DDD | Docs | ⏸️ 보류 |
+| 8 | streaming.md Bounded Context 문서 | DDD | Docs | ✅ 완료 |
 
 ### P3 (MVP 이후) - ✅ 완료
 
@@ -382,7 +382,7 @@ P1~P3 액션 아이템 구현 후:
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| 분산 락 (ShedLock) | ⏸️ 보류 | 단일 인스턴스에서는 불필요 |
+| 분산 락 (ShedLock) | ✅ 완료 | PR 리뷰 반영으로 추가 |
 | Bounded Context 문서 | ✅ 완료 | `doc/ddd/bounded-contexts/streaming.md` 작성 |
 
 ---
@@ -393,3 +393,4 @@ P1~P3 액션 아이템 구현 후:
 |------|------|----------|
 | 1.0.0 | 2026-01-07 | 최초 작성 |
 | 1.1.0 | 2026-01-07 | P1/P2/P3 구현 완료, 구현 상세 섹션 추가 |
+| 1.2.0 | 2026-01-11 | ShedLock 추가, Bounded Context 문서 완료 |
