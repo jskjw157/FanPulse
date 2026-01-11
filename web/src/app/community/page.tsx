@@ -95,9 +95,18 @@ export default function CommunityPage() {
       <PageHeader 
         title="Community" 
         rightAction={
-          <button className="p-2">
-            <i className="ri-search-line text-xl text-gray-700"></i>
-          </button>
+          <div className="flex items-center gap-2">
+            <Link 
+              href="/post-create" 
+              className="hidden lg:flex items-center gap-1 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+            >
+              <i className="ri-edit-line"></i>
+              <span>글쓰기</span>
+            </Link>
+            <button className="p-2">
+              <i className="ri-search-line text-xl text-gray-700"></i>
+            </button>
+          </div>
         }
       />
       <PageWrapper>
@@ -213,7 +222,7 @@ export default function CommunityPage() {
         {/* Floating Action Button */}
         <Link 
           href="/post-create"
-          className="fixed bottom-24 right-4 lg:right-8 lg:bottom-8 w-14 h-14 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-lg text-white hover:scale-105 transition-transform"
+          className="fixed bottom-24 right-4 lg:hidden w-14 h-14 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-lg text-white hover:scale-105 transition-transform"
         >
           <i className="ri-add-line text-2xl"></i>
         </Link>
