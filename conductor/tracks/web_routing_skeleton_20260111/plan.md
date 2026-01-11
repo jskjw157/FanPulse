@@ -26,9 +26,9 @@
 ## Phase 3: Detailed View Pages (Detail-view Skeletons)
 쿼리 파라미터를 포함한 상세 정보를 보여주는 페이지들을 구현합니다.
 
-- [ ] Task: News & Post Detail - `/news-detail`, `/post-detail` 경로 구현
-    - [ ] Sub-task: 다이나믹 라우팅/쿼리 파라미터 처리 테스트 작성
-    - [ ] Sub-task: 상세 본문, 메타 정보, 댓글 영역 스켈레톤 구현
+- [x] Task: News & Post Detail - `/news-detail`, `/post-detail` 경로 구현 04febba
+    - [x] Sub-task: 다이나믹 라우팅/쿼리 파라미터 처리 테스트 작성
+    - [x] Sub-task: 상세 본문, 메타 정보, 댓글 영역 스켈레톤 구현
 - [ ] Task: Artist & Live Detail - `/artist-detail`, `/live-detail` 경로 구현
     - [ ] Sub-task: 테스트 작성 및 아티스트 프로필/라이브 플레이어 레이아웃 구현
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
