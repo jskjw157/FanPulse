@@ -23,7 +23,7 @@
     - [x] Sub-task: 차트 순위 및 공연 일정 목록 스켈레톤 구현
 - [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
-## Phase 3: Detailed View Pages (Detail-view Skeletons)
+## Phase 3: Detailed View Pages (Detail-view Skeletons) [checkpoint: b06cd3d]
 쿼리 파라미터를 포함한 상세 정보를 보여주는 페이지들을 구현합니다.
 
 - [x] Task: News & Post Detail - `/news-detail`, `/post-detail` 경로 구현 04febba
@@ -31,7 +31,7 @@
     - [x] Sub-task: 상세 본문, 메타 정보, 댓글 영역 스켈레톤 구현
 - [x] Task: Artist & Live Detail - `/artist-detail`, `/live-detail` 경로 구현 f295349
     - [x] Sub-task: 테스트 작성 및 아티스트 프로필/라이브 플레이어 레이아웃 구현
-- [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
 
 ## Phase 4: Special Interest & Interactive Pages
 투표, 리워드, 멤버십 페이지를 구현합니다.
