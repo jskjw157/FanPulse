@@ -383,7 +383,7 @@ P1~P3 액션 아이템 구현 후:
 | 항목 | 상태 | 비고 |
 |------|------|------|
 | 분산 락 (ShedLock) | ⏸️ 보류 | 단일 인스턴스에서는 불필요 |
-| Bounded Context 문서 | ⏸️ 보류 | 별도 문서화 작업 필요 |
+| Bounded Context 문서 | ✅ 완료 | `doc/ddd/bounded-contexts/streaming.md` 작성 |
 
 ---
 
