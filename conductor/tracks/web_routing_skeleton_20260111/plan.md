@@ -9,7 +9,7 @@
 - [x] Task: Setup - 공통 와이어프레임 컴포넌트(Skeleton Card, Header, Wrapper) 구현
 - [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
-## Phase 2: Content Listing Pages (List-view Skeletons)
+## Phase 2: Content Listing Pages (List-view Skeletons) [checkpoint: 2b550c7]
 목록 형태의 정보를 제공하는 페이지들을 구현합니다. TDD 방식에 따라 테스트를 먼저 작성합니다.
 
 - [x] Task: Live List Page - `/live` 경로 구현 9f02b68
@@ -21,7 +21,7 @@
 - [x] Task: Chart & Concert Pages - `/chart`, `/concert` 경로 구현 1c3f2ea
     - [x] Sub-task: 각 페이지 테스트 작성
     - [x] Sub-task: 차트 순위 및 공연 일정 목록 스켈레톤 구현
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Detailed View Pages (Detail-view Skeletons)
 쿼리 파라미터를 포함한 상세 정보를 보여주는 페이지들을 구현합니다.
