@@ -7,11 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.DynamicPropertyRegistry
-import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.util.*
 
 /**
@@ -25,35 +20,14 @@ import java.util.*
  * 3. FK 제약조건이 올바르게 설정되는지 검증
  * 4. 인덱스가 올바르게 생성되는지 검증
  * 5. 시딩 데이터가 올바르게 삽입되는지 검증
+ *
+ * 로컬 PostgreSQL이 application-integration-test.yml 설정으로 실행되어 있어야 합니다.
  */
 @SpringBootTest
-@Testcontainers
 @ActiveProfiles("integration-test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 @DisplayName("Flyway Migration Integration Tests")
 class FlywayMigrationIntegrationTest {
-
-    companion object {
-        @Container
-        @JvmStatic
-        val postgres = PostgreSQLContainer("postgres:14")
-            .withDatabaseName("fanpulse_test")
-            .withUsername("test")
-            .withPassword("test")
-
-        @JvmStatic
-        @DynamicPropertySource
-        fun configureProperties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.datasource.url") { postgres.jdbcUrl }
-            registry.add("spring.datasource.username") { postgres.username }
-            registry.add("spring.datasource.password") { postgres.password }
-            registry.add("spring.datasource.driver-class-name") { "org.postgresql.Driver" }
-            registry.add("spring.flyway.enabled") { "true" }
-            registry.add("spring.flyway.locations") { "classpath:db/migration" }
-            registry.add("spring.jpa.hibernate.ddl-auto") { "validate" }
-            registry.add("fanpulse.scheduler.metadata-refresh.enabled") { "false" }
-        }
-    }
 
     @Autowired
     private lateinit var flyway: Flyway
@@ -178,7 +152,7 @@ class FlywayMigrationIntegrationTest {
                 referencedTable
             )
             assertTrue(
-                fkCount!! > 0,
+                fkCount > 0,
                 "Table '$table' should have FK to '$referencedTable'"
             )
         }

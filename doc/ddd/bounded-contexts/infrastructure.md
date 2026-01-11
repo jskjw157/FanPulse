@@ -127,7 +127,13 @@ graph TD
 
 ## 마이그레이션 전략
 
-### Phase 1: Core Tables (V1__init_core.sql)
+### Phase 0: Extensions (V1__create_extension.sql)
+
+| 순서 | 테이블 | FK 의존성 | 비고 |
+|------|--------|-----------|------|
+| 1 | (extension) | - | uuid-ossp 활성화 |
+
+### Phase 1: Core Tables (V2__create_core_tables.sql)
 
 | 순서 | 테이블 | FK 의존성 | 비고 |
 |------|--------|-----------|------|
@@ -136,7 +142,7 @@ graph TD
 | 3 | polls | - | 독립 테이블 |
 | 4 | rewards | - | 독립 마스터 테이블 |
 
-### Phase 2: Identity Tables (V2__init_identity.sql)
+### Phase 2: Identity Tables (V3__create_identity_tables.sql)
 
 | 순서 | 테이블 | FK 의존성 | 비고 |
 |------|--------|-----------|------|
@@ -144,7 +150,7 @@ graph TD
 | 2 | oauth_accounts | users | OAuth 연동 |
 | 3 | user_settings | users | 1:1 관계 |
 
-### Phase 3: Voting Tables (V3__init_voting.sql)
+### Phase 3: Voting Tables (V4__create_voting_tables.sql)
 
 | 순서 | 테이블 | FK 의존성 | 비고 |
 |------|--------|-----------|------|
@@ -152,7 +158,7 @@ graph TD
 | 2 | voting_power | users | 투표권 |
 | 3 | votes | users, polls, vote_options | 투표 기록 |
 
-### Phase 4: Reward & Membership (V4__init_reward.sql)
+### Phase 4: Reward & Membership (V5__create_reward_tables.sql)
 
 | 순서 | 테이블 | FK 의존성 | 비고 |
 |------|--------|-----------|------|
@@ -161,7 +167,7 @@ graph TD
 | 3 | memberships | users | VIP 멤버십 |
 | 4 | user_daily_missions | users | 일일 미션 |
 
-### Phase 5: Streaming (V5__init_streaming.sql)
+### Phase 5: Streaming (V6__create_streaming_tables.sql)
 
 | 순서 | 테이블 | FK 의존성 | 비고 |
 |------|--------|-----------|------|
@@ -169,7 +175,7 @@ graph TD
 | 2 | chat_messages | streaming_events, users | 채팅 |
 | 3 | live_hearts | streaming_events, users | 하트 |
 
-### Phase 6: Content & Crawling (V6__init_content.sql)
+### Phase 6: Content & Crawling (V7__create_content_tables.sql)
 
 | 순서 | 테이블 | FK 의존성 | 비고 |
 |------|--------|-----------|------|
@@ -179,7 +185,7 @@ graph TD
 | 4 | crawled_concerts | - | 콘서트 정보 |
 | 5 | crawled_ads | - | 광고 상품 |
 
-### Phase 7: Community & Social (V7__init_social.sql)
+### Phase 7: Community & Social (V8__create_social_tables.sql)
 
 | 순서 | 테이블 | FK 의존성 | 비고 |
 |------|--------|-----------|------|
@@ -189,7 +195,7 @@ graph TD
 | 4 | user_favorites | users, artists | 팔로우 |
 | 5 | saved_posts | users | 저장 게시물 |
 
-### Phase 8: Support (V8__init_support.sql)
+### Phase 8: Support (V9__create_support_tables.sql)
 
 | 순서 | 테이블 | FK 의존성 | 비고 |
 |------|--------|-----------|------|
@@ -198,11 +204,17 @@ graph TD
 | 3 | support_tickets | users | 1:1 문의 |
 | 4 | search_history | users | 검색 기록 |
 
-### Phase 9: Concert Reservation (V9__init_reservation.sql)
+### Phase 9: Concert Reservation (V10__create_reservation_tables.sql)
 
 | 순서 | 테이블 | FK 의존성 | 비고 |
 |------|--------|-----------|------|
 | 1 | ticket_reservations | users, crawled_concerts | 예매 내역 |
+
+### Phase 10: Indexes (V11__create_indexes.sql)
+
+| 순서 | 테이블 | FK 의존성 | 비고 |
+|------|--------|-----------|------|
+| 1 | (indexes) | - | 주요 조회 성능 인덱스 |
 
 ## 인덱스 설계
 
@@ -212,21 +224,20 @@ graph TD
 |--------|--------|------|
 | users | idx_users_email | 로그인 조회 |
 | users | idx_users_username | 닉네임 검색 |
-| auth_tokens | idx_auth_tokens_access | 토큰 검증 |
-| auth_tokens | idx_auth_tokens_refresh | 토큰 갱신 |
-| votes | idx_votes_user_poll | 중복 투표 검사 |
+| auth_tokens | idx_auth_tokens_access_expires | 토큰 만료 조회 |
+| auth_tokens | idx_auth_tokens_refresh_expires | 리프레시 만료 조회 |
 | votes | idx_votes_poll_created | 투표 결과 조회 |
 | notifications | idx_notifications_user_unread | 안읽은 알림 조회 |
-| streaming_events | idx_streaming_status | 라이브 방송 조회 |
-| crawled_charts | idx_charts_source_period | 차트 조회 |
+| streaming_events | idx_streaming_events_status | 라이브 방송 조회 |
+| crawled_charts | idx_crawled_charts_source_period | 차트 조회 |
 
 ## 데이터 시딩 전략
 
-### 마스터 데이터 (V100__seed_master_data.sql)
+### 마스터 데이터 (V100__seed_faq.sql, V101__seed_rewards.sql)
 
 | 테이블 | 시딩 데이터 | 비고 |
 |--------|------------|------|
-| faq | 기본 FAQ 항목 | 카테고리별 10개 |
+| faq | 기본 FAQ 항목 | 카테고리별 기본 항목 |
 | rewards | 기본 리워드 상품 | 포인트 교환 상품 |
 
 ### 테스트 데이터 (로컬/개발 환경 전용)
@@ -259,10 +270,7 @@ spring:
 
 ## 롤백 전략
 
-각 마이그레이션 스크립트에 대응하는 롤백 스크립트 작성:
-- `U1__undo_init_core.sql`
-- `U2__undo_init_identity.sql`
-- ... 등
+현재 롤백 스크립트는 작성되어 있지 않습니다. 필요한 경우 Undo 마이그레이션을 추가합니다.
 
 ## 변경 이력
 
