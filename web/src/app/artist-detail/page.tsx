@@ -11,7 +11,7 @@ export default function ArtistDetailPage() {
 
   return (
     <>
-      <PageHeader title="Artist Profile" />
+      <PageHeader title={artist ? `${artist} Profile` : "Artist Profile"} />
       <PageWrapper>
         <div data-testid="artist-profile-skeleton" className="min-h-screen bg-white pb-20">
           {/* Cover Image */}

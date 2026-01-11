@@ -21,7 +21,7 @@ export default function CommunityPage() {
       />
       <PageWrapper>
         {/* Tab Navigation */}
-        <div className="sticky top-16 bg-white border-b border-gray-200 z-30 lg:ml-64">
+        <div className="sticky top-16 bg-white border-b border-gray-200 z-30">
           <div className="flex max-w-7xl mx-auto">
             <button 
               onClick={() => setActiveTab("all")}

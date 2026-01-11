@@ -8,12 +8,12 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick }: HeaderProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 bg-gradient-to-r from-purple-600 to-pink-600 z-50 lg:bg-white lg:border-b lg:border-gray-200 lg:shadow-sm">
+    <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <h1 className="text-xl md:text-2xl font-bold text-white lg:bg-gradient-to-r lg:from-purple-600 lg:to-pink-600 lg:bg-clip-text lg:text-transparent font-pacifico">
+            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-pacifico">
               FanPulse
             </h1>
           </Link>
@@ -42,11 +42,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
-            <Link href="/search" className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-lg lg:hover:bg-gray-100">
-              <i className="ri-search-line text-xl text-white lg:text-gray-700"></i>
+            <Link href="/search" className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100">
+              <i className="ri-search-line text-xl text-gray-700"></i>
             </Link>
-            <Link href="/notifications" className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-lg lg:hover:bg-gray-100 relative">
-              <i className="ri-notification-line text-xl text-white lg:text-gray-700"></i>
+            <Link href="/notifications" className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 relative">
+              <i className="ri-notification-line text-xl text-gray-700"></i>
               <span className="absolute top-1.5 right-1.5 lg:top-2 lg:right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </Link>
             <Link href="/mypage" className="hidden lg:flex w-10 h-10 items-center justify-center rounded-lg hover:bg-gray-100">
@@ -56,7 +56,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
               onClick={onMenuClick}
               className="w-9 h-9 flex items-center justify-center lg:hidden"
             >
-              <i className="ri-menu-line text-xl text-white"></i>
+              <i className="ri-menu-line text-xl text-gray-700"></i>
             </button>
           </div>
         </div>
