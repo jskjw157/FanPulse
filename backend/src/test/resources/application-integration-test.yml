@@ -2,11 +2,11 @@ spring:
   application:
     name: fanpulse-backend-integration-test
 
-  # DataSource will be overridden by Testcontainers @DynamicPropertySource
+  # DataSource uses local PostgreSQL (override via environment variables)
   datasource:
-    url: jdbc:postgresql://localhost:5432/fanpulse_test
-    username: test
-    password: test
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fanpulse}
+    username: ${DB_USERNAME:fanpulse}
+    password: ${DB_PASSWORD:fanpulse}
     driver-class-name: org.postgresql.Driver
 
   jpa:

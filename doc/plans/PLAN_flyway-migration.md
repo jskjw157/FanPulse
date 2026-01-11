@@ -35,10 +35,10 @@ Flyway를 도입하여 데이터베이스 스키마를 코드로 관리하고, �
 ### 2.1 In Scope
 - [x] Flyway 의존성 추가 및 설정
 - [x] 테이블 의존성 분석 및 마이그레이션 순서 결정
-- [x] PostgreSQL 스키마 마이그레이션 스크립트 작성 (26개 테이블)
+- [x] PostgreSQL 스키마 마이그레이션 스크립트 작성 (32개 테이블)
 - [x] 인덱스 및 외래키 제약조건 설정
 - [x] 마스터 데이터 시딩 (FAQ, Rewards)
-- [x] 테스트 환경 구성 (Testcontainers)
+- [x] 테스트 환경 구성 (Local PostgreSQL)
 - [x] 마이그레이션 테스트 작성
 
 ### 2.2 Out of Scope (Next Phase)
@@ -62,13 +62,13 @@ Flyway를 도입하여 데이터베이스 스키마를 코드로 관리하고, �
                                     v
                           +-------------------+
                           | db/migration/     |
-                          | V1__init_core.sql |
-                          | V2__init_xxx.sql  |
+                          | V1__create_extension.sql |
+                          | V2__create_core_tables.sql |
                           | ...               |
                           +-------------------+
 ```
 
-### 3.2 Database Tables (26 Tables)
+### 3.2 Database Tables (32 Tables)
 
 #### Core Tables
 | 테이블 | Context | 설명 |
@@ -177,7 +177,7 @@ implementation("org.flywaydb:flyway-database-postgresql")
 |------|----------|----------|
 | Flyway 의존성 추가 | P0 | 0.5h |
 | application.yml 설정 | P0 | 0.5h |
-| 테스트 환경 설정 (Testcontainers) | P0 | 1h |
+| 테스트 환경 설정 (Local PostgreSQL) | P0 | 1h |
 
 ### Phase 2: Core Migration (Day 1-2)
 | Task | Priority | Estimate |
@@ -262,16 +262,12 @@ CREATE INDEX idx_votes_poll_created ON votes(poll_id, created_at DESC);
 ### 6.2 Integration Tests
 ```kotlin
 @SpringBootTest
-@Testcontainers
+@ActiveProfiles("integration-test")
 class FlywayMigrationTest {
-
-    @Container
-    val postgres = PostgreSQLContainer("postgres:14")
-        .withDatabaseName("fanpulse_test")
 
     @Test
     fun `should run all migrations successfully`() {
-        // Given: Clean database
+        // Given: 로컬 PostgreSQL (application-integration-test.yml)
         // When: Application starts
         // Then: All migrations applied
         val result = flyway.migrate()
@@ -326,11 +322,11 @@ DROP TABLE IF EXISTS rewards CASCADE;
 ## 9. Acceptance Criteria
 
 - [x] Flyway 설정이 완료되어 애플리케이션 시작 시 자동 마이그레이션 실행
-- [x] 26개 테이블이 정의서에 맞게 생성됨
+- [x] 32개 테이블이 정의서에 맞게 생성됨
 - [x] 모든 FK 제약조건이 올바르게 설정됨
 - [x] 필수 인덱스가 생성됨
 - [x] FAQ, Rewards 마스터 데이터가 시딩됨
-- [x] Testcontainers를 사용한 통합 테스트 통과
+- [x] 로컬 PostgreSQL 기반 통합 테스트 통과
 - [x] JPA validate 모드에서 애플리케이션 정상 시작
 
 ---
