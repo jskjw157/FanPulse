@@ -44,6 +44,7 @@ fanpulse:
       enabled: true
       cron: "0 0 * * * *"
       channel-delay-ms: 500
+      max-concurrency: 5
 
 # Resilience4j Circuit Breaker
 resilience4j:
@@ -65,6 +66,33 @@ resilience4j:
           - org.springframework.web.reactive.function.client.WebClientResponseException.GatewayTimeout
         ignoreExceptions:
           - com.fanpulse.infrastructure.external.youtube.VideoNotFoundException
+
+      # P0-2: yt-dlp Circuit Breaker 설정
+      ytdlp:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 60s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.lang.IllegalStateException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+
+  # P0-2: Retry 설정
+  retry:
+    instances:
+      ytdlp:
+        maxAttempts: 3
+        waitDuration: 2s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - java.lang.IllegalStateException
+          - java.io.IOException
 
 management:
   endpoints:
