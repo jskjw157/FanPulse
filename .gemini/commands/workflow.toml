@@ -1,0 +1,27 @@
+[meta]
+name = "advanced-frontend-workflow"
+description = "Sequential Thinking 기반의 프론트엔드 디자인 워크플로우 (Next.js + Tailwind + Framer Motion)"
+
+[global_policy]
+always_use = "sequentialthinking"
+
+[frontend_design_policy]
+required_stack = ["Next.js", "Tailwind CSS", "Framer Motion"]
+documentation_strategy = "Use 'docfork_search_docs' or 'resolve-library-id'/'query-docs' (Context7) to fetch official documentation and patterns."
+
+[[workflow_steps]]
+step_id = 1
+name = "Plan with Sequential Thinking"
+instruction = "모든 작업은 'sequentialthinking' 도구를 사용하여 단계를 분석하고 계획합니다."
+
+[[workflow_steps]]
+step_id = 2
+name = "Context Retrieval (Frontend Only)"
+condition = "Task involves frontend design/UI"
+action = "Call 'docfork_search_docs' or 'query-docs'"
+query_context = "Next.js, Tailwind CSS, Framer Motion 사용법 및 디자인 패턴 참조"
+
+[[workflow_steps]]
+step_id = 3
+name = "Implementation"
+instruction = "확보한 문서를 참조하여 작업을 수행하며, 지속적으로 'sequentialthinking'을 통해 검증합니다."
