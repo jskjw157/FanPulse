@@ -9,17 +9,17 @@ CREATE TABLE streaming_events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    stream_url TEXT,
+    stream_url TEXT NOT NULL,
     thumbnail_url TEXT,
-    artist_id UUID,
-    scheduled_at TIMESTAMP,
+    artist_id UUID NOT NULL,
+    scheduled_at TIMESTAMP NOT NULL,
     started_at TIMESTAMP,
     ended_at TIMESTAMP,
     status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
     viewer_count INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_streaming_events_artist FOREIGN KEY (artist_id)
-        REFERENCES artists(id) ON DELETE SET NULL,
+        REFERENCES artists(id) ON DELETE RESTRICT,
     CONSTRAINT chk_streaming_events_status CHECK (status IN ('SCHEDULED', 'LIVE', 'ENDED')),
     CONSTRAINT chk_streaming_events_viewer CHECK (viewer_count >= 0)
 );
