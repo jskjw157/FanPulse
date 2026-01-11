@@ -45,5 +45,5 @@
 ## Phase 5: Final Navigation Integration
 메인 페이지의 모든 링크가 정상 동작하는지 최종 검증합니다.
 
-- [ ] Task: Integration Test - `app/page.tsx`에서 모든 생성된 페이지로의 네비게이션 테스트
-- [ ] Task: Conductor - User Manual Verification 'Phase 5' (Protocol in workflow.md)
+- [x] Task: Integration Test - `app/page.tsx`에서 모든 생성된 페이지로의 네비게이션 테스트 73269b6
+- [x] Task: Conductor - User Manual Verification 'Phase 5' (Protocol in workflow.md)
