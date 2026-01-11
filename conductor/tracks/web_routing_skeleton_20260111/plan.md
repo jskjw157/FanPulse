@@ -18,9 +18,9 @@
 - [x] Task: Community Page - `/community` 경로 구현 560b978
     - [x] Sub-task: `/community/page.test.tsx` 작성
     - [x] Sub-task: `/community/page.tsx` 구현 (게시글 목록 스켈레톤)
-- [ ] Task: Chart & Concert Pages - `/chart`, `/concert` 경로 구현
-    - [ ] Sub-task: 각 페이지 테스트 작성
-    - [ ] Sub-task: 차트 순위 및 공연 일정 목록 스켈레톤 구현
+- [x] Task: Chart & Concert Pages - `/chart`, `/concert` 경로 구현 1c3f2ea
+    - [x] Sub-task: 각 페이지 테스트 작성
+    - [x] Sub-task: 차트 순위 및 공연 일정 목록 스켈레톤 구현
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Detailed View Pages (Detail-view Skeletons)
