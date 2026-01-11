@@ -9,6 +9,7 @@
 
 ## Frontend
 - **Web**: Next.js (App Router), Tailwind CSS, Framer Motion
+- **Testing (Web)**: Vitest, React Testing Library
 - **Android**: Kotlin, Jetpack Compose
 - **iOS**: Swift, UIKit (MVVM)
 
