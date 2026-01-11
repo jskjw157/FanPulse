@@ -3,11 +3,11 @@
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
 import Skeleton from "@/components/ui/Skeleton";
-import { useSearchParams } from "next/navigation";
+// import { useSearchParams } from "next/navigation";
 
 export default function PostDetailPage() {
-  const searchParams = useSearchParams();
-  const id = searchParams.get('id');
+  // const searchParams = useSearchParams();
+  // const id = searchParams.get('id');
 
   return (
     <>
