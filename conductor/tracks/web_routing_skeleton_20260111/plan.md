@@ -12,9 +12,9 @@
 ## Phase 2: Content Listing Pages (List-view Skeletons)
 목록 형태의 정보를 제공하는 페이지들을 구현합니다. TDD 방식에 따라 테스트를 먼저 작성합니다.
 
-- [ ] Task: Live List Page - `/live` 경로 구현
-    - [ ] Sub-task: `/live/page.test.tsx` 작성 (라우팅 및 기본 UI 요소 검증)
-    - [ ] Sub-task: `/live/page.tsx` 구현 (Live 카드 목록 스켈레톤, Framer Motion 적용)
+- [x] Task: Live List Page - `/live` 경로 구현 9f02b68
+    - [x] Sub-task: `/live/page.test.tsx` 작성 (라우팅 및 기본 UI 요소 검증)
+    - [x] Sub-task: `/live/page.tsx` 구현 (Live 카드 목록 스켈레톤, Framer Motion 적용)
 - [ ] Task: Community Page - `/community` 경로 구현
     - [ ] Sub-task: `/community/page.test.tsx` 작성
     - [ ] Sub-task: `/community/page.tsx` 구현 (게시글 목록 스켈레톤)
