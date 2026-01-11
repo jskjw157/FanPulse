@@ -10,7 +10,7 @@ interface SkeletonCardProps {
 export default function SkeletonCard({ layout = "vertical" }: SkeletonCardProps) {
   if (layout === "horizontal") {
     return (
-      <Card className="flex gap-3 p-3">
+      <Card data-testid="skeleton-card" className="flex gap-3 p-3">
         <Skeleton className="w-24 h-20 rounded-xl flex-shrink-0" />
         <div className="flex-1 space-y-2 py-1">
           <Skeleton className="w-1/3 h-3" />
@@ -22,7 +22,7 @@ export default function SkeletonCard({ layout = "vertical" }: SkeletonCardProps)
   }
 
   return (
-    <Card className="flex flex-col">
+    <Card data-testid="skeleton-card" className="flex flex-col">
       <Skeleton className="w-full h-40 rounded-none" />
       <div className="p-3 space-y-2">
         <Skeleton className="w-full h-4" />
