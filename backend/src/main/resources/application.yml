@@ -64,8 +64,11 @@ resilience4j:
           - java.util.concurrent.TimeoutException
           - org.springframework.web.reactive.function.client.WebClientResponseException.ServiceUnavailable
           - org.springframework.web.reactive.function.client.WebClientResponseException.GatewayTimeout
+          - com.fanpulse.infrastructure.external.youtube.QuotaExceededException
+          - com.fanpulse.infrastructure.external.youtube.UnexpectedClientException
         ignoreExceptions:
           - com.fanpulse.infrastructure.external.youtube.VideoNotFoundException
+          - com.fanpulse.infrastructure.external.youtube.RateLimitExceededException
 
       # P0-2: yt-dlp Circuit Breaker 설정
       ytdlp:

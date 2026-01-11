@@ -11,9 +11,13 @@ import java.util.*
  * without any infrastructure dependencies.
  */
 interface StreamingEventPort {
+
     fun findEventById(id: UUID): StreamingEvent?
+
     fun findByStatus(status: StreamingStatus): List<StreamingEvent>
+
     fun findByStatusNot(status: StreamingStatus): List<StreamingEvent>
+
     fun findByPlatformAndExternalId(platform: StreamingPlatform, externalId: String): StreamingEvent?
 
     /**
