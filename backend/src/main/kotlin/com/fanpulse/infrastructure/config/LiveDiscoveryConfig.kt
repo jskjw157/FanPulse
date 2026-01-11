@@ -28,6 +28,9 @@ class LiveDiscoveryConfig {
     @Value("\${fanpulse.scheduler.live-discovery.channel-delay-ms:0}")
     private var channelDelayMs: Long = 0
 
+    @Value("\${fanpulse.scheduler.live-discovery.max-concurrency:5}")
+    private var maxConcurrency: Int = 5
+
     @Bean
     fun ytdlpConfig(): YtDlpConfig {
         return YtDlpConfig(
@@ -50,7 +53,8 @@ class LiveDiscoveryConfig {
             discoveryPort = discoveryPort,
             eventPort = eventPort,
             meterRegistry = meterRegistry,
-            channelDelayMs = channelDelayMs
+            channelDelayMs = channelDelayMs,
+            maxConcurrency = maxConcurrency
         )
     }
 }

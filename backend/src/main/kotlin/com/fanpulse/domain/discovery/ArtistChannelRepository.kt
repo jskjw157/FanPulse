@@ -10,4 +10,8 @@ import java.util.UUID
 interface ArtistChannelRepository : JpaRepository<ArtistChannel, UUID>, ArtistChannelPort {
     override fun findByPlatformAndIsActiveTrue(platform: StreamingPlatform): List<ArtistChannel>
     override fun findByArtistId(artistId: UUID): List<ArtistChannel>
+
+    /** P0-3: JpaRepository.saveAll을 Port 인터페이스에 맞게 위임 */
+    @Suppress("UNCHECKED_CAST")
+    override fun <S : ArtistChannel> saveAll(entities: Iterable<S>): List<S>
 }
