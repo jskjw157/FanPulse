@@ -3,6 +3,7 @@ package com.fanpulse.infrastructure.scheduler
 import com.fanpulse.application.service.MetadataRefreshService
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -29,8 +30,15 @@ class MetadataRefreshScheduler(
     /**
      * Refresh metadata for LIVE events every hour.
      * Runs at the top of every hour (0 minutes, 0 seconds).
+     *
+     * PR Review Fix: @SchedulerLock 추가로 분산 환경 중복 실행 방지
      */
     @Scheduled(cron = "\${fanpulse.scheduler.metadata-refresh.live-cron:0 0 * * * *}")
+    @SchedulerLock(
+        name = "metadataRefreshLiveScheduler",
+        lockAtMostFor = "30m",
+        lockAtLeastFor = "5m"
+    )
     fun refreshLiveMetadata() {
         val startTime = Instant.now()
         logger.info { "Starting scheduled LIVE metadata refresh at $startTime" }
@@ -55,8 +63,15 @@ class MetadataRefreshScheduler(
     /**
      * Refresh metadata for all non-ENDED events daily at midnight.
      * Runs at 00:00:00 every day.
+     *
+     * PR Review Fix: @SchedulerLock 추가로 분산 환경 중복 실행 방지
      */
     @Scheduled(cron = "\${fanpulse.scheduler.metadata-refresh.all-cron:0 0 0 * * *}")
+    @SchedulerLock(
+        name = "metadataRefreshAllScheduler",
+        lockAtMostFor = "2h",
+        lockAtLeastFor = "10m"
+    )
     fun refreshAllMetadata() {
         val startTime = Instant.now()
         logger.info { "Starting scheduled ALL metadata refresh at $startTime" }

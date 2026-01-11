@@ -206,7 +206,10 @@ class LiveDiscoveryServiceImpl(
                 if (stream.title.isNotBlank()) {
                     existing.updateMetadata(stream.title, stream.thumbnailUrl)
                 }
-                existing.updateDescription(stream.description)
+                // PR Review Fix: description이 있을 때만 업데이트 (null 전파 방지)
+                if (!stream.description.isNullOrBlank()) {
+                    existing.updateDescription(stream.description)
+                }
                 existing.updateSourceIdentity(stream.platform, stream.externalId)
                 existing.updateSourceUrl(stream.sourceUrl)
                 existing.applyDiscoveryStatus(
