@@ -38,8 +38,8 @@
 
 - [x] Task: Voting Page - `/voting` 경로 구현 7b15f37
     - [x] Sub-task: 투표 참여 UI 테스트 작성 및 구현 (Framer Motion 인터랙션 포함)
-- [ ] Task: Membership & Ads - `/membership`, `/ads` 경로 구현
-    - [ ] Sub-task: 안내 레이아웃 및 CTA 버튼 스켈레톤 구현
+- [x] Task: Membership & Ads - `/membership`, `/ads` 경로 구현 d76a976
+    - [x] Sub-task: 안내 레이아웃 및 CTA 버튼 스켈레톤 구현
 - [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
 
 ## Phase 5: Final Navigation Integration
