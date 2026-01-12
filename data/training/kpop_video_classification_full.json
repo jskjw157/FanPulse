@@ -1,0 +1,3612 @@
+{
+  "description": "K-Pop 영상 분류 AI 학습 데이터 (Full Dataset)",
+  "version": "2.0",
+  "created_at": "2026-01-13",
+  "source": "FanPulse YouTube Crawler (22 K-Pop channels + Lofi Girl)",
+  "labels": {
+    "1": "K-Pop 관련 영상 (적절)",
+    "0": "K-Pop 무관 영상 (부적절)"
+  },
+  "statistics": {
+    "total": 510,
+    "kpop_positive": 500,
+    "kpop_negative": 10
+  },
+  "artists": {
+    "kpop": [
+      "(G)I-DLE",
+      "ATEEZ",
+      "BLACKPINK",
+      "HYBE LABELS",
+      "ITZY",
+      "IU",
+      "IVE",
+      "LE SSERAFIM",
+      "NCT 127",
+      "NCT DREAM",
+      "NewJeans",
+      "RIIZE",
+      "Red Velvet",
+      "SEVENTEEN",
+      "Stray Kids",
+      "TWICE",
+      "TXT",
+      "aespa"
+    ],
+    "non_kpop": [
+      "Lofi Girl"
+    ]
+  },
+  "data": [
+    {
+      "video_id": "kNSyrOHfok0",
+      "title": "[R(ae)cord] 최고의 안무, 최고의 선생님 👍✨ | 에스파 aespa ‘Rich Man’ Dance Practice Behind The Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "1bNLKSm64Mc",
+      "title": "2025-26 aespa LIVE TOUR – SYNK : aeXIS LINE – Recap Video",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "p3H1xsNKc0s",
+      "title": "[R(ae)cord] 지금 그 리치를 잡으러 갑니다!😈 | aespa POP-UP STORE ’aespa WEEK - #Rich Man’ Behind The Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "KX2wlDanZK8",
+      "title": "[ae:scenes] 감사의 모자 돌리기 퍼포먼스🧢 | 에스파 카리나 aespa KARINA MLB Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "xkgeX_mu8lY",
+      "title": "몸이 기억하는 안무💃🔥 | 2025 aespa LIVE TOUR - SYNK : aeXIS LINE Concert Rehearsal Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "NQwmhE_Gakc",
+      "title": "👊에스파 출격 준비 완료👊 | 2025 aespa LIVE TOUR - SYNK : aeXIS LINE Concert in SEOUL Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "VtJmWxzjmbY",
+      "title": "🥰🖤난 MY들이 친하게 지내는 모습 보면 진짜 진심으로 너무 행복해🖤🥰 | aespa 에스파 ‘Rich Man’ 음악방송 Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "k5KiLR7Ak_U",
+      "title": "2026 aespa SEASON’S GREETINGS VIDEO TEASER",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "FvfJqc72gjU",
+      "title": "2026 aespa SEASON’S GREETINGS BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "rrv0QPpxYok",
+      "title": "[🎂] 제가 한번 닝사장 잘해보겠습니다😎| Happy Birthday NINGNING🦋",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "tzG35N8IK5w",
+      "title": "💜즐겁게 준비했어 MY🪽💙 | 2025 aespa LIVE TOUR - SYNK : aeXIS LINE Dance Practice Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "GP2Gy-k45SI",
+      "title": "[🎂] 아쉬움이 있으면 안 되잖아 | Happy Birthday GISELLE🌙",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "lKAyppnsVKE",
+      "title": "[ae:scenes] 가을에 태어난 애리의 가을 느낌🍂🤎 | 에스파 지젤 와키윌리 비하인드 (aespa GISELLE Wacky WiLLy Behind)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "EcPbsIFEeFw",
+      "title": "✨오늘의 컨셉은 엣지 있는 앞머리 있는 여성✨ | KARINA PRADA SS26 Womenswear Show | katarinabluu-log",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "r6w3UdvAQuY",
+      "title": "[ae:scenes]🐴마아ㅏR이 좋아🥰 ㅣ에스파 윈터 하퍼스바자 10월호 커버 비하인드 (aespa WINTER Harper's BAZAAR October Cover Behind)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "tKDa8g1ZOG0",
+      "title": "[aenniversary] 50년, 500년도 같이 하자 | 5th aenniversary Girls’ Night",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "3HwEyEpRey4",
+      "title": "KARINA ‘GOOD STUFF’+GISELLE ‘Tornado’ Recording Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "NAsMg8vkww8",
+      "title": "WINTER 'BLUE'+NINGNING 'Ketchup And Lemonade' Recording Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "fBPWMss8S_A",
+      "title": "[ae:scenes] 🥟갈비 만두🥟 Nice👍 | 에스파 닝닝 마뗑킴 비하인드 (aespa NINGNING Matin Kim Behind)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "-J6GcT3iLdA",
+      "title": "[ae:scenes] 입덕했습니다 노랑💛 | 에스파 지젤 로에베 캠페인 비하인드 (aespa GISELLE LOEWE CAMPAIGN Behind)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "0vPlpfxyaXQ",
+      "title": "aespa 에스파 'Rich Man (English Ver.)' Live Stage @Amazon Music Live",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "xJDMMcY8-1U",
+      "title": "[EP.05] 아우디즈의 찾아서 투어✈️ | 미역 수제비를 찾아서🍲🍚",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "lPbJ3cno950",
+      "title": "저는 오늘 23살 됐고🦋 VOGUE CHINA도 20살🎂 | NINGNING X  VOGUE Forces Of Fashion Gala",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "8QpcwgviHkI",
+      "title": "[ae:scenes] 분노 연기에 도전했어요💢😋  | 에스파 닝닝 구찌 X 하퍼스바자 비하인드 (aespa NINGNING GUCCI X Harper’s BAZAAR Behind)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "Hsagk6_F0pg",
+      "title": "[ae:scenes] 머리가 엄청 귀여워요🥰 | 에스파 카리나 샤넬 뷰티 비하인드 (aespa KARINA CHANEL BEAUTY Behind)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "o1Ud0xIttQI",
+      "title": "✨I’m a shy girl ☺️ㅣNINGNING X Elle China Style Awards 2025",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "4rQzMFCwq78",
+      "title": "[ae:scenes] 세상을 신라면으로 물들이는 중…❤️ | 에스파 신라면 비하인드 (aespa Shin Ramyun Behind)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "QbA81W_roj4",
+      "title": "[ae:scenes] 콘서트를 새로 준비하는 느낌이에요 | 에스파 아마존 뮤직 라이브 비하인드 (aespa Amazon Music Live Behind)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "tzf5cRk1wFo",
+      "title": "[🎂] 윈터와 MY를 위한 소원빌기 | Happy Birthday WINTER⭐️",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "liaOds-OwsE",
+      "title": "[ae:scenes] 에스파 내 코어 힘 최강자는?💪 | 에스파 2025 MAMA 비하인드 (aespa 2025 MAMA Behind)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "R8UB8F0LZVI",
+      "title": "ATEEZ(에이티즈) - 에이티니 수호대 : 티즈레인저",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "zBkvRUsQR2o",
+      "title": "[Special Clip] ATEEZ(에이티즈) ‘Choose’",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "Lvqj-dzpC-M",
+      "title": "ATEEZ(에이티즈) 홍중 Fashion Show 'Petit Coussin' Making Film",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "AzMxDDKZ-s4",
+      "title": "ATEEZ(에이티즈) 'Choose' Production Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "7xIsS7pUoao",
+      "title": "ATEEZ(에이티즈) 산 'Creep' | ATEEZ Present",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "F5xVDyk-Tr0",
+      "title": "ATEEZ(에이티즈) 산 'Creep' Dance Practice Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "whnJ2jTpXtg",
+      "title": "ATEEZ(에이티즈) 우영's Perfect Birthday Plan⏰",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "chBHDsEMRfU",
+      "title": "[Special Clip] ATEEZ(에이티즈) 여상 & 우영 '방탄소년단 - 친구'",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "I_-EDyYCCT8",
+      "title": "ATEEZ(에이티즈) VR CONCERT : LIGHT THE WAY",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "fbeCRDQbcII",
+      "title": "ATEEZ(에이티즈) log_logbook#200",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "sKGwDGnZ5i4",
+      "title": "ATEEZ(에이티즈) 2026 SEASON'S GREETINGS Preview video",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "WqeaMvX3vqw",
+      "title": "ATEEZ(에이티즈) log_logbook#201",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "DElqg7XL-s4",
+      "title": "ATEEZ(에이티즈) 종호 '우리의 마음이 닿는 곳이라면 (To be your light)' | ATEEZ Present",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "7_Xy1Xrl-M0",
+      "title": "ATEEZ(에이티즈) 종호 '우리의 마음이 닿는 곳이라면 (To be your light)' Production Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "KhHVr-FZXHo",
+      "title": "ATEEZ(에이티즈) - AAA 2025 Performance Practice",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "8alWFP5tBjw",
+      "title": "ATEEZ(에이티즈) 2025 크리스마스 메시지",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "E6gWWCQ_Do4",
+      "title": "ATEEZ(에이티즈) 산타를 찾아서",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "QXaDflrLjc8",
+      "title": "ATEEZ(에이티즈) 홍중 'NO1' | ATEEZ Present",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "vUxlgo0XsRQ",
+      "title": "ATEEZ(에이티즈) [TOWARDS THE LIGHT : WILL TO POWER] FINALE IN SEOUL PLAYCODE Preview",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "8dyAzC28Sjw",
+      "title": "ATEEZ(에이티즈) 홍중 'NO1' Dance Practice Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "LZFslv2lMvc",
+      "title": "ATEEZ(에이티즈) - 2025 SBS 가요대전 Performance Practice",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "5to_Vzgz8d0",
+      "title": "ATEEZ(에이티즈) Goodbye 2025 티즈나잇",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "gQwebJ3RuZs",
+      "title": "ATEEZ(에이티즈) 2026 새해 인사 (New Year's Greetings for 2026)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "v6sNecIy7dA",
+      "title": "ATEEZ(에이티즈) - 'Blind' Performance Practice (@2025 뮤직뱅크 글로벌 페스티벌 IN JAPAN)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "bynhu5nuLtI",
+      "title": "ATEEZ(에이티즈) log_logbook#202",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "XP7zqLMu-mM",
+      "title": "ATEEZ(에이티즈) 성화 'Skin' | ATEEZ Present",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "SBKc3m2P5Uk",
+      "title": "ATEEZ(에이티즈) - 2025 MBC 가요대제전 Performance Practice",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "AZMZFQLwI1c",
+      "title": "ATEEZ(에이티즈) 성화 'Skin' Production Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "PXn4hy0kAms",
+      "title": "ATEEZ(에이티즈) WANTEEZ 회의: 곧 감",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "MDu4ZIWHYGk",
+      "title": "[Special Clip] ATEEZ(에이티즈) 성화 '로이킴 - 달리 표현할 수 없어요'",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ATEEZ"
+    },
+    {
+      "video_id": "TIbItS4-4bQ",
+      "title": "BLACKPINK - ‘B.P.M.’ Roll #32",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "ZSc-zcWl2g8",
+      "title": "JENNIE - ‘You & Me’ [BORN PINK] WORLD TOUR STAGE MIX VIDEO",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "ZgLlabyz7oY",
+      "title": "JENNIE - ‘You & Me (Jazz ver.)’ LIVE CLIP",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "q9lQG1shW6o",
+      "title": "JENNIE - 'You & Me' Behind The Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "Yl_rmlS4u9s",
+      "title": "BLACKPINK - ‘B.P.M.’ Roll #33",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "6lw4Cbk1IzA",
+      "title": "BLACKPINK - ‘B.P.M.’ Last Roll",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "gExhbUo61n0",
+      "title": "BLACKPINK: A VR Encore – Official Teaser",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "2V_GLwm0oK0",
+      "title": "Season’s Greetings: From HANK & ROSÉ To You [2024] Preview",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "qfTIbCXH68A",
+      "title": "BLACKPINK: A VR Encore – Official Trailer",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "RjRkne7tkrY",
+      "title": "BLACKPINK – WORLD TOUR [BORN PINK] IN CINEMAS MAIN TRAILER",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "_zbdR2HzWPY",
+      "title": "BLACKPINK – WORLD TOUR [BORN PINK] IN CINEMAS SCREENX TRAILER",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "azHJG5GAJBo",
+      "title": "BLACKPINK - WORLD TOUR [BORN PINK] IN CINEMAS SPOILER",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "g4hprYkwJik",
+      "title": "BLACKPINK - 8TH ANNIVERSARY ‘OUR AREA’ RECAP VIDEO",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "blIkPgtlQZw",
+      "title": "BLACKPINK 2025 WORLD TOUR TEASER",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "BZR6dcAkIYM",
+      "title": "BLACKPINK 2025 WORLD TOUR SPOT VIDEO",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "otS1Nb3hE1k",
+      "title": "BLACKPINK 2025 WORLD TOUR - Special Moments with BLINKS",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "IHVbb5KsBew",
+      "title": "BLACKPINK 2025 WORLD TOUR - BLACKPINK MEMORIES",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "6SHLjOKFVXA",
+      "title": "BLACKPINK WORLD TOUR [DEADLINE]",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "8YiR9v3sOpk",
+      "title": "BLACKPINK WORLD TOUR [DEADLINE] TRAILER",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "j6tqePTqU8A",
+      "title": "READY TO JUMP?",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "VSlfs3s5mtk",
+      "title": "BLACKPINK - ‘뛰어(JUMP)’ M/V TEASER",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "CgCVZdcKcqY",
+      "title": "BLACKPINK - ‘뛰어(JUMP)’ M/V",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "RUKqwwyAiEU",
+      "title": "BLACKPINK - ‘뛰어(JUMP)’ (Official Audio)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "JBkVSQ6wMVI",
+      "title": "BLACKPINK - NEW OFFICIAL LIGHT STICK SPECIAL EDITION 🩷",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "OIT4-nkQVyo",
+      "title": "BLACKPINK - ‘뛰어(JUMP)’ M/V Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "P169hsXjYQs",
+      "title": "BLACKPINK - '뛰어(JUMP)' Live at WORLD TOUR [DEADLINE] IN GOYANG",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "zTnAvaoHR4I",
+      "title": "BLACKPINK - WORLD TOUR [DEADLINE] IN GOYANG Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "WB_AOdAEuBM",
+      "title": "BLACKPINK - WORLD TOUR [DEADLINE] IN LA Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "W-9-keHNwV8",
+      "title": "BLACKPINK - WORLD TOUR [DEADLINE] IN PARIS & LONDON Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "vy_mB6QY-Sc",
+      "title": "BLACKPINK - WORLD TOUR [DEADLINE] IN BANGKOK Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "72GoImNpvLw",
+      "title": "My favorite and least favorite parts in kpop songs",
+      "label": 1,
+      "category": "kpop",
+      "artist": "(G)I-DLE"
+    },
+    {
+      "video_id": "v0poau-vDmo",
+      "title": "K-pop gg playlist my favorites b-sides tracks",
+      "label": 1,
+      "category": "kpop",
+      "artist": "(G)I-DLE"
+    },
+    {
+      "video_id": "Zu97Imxib5M",
+      "title": "EMPIRE- WENGIE FT. MINNIE OF (G)I-DLE (speed up)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "(G)I-DLE"
+    },
+    {
+      "video_id": "GH87caMiO0U",
+      "title": "Cool (your rainbow)- nmixx (speed up)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "(G)I-DLE"
+    },
+    {
+      "video_id": "XrZbgs8zcMU",
+      "title": "Queen of Hearts-TWICE (speed up)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "(G)I-DLE"
+    },
+    {
+      "video_id": "1i9iX8SfXfE",
+      "title": "I am the best (2ne1) speed up",
+      "label": 1,
+      "category": "kpop",
+      "artist": "(G)I-DLE"
+    },
+    {
+      "video_id": "rYmjBfNcykI",
+      "title": "No celestial-le sserafim (speed up)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "(G)I-DLE"
+    },
+    {
+      "video_id": "VfUfMgHtMzY",
+      "title": "(G)I-DLE- change (speed up)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "(G)I-DLE"
+    },
+    {
+      "video_id": "Sq9cnhFdGvg",
+      "title": "good parts(when the quality is bed by I am)-le sserafim (speed up)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "(G)I-DLE"
+    },
+    {
+      "video_id": "sEeXBvk_t8Y",
+      "title": "호시 (HOSHI) 'Fallen Superstar' Official MV",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "wDRtppkYRyM",
+      "title": "aoen ‘MXMM’ Official MV Teaser",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "zjvA5tU2-i4",
+      "title": "aoen ‘MXMM’ Official MV",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "Aq7UmZzkGwg",
+      "title": "ILLIT (아일릿) 'NOT CUTE ANYMORE’ Official Teaser 1",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "AIq7lPJUBJ4",
+      "title": "ILLIT (아일릿) 'NOT CUTE ANYMORE’ Official Teaser 2",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "x_RYZsOfpKY",
+      "title": "ILLIT (아일릿) 'NOT CUTE ANYMORE’ Official MV",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "ES9oYbzYCh8",
+      "title": "ILLIT (아일릿) 'NOT CUTE ANYMORE’ Performance Film",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "ajlNu7Cc7-Y",
+      "title": "THE 8 ‘Skyfall (Remix Ver.)’ Art Film",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "blYK_tKXn9E",
+      "title": "도겸X승관 (SEVENTEEN) 1st Mini Album ‘소야곡’ Trailer : An Ordinary Love",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "1nFGsr35anU",
+      "title": "ZICO (지코), Lilas (YOASOBI’s ikura) ‘DUET’ Official MV Teaser",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "sssoyDLFPWE",
+      "title": "ZICO (지코), Lilas (YOASOBI’s ikura) ‘DUET’ Official MV",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "ogmUm0xh8-w",
+      "title": "SANTOS BRAVOS “0%” Official MV",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "T5vg_Kng2sA",
+      "title": "ILLIT (아일릿) 'NOT CUTE ANYMORE (Holiday Night ver.)' Official Visualizer",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "QqCcH_6Rr7c",
+      "title": "ILLIT (아일릿) 'NOT CUTE ANYMORE (Holiday Party ver.)' Official Visualizer",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "1lIAEzOasWQ",
+      "title": "ENHYPEN (엔하이픈) 'THE SIN : VANISH' Album Teaser",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "OCfFVUySdYw",
+      "title": "ENHYPEN (엔하이픈) 'THE SIN : VANISH' Chapter 1. 'No Way Back'",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "u6av7w877z4",
+      "title": "ENHYPEN (엔하이픈) 'THE SIN : VANISH' Interlude 1",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "8NVQuLU9SdE",
+      "title": "ENHYPEN (엔하이픈) 'THE SIN : VANISH' Chapter 2. 'Big Girls Don’t Cry'",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "FE2XPxza-MI",
+      "title": "ENHYPEN (엔하이픈) 'THE SIN : VANISH' Interlude 2",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "aSVrki8FQUU",
+      "title": "ENHYPEN (엔하이픈) 'THE SIN : VANISH' Chapter 3. 'Stealer'",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "6tYUaUWWmEs",
+      "title": "ENHYPEN (엔하이픈) 'THE SIN : VANISH' Interlude 3",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "EAkxrvfBfXw",
+      "title": "SOURCE MUSIC 2026 GLOBAL BOY AUDITION #1. 층간소음",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "XOJjAXDGsrc",
+      "title": "SOURCE MUSIC 2026 GLOBAL BOY AUDITION #2. 자식걱정",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "3Y7V8beSo7o",
+      "title": "SOURCE MUSIC 2026 GLOBAL BOY AUDITION #3. 착각무대",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "-01oDwXKSuE",
+      "title": "ILLIT (아일릿) 'Sunday Morning’ Official MV",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "GMSWTYbwAdI",
+      "title": "ENHYPEN (엔하이픈) 'THE SIN : VANISH' Chapter 4. 'Knife'",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "kBiLpDbuArA",
+      "title": "도겸X승관 (SEVENTEEN) 1st Mini Album ‘소야곡’ Highlight Medley",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "qEpUmWJ1lS4",
+      "title": "ILLIT (아일릿) 'Sunday Morning’ Official MV Teaser",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "yr-4OUUdYmw",
+      "title": "도겸X승관 (SEVENTEEN) 'Blue’ Official Teaser",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "N9X1o0q4aIc",
+      "title": "도겸X승관 (SEVENTEEN) 'Blue' Official MV (Cinema Ver.)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "HYBE LABELS"
+    },
+    {
+      "video_id": "NF_CdIbhOhU",
+      "title": "터널비전 뮤비를 어떻게 찍었는가. 에 대해서 알아보겠습니다. #ITZY #MIDZY #ITZY_TUNNELVISION #ITZY_TNVS",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "7HTeRmfG7rc",
+      "title": "ITZY “TUNNEL VISION” Cheer Guide",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "Ok4usEb53Ug",
+      "title": "🍀 ITZY의 2026학년도 수능 응원 메시지 🍀",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "Y3Et23FlvDw",
+      "title": "ITZY \"TUNNEL VISION\" Dance Practice (School Look ver.) (4K)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "rYcGGy2GiKQ",
+      "title": "ITZY “TUNNEL VISION” M/V Reaction Video",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "sepXm4ypo-U",
+      "title": "ITZY \"TUNNEL VISION\" Dance Practice (Fix Ver.) (4K)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "bglipwyal-U",
+      "title": "[ITZY? ITZY!] EP 225 | Spotify 'Line by Line' & 'TUNNEL VISION' POP-UP STORE",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "n5WXEaniX4o",
+      "title": "ITZY \"TUNNEL VISION\" Dance Practice Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "1me7hT1GUJY",
+      "title": "ITZY 'TUNNEL VISION' Recording Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "SvoGg4CAdc8",
+      "title": "ITZY \"TUNNEL VISION\" Dance Practice (Cats ver.) (4K)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "Nh46QnqX9wY",
+      "title": "Because that’s what TUNNEL VISION is l School Look & Cats Ver. Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "NJgrPkUs_tg",
+      "title": "[ITZY? ITZY!] EP 226 | Chaeryeong Young Street Radio DJ",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "3mA16Y_G9Do",
+      "title": "ITZY “DYT”",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "nByx9J-VL7o",
+      "title": "ITZY “TUNNEL VISION” BEHIND #1",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "G0j3d75CUMI",
+      "title": "[ITZY? ITZY!] EP 227 | Ryujin & Chaeryeong on MBC Radio Traffic Report",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "fd68xm_7BKk",
+      "title": "ITZY “TUNNEL VISION” BEHIND #2",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "TFuWSg8ViVc",
+      "title": "[ITZY? ITZY!] EP 228 | Yeji & Yuna on Gagconcert",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "q1J3_riebjo",
+      "title": "Yuna's B-DAY 100 QnA📝",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "M8MoJWmTYZs",
+      "title": "ITZY \"TUNNEL VISION\" Challenge BEHIND | #TNVSChallenge",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "e-vBLQD-9uU",
+      "title": "[ITZY? ITZY!] EP 229 | Yeji Roger Vivier 2026 S/S Presentation & Lia Rockfish Weatherwear Shanghai",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "PSZPlSOizxk",
+      "title": "Yeji \"바본가봐\" (by. 아이비) | #COVER_IT",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "bBcD5kacquk",
+      "title": "[ITZY VLOG] LIA｜This Is Lia Core💛🍀| Outfit Fitting | Morning Routine | Lots of Bella Moments",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "4W-1cVLnoUc",
+      "title": "[ITZY?ITZY!] EP 230 | Yuna's DYNAFIT Shooting",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "8fy4A3YKTzw",
+      "title": "[ITZY VLOG] CHAERYEONG｜Introvert’s Comfort Vlog ☁ | Abs Routine | Hangang Run | Self-Care Day",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "RMVoGqYkr1A",
+      "title": "Ryujin \"Snowman\" (by. Sia) | #COVER_IT",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "ByvjDGtVr9s",
+      "title": "[ITZY?ITZY!] EP 231 l Yuna's FENDI 2026 S/S Fashion Show & Ryujin's Polo Ralph Lauren",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "RU_5XWAfED4",
+      "title": "[ITZY VLOG] YUNA｜Yuna’s Favorite Items 💫 | Home Workout | Ice Cream Shopping | Snack Gift Unboxing",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "9VrSvyeR7Aw",
+      "title": "[ITZY?ITZY!] EP 232 | Ryujin’s Marie Claire X KOOZA & Lia’s 'Idol I' OST Recording",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "KddB3vyq-YA",
+      "title": "Chaeryeong \"Start\" (by. Park Ki-young) | #COVER_IT",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "qClKD0V4AdM",
+      "title": "[ITZY VLOG] RYUJIN｜After-Work Real Life 🌃 | Cats | Namsan Date Course | Dream Come True Night 🎪",
+      "label": 1,
+      "category": "kpop",
+      "artist": "ITZY"
+    },
+    {
+      "video_id": "TwBvUP5Z6Cc",
+      "title": "[IU TV] 1000만 유튜버 이지금의 💎다이아 버튼💎 언박싱",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "6FNLXKGJKKY",
+      "title": "IU '빨간 운동화' Track Teaser",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "yrGbZTi4KD0",
+      "title": "IU [꽃갈피 셋] Track List (Inst ver.)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "WE4LU1ks8u4",
+      "title": "[아이유의 팔레트🎨] '아이'들 (With i-dle) Ep.33",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "23ih3V1aBTY",
+      "title": "IU '네모의 꿈' Track Teaser",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "TU4qAG0Zj2s",
+      "title": "[조각집🎨] '나는 아픈 건 딱 질색이니까' IU Live Clip (With i-dle)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "jjo4Zgb0OGk",
+      "title": "IU 'Never Ending Story' MV Teaser",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "6J9ixwhDYSM",
+      "title": "IU 'Never Ending Story' MV",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "ojZrT0-Mq3M",
+      "title": "[IU TV] 어느 영화와 같은 아이유의 5월의 크리스마스",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "l5Z1PBJLUss",
+      "title": "IU '미인 (Feat. Balming Tiger)' MV",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "1DL-P7R3-_s",
+      "title": "[IU TV] 교복 징니? 한 번 보고 두 번 보고 자꾸만 보고 싶네?👀",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "XC5FtNIgaQ4",
+      "title": "IU 'Never Ending Story' Recording Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "EZPP2m1zWbc",
+      "title": "[IU TV] 마미뮤 분노의 마인크래프트! (w.샘킴)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "r3WS1BOpgk4",
+      "title": "IU '네모의 꿈' Live Clip",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "cuW0CF6NXj8",
+      "title": "IU '미인' Recording Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "IJu4GBiwfN0",
+      "title": "IU '꽃갈피 셋' Recording Behind 모음 (/w 코러스 개미지옥)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "GJSlIXwcXJ4",
+      "title": "[IU TV] 관식이를 위하여 (검요일에 만나요)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "Hsuy_xzPyWQ",
+      "title": "IU '바이, 썸머' Lyric Video",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "AiZb8Iz83Og",
+      "title": "[IU TV] 징니 볼살이 제철🍑 ㅣ2025 IU FAN MEET UP 'Bye, Summer' 합주 비하인드 Part 1",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "Hm-Ynk7QSpY",
+      "title": "IU '크레파스(Crayon)' Live Clip (2025 IU FAN MEET-UP [Bye, Summer])",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "ul8wBH265bo",
+      "title": "IU '라망(L'amant)' Live Clip (2025 IU FAN MEET-UP [Bye, Summer])",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "hZpMABioJ2M",
+      "title": "IU '이름(Name)' Live Clip (2025 IU FAN MEET-UP [Bye, Summer])",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "Zo4lBKPcLac",
+      "title": "[IU TV] 아이유의 인이어학개론ㅣ2025 IU FAN MEET UP 'Bye, Summer' 합주 비하인드 Part 2",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "UV6XYu33Yr0",
+      "title": "[IU TV] 17년 지기 내 친구 유애나랑💞ㅣ2025 IU FAN MEET UP 'Bye, Summer'",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "QKDjE-rqmSs",
+      "title": "IU '홀씨(Holssi)' Live Clip (2024 IU HEREH WORLD TOUR CONCERT ENCORE : THE WINNING)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "BkLKEsh6tZU",
+      "title": "IU '스물셋(Twenty-three)' MV (Performance Ver.)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "sJS4x_5EDrY",
+      "title": "IU 2026 SEASON'S GREETINGS Preview",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "Gxk7XJbm2ac",
+      "title": "IU 2026학년도 수능 응원 메시지💌 (Supporting Message for the College Scholastic Ability Test)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "fB8MOp68dRM",
+      "title": "[IU TV] 기내에서 소근소근 브이로그🤫 ㅣ AAA 2025 시상식 비하인드",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "t0lus004uoc",
+      "title": "IU 'Last Fantasy' Live Clip (2024 IU HEREH WORLD TOUR CONCERT ENCORE : THE WINNING)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IU"
+    },
+    {
+      "video_id": "hopYX3IyY9s",
+      "title": "[IVE ON] 2025 K-WORLD DREAM AWARDS BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "EnDBSEazby4",
+      "title": "[IVE ON] ROCK IN JAPAN FESTIVAL 2025 BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "fjTybZocVt0",
+      "title": "[IVE ON] REI X 풀리(FULLY) BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "rZPGoc307i0",
+      "title": "[IVE ON] 2025 THE FACT MUSIC AWARDS BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "l1PmdYuPkow",
+      "title": "[IVE ON] LIZ X 에스네이처 BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "g-Rr48cPSjs",
+      "title": "[IVE LOG] 버튼을 눌러 꾹 〰️😆 삐빅 (♥beats) 안무 브이로그",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "Hejwk0XsWxk",
+      "title": "Baby Powder Covered by IVE REI",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "9NiDbppvDlI",
+      "title": "[Special Clip] IVE 아이브 2026 수능 응원 영상",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "kERoOBmK9E8",
+      "title": "[IVE OFF] 짧지만 알차게 녕토끼의 쫑알쫑알 타임 🐰✨",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "xK-WtU2UeqM",
+      "title": "IVE 아이브 '2026 SEASON'S GREETINGS' TEASER",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "-INdNgYqeOg",
+      "title": "Note #1 : VCR & MD SHOOTING | IVE WORLD TOUR〈SHOW WHAT I AM〉",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "q_Xq_q9A-qI",
+      "title": "[IVE ON] REI X MILLET BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "lKk24NtkJwE",
+      "title": "[IVE ON] LIZ X 8seconds BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "78i8ZjmjQN4",
+      "title": "HAPPY IVE DAY｜IVE Debut 4th Anniversary👯‍♀️🎂",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "tkFMRobZUPs",
+      "title": "바로 그 That’s My... 👉👑💘 Reaction",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "vIH6Eebalh8",
+      "title": "IVE 아이브 'That's my girl' DANCE PRACTICE",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "jtZnBCpjlSc",
+      "title": "[IVE LOG] 파리의 커플즈 - - ꒰ ୨୧ ꒱ - - 우리의 첫 패션 위크｜커플즈 LOG",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "-EF0_W0FcgA",
+      "title": "[IVE ON] JANGWONYOUNG X BVLGARI BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "nWJ6Zofg8zM",
+      "title": "[IVE LOG] ﾟ:･*･가을 감성 듬뿍 담긴 2026년 다이어리 문구 하울･:*:･ﾟ l FALL LOG",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "ik0bEWDtXCQ",
+      "title": "[IVE ON] 2025 KGMA BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "NuEdFQi6PUE",
+      "title": "[IVE ON] ꒰인가 막내 공주 졸업식에 초대합니다꒱｜인기가요 이서 MC 막방 BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "W_yA-Cd3E4Q",
+      "title": "K-CAROL Covered by IVE ANYUJIN",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "D75a8yfvvu0",
+      "title": "[Special Clip] IVE 2025 Christmas Message",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "onDytIpS2S4",
+      "title": "IVE 아이브 💌 삐빅 (♥beats)  To. DIVE",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "K7LflQ9jTCI",
+      "title": "[IVE ON] AAA 2025 BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "kXvtbtYpZn4",
+      "title": "[Special Clip] IVE 아이브 2026 New Year's Greetings",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "RkUTBJWmu7E",
+      "title": "[IVE LOG] 10대 마지막 이서 Vlog🎀  ‎𓏲 ۫ 𓈒 ♡｜LEESEO LOG",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "zbXg3zi9sLE",
+      "title": "Note #2 : DANCE PRACTICE & BAND REHEARSAL | IVE WORLD TOUR〈SHOW WHAT I AM〉",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "mx8VPWBWKmY",
+      "title": "IVE 아이브 The 40TH Golden Disc AWARDS DANCE PRACTICE",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "twN7fXcas5c",
+      "title": "[IVE ON] 2025 KBS 가요대축제 & 뮤직뱅크 글로벌 페스티벌 IN JAPAN BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "YELf9m-wu4I",
+      "title": "[PS5] Metal Gear Solid Delta: Snake Eater - Prologue Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "hFmIF-MfL9w",
+      "title": "[NS] Shinobi: Art of Vengeance - First 1 Hour of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "6EMGkpfPRWw",
+      "title": "[PC] Hell is Us - First 1 Hours of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "Aei3H-MhvvE",
+      "title": "[PS5] Cronos: The New Dawn - First 35 Minutes of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "SpsCGaQR0eg",
+      "title": "[PC] Hollow Knight: Silksong - The First 35 Minutes of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "75WDZjSi3ko",
+      "title": "[NS] Everybody's Golf Hot Shots - First 10 Minutes of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "4G5fEhyM0qU",
+      "title": "[PC] Daemon X Machina: Titanic Scion - The First 1 Hour of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "tAWlR92C9vg",
+      "title": "[PC] Hollow Knight: Silksong - Normal / Hidden / True Ending",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "QZMho_oaBCg",
+      "title": "[PC] Digimon Story: Time Stranger - Demo Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "gLrqaqa5iLA",
+      "title": "[PC] Dying Light: The Beast - The First 1 Hour of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "n2E41Koly6I",
+      "title": "[PS5] Silent Hill f - The First 1 Hour of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "9WFA3Z0I2M0",
+      "title": "[PS5] Silent Hill f - All Endings",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "keykEwj22w4",
+      "title": "[PC] Atelier Resleriana: The Red Alchemist & the White Guardian - Prologue of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "cZOurSvAk74",
+      "title": "[NS2] Final Fantasy Tactics: The Ivalice Chronicles - First 1 Hour of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "CnfmKdLPZWU",
+      "title": "[PS5] Ghost of Yōtei - The First 1 Hour 45 Minutes of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "MWQI0aWRP4I",
+      "title": "[PS5] Ghost of Yōtei - Final Boss & Ending",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "SGxNKbIc75k",
+      "title": "[PC] Battlefield 6 - First 1 Hour 20 Minutes of Campaign Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "yqpHmDRqrBQ",
+      "title": "[PC] REANIMAL - 25 Minutes Demo Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "0McqQYbDriE",
+      "title": "[NS2] Pokémon LEGENDS Z-A - The First 1 Hour of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "IzEXT1N7xjo",
+      "title": "[NS2] Pokémon LEGENDS Z-A - Final Boss & Ending",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "275HBSJTmis",
+      "title": "[PC] Ninja Gaiden 4 - First 1 Hour of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "nQs6enaUuXU",
+      "title": "[PC] Vampire: The Masquerade Bloodlines 2 - First 10 Minutes of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "bUQJlG2gtOE",
+      "title": "[PC] Dispatch - First Episode of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "a23qqMONzM4",
+      "title": "[PC] The Outer Worlds 2 - First 45 Minutes of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "eany_eGKTTc",
+      "title": "[PS5] Dragon Quest I & II Remake - First 1 Hour of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "tfamp1Mkx84",
+      "title": "[PS5] ARC Raiders - 15 Minutes of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "FDoV0aHtCi0",
+      "title": "[PS5] Octopath Traveler 0 - Prologue Demo Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "7v_1tMSdHRA",
+      "title": "[PC] Call of Duty: Black Ops 7 - Co-op Campaign Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "BxFa8J5m_zI",
+      "title": "[PS5] Octopath Traveler 0 - 40 Minutes of Gameplay",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "xBr4xrOHPRE",
+      "title": "[PS5] Diablo 4 - Paladin Gameplay (Season 11)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "LE SSERAFIM"
+    },
+    {
+      "video_id": "Z_8f5IWuTFg",
+      "title": "5 A.M Study Session 📚 [lofi hip hop]",
+      "label": 0,
+      "category": "non_kpop",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "7O9jGGm7PlE",
+      "title": "Lofi Girl - Christmas 2025 🎄",
+      "label": 0,
+      "category": "non_kpop",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "7ccH8u8fj8Y",
+      "title": "Best of lofi hip hop 2025 🏙️ - beats to relax/study to",
+      "label": 0,
+      "category": "non_kpop",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "kcaGFkX7rGg",
+      "title": "good bye 2025 🧡",
+      "label": 0,
+      "category": "non_kpop",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "S-4hwfyK-XQ",
+      "title": "winter lofi mix [3 hours] ❄️ relaxing music to chill/study to",
+      "label": 0,
+      "category": "non_kpop",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "q_4KI-ChIIs",
+      "title": "fireplace ambience 🔥 cozy sound to chill to",
+      "label": 0,
+      "category": "non_kpop",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "3GQY80jyysQ",
+      "title": "Halloween lofi radio  🧟‍♀️ - spooky beats to get chills to",
+      "label": 0,
+      "category": "non_kpop",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "A8jDx9TLMQc",
+      "title": "relaxing jazz music 🌹 cozy radio to study/chill to",
+      "label": 0,
+      "category": "non_kpop",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "jXAEIWcGXwE",
+      "title": "classical music radio 🎻 relaxing songs to read/study to",
+      "label": 0,
+      "category": "non_kpop",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "XSXEaikz0Bc",
+      "title": "christmas lofi music🎄cozy radio to get festive to",
+      "label": 0,
+      "category": "non_kpop",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "8uPEg6Bhvr0",
+      "title": "KICK-OFF Meeting & VCR Shooting & Concert Rehearsal Behind | Ep. 1 | 2025 DOYOUNG CONCERT [ Yours ]",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "zKliw6wr00E",
+      "title": "JUNGWOO 정우 'SUGAR' Dance Practice",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "BcN88qyQg5U",
+      "title": "🥺지금까지 더쇼 MC 샤오쥔이었습니다!👋 | 샤오쥔 더쇼 MC 막방 비하인드",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "KtEa0esi5ik",
+      "title": "JUNGWOO 'SUGAR' MV Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "mbEhETilgM0",
+      "title": "JUNGWOO 'SUGAR' Album Listening Meeting & 'SUGAR' Recording Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "QJDNrGaiipY",
+      "title": "Concert D-Day Behind | Ep. 2 | 2025 DOYOUNG CONCERT [ Yours ]",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "Y0OIWuRMYZ4",
+      "title": "온전히 제 마음이 전달 됐기를 바라면서…♡⁼³₌₃ | 김SUGAR의 붕방파티시에",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "Np_TrbUCNf8",
+      "title": "˚✧₊⁎'늦은 말’을 이렇게나마 전할 수 있어 정말 다행입니다⁎⁺˳✧༚ l Promise Express 프로미스 배달부",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "tOKgzYV3hU8",
+      "title": "DOYOUNG 도영 'Whistle (Feat. 벨 of KISS OF LIFE)' Live Clip",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "Ie_N0Y3L6V8",
+      "title": "JUNGWOO ‘SUGAR’ Dance Practice Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "hvzhlTCyQws",
+      "title": "DOYOUNG ‘늦은 말 (Promise)’ Recording Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "PScuivbU_fA",
+      "title": "TAEYONG 태용 'H.E.R' Special Video",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "BGhjOebV3P8",
+      "title": "DOYOUNG '늦은 말 (Promise)' MV Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "-M3CvlEAdec",
+      "title": "₊‧✩•.부쉐론과 함께 하는 오늘 촬영💎.•✩‧₊  | MARK ESQUIRE Korea Photoshoot Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "6DcwJBinO3Q",
+      "title": "DOYOUNG 'Whistle (Feat. 벨 of KISS OF LIFE)' Recording Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "TpDGucqTRM4",
+      "title": "⋆˚수상하게 숙련된 신인 가수 김SUGARingcandy🐶🍬𝜗𝜚˚  | JUNGWOO ‘SUGAR’ 음악방송 대기실 비하인드",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "WVjbwaHtU2Y",
+      "title": "[Replay] In A Prince, TY-Time",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "w5oPfswnqnc",
+      "title": "DOYOUNG 도영 'Whistle (Feat. 벨 of KISS OF LIFE)' Live Clip Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "JRxObcBl7Ys",
+      "title": "푸두가 마냥 귀여운 촬영 현장⋰˚☆ | HAECHAN DAZED KOREA Photoshoot Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "ZXx0q7yijCQ",
+      "title": "YUTA ユウタ 'TO LOVE SOMEONE' Special Video",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "-qcf-4NoyAY",
+      "title": "JUNGWOO 정우 'SUGAR' Dance Clip (Exclusive Ver.)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "X1Hz_WoxZHc",
+      "title": "Cover｜YUTA - いつかのメリークリスマス (Itsuka no Merry Christmas) (B'z)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "ZdXFrAHm_R8",
+      "title": "🍀도영이가 왜 이렇게 요리에 진심이야ꕤ 🐰저 셰프가 될래요🧑‍🍳 | Doyoung '땡스버디클럽' Cooking Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "0BSBQdLVfog",
+      "title": "평생 잊지 못한 여행이었던 것 같아요(*˙︶˙*)و | CHENLE in Abu Dhabi",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "mrF-dgTXyGs",
+      "title": "황야의 카우보이🤠🐴 | MARK GQ KOREA Photoshoot Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "O0irWyPBh2s",
+      "title": "🥶어느 12월 겨울(?)… 아차산 정상 찍고 온 천지래미들⛰️🍂 | 천지의 이것저것 시즌3 Ep.4",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "ElBSLjP3pqo",
+      "title": "제가 애정하는 브랜드ᯓ♥ | DOYOUNG Biodance Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "UpQ6h5NRenA",
+      "title": "₊‧✩어딜 가도 기분이 좋아요🐱✩‧₊ JOHNNY in PARIS | Acne Studios SS26 Show",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "5Z7MC0u2ix8",
+      "title": "☆｡ﾟ･첫 생일 파티할 수 있어서 좋았어요 🎂🥳 ･｡ﾟ☆ | 2025 CHENLE B-day PARTY [Lele's Show] Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "Mjv5yvRrJoI",
+      "title": "♡₊· ˚Aku cinta kamu˚₊·♡ | XIAOJUN Judydoll Makeup Playground Jakarta",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT 127"
+    },
+    {
+      "video_id": "gsLmdj7ljpM",
+      "title": "함께 가봅시다!!! 시즈니랑 드림이들 안아…🫂 | SMTOWN LIVE 2025 in TOKYO Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "Bau9ZMcteZE",
+      "title": "👨‍💻 『 공식 성숙도 순위 발표회 』 🏛️  | 드림 바이 드림 | DREAM x DREAM",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "RQA48UpWkN0",
+      "title": "2026 NCT DREAM SEASON’S GREETINGS BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "4OifDVqeZ0s",
+      "title": "🏫대축 라이브 찢으러 왔습니다🔊 (with. 경희대 88학번 CC의 아들 박지성🐹) | 2025 경희대학교 대동제 비하인드",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "o01S7St_cDw",
+      "title": "⚠️정비공 긴급 회의👨‍🔧 그래서… 어디가 망가졌는데???  | Beat It Up Project | EP.1",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "BfLrRmbWcXs",
+      "title": "NCT DREAM : They Were Here To Beat It Up",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "ZSNfqYNDXYE",
+      "title": "🔍부품 찾기 미션‼️ 얼렁뚱땅 와진창(?) 게임🔨💥 | Beat It Up Project | EP. 2",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "E8OGtmbwzZU",
+      "title": "NCT DREAM 'Rush' (Official Audio)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "eyn7xCJu6q0",
+      "title": "NCT DREAM 'Cold Coffee' (Official Audio)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "LMfcc8FeB-g",
+      "title": "NCT DREAM 'Butterflies' (Official Audio)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "sqWk4Hn3sIg",
+      "title": "NCT DREAM 'Tempo (0에서 100)' (Official Audio)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "kT_bK9QD-T4",
+      "title": "NCT DREAM 'TRICKY' (Official Audio)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "K6rv7rGPnIs",
+      "title": "NCT DREAM 엔시티 드림 'Beat It Up' Cheering Guide | 시즈니 우리가 함께 이룬 걸 봐 💚",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "0FjtZz-zWWs",
+      "title": "NCT DREAM 엔시티 드림 'Beat It Up' Stage Clip",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "lJpYdkD83wI",
+      "title": "하이↗야아↘!!! 서로의 능력치를 깨 봐드림🥊 | 도장깨DREAM | EP.1",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "0rtxP3HkfmE",
+      "title": "REACTION to ⚡️’Beat It Up’🥊 MV | NCT DREAM Reaction",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "KDC-EOsNzAg",
+      "title": "NCT DREAM 엔시티 드림 'Beat It Up' Dance Practice",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "9tIsyA8Ljp4",
+      "title": "[Replay] NCT DREAM 'Beat It Up' Countdown Live",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "LowLLfe2euo",
+      "title": "드림이들이 직접 뽑은 《NCT DREAM 64강 수록곡 월드컵》🎵🏆  | 도장깨DREAM | EP.2",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "CS5_tj8Frzo",
+      "title": "Dream VS Dream | 3 VS 4",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "qmSKhdRLdKY",
+      "title": "NCT DREAM ‘Beat It Up’ Jacket & Trailer Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "SO5WTkqa0OA",
+      "title": "NCT DREAM ‘Beat It Up’ MV Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "r-Hok2CL5a0",
+      "title": "시즈니들의 마음까지 한번… 💥깨부숴버리는(positive)🥊 기록들 | Beat It Up 음악방송 대기실 비하인드",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "xqyycAJpMC8",
+      "title": "NCT DREAM ‘Beat It Up’ Dance Practice Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "__Pia1OWMGI",
+      "title": "NCT DREAM ‘Beat It Up’ Recording Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "RKW5Txp4_o4",
+      "title": "NCT DREAM 'Beat It Up' Showcase & Dance Practice Behind the Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "NZV9CXav2x0",
+      "title": "NCT DREAM 'Beat It Up' | Spotify Performance Video",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "Xp_A388BM8s",
+      "title": "⋆꙳•❅☃️돌아온 미니게임 𝖬𝖾𝗋𝗋𝗒 𝖢𝗁𝗋𝗂𝗌𝗍𝗆𝖺𝗌🎅🏻*❆₊⋆ | 드림 바이 드림 | DREAM x DREAM",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "mm9SDBQOjIk",
+      "title": "NCT DREAM 엔시티 드림 'CHILLER + Beat It Up' Performance Practice (2025 SBS 가요대전 Ver.)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "WDL9rU6Ia9o",
+      "title": "DREAM THE FUTURE : Page#4 BANGKOK,HONG KONG,JAKARTA,SINGAPORE,TAIPEI,KUALA LUMPUR | THE DREAM SHOW 4",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NCT DREAM"
+    },
+    {
+      "video_id": "yYznzbLNecA",
+      "title": "[Jeans' ZINE+] 봄맞이 피크닉🧺.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "yWvzZW_g5b0",
+      "title": "[Jeans' ZINE+] 엉망잔칭 토론회👑.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "BHhRlI9o0PU",
+      "title": "[Jeans' ZINE+] 우밤당낮 아케이드👽.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "5X2__AA0IdU",
+      "title": "Jeans' Clip # 0️⃣ 3️⃣ | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "wLApx-mWc5Y",
+      "title": "[Jeans' ZINE+] 뉴진스파랜드♨.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "p4Z2uH2dFOA",
+      "title": "[Jeans' ZINE+] GRANNIE'S FARM🍓.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "zMTPU1rvhyM",
+      "title": "[NewJeans Day🎂] Happy 3rd Anniversary🩷",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "vCLOISqUHYQ",
+      "title": "[NewJeans Day🎂] We are NewJeans💫",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "gY8_MPI3p4Q",
+      "title": "[Jeans' ZINE+] 요리퀸을 찾아라👩‍🍳.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "gP3ubOac1tI",
+      "title": "[Jeans' ZINE+] 김장대소동🥬.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "YzUsB8MXTlw",
+      "title": "Jeans' Clip # 0️⃣ 4️⃣ | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "7G6iDGlZNlY",
+      "title": "Jeans' Clip # 0️⃣ 5️⃣ | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "iNHvelouaxI",
+      "title": "[Jeans' ZINE+] 조금 이른 봄놀이🌧.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "10LfhmKMWW8",
+      "title": "[Jeans' ZINE+] 버킷리스트🪂.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "y82zHUsqRUc",
+      "title": "[Jeans' ZINE+] 우천 시 취소 특집🌦.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "W3xbbWSIs38",
+      "title": "Jeans' Clip # 0️⃣ 6️⃣ | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "rRj4FYR9AfM",
+      "title": "[Jeans' ZINE+] 가을캠프🍂.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "D2i4wqBtvVI",
+      "title": "[Jeans' ZINE+] 제2회 엉망잔칭 토론회👸.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "-Z6qDIBs_JQ",
+      "title": "Jeans' Clip # 0️⃣ 7️⃣ | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "rPIcX7QEkPE",
+      "title": "[Jeans' ZINE+] 다니엘의 힐링 여행🐢.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "fT43u9OV13U",
+      "title": "[Jeans' ZINE+] 체험 삶의 목장👾.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "-INWznoZLBE",
+      "title": "[Bunnies Day🐰] Happy 3rd Bunnies Day 🧸🐱🦦🐹🐶💛🐰",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "-8brw2wqj-s",
+      "title": "Jeans' Clip # 0️⃣ 8️⃣ | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "uffCXOcna9s",
+      "title": "[Jeans' ZINE+] 린틀포레스트🍥.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "xuS9aw6sKQM",
+      "title": "[Jeans' ZINE+] 사격왕 김민지💫.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "pE7O2EgzEZc",
+      "title": "Jeans' Clip # 0️⃣ 9️⃣ | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "mM_y4-7MuPM",
+      "title": "[Jeans' ZINE+] 꼬마 유치원 하니 둘 셋🧺.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "a0R3fQCmBKs",
+      "title": "[Jeans' ZINE+] ASAP Wish List🦄.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "yqzR4_SXCaM",
+      "title": "Jeans' Clip # 1️⃣ 0️⃣ | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "OMVoxddjWmM",
+      "title": "[Jeans' ZINE+] 연말 파티🏘.ZIP | NewJeans",
+      "label": 1,
+      "category": "kpop",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "iMyGM6O61bI",
+      "title": "Red Velvet - IRENE & SEULGI 'TILT' Dance Practice | TILT Week Irene/Seulgi 2025 #4",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "KagW84RWrR8",
+      "title": "Red Velvet - IRENE & SEULGI 'TILT' Music Show Behind | TILT Week Irene/Seulgi 2025 #5",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "_2tKRvzfwvc",
+      "title": "Back by Popular Demand 🩷 It’s Me IRENE🙋‍♀️ㅣ여러분의 성원에 힘입어 돌아온 ‘나야 아이린이’",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "I_m7mRah69k",
+      "title": "이번 목표는 퐁당⤵ 던지지 않기⚾️ | IRENE SAMSUNG LIONS Vlog🩷",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "hpXslR-XgO8",
+      "title": "2025 IRENE & SEULGI Concert Tour [BALANCE] in SEOUL Recap Video",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "ki1rh_J2q7M",
+      "title": "JOY 조이 'From JOY, with Love' Announcement Film",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "TisOVfCUa_E",
+      "title": "생애 첫 시구!⚾️ 크림 새우도 있고🍤 치킨도 있고🍗 | JOY KIWOOM HEROES Vlog💚",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "WMIaOhC_Jyk",
+      "title": "JOY 조이 'From JOY, with Love' Album Trailer",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "I-lXgCb-1bM",
+      "title": "Red Velvet - IRENE & SEULGI 'Trampoline' @2025 IRENE & SEULGI Concert Tour [ BALANCE ] in SEOUL",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "_Xp58eXqzDo",
+      "title": "JOY 조이 'From JOY, with Love' Highlight Clip",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "3JN0MvGWIbk",
+      "title": "Joy’s summer playlist is calling 💞☀️ #JOY #조이 #LoveSplash! #JOY_LoveSplash! #RedVelvet #레드벨벳",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "XZHOlkbNs28",
+      "title": "ReVeluv💚 From JOY, with Love | JOY 조이 'Love Splash!' 응원법 Cheering Guide",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "YC35y1K4M8c",
+      "title": "POV : When I'm JOY's First Love",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "7tTQpfpM804",
+      "title": "[Replay] JOY 조이 'From JOY, with Love' Countdown Live",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "OrI_FLVLG_4",
+      "title": "JOY 조이 'Love Splash!' Live Stage Practice (Moving Ver.)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "ly0xQY2AADw",
+      "title": "JOY 조이 ‘Love Splash!’ Dance Practice Behind | From JOY, with Love",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "OXU3NeG75BQ",
+      "title": "JOY 조이 ‘Love Splash!’ Recording Behind | From JOY, with Love",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "vnenDyMdhB4",
+      "title": "벌써 끝나다니 아쉬워요🥲 | 레드벨벳 Red Velvet SMTOWN LIVE 2025 tour Behind The Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "1hoLPo-pyYk",
+      "title": "JOY 조이 ‘Love Splash!’ Music Show Behind | From JOY, with Love",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "6PubX76wsAc",
+      "title": "(엉엉) 힘든 거 얘기해 보자 우리😂ㅣ2025 IRENE & SEULGI Concert Tour BALANCE",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "Q6-e-j7Nz60",
+      "title": "Back by Popular Demand 🩷 It’s Me IRENE🙋‍♀️ㅣ#MEXICO & LONDON & TOKYO",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "pCPa2Li8oKw",
+      "title": "VCR 예쁘게 봤나요 여러분?ㅣ2025 IRENE & SEULGI Concert Tour BALANCE",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "JfSskaBeK4s",
+      "title": "아~주 오래 슬~며시 함께하자❤️ㅣ2025 IRENE & SEULGI Concert Tour BALANCE",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "g_l5dzXk-Ag",
+      "title": "여러분들 만나서 정말 에너지 얻고 갑니다💪ㅣ2025 IRENE & SEULGI Concert Tour BALANCE",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "QK5w2Zyq4ko",
+      "title": "2026 Red Velvet SEASON’S GREETINGS CONCEPT TRAILER #RedVelvet",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "i8tm-_ZktwI",
+      "title": "JOY 조이 '품 (Cuddle)' Mood Film",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "HDQMZvUpes4",
+      "title": "2026 Red Velvet SEASON’S GREETINGS BEHIND",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "d6EPI27tN14",
+      "title": "영원히 녹지 않을 마음속의 추억으로 잘 간직해요💚ㅣ2025 JOY FANMEETING Unmelting Our Green",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "ZClPxSsQ3HU",
+      "title": "Back by Popular Demand 🩷 It’s Me IRENE🙋‍♀️ㅣ#I&S Concert Tour [BALANCE].zip",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "vrVmcx5atjI",
+      "title": "객관적인 데이터를 기반으로♾️ㅣ2025 Korea Grand Music Awards Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Red Velvet"
+    },
+    {
+      "video_id": "Mp6ZbPFJOO8",
+      "title": "SHOTARO's GRWM (w/WONBIN's Dubbing)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "w7RVP6QFNsk",
+      "title": "𝑭𝒂𝒎𝒆 𝒐𝒓 𝑭𝒂𝒌𝒆 ❮여섯 왕자들의 왕위 계승전❯ | WE RIIZE EP.47",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "-DplI4m20rc",
+      "title": "'Fame' MV Shoot d-1 | pre-alize_06",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "SQiWCAWxPjw",
+      "title": "[Vlog] 아이스링크장에서 스케이트 타기 / 피자집에서 피맥타임 | RIIZE IN USA EP.2",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "81QYAxvO3Ik",
+      "title": "RIIZE 'Something’s in the Water' (Official Audio)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "MRYXsF2lblY",
+      "title": "RIIZE 'Sticky Like' (Official Audio)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "XQhOzX_Lq_M",
+      "title": "RIIZE 라이즈 ‘Fame’ MV Reaction",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "DsNnBkh55fc",
+      "title": "SOHEE & SHOTARO's SURPRIIZE B-DAY (DIY Ver.)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "4QNkMLyZ3yI",
+      "title": "RIIZE 라이즈 'Fame' Jacket & Trailer Behind the Scene",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "pOFhWW65HLE",
+      "title": "UNBOXING of RIIZE ‘Fame’ Album",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "mEz7RVhe08I",
+      "title": "RIIZE 라이즈 PHOTO EXHIBITION ‘Silence: Inside the Fame 고요와 파동’ Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "8LrXQH2ja34",
+      "title": "RIIZE 라이즈 'Fame' Dance Practice",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "ZH2Rh7JXBJ8",
+      "title": "RIIZE 라이즈 'Fame' MV Behind the Scene",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "S-t06OCkQYg",
+      "title": "‘Fame’ Recording | RISE & REALIZE EP.81",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "RLBMT2DMT2I",
+      "title": "‘Fame’ Dance Practice | RISE & REALIZE EP.82",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "6xCLXDtLMcQ",
+      "title": "Our Memories of North America #1 | RISE & REALIZE EP.83",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "Ac461YWctts",
+      "title": "브리즈 춥지? 나 안아🫂 | RIIZE 라이즈 'Fame’ Premiere & 음악방송 대기실 비하인드",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "QaNFnxee36I",
+      "title": "Our Memories of North America #2 | RISE & REALIZE EP.84",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "qoK6iWm5oLo",
+      "title": "[Vlog] 워싱턴 기념탑 산책 / 링컨 기념관 구경 / 레스토랑 디너 | RIIZE IN USA EP.3",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "ByZw_LWblLI",
+      "title": "Our way of gaming",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "ZRihDThinJ4",
+      "title": "2025 MAMA AWARDS | RISE & REALIZE EP.85",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "fxRRDqdB_g4",
+      "title": "2025 RIIZING Awards Night ❮올해의 RIIZE 베스트 커플상은?❯ | WE RIIZE EP.48",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "ncJWB1bzr04",
+      "title": "Merry RIIZEmas🎁🎄🎅 (‘Fame' Part Switch ver.)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "dimOIMaAsxg",
+      "title": "AAA 2025 | RISE & REALIZE EP.86",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "G7RTgZmMAQQ",
+      "title": "2025 RIIZING Awards Night ❮와! 대박 이거 정말 감동이에요❯ | WE RIIZE EP.49",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "tBvrzORGT2Q",
+      "title": "MMA 2025 | RISE & REALIZE EP.87",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "J424xQur7tE",
+      "title": "Quotes from ANTON’s notes on Oct 30th, 2025",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "GsW4_awsoOQ",
+      "title": "‘Sticky Like’ Dance Practice / Year-end Performance Practice | RISE & REALIZE EP.88",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "-k-bb77geTo",
+      "title": "우리가 두쫀쿠에게로 간다",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "U-zLuGjOdTk",
+      "title": "2026년 더 사랑해 보자구🧡 | 2025 연말무대 비하인드",
+      "label": 1,
+      "category": "kpop",
+      "artist": "RIIZE"
+    },
+    {
+      "video_id": "CIiZEtuNpo4",
+      "title": "[INSIDE SEVENTEEN] 준 헤드앤숄더 광고 촬영 비하인드 (JUN's Head & Shoulders Ad Shoot Sketch)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "u1O2b6tQjtw",
+      "title": "[GOING SEVENTEEN] EP.145 빠퇴 #2 (Let’s Go Home #2)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "Y9p19nX4AGY",
+      "title": "[INSIDE SEVENTEEN] 디에잇 로레알 파리 광고 촬영 비하인드 (THE 8's L'Oréal Paris Ad Shoot Sketch)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "ZR1mB_2T0dY",
+      "title": "[WOO.ZIP] HAPPY WOOZI DAY ❤️",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "H3Bap1mEHaM",
+      "title": "[HOSHI TAMTAM] 나 홀로 하는 BUS 여행🚎 I 호시의 BSS 스케줄🎙️ | 호랑이의 시선",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "JrI4_jUZe98",
+      "title": "SEVENTEEN | THE SMURFS (세븐틴 | 스머프) Ver. '음악의 신' Official MV",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "cm0IDBXnJUw",
+      "title": "[PREVIEW] SEVENTEEN 2026 SEASON'S GREETINGS Teaser",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "BMeK_rcQfrU",
+      "title": "[GOING SEVENTEEN] EP.146 Chat, Chat #1",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "h2SOZha5NqI",
+      "title": "[MINITEEN] A very nice holiday is coming!",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "nFbnZ9a8cPs",
+      "title": "[SVT Record] 준냥이의 지공바오 먹방🍽️ | 포토 촬영과 함께 오랜만에 승마🐎 | 파리 패션위크 참석",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "x-dEKCW3mmc",
+      "title": "[GOING SEVENTEEN] EP.147 Chat, Chat #2",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "_ejTP_t7SJs",
+      "title": "[하니왔쫑] ‘なんでもないよ、(아무것도 아니야)’ 녹음 비하인드 (It's Nothing (Nanndemonaiyo,) Recording Shoot Sketch)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "Z72IxNTKqKo",
+      "title": "[HOSHI TAMTAM] 호시 ‘Fallen Superstar’ 비하인드(HOSHI’s ‘Fallen Superstar’ Recording & Video Shoot Sketch)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "viBZRAKZpfo",
+      "title": "THE 8 'Skyfall (Remix Ver.)' Art Film MAKING FILM",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "MbqitUOcMxw",
+      "title": "[GOING SEVENTEEN] EP.148 마피아불 #1 (Mafiapoly #1)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "99DMI3qRYOg",
+      "title": "[INSIDE SEVENTEEN] Tiny Desk Concert 비하인드 (\"Tiny Desk\" Performance Sketch)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "04GSqsX0S50",
+      "title": "[COVER] DK X SEUNGKWAN - Die With A Smile (Original Song : Lady Gaga, Bruno Mars)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "B9kF1Momqc0",
+      "title": "[INSIDE SEVENTEEN] 준 '포풍추영' 촬영 비하인드 (JUN \"The Shadow's Edge\" Shoot Sketch)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "UYCbx2MNuAY",
+      "title": "[EVERY WONWOO] GAM3 BO1’s ASMR",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "Cr9NHLoQjm8",
+      "title": "[GOING SEVENTEEN] EP.149 마피아불 #2 (Mafiapoly #2)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "V5IfyFD4LDw",
+      "title": "[INSIDE SEVENTEEN] 도겸&승관 ‘Die With A Smile’ 촬영 비하인드 (DK & SEUNGKWAN ‘Die With A Smile’ Sketch)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "mrKd-qt0Xls",
+      "title": "[HOSHI TAMTAM] HOT 했던 글래스톤베리 2024🔥 I 해리포터 정기 모임 살루떼🥂 | 호랑이의 시선",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "bQgikiTB8GU",
+      "title": "[SPECIAL VIDEO] 민규 - 시작처럼 (Like the Beginning) Live Clip",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "LiqrDCrdOlM",
+      "title": "[슈아 앤 쿡] 생일 때 먹고 싶은 음식 만들기 🍽️ | 경양식 돈가스가 당길 때가 있잖아요?",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "fflda62lN1g",
+      "title": "[GOING DxS SPECIAL] 악당 뿌도 (Villains BBOODO) TEASER",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "kjh8hKdQ7oI",
+      "title": "세븐틴(SEVENTEEN)이 전하는 2026 새해 인사 메시지 💌",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "JW60VAQ4jbk",
+      "title": "[하니왔쫑] '정한이의 플레이리스트 : 겨울’",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "WZHE3-RmN1U",
+      "title": "[GOING DxS SPECIAL] 악당 뿌도 #1 (Villains BBOODO #1)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "MQ9fqyO0Oc0",
+      "title": "[INSIDE SEVENTEEN] ‘시작처럼’ Live Clip 촬영 비하인드 (MINGYU's \"Like the Beginning\" Live Clip Sketch)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "TBXuklxvOjA",
+      "title": "Ordinary Notes #1 | 도겸X승관 (SEVENTEEN)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "kaBPTrvzf8c",
+      "title": "Stray Kids \"Do It\" Dance Practice Video",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "FECQ9MmbC4Y",
+      "title": "[2 Kids Room 2025] Ep.21 Bang Chan X Hyunjin",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "eHmQ_b0LkUA",
+      "title": "Stray Kids \"Do It (Turbo Version)\" Lyric Visualizer",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "mf967jPZrCk",
+      "title": "Stray Kids \"Do It\" Dance Practice Video (Black Swan Ver.)",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "FCXd9nXSWTM",
+      "title": "[Stray Kids : SKZ-TALKER] Ep.73",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "wIJ2TcnDKPs",
+      "title": "Stray Kids \"신선놀음 (DIVINE)\" (Feat. STAY) Guide Video",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "udFiiR4V6mg",
+      "title": "Stray Kids World Tour ＜dominATE SEOUL＞ DVD & BLU-RAY Preview",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "k4IsJDwRKz4",
+      "title": "[2 Kids Room 2025] Ep.22 HAN X Seungmin",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "vPPEfLv1EpE",
+      "title": "[SKZ VLOG] Hyunjin : Hyun.e's Holiday 12",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "7oxJSrN2CNQ",
+      "title": "[Stray Kids : SKZ-TALKER] Ep.74",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "xqu9eeGQxXc",
+      "title": "SKZOO ATTACK #1｜[SKZ CODE] Ep.87",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "FR99OlxOVus",
+      "title": "Stray Kids \"DO IT\" Jacket MAKING FILM",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "QNKTZSZ-X3s",
+      "title": "Stray Kids \"Do It\" M/V MAKING FILM",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "ZqnBCh51qUw",
+      "title": "[2 Kids Room 2025] Ep.23 Lee Know X Felix",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "5bzHeSphgUU",
+      "title": "Stray Kids \"Do It (Overdrive Version)\" M/V MAKING FILM",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "3z27jOgXx-I",
+      "title": "SKZOO ATTACK #2｜[SKZ CODE] Ep.88",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "TA7C2NBYw88",
+      "title": "Stray Kids \"신선놀음 (DIVINE)\" M/V MAKING FILM",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "PET396MCIV8",
+      "title": "Stray Kids SKZ IT TAPE \"DO IT\" Trailer MAKING FILM",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "uRJUVUlTevM",
+      "title": "[2 Kids Room 2025] Ep.24 Changbin X I.N",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "dxi4pB9b7eg",
+      "title": "[Stray Kids : SKZ-TALKER] Ep.75",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "HdgpH3_mZEs",
+      "title": "[Stray Kids : SKZ-TALKER] Ep.76",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "MI6_aH1JT7s",
+      "title": "Holiday House #1｜[SKZ CODE] Ep.89",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "wgfPkWSDUHU",
+      "title": "[2 Kids Room 2025] Ep.25 Hyunjin X Felix",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "ZeoHs2zfXPE",
+      "title": "Holiday House #2｜[SKZ CODE] Ep.90",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "YsvbN665LZE",
+      "title": "HAN \"유성우 (Raining stars)\" | [Stray Kids : SKZ-RECORD]",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "nv6WtNmPXZU",
+      "title": "[2 Kids Room 2025] Ep.26 Bang Chan X I.N",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "5Oio145WBB8",
+      "title": "Stray Kids \"STEP OUT 2026\"",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "9bHJc5Hv9Vw",
+      "title": "[2 Kids Room 2025] Ep.27 Lee Know X Seungmin",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "urNLPgalt6o",
+      "title": "[Stray Kids : SKZ-TALKER] Ep.77",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "fETjgY83o7Q",
+      "title": "[2 Kids Room 2025] Ep.28 Changbin X HAN",
+      "label": 1,
+      "category": "kpop",
+      "artist": "Stray Kids"
+    },
+    {
+      "video_id": "kBRBBr-grz4",
+      "title": "[📂Secret Cut] 17_Lunch Squad Having Fun With Just One Prop.mp4 ⏵ ‘Feel Special’ Jacket Shoot",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "C4cM66WbWYs",
+      "title": "[📂Secret Cut] 18_What's in My Bag.mp4 ⏵ ‘I CAN’T STOP ME’ M COUNTDOWN Green Room",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "tWnU3yXUcOA",
+      "title": "[📂Secret Cut] 19_TDOONG’s Very First Fansign.mp4 ⏵ 1st Mini Album Fansign",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "gWk6wMY8jvI",
+      "title": "[📂Secret Cut] 20_Body Language Game.mp4 ⏵ ‘MORE & MORE’ Jacket Shoot",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "FyVnLgJWs8U",
+      "title": "[📂Secret Cut] 21_SHAMO’s Talk Marathon.mp4 ⏵ ‘SCIENTIST’ MV Filming",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "bccBmW75VC0",
+      "title": "[📂Secret Cut] 22_Self-Cam Dub & [Animal Crossing] Residents.mp4 ⏵ ‘MORE & MORE’ Jacket Shoot",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "3QhS_I4qfiU",
+      "title": "[📂Secret Cut] 23_Anyone wanna toast with TZUYU?.mp4 ⏵ ‘I CAN’T STOP ME’ M Countdown Green Room",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "EM0hwt3DpKA",
+      "title": "[📂Secret Cut] 24_MINA’s Kimchi Stew Mukbang Unreleased Cut.mp4 ⏵ MINATV LEGO TIME",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "zToJ6GWq-U4",
+      "title": "[📂Secret Cut] 25_Dancing Tzu.mp4 ⏵ ‘MORE & MORE’ MV Shoot",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "ylQiHqgTHHY",
+      "title": "[📂Secret Cut] 26_Tiny Moments Compilation.mp4 ⏵ ‘Feel Special’ Jacket Shoot",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "sZg99XaoxEU",
+      "title": "[📂Secret Cut] 27_Zyo PD on online concert day.mp4 ⏵TWICE : World in A Day",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "9JNvdo4UeuA",
+      "title": "2025 TWICE FANMEETING [10VE UNIVERSE]🚀 Behind",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "638Z-i7KRH8",
+      "title": "[📂Secret Cut] 28_Chatty Sha’s TMI Talk.mp4 ⏵ 2020 ASIA ARTIST AWARDS",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "pQ0bksB2k_M",
+      "title": "[📂Secret Cut] 29_IM JIEUN's day.mp4 ⏵ Movie ‘Run To You’",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "NUNQjqa7bkk",
+      "title": "[📂Secret Cut] 30_How to Play With the Camera on Stage.mp4 ⏵ TWICE : World in A Day",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "pL3HEp645c8",
+      "title": "[📂Secret Cut] 31_Cute Son Zzaeyong.mp4 ⏵ November 2015",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "18zBbRMkhMs",
+      "title": "[📂Secret Cut] 32_I wanna turn 30 already.mp4 ⏵ CHAEYOUNG Melody Project",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "eWsxem64nMg",
+      "title": "[📂Secret Cut] 33_JYP PDnim Meme Behind.mp4 ⏵ ‘Alcohol-Free’ MV Shoot",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "aZ-PyKFCfoA",
+      "title": "[📂Secret Cut] 34_SANA the Backstage Reporter.mp4 ⏵ JYP EDM DAY",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "9wI4ZQLmlhs",
+      "title": "[📂Secret Cut] 35_NAYEON’s Biggest Struggle.mp4 ⏵ ‘MORE & MORE’ MV Shoot",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "5NQgPb1htV8",
+      "title": "[📂Secret Cut] 36_Lyric video shoot is no joke.mp4 ⏵ ‘The Feels’ MV Shoot",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "5Agf-XNQ0hA",
+      "title": "[📂Secret Cut] 37_‘LIKEY’ Choreography Video for Broadcast.mp4",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "a0rMb-w4P_0",
+      "title": "MOMO-Log with AMAFFI",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "3zQraeuNbK8",
+      "title": "VICTORIA’S SECRET FASHION SHOW 2025 Behind The Scenes",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "7jDiZ1EYpTw",
+      "title": "TWICE ＜THIS IS FOR＞ WORLD TOUR IN KAOHSIUNG｜DRONE CAM",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "hTj8JdZN8Ms",
+      "title": "[📂Secret Cut] 38_‘Merry & Happy’ Choreography Video for Broadcast.mp4",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "wfGTo_nMpA4",
+      "title": "TWICE “Magical” & “TT” Live Stage @ TWICE ＜THIS IS FOR＞ WORLD TOUR IN BANGKOK",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "GqRKY-RLhp0",
+      "title": "TWICE ＜THIS IS FOR＞ WORLD TOUR PART.1 RECAP",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "2R2W_CXrp3E",
+      "title": "🩷HAPPY NEW YEAR, ONCE🩷",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "35kacj9xT9c",
+      "title": "MOMO-Log in Milano",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TWICE"
+    },
+    {
+      "video_id": "egs9y0qoNQ0",
+      "title": "mi house tour🏠😚",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    },
+    {
+      "video_id": "jrQ76gmEB9I",
+      "title": "miga storie sad🥺me cambiaron de bebé Rica a pobre|Miga Ren! 🍤",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    },
+    {
+      "video_id": "1D037Mi_OxQ",
+      "title": "MIGA STORIE SAD LA NIÑA MALA😎|MIGA REN|",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    },
+    {
+      "video_id": "vqPU93L3w10",
+      "title": "probando hacks en miga World  no sale bien😎🐟",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    },
+    {
+      "video_id": "6b6tqISujlc",
+      "title": "me enamore de un chico famoso❤️🥺|Miga ten|🪐",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    },
+    {
+      "video_id": "HjJiur-fv2E",
+      "title": "🍄como tener todo el mundo de TOCA BOCA 🍄|MIGA REN|🪐",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    },
+    {
+      "video_id": "naV1jhGizhM",
+      "title": "jugando por primera vez TRAVELS urbano|MIGA REN|🪐",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    },
+    {
+      "video_id": "yg9966EkHW8",
+      "title": "NUEVA ACTUALIZACIÓN EN MIGA WORLD|MIGA REN|🪐",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    },
+    {
+      "video_id": "5OoCIAmS5Zo",
+      "title": "MI HIJA Y MI SOBRINA HACEN UNA PIJAMADA SALE MAL😱🤪|MIGA REN|",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    },
+    {
+      "video_id": "A6p1TfSuFaA",
+      "title": "PROBANDO HACKS PT.2 😎😏:P",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    },
+    {
+      "video_id": "wJM8JmHSY60",
+      "title": "{CUATRILLIZOS PERDIDOS} ✨HISTORIA DIVERTIDA ✨|🤍 POTTER TWICE 🖤",
+      "label": 1,
+      "category": "kpop",
+      "artist": "TXT"
+    }
+  ]
+}

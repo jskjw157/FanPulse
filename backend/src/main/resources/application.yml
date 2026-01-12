@@ -38,8 +38,8 @@ fanpulse:
   discovery:
     ytdlp:
       command: yt-dlp
-      timeout-ms: 20000
-      playlist-limit: 30
+      timeout-ms: 30000   # 30초 타임아웃
+      playlist-limit: 30   # 채널당 30개
       extract-flat: false
 
   scheduler:
@@ -51,7 +51,7 @@ fanpulse:
       batch-delay-ms: 1000
     live-discovery:
       enabled: true
-      cron: "0 0 * * * *"
+      cron: "0 0 * * * *"  # 매시간 실행
       channel-delay-ms: 500
       max-concurrency: 5
 

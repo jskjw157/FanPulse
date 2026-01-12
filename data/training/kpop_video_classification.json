@@ -1,0 +1,265 @@
+{
+  "description": "K-Pop 영상 분류 AI 학습 데이터",
+  "version": "1.0",
+  "created_at": "2026-01-12",
+  "labels": {
+    "1": "K-Pop 관련 영상 (적절)",
+    "0": "K-Pop 무관 영상 (부적절)"
+  },
+  "data": [
+    {
+      "video_id": "P169hsXjYQs",
+      "title": "BLACKPINK - '뛰어(JUMP)' Live at WORLD TOUR [DEADLINE] IN GOYANG",
+      "label": 1,
+      "category": "concert",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "zTnAvaoHR4I",
+      "title": "BLACKPINK - WORLD TOUR [DEADLINE] IN GOYANG Behind the Scenes",
+      "label": 1,
+      "category": "behind_the_scenes",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "WB_AOdAEuBM",
+      "title": "BLACKPINK - WORLD TOUR [DEADLINE] IN LA Behind the Scenes",
+      "label": 1,
+      "category": "behind_the_scenes",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "W-9-keHNwV8",
+      "title": "BLACKPINK - WORLD TOUR [DEADLINE] IN PARIS & LONDON Behind the Scenes",
+      "label": 1,
+      "category": "behind_the_scenes",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "vy_mB6QY-Sc",
+      "title": "BLACKPINK - WORLD TOUR [DEADLINE] IN BANGKOK Behind the Scenes",
+      "label": 1,
+      "category": "behind_the_scenes",
+      "artist": "BLACKPINK"
+    },
+    {
+      "video_id": "pE7O2EgzEZc",
+      "title": "Jeans' Clip # 09 | NewJeans",
+      "label": 1,
+      "category": "vlog",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "mM_y4-7MuPM",
+      "title": "[Jeans' ZINE+] 꼬마 유치원 하니 둘 셋.ZIP | NewJeans",
+      "label": 1,
+      "category": "vlog",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "a0R3fQCmBKs",
+      "title": "[Jeans' ZINE+] ASAP Wish List.ZIP | NewJeans",
+      "label": 1,
+      "category": "vlog",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "yqzR4_SXCaM",
+      "title": "Jeans' Clip # 10 | NewJeans",
+      "label": 1,
+      "category": "vlog",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "OMVoxddjWmM",
+      "title": "[Jeans' ZINE+] 연말 파티.ZIP | NewJeans",
+      "label": 1,
+      "category": "vlog",
+      "artist": "NewJeans"
+    },
+    {
+      "video_id": "o1Ud0xIttQI",
+      "title": "I'm a shy girl | NINGNING X Elle China Style Awards 2025",
+      "label": 1,
+      "category": "event",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "4rQzMFCwq78",
+      "title": "[ae:scenes] 세상을 신라면으로 물들이는 중 | 에스파 신라면 비하인드",
+      "label": 1,
+      "category": "behind_the_scenes",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "QbA81W_roj4",
+      "title": "[ae:scenes] 콘서트를 새로 준비하는 느낌이에요 | 에스파 아마존 뮤직 라이브 비하인드",
+      "label": 1,
+      "category": "behind_the_scenes",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "tzf5cRk1wFo",
+      "title": "윈터와 MY를 위한 소원빌기 | Happy Birthday WINTER",
+      "label": 1,
+      "category": "fan_content",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "liaOds-OwsE",
+      "title": "[ae:scenes] 에스파 내 코어 힘 최강자는? | 에스파 2025 MAMA 비하인드",
+      "label": 1,
+      "category": "behind_the_scenes",
+      "artist": "aespa"
+    },
+    {
+      "video_id": "kXvtbtYpZn4",
+      "title": "[Special Clip] IVE 아이브 2026 New Year's Greetings",
+      "label": 1,
+      "category": "fan_content",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "RkUTBJWmu7E",
+      "title": "[IVE LOG] 10대 마지막 이서 Vlog | LEESEO LOG",
+      "label": 1,
+      "category": "vlog",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "zbXg3zi9sLE",
+      "title": "Note #2 : DANCE PRACTICE & BAND REHEARSAL | IVE WORLD TOUR SHOW WHAT I AM",
+      "label": 1,
+      "category": "dance_practice",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "mx8VPWBWKmY",
+      "title": "IVE 아이브 The 40TH Golden Disc AWARDS DANCE PRACTICE",
+      "label": 1,
+      "category": "dance_practice",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "twN7fXcas5c",
+      "title": "[IVE ON] 2025 KBS 가요대축제 & 뮤직뱅크 글로벌 페스티벌 IN JAPAN BEHIND",
+      "label": 1,
+      "category": "behind_the_scenes",
+      "artist": "IVE"
+    },
+    {
+      "video_id": "GMSWTYbwAdI",
+      "title": "ENHYPEN (엔하이픈) 'THE SIN : VANISH' Chapter 4. 'Knife'",
+      "label": 1,
+      "category": "teaser",
+      "artist": "ENHYPEN"
+    },
+    {
+      "video_id": "kBiLpDbuArA",
+      "title": "도겸X승관 (SEVENTEEN) 1st Mini Album '소야곡' Highlight Medley",
+      "label": 1,
+      "category": "teaser",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "qEpUmWJ1lS4",
+      "title": "ILLIT (아일릿) 'Sunday Morning' Official MV Teaser",
+      "label": 1,
+      "category": "teaser",
+      "artist": "ILLIT"
+    },
+    {
+      "video_id": "yr-4OUUdYmw",
+      "title": "도겸X승관 (SEVENTEEN) 'Blue' Official Teaser",
+      "label": 1,
+      "category": "teaser",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "N9X1o0q4aIc",
+      "title": "도겸X승관 (SEVENTEEN) 'Blue' Official MV (Cinema Ver.)",
+      "label": 1,
+      "category": "mv",
+      "artist": "SEVENTEEN"
+    },
+    {
+      "video_id": "Z_8f5IWuTFg",
+      "title": "5 A.M Study Session [lofi hip hop]",
+      "label": 0,
+      "category": "lofi_music",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "7O9jGGm7PlE",
+      "title": "Lofi Girl - Christmas 2025",
+      "label": 0,
+      "category": "lofi_music",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "7ccH8u8fj8Y",
+      "title": "Best of lofi hip hop 2025 - beats to relax/study to",
+      "label": 0,
+      "category": "lofi_music",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "kcaGFkX7rGg",
+      "title": "good bye 2025",
+      "label": 0,
+      "category": "lofi_music",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "S-4hwfyK-XQ",
+      "title": "winter lofi mix [3 hours] - relaxing music to chill/study to",
+      "label": 0,
+      "category": "lofi_music",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "q_4KI-ChIIs",
+      "title": "fireplace ambience - cozy sound to chill to",
+      "label": 0,
+      "category": "ambient",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "3GQY80jyysQ",
+      "title": "Halloween lofi radio - spooky beats to get chills to",
+      "label": 0,
+      "category": "lofi_music",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "A8jDx9TLMQc",
+      "title": "relaxing jazz music - cozy radio to study/chill to",
+      "label": 0,
+      "category": "jazz_music",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "jXAEIWcGXwE",
+      "title": "classical music radio - relaxing songs to read/study to",
+      "label": 0,
+      "category": "classical_music",
+      "artist": "Lofi Girl"
+    },
+    {
+      "video_id": "XSXEaikz0Bc",
+      "title": "christmas lofi music - cozy radio to get festive to",
+      "label": 0,
+      "category": "lofi_music",
+      "artist": "Lofi Girl"
+    }
+  ],
+  "statistics": {
+    "total": 35,
+    "kpop_positive": 25,
+    "kpop_negative": 10
+  },
+  "categories": {
+    "kpop": ["concert", "mv", "teaser", "dance_practice", "behind_the_scenes", "vlog", "fan_content", "event"],
+    "non_kpop": ["lofi_music", "jazz_music", "classical_music", "ambient"]
+  }
+}
