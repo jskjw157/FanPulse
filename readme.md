@@ -292,9 +292,11 @@ http://localhost:8080/swagger-ui.html
 
 ---
 
-## 📝 라이선스
+## License
 
-This project is licensed under the MIT License
+This project is source-available for reference only.
+All rights are reserved.
+
 
 ---
 
