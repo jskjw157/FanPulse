@@ -26,32 +26,32 @@ final class MainTabBarController: UITabBarController {
         viewControllers = [
             makeTab(
                 title: "Home",
-                systemImage: "house",
-                selectedSystemImage: "house.fill",
+                systemImage: "home",
+                selectedSystemImage: "home_sel",
                 rootViewController: HomeViewController()
             ),
             makeTab(
                 title: "Community",
-                systemImage: "person.2",
-                selectedSystemImage: "person.2.fill",
+                systemImage: "commu",
+                selectedSystemImage: "commu_sel",
                 rootViewController: CommunityViewController()
             ),
             makeTab(
                 title: "Live",
-                systemImage: "dot.radiowaves.left.and.right",
-                selectedSystemImage: "dot.radiowaves.left.and.right",
+                systemImage: "live",
+                selectedSystemImage: "live_sel",
                 rootViewController: LiveViewController()
             ),
             makeTab(
                 title: "Voting",
-                systemImage: "checkmark.square",
-                selectedSystemImage: "checkmark.square.fill",
+                systemImage: "vote",
+                selectedSystemImage: "vote_sel",
                 rootViewController: VotingViewController()
             ),
             makeTab(
                 title: "My",
-                systemImage: "person.circle",
-                selectedSystemImage: "person.circle.fill",
+                systemImage: "my",
+                selectedSystemImage: "my_sel",
                 rootViewController: MyViewController()
             )
         ]
@@ -67,8 +67,8 @@ final class MainTabBarController: UITabBarController {
         let nav = UINavigationController(rootViewController: rootViewController)
         nav.tabBarItem = UITabBarItem(
             title: title,
-            image: UIImage(systemName: systemImage),
-            selectedImage: UIImage(systemName: selectedSystemImage)
+            image: UIImage(named: systemImage),
+            selectedImage: UIImage(named: selectedSystemImage)
         )
         return nav
     }

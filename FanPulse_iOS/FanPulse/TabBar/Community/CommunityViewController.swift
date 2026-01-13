@@ -7,11 +7,19 @@
 
 import UIKit
 
-final class CommunityViewController: UIViewController {
-
+final class CommunityViewController: BaseViewController {
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Community"
+        view.backgroundColor = .white
+        
+        configureNavigationBar(type: .commu)
+        setNavigationTitle("Community")
+        
+        setupUI()
+    }
+    
+    private func setupUI() {
+        
     }
 }
