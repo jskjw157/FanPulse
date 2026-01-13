@@ -7,11 +7,19 @@
 
 import UIKit
 
-final class HomeViewController: UIViewController {
-
+class HomeViewController: BaseViewController {
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Home"
+        view.backgroundColor = .white
+        
+        configureNavigationBar(type: .home)
+        setNavigationTitle("FanPulse")
+        
+        setupUI()
+    }
+    
+    private func setupUI() {
+        
     }
 }

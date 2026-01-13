@@ -7,11 +7,19 @@
 
 import UIKit
 
-final class LiveViewController: UIViewController {
-
+final class LiveViewController: BaseViewController {
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "Live"
+        view.backgroundColor = .white
+        
+        configureNavigationBar(type: .live)
+        setNavigationTitle("Live")
+        
+        setupUI()
+    }
+    
+    private func setupUI() {
+        
     }
 }

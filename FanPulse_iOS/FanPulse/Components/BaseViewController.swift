@@ -1,0 +1,173 @@
+//
+//  BaseViewController.swift
+//  FanPulse
+//
+//  Created by 김송 on 1/12/26.
+//
+
+import UIKit
+import SnapKit
+
+// MARK: - Navigation Types
+
+enum NavigationBarPageType {
+    case detail
+    case home
+    case commu
+    case live
+    case vote
+    case my
+}
+
+enum NavigationBarButton {
+    case search
+    case notification
+    case menu
+    case setting
+}
+
+// 페이지별 버튼 구성 (순서 중요)
+extension NavigationBarPageType {
+    var buttons: [NavigationBarButton] {
+        switch self {
+        case .home:
+            return [.search, .notification, .menu]
+        case .commu:
+            return [.search, .notification]
+        case .live:
+            return [.search, .notification, .menu]
+        case .vote:
+            return []
+        case .my:
+            return [.notification, .setting]   // 🔥 알림 + 설정
+        case .detail:
+            return []
+        }
+    }
+}
+
+// MARK: - BaseViewController
+
+class BaseViewController: UIViewController {
+
+    // MARK: - Callbacks
+
+    var onSearchTapped: (() -> Void)?
+    var onNotificationTapped: (() -> Void)?
+    var onMenuTapped: (() -> Void)?
+    var onSettingTapped: (() -> Void)?
+
+    // MARK: - UI
+
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 20, weight: .semibold)
+        label.textColor = .black
+        return label
+    }()
+
+    private lazy var rightButtonStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.alignment = .center
+        return stack
+    }()
+
+    private let searchButton = BaseViewController.makeButton(imageName: "magnifyingglass")
+    private let notificationButton = BaseViewController.makeButton(imageName: "bell")
+    private let menuButton = BaseViewController.makeButton(imageName: "line.3.horizontal")
+    private let settingButton = BaseViewController.makeButton(imageName: "set")
+
+    // MARK: - Lifecycle
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupNavigationBar()
+        setupRightButtons()
+        setupActions()
+    }
+
+    // MARK: - Setup
+
+    private func setupNavigationBar() {
+        navigationController?.navigationBar.prefersLargeTitles = false
+        navigationController?.navigationBar.tintColor = .black
+
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .white
+        appearance.shadowColor = .systemGray5
+
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleLabel)
+    }
+
+    private func setupRightButtons() {
+        // ⚠️ 순서 고정 (검색 → 알림 → 메뉴 → 설정)
+        [
+            searchButton,
+            notificationButton,
+            menuButton,
+            settingButton
+        ].forEach {
+            rightButtonStackView.addArrangedSubview($0)
+            $0.snp.makeConstraints { make in
+                make.width.height.equalTo(32)
+            }
+        }
+
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: rightButtonStackView)
+    }
+
+    private func setupActions() {
+        searchButton.addTarget(self, action: #selector(searchTapped), for: .touchUpInside)
+        notificationButton.addTarget(self, action: #selector(notificationTapped), for: .touchUpInside)
+        menuButton.addTarget(self, action: #selector(menuTapped), for: .touchUpInside)
+        settingButton.addTarget(self, action: #selector(settingTapped), for: .touchUpInside)
+    }
+
+    // MARK: - Actions
+
+    @objc private func searchTapped() {
+        onSearchTapped?()
+    }
+
+    @objc private func notificationTapped() {
+        onNotificationTapped?()
+    }
+
+    @objc private func menuTapped() {
+        onMenuTapped?()
+    }
+
+    @objc private func settingTapped() {
+        onSettingTapped?()
+    }
+
+    // MARK: - Public
+
+    func setNavigationTitle(_ title: String) {
+        titleLabel.text = title
+    }
+
+    func configureNavigationBar(type: NavigationBarPageType) {
+        let visibleButtons = type.buttons
+
+        searchButton.isHidden = !visibleButtons.contains(.search)
+        notificationButton.isHidden = !visibleButtons.contains(.notification)
+        menuButton.isHidden = !visibleButtons.contains(.menu)
+        settingButton.isHidden = !visibleButtons.contains(.setting)
+    }
+
+    // MARK: - Button Factory
+
+    private static func makeButton(imageName: String) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(named: imageName), for: .normal)
+        button.tintColor = .black
+        return button
+    }
+}
