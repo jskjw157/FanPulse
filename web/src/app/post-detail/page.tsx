@@ -89,9 +89,13 @@ export default function PostDetailPage() {
           {/* Tags */}
           <div className="flex flex-wrap gap-2 mb-4">
             {post.tags.map(tag => (
-              <span key={tag} className="text-xs text-purple-600 bg-purple-50 px-3 py-1 rounded-full font-medium">
+              <Link
+                key={tag}
+                href={`/search?tag=${encodeURIComponent(tag)}`}
+                className="text-xs text-purple-600 bg-purple-50 px-3 py-1 rounded-full font-medium hover:bg-purple-100 transition-colors"
+              >
                 #{tag}
-              </span>
+              </Link>
             ))}
           </div>
 

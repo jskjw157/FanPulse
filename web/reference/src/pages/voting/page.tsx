@@ -1,11 +1,28 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+interface Candidate {
+  id: number;
+  name: string;
+  image: string;
+  votes: number;
+  percentage: number;
+}
+
+interface Poll {
+  id: number;
+  title: string;
+  category: string;
+  endDate: string;
+  totalVotes: string;
+  candidates: Candidate[];
+}
+
 export default function Voting() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showRankingsModal, setShowRankingsModal] = useState(false);
-  const [selectedPoll, setSelectedPoll] = useState<any>(null);
+  const [selectedPoll, setSelectedPoll] = useState<Poll | null>(null);
   const [votedCandidates, setVotedCandidates] = useState<Set<string>>(new Set());
   const [votingPower, setVotingPower] = useState({
     daily: 10,
@@ -148,7 +165,7 @@ export default function Voting() {
     ? activePolls 
     : activePolls.filter(poll => poll.category === selectedCategory);
 
-  const handleViewFullRankings = (poll: any) => {
+  const handleViewFullRankings = (poll: Poll) => {
     setSelectedPoll(poll);
     setShowRankingsModal(true);
   };
@@ -643,7 +660,7 @@ export default function Voting() {
             {/* Rankings List */}
             <div className="overflow-y-auto max-h-[calc(80vh-80px)] p-4">
               <div className="space-y-3">
-                {selectedPoll.candidates.map((candidate: any, index: number) => (
+                {selectedPoll.candidates.map((candidate: Candidate, index: number) => (
                   <div key={candidate.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                     <div className={`w-8 h-8 flex items-center justify-center font-bold ${
                       index === 0 ? 'text-yellow-500' :
