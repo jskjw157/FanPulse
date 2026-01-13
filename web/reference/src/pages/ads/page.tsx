@@ -139,7 +139,10 @@ export default function Ads() {
                 <p className="text-xs text-white/90 mb-3 line-clamp-2">{offer.description}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold">+{offer.reward}</span>
-                  <button className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">
+                  <button
+                    onClick={() => setPoints(prev => prev + offer.reward)}
+                    className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium"
+                  >
                     Start
                   </button>
                 </div>

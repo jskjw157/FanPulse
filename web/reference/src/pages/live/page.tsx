@@ -51,7 +51,7 @@ export default function Live() {
     }
   ];
 
-  const handleGetTickets = (concert: any) => {
+  const handleGetTickets = (concert: { id: number; title: string; date: string; location: string; image: string; status: string }) => {
     navigate('/concert-detail', { 
       state: { 
         concert: {

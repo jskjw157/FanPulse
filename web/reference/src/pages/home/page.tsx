@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('trending');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const trendingArtists = [
