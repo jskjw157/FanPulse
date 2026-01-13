@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Image from 'next/image';
 
 export default function Membership() {
   const [isVIP, setIsVIP] = useState(false);
@@ -118,9 +119,11 @@ export default function Membership() {
         {/* Profile Section */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-4 pt-6 pb-8">
           <div className="flex items-center gap-4 mb-6">
-            <img
+            <Image
               src="https://readdy.ai/api/search-image?query=young%20person%20profile%20photo%2C%20friendly%20smile%2C%20casual%20style%2C%20professional%20portrait%20photography%2C%20natural%20lighting%2C%20clean%20background&width=200&height=200&seq=profile001&orientation=squarish"
               alt="Profile"
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-full object-cover border-4 border-white"
             />
             <div className="flex-1">
@@ -213,7 +216,10 @@ export default function Membership() {
                   </div>
                   <div className="text-right">
                     <p className="text-3xl font-bold text-gray-900">${plan.price}</p>
-                    <button className="mt-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full text-sm font-medium">
+                    <button
+                      onClick={() => setIsVIP(true)}
+                      className="mt-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full text-sm font-medium"
+                    >
                       Subscribe
                     </button>
                   </div>

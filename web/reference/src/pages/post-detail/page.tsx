@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Image from 'next/image';
 
 export default function PostDetail() {
   const [liked, setLiked] = useState(false);
@@ -70,9 +71,11 @@ export default function PostDetail() {
         <div className="px-4 py-4">
           {/* Author Info */}
           <div className="flex items-center gap-3 mb-4">
-            <img 
+            <Image
               src={post.author.avatar}
               alt={post.author.name}
+              width={48}
+              height={48}
               className="w-12 h-12 rounded-full object-cover"
             />
             <div className="flex-1">
@@ -104,11 +107,12 @@ export default function PostDetail() {
           </div>
 
           {/* Post Image */}
-          <div className="rounded-2xl overflow-hidden mb-4">
-            <img 
+          <div className="rounded-2xl overflow-hidden mb-4 relative h-64">
+            <Image
               src={post.image}
               alt="Post"
-              className="w-full h-64 object-cover object-top"
+              fill
+              className="object-cover object-top"
             />
           </div>
 
@@ -168,9 +172,11 @@ export default function PostDetail() {
             {commentsList.map(item => (
               <div key={item.id} className="bg-white rounded-xl p-3">
                 <div className="flex items-start gap-3">
-                  <img 
+                  <Image
                     src={item.avatar}
                     alt={item.author}
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                   />
                   <div className="flex-1">
