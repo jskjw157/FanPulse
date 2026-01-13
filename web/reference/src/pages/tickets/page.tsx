@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Image from 'next/image';
 
 interface Ticket {
   id: number;
@@ -207,11 +208,15 @@ export default function TicketsPage() {
                 onClick={() => setSelectedTicket(ticket)}
                 className="flex gap-3 p-4 cursor-pointer"
               >
-                <img
-                  src={ticket.poster}
-                  alt={ticket.concertName}
-                  className="w-24 h-32 object-cover rounded-xl"
-                />
+                <div className="relative w-24 h-32 rounded-xl overflow-hidden">
+                  <Image
+                    src={ticket.poster}
+                    alt={ticket.concertName}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
@@ -277,11 +282,15 @@ export default function TicketsPage() {
 
             <div className="p-4 pb-6">
               {/* Poster */}
-              <img
-                src={selectedTicket.poster}
-                alt={selectedTicket.concertName}
-                className="w-full h-48 object-cover rounded-2xl mb-4"
-              />
+              <div className="relative w-full h-48 rounded-2xl overflow-hidden mb-4">
+                <Image
+                  src={selectedTicket.poster}
+                  alt={selectedTicket.concertName}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
 
               {/* Concert Info */}
               <div className="bg-gray-50 rounded-2xl p-4 mb-3">
@@ -314,11 +323,15 @@ export default function TicketsPage() {
               {selectedTicket.status === 'confirmed' && (
                 <div className="bg-white border-2 border-purple-200 rounded-2xl p-4 mb-3 text-center">
                   <p className="text-sm text-gray-600 mb-3">입장 QR 코드</p>
-                  <img
-                    src={selectedTicket.qrCode}
-                    alt="QR Code"
-                    className="w-40 h-40 mx-auto mb-2"
-                  />
+                  <div className="relative w-40 h-40 mx-auto mb-2">
+                    <Image
+                      src={selectedTicket.qrCode}
+                      alt="QR Code"
+                      fill
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
                   <p className="text-xs text-gray-500">
                     공연 당일 입장 시 제시해주세요
                   </p>

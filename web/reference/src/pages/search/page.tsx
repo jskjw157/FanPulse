@@ -253,11 +253,15 @@ export default function Search() {
                       to={`/news-detail?id=${news.id}`}
                       className="flex gap-3"
                     >
-                      <img
-                        src={news.image}
-                        alt={news.title}
-                        className="w-24 h-20 rounded-lg object-cover object-top flex-shrink-0"
-                      />
+                      <div className="relative w-24 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                        <Image
+                          src={news.image}
+                          alt={news.title}
+                          fill
+                          className="object-cover object-top"
+                          unoptimized
+                        />
+                      </div>
                       <div className="flex-1">
                         <span className="text-xs text-purple-600 font-medium">{news.category}</span>
                         <h3 className="text-sm font-medium text-gray-900 mt-1 line-clamp-2">
@@ -282,11 +286,15 @@ export default function Search() {
                       to={`/concert-detail?id=${concert.id}`}
                       className="bg-white rounded-xl overflow-hidden"
                     >
-                      <img
-                        src={concert.image}
-                        alt={concert.title}
-                        className="w-full h-48 object-cover object-top"
-                      />
+                      <div className="relative w-full h-48">
+                        <Image
+                          src={concert.image}
+                          alt={concert.title}
+                          fill
+                          className="object-cover object-top"
+                          unoptimized
+                        />
+                      </div>
                       <div className="p-3">
                         <h3 className="text-sm font-bold text-gray-900 line-clamp-1 mb-1">
                           {concert.title}

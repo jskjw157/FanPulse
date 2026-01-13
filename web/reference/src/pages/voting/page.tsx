@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Image from 'next/image';
 
 interface Candidate {
   id: number;
@@ -575,11 +576,13 @@ export default function Voting() {
                   {poll.candidates.map(candidate => (
                     <div key={candidate.id} className="relative">
                       {/* Candidate Card */}
-                      <div className="relative rounded-xl overflow-hidden">
-                        <img
+                      <div className="relative rounded-xl overflow-hidden h-48">
+                        <Image
                           src={candidate.image}
                           alt={candidate.name}
-                          className="w-full h-48 object-cover object-top"
+                          fill
+                          className="object-cover object-top"
+                          unoptimized
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                         
@@ -670,11 +673,15 @@ export default function Voting() {
                     }`}>
                       {index + 1}
                     </div>
-                    <img
-                      src={candidate.image}
-                      alt={candidate.name}
-                      className="w-12 h-12 rounded-lg object-cover object-top"
-                    />
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+                      <Image
+                        src={candidate.image}
+                        alt={candidate.name}
+                        fill
+                        className="object-cover object-top"
+                        unoptimized
+                      />
+                    </div>
                     <div className="flex-1">
                       <h4 className="font-bold text-gray-900">{candidate.name}</h4>
                       <div className="flex items-center gap-2 mt-1">
