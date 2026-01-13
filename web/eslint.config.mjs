@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Exclude reference folder - uses react-router-dom, not Next.js
+    "reference/**",
   ]),
 ]);
 
