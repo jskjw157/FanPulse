@@ -1,5 +1,6 @@
 package com.aos.fanpulse.presentation.login
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.usecase.GoogleLoginUseCase
 import com.aos.fanpulse.presentation.common.LoginState
@@ -17,7 +18,7 @@ class LoginViewModel @Inject constructor(
     override val container: Container<LoginContract.SignInState, LoginContract.SideEffect> =
         container(initialState = LoginContract.SignInState())
 
-    fun googleLogin() = intent {
+    fun googleLogin(context: Context) = intent {
         // 상태를 IDLE로 초기화
         reduce {
             state.copy(
@@ -26,7 +27,7 @@ class LoginViewModel @Inject constructor(
         }
 
         // Google 로그인 유스케이스 호출
-        googleLoginUseCase()
+        googleLoginUseCase(context)
             .onSuccess { credential ->
                 for (key in credential.data.keySet()) {
                     val value = credential.data.getString(key)

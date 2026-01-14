@@ -19,6 +19,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField(
+            "String",
+            "GOOGLE_WEB_CLIENT_ID",
+            ""
+        )
     }
 
     buildTypes {
@@ -39,6 +44,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -76,6 +82,13 @@ dependencies {
     implementation(libs.orbit.compose)
     // Tests
     testImplementation(libs.orbit.test)
+
+    // Credential Manager core
+    implementation(libs.credentials)
+    // Google Identity Provider (필수)
+    implementation(libs.androidx.credentials.play.services.auth)
+    // Google Identity Services
+    implementation(libs.googleid)
 }
 
 //  Hilt

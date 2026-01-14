@@ -2,6 +2,7 @@ package com.aos.fanpulse.di
 
 import android.content.Context
 import androidx.credentials.CredentialManager
+import com.aos.fanpulse.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import dagger.Module
 import dagger.Provides
@@ -20,6 +21,7 @@ object GoogleAuthModule {
     @Singleton
     fun provideGoogleIdOptions(): GetGoogleIdOption {
         return GetGoogleIdOption.Builder()
+            .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
             .setFilterByAuthorizedAccounts(false)
             .setAutoSelectEnabled(false) // 재방문 사용자의 자동 로그인 사용 설정
             .build()
