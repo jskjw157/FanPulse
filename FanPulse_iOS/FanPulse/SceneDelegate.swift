@@ -53,7 +53,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     private func showLoginScreen() {
         DispatchQueue.main.async {
-            let loginVC = AuthViewController()
+            let loginVC = LoginViewController()
             let nav = UINavigationController(rootViewController: loginVC)
             self.window?.rootViewController = nav
         }
@@ -63,10 +63,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         DispatchQueue.main.async {
             print("📱 메인 화면 표시")
 
-            let mainVC = ViewController()
-            let nav = UINavigationController(rootViewController: mainVC)
-
-            self.window?.rootViewController = nav
+            let tabBarController = MainTabBarController()
+            self.window?.rootViewController = tabBarController
         }
     }
 }
