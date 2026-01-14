@@ -37,6 +37,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -74,7 +75,7 @@ fun LoginScreen (
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .padding(16.dp),
+                .padding(40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ){
@@ -101,50 +102,54 @@ fun LoginScreen (
                 color = Color.White,
             )
 
-            Column(
-                modifier = Modifier
-                    .background(
-                        color = colorResource(R.color.white),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .padding(24.dp),
-            ) {
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(100.dp))
-                        .background(colorResource(R.color.color_2)),
-                ) {
-                    TabRow(
-                        selectedTabIndex = selectedTab.ordinal,
-                        containerColor = colorResource(R.color.color_2),
-                        indicator = {},
-                        divider = {}
-                    ) {
-                        AuthTab(
-                            selected = selectedTab == LoginState.LOGIN,
-                            onClick = { selectedTab = LoginState.LOGIN },
-                            text = "로그인"
-                        )
-
-                        AuthTab(
-                            selected = selectedTab == LoginState.SIGNUP,
-                            onClick = { selectedTab = LoginState.SIGNUP },
-                            text = "회원가입"
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-                AuthComponent(selectedTab)
-            }
-            Spacer(modifier = Modifier.height(28.dp))
-            Text(
-                text = "둘러보기",
-                color = Color.White,
-                fontSize = 14.sp
-            )
+            LoginGoogleButton(LoginState.LOGIN, viewModel)
+//
+//            Column(
+//                modifier = Modifier
+//                    .background(
+//                        color = colorResource(R.color.white),
+//                        shape = RoundedCornerShape(12.dp)
+//                    )
+//                    .padding(24.dp),
+//            ) {
+//
+//                Box(
+//                    modifier = Modifier
+//                        .clip(RoundedCornerShape(100.dp))
+//                        .background(colorResource(R.color.color_2)),
+//                ) {
+//                    TabRow(
+//                        selectedTabIndex = selectedTab.ordinal,
+//                        containerColor = colorResource(R.color.color_2),
+//                        indicator = {},
+//                        divider = {}
+//                    ) {
+//                        AuthTab(
+//                            selected = selectedTab == LoginState.LOGIN,
+//                            onClick = { selectedTab = LoginState.LOGIN },
+//                            text = "로그인"
+//                        )
+//
+//                        AuthTab(
+//                            selected = selectedTab == LoginState.SIGNUP,
+//                            onClick = { selectedTab = LoginState.SIGNUP },
+//                            text = "회원가입"
+//                        )
+//                    }
+//                }
+//
+//                Spacer(modifier = Modifier.height(24.dp))
+//                AuthComponent(selectedTab, viewModel)
+//
+//            }
+//            Spacer(modifier = Modifier.height(28.dp))
+//            Text(
+//                text = "둘러보기",
+//                color = Color.White,
+//                fontSize = 14.sp
+//            )
         }
+
     }
 }
 
@@ -182,7 +187,8 @@ fun AuthTab(
 
 @Composable
 fun AuthComponent(
-    authState: LoginState
+    authState: LoginState,
+    viewModel: LoginViewModel
 ){
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -191,8 +197,6 @@ fun AuthComponent(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        LoginGoogleButton(authState)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -228,7 +232,7 @@ fun AuthComponent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        LoginButton(authState)
+        LoginButton(authState, viewModel)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -244,9 +248,10 @@ fun AuthComponent(
 }
 
 @Composable
-fun LoginGoogleButton(authState: LoginState) {
+fun LoginGoogleButton(authState: LoginState, viewModel: LoginViewModel) {
+    val context = LocalContext.current
     Button(
-        onClick = {},
+        onClick = {viewModel.googleLogin(context)},
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, Color.Gray, RoundedCornerShape(100.dp)),
@@ -297,7 +302,8 @@ fun LoginTextField(
 }
 
 @Composable
-fun LoginButton(loginState: LoginState) {
+fun LoginButton(loginState: LoginState,
+                viewModel: LoginViewModel) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -310,7 +316,7 @@ fun LoginButton(loginState: LoginState) {
                 ),
                 shape = RoundedCornerShape(100.dp)
             )
-            .clickable { }
+            .clickable {}
             .wrapContentSize(Alignment.Center)
     ) {
         Text(
