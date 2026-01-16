@@ -73,11 +73,13 @@ final class MyViewController: BaseViewController {
         setNavigationTitle("My")
         
         onNotificationTapped = {
-            self.navigationController?.pushViewController(NotificationViewController(), animated: true)
+            let vc = NotificationViewController()
+            self.navigationController?.pushViewController(vc, animated: true)
         }
         
         onSettingTapped = {
-            self.navigationController?.pushViewController(SettingsViewController(), animated: true)
+            let vc = SettingsViewController()
+            self.navigationController?.pushViewController(vc, animated: true)
         }
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(logoutButtonTapped))

@@ -7,11 +7,13 @@
 
 import UIKit
 
-final class NotificationViewController: UIViewController {
+final class NotificationViewController: BaseViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         title = "Noti"
+        configureNavigationBar(type: .noti)
+        setNavigationBackButton()
     }
 }
