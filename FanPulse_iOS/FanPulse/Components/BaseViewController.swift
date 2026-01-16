@@ -171,7 +171,7 @@ class BaseViewController: UIViewController {
         } else {
             titleLabel.isHidden = true
             titleImageView.isHidden = false
-            titleImageView.image = UIImage(named: "logo")
+            titleImageView.image = UIImage(named: "logo_main")
             navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleImageView)
             titleImageView.snp.makeConstraints { make in
                 make.height.equalTo(28)
@@ -210,7 +210,7 @@ class BaseViewController: UIViewController {
             let appearance = UINavigationBarAppearance()
             appearance.configureWithOpaqueBackground()
             
-            if let bgImage = UIImage(named: "navBarBg") {
+            if let bgImage = UIImage(named: "img_navBg") {
                 appearance.backgroundImage = bgImage
             }
             appearance.shadowColor = .systemGray5

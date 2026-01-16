@@ -29,7 +29,7 @@ final class MyViewController: BaseViewController {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.image = UIImage(named: "myPageBg")
+        imageView.image = UIImage(named: "img_myBg")
         return imageView
     }()
     
