@@ -13,8 +13,8 @@ class HomeViewController: BaseViewController {
         super.viewDidLoad()
         view.backgroundColor = .white
         
-        configureNavigationBar(type: .home)
-        setNavigationTitle("FanPulse")
+        configureNavigationBar(type: .home, setBgImage: true)
+        setNavigationTitle()
         
         setupUI()
     }

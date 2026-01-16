@@ -13,8 +13,8 @@ final class LiveViewController: BaseViewController {
         super.viewDidLoad()
         view.backgroundColor = .white
         
-        configureNavigationBar(type: .live)
-        setNavigationTitle("Live")
+        configureNavigationBar(type: .live, setBgImage: true)
+        setNavigationTitle()
         
         setupUI()
     }

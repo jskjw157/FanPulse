@@ -12,14 +12,55 @@ final class MyViewController: BaseViewController {
 
     // MARK: - UI Components
     
-    private let logoutButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("로그아웃", for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
-        button.backgroundColor = .systemRed
-        button.layer.cornerRadius = 12
-        return button
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.backgroundColor = UIColor(hex: "#F3F4F6")
+        return scrollView
+    }()
+    
+    private let contentView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .clear
+        return view
+    }()
+    
+    private let profileBackgroundImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.image = UIImage(named: "myPageBg")
+        return imageView
+    }()
+    
+    private let pointBackgroundView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 16
+        return view
+    }()
+    
+    private let myListBackgroundView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 16
+        return view
+    }()
+    
+    private let logoutButtonView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 16
+        return view
+    }()
+    
+    private let logoutButtonLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.textAlignment = .center
+        label.text = "로그아웃"
+        label.isUserInteractionEnabled = false
+        return label
     }()
     
     // MARK: - Lifecycle
@@ -31,9 +72,17 @@ final class MyViewController: BaseViewController {
         configureNavigationBar(type: .my)
         setNavigationTitle("My")
         
-        onSettingTapped = {
-            self.logoutButtonTapped()
+        onNotificationTapped = {
+            self.navigationController?.pushViewController(NotificationViewController(), animated: true)
         }
+        
+        onSettingTapped = {
+            self.navigationController?.pushViewController(SettingsViewController(), animated: true)
+        }
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(logoutButtonTapped))
+        logoutButtonView.addGestureRecognizer(tapGesture)
+        logoutButtonView.isUserInteractionEnabled = true
         
         setupUI()
     }
@@ -41,7 +90,55 @@ final class MyViewController: BaseViewController {
     // MARK: - Setup
     
     private func setupUI() {
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
         
+        scrollView.snp.makeConstraints { make in
+            make.edges.equalTo(view.safeAreaLayoutGuide)
+        }
+        
+        contentView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.width.equalToSuperview()
+        }
+        
+        setupContentView()
+    }
+
+    private func setupContentView() {
+        contentView.addSubview(profileBackgroundImageView)
+        contentView.addSubview(pointBackgroundView)
+        contentView.addSubview(myListBackgroundView)
+        contentView.addSubview(logoutButtonView)
+        logoutButtonView.addSubview(logoutButtonLabel)
+        
+        profileBackgroundImageView.snp.makeConstraints { make in
+            make.leading.trailing.top.equalToSuperview()
+            make.height.equalTo(244)
+        }
+        
+        pointBackgroundView.snp.makeConstraints { make in
+            make.top.equalTo(profileBackgroundImageView.snp.bottom).offset(16)
+            make.horizontalEdges.equalToSuperview().inset(16)
+            make.height.equalTo(246)
+        }
+        
+        myListBackgroundView.snp.makeConstraints { make in
+            make.top.equalTo(pointBackgroundView.snp.bottom).offset(16)
+            make.horizontalEdges.equalToSuperview().inset(16)
+            make.height.equalTo(464)
+        }
+        
+        logoutButtonView.snp.makeConstraints { make in
+            make.top.equalTo(myListBackgroundView.snp.bottom).offset(16)
+            make.horizontalEdges.equalToSuperview().inset(16)
+            make.height.equalTo(47)
+            make.bottom.equalToSuperview().inset(16)
+        }
+        
+        logoutButtonLabel.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+        }
     }
     
     // MARK: - Actions
