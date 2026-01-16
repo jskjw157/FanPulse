@@ -39,7 +39,7 @@ extension NavigationBarPageType {
         case .vote:
             return []
         case .my:
-            return [.notification, .setting]   // 🔥 알림 + 설정
+            return [.notification, .setting]
         case .detail:
             return []
         }
@@ -49,6 +49,10 @@ extension NavigationBarPageType {
 // MARK: - BaseViewController
 
 class BaseViewController: UIViewController {
+
+    // MARK: - Properties
+    
+    private var currentPageType: NavigationBarPageType = .detail
 
     // MARK: - Callbacks
 
@@ -64,6 +68,13 @@ class BaseViewController: UIViewController {
         label.font = .systemFont(ofSize: 20, weight: .semibold)
         label.textColor = .black
         return label
+    }()
+    
+    private let titleImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.isHidden = true
+        return imageView
     }()
 
     private lazy var rightButtonStackView: UIStackView = {
@@ -106,7 +117,6 @@ class BaseViewController: UIViewController {
     }
 
     private func setupRightButtons() {
-        // ⚠️ 순서 고정 (검색 → 알림 → 메뉴 → 설정)
         [
             searchButton,
             notificationButton,
@@ -149,17 +159,58 @@ class BaseViewController: UIViewController {
 
     // MARK: - Public
 
-    func setNavigationTitle(_ title: String) {
-        titleLabel.text = title
+    func setNavigationTitle(_ title: String? = nil) {
+        if let title = title {
+            titleLabel.isHidden = false
+            titleImageView.isHidden = true
+            titleLabel.text = title
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleLabel)
+        } else {
+            titleLabel.isHidden = true
+            titleImageView.isHidden = false
+            titleImageView.image = UIImage(named: "logo")
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleImageView)
+            titleImageView.snp.makeConstraints { make in
+                make.height.equalTo(28)
+                make.width.equalTo(81)
+            }
+        }
     }
 
-    func configureNavigationBar(type: NavigationBarPageType) {
+    func configureNavigationBar(type: NavigationBarPageType, setBgImage: Bool = false) {
+        currentPageType = type
         let visibleButtons = type.buttons
 
         searchButton.isHidden = !visibleButtons.contains(.search)
         notificationButton.isHidden = !visibleButtons.contains(.notification)
         menuButton.isHidden = !visibleButtons.contains(.menu)
         settingButton.isHidden = !visibleButtons.contains(.setting)
+        
+        // 배경 이미지 설정
+        if setBgImage == true {
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            
+            if let bgImage = UIImage(named: "navBarBg") {
+                appearance.backgroundImage = bgImage
+            }
+            appearance.shadowColor = .systemGray5
+            
+            navigationController?.navigationBar.standardAppearance = appearance
+            navigationController?.navigationBar.scrollEdgeAppearance = appearance
+            searchButton.tintColor = .white
+            notificationButton.tintColor = .white
+            menuButton.tintColor = .white
+        } else {
+            // 기본 배경으로 복원
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = .white
+            appearance.shadowColor = .systemGray5
+            
+            navigationController?.navigationBar.standardAppearance = appearance
+            navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        }
     }
 
     // MARK: - Button Factory
