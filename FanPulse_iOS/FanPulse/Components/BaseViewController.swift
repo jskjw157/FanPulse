@@ -11,12 +11,13 @@ import SnapKit
 // MARK: - Navigation Types
 
 enum NavigationBarPageType {
-    case detail
+    case def
     case home
     case commu
     case live
     case vote
     case my
+    case noti
 }
 
 enum NavigationBarButton {
@@ -40,7 +41,9 @@ extension NavigationBarPageType {
             return []
         case .my:
             return [.notification, .setting]
-        case .detail:
+        case .noti:
+            return [ .setting]
+        case .def:
             return []
         }
     }
@@ -52,7 +55,7 @@ class BaseViewController: UIViewController {
 
     // MARK: - Properties
     
-    private var currentPageType: NavigationBarPageType = .detail
+    private var currentPageType: NavigationBarPageType = .def
 
     // MARK: - Callbacks
 
@@ -85,10 +88,10 @@ class BaseViewController: UIViewController {
         return stack
     }()
 
-    private let searchButton = BaseViewController.makeButton(imageName: "magnifyingglass")
-    private let notificationButton = BaseViewController.makeButton(imageName: "bell")
-    private let menuButton = BaseViewController.makeButton(imageName: "line.3.horizontal")
-    private let settingButton = BaseViewController.makeButton(imageName: "set")
+    private let searchButton = BaseViewController.makeButton(imageName: "icon_magnifyingglass")
+    private let notificationButton = BaseViewController.makeButton(imageName: "icon_bell")
+    private let menuButton = BaseViewController.makeButton(imageName: "icon_line.3.horizontal")
+    private let settingButton = BaseViewController.makeButton(imageName: "icon_set")
 
     // MARK: - Lifecycle
 
@@ -175,6 +178,22 @@ class BaseViewController: UIViewController {
                 make.width.equalTo(81)
             }
         }
+    }
+    
+    func setNavigationBackButton() {
+        let backItem = UIBarButtonItem(
+            image: UIImage(named: "icon_chev"),
+            style: .plain,
+            target: self,
+            action: #selector(didTapBack)
+        )
+        navigationItem.leftBarButtonItem = backItem
+
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+    }
+    
+    @objc private func didTapBack() {
+        navigationController?.popViewController(animated: true)
     }
 
     func configureNavigationBar(type: NavigationBarPageType, setBgImage: Bool = false) {
