@@ -119,14 +119,17 @@ export default function Settings() {
               </button>
             </div>
 
-            <button className="w-full flex items-center justify-between px-4 py-3.5">
+            <button
+              onClick={() => setLanguage(language === 'ko' ? 'en' : 'ko')}
+              className="w-full flex items-center justify-between px-4 py-3.5"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-teal-100 rounded-full flex items-center justify-center">
                   <i className="ri-global-line text-teal-600"></i>
                 </div>
                 <div className="flex-1 text-left">
                   <p className="text-sm text-gray-900">언어</p>
-                  <p className="text-xs text-gray-500">한국어</p>
+                  <p className="text-xs text-gray-500">{language === 'ko' ? '한국어' : 'English'}</p>
                 </div>
               </div>
               <i className="ri-arrow-right-s-line text-gray-400"></i>

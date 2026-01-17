@@ -1,6 +1,6 @@
-
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function LiveDetail() {
   const navigate = useNavigate();
@@ -43,10 +43,13 @@ export default function LiveDetail() {
 
       {/* 라이브 영상 영역 */}
       <div className="relative w-full h-[450px] bg-black">
-        <img 
+        <Image
           src="https://readdy.ai/api/search-image?query=K-pop%20girl%20group%20NewJeans%20performing%20live%20on%20stage%20with%20dynamic%20lighting%2C%20professional%20concert%20photography%2C%20energetic%20performance%2C%20vibrant%20stage%20lights%2C%20multiple%20members%20singing%20and%20dancing%2C%20high-quality%20broadcast%20camera%20angle%2C%20modern%20stage%20design%2C%20purple%20and%20pink%20lighting%20effects%2C%20professional%20live%20streaming%20quality%2C%204K%20resolution%2C%20cinematic%20composition&width=375&height=450&seq=live001&orientation=portrait"
           alt="Live Stream"
-          className="w-full h-full object-cover"
+          fill
+          sizes="100vw"
+          className="object-cover"
+          priority
         />
         
         {/* LIVE 배지 */}
@@ -64,11 +67,15 @@ export default function LiveDetail() {
         {/* 하단 정보 */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
           <div className="flex items-start gap-3">
-            <img 
-              src="https://readdy.ai/api/search-image?query=K-pop%20idol%20profile%20photo%2C%20professional%20headshot%2C%20beautiful%20young%20woman%2C%20soft%20lighting%2C%20clean%20background%2C%20high%20quality%20portrait%20photography%2C%20friendly%20smile%2C%20modern%20styling&width=48&height=48&seq=profile001&orientation=squarish"
-              alt="Artist"
-              className="w-12 h-12 rounded-full border-2 border-white"
-            />
+            <div className="relative w-12 h-12 flex-shrink-0">
+              <Image
+                src="https://readdy.ai/api/search-image?query=K-pop%20idol%20profile%20photo%2C%20professional%20headshot%2C%20beautiful%20young%20woman%2C%20soft%20lighting%2C%20clean%20background%2C%20high%20quality%20portrait%20photography%2C%20friendly%20smile%2C%20modern%20styling&width=48&height=48&seq=profile001&orientation=squarish"
+                alt="Artist"
+                fill
+                sizes="48px"
+                className="rounded-full border-2 border-white object-cover"
+              />
+            </div>
             <div className="flex-1">
               <h2 className="text-white font-bold text-base">NewJeans 컴백 쇼케이스</h2>
               <p className="text-white/80 text-sm mt-0.5">NewJeans Official</p>

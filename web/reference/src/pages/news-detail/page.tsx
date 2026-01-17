@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
+import Image from 'next/image';
 
 export default function NewsDetail() {
   const [searchParams] = useSearchParams();
@@ -79,11 +80,12 @@ YG엔터테인먼트는 "팬들의 뜨거운 성원에 힘입어 아시아 및 �
       {/* Content */}
       <div className="pt-14">
         {/* Featured Image */}
-        <div className="w-full h-56">
-          <img 
+        <div className="w-full h-56 relative">
+          <Image
             src={news.image}
             alt={news.title}
-            className="w-full h-full object-cover object-top"
+            fill
+            className="object-cover object-top"
           />
         </div>
 
@@ -137,14 +139,16 @@ YG엔터테인먼트는 "팬들의 뜨거운 성원에 힘입어 아시아 및 �
           <h2 className="text-base font-bold text-gray-900 mb-4">관련 뉴스</h2>
           <div className="space-y-3">
             {relatedNews.map(item => (
-              <Link 
-                key={item.id} 
+              <Link
+                key={item.id}
                 to={`/news-detail?id=${item.id}`}
                 className="flex gap-3 bg-white rounded-xl p-3"
               >
-                <img 
+                <Image
                   src={item.image}
                   alt={item.title}
+                  width={96}
+                  height={80}
                   className="w-24 h-20 rounded-lg object-cover object-top flex-shrink-0"
                 />
                 <div className="flex-1">

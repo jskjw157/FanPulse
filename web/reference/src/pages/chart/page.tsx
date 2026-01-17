@@ -490,9 +490,7 @@ export default function Chart() {
                   item.change < 0 ? 'text-blue-500' :
                   'text-gray-400'
                 }`}>
-                  {item.change > 0 && <i className="ri-arrow-up-line text-lg"></i>}
-                  {item.change < 0 && <i className="ri-arrow-down-line text-lg"></i>}
-                  {item.change === 0 && <i className="ri-subtract-line text-lg"></i>}
+                  {getChangeIcon(item.change)}
                   <span className="w-6 text-right">{Math.abs(item.change) || '-'}</span>
                 </div>
               </Link>

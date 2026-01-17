@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Image from 'next/image';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('trending');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const trendingArtists = [
@@ -346,10 +346,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           {/* Hero Banner */}
           <div className="mt-4 relative rounded-2xl overflow-hidden h-48 md:h-64 lg:h-96">
-            <img 
+            <Image
               src="https://readdy.ai/api/search-image?query=KPOP%20festival%20main%20stage%2C%20spectacular%20light%20show%2C%20vibrant%20purple%20and%20pink%20gradient%20lighting%2C%20professional%20concert%20photography%2C%20energetic%20atmosphere%2C%20massive%20LED%20screens%2C%20dynamic%20stage%20effects&width=800&height=400&seq=hero001&orientation=landscape"
               alt="Hero Banner"
-              className="w-full h-full object-cover object-top"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 100vw, 1280px"
+              className="object-cover object-top"
+              priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-5 md:p-8 lg:p-12">
               <h1 className="text-white text-2xl md:text-3xl lg:text-5xl font-bold">Welcome to FanPulse</h1>
@@ -389,11 +392,13 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-6">
               {liveNow.map(live => (
                 <Link key={live.id} to="/live-detail" className="block group">
-                  <div className="relative rounded-xl overflow-hidden">
-                    <img 
+                  <div className="relative rounded-xl overflow-hidden h-48 lg:h-64">
+                    <Image
                       src={live.thumbnail}
                       alt={live.title}
-                      className="w-full h-48 lg:h-64 object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 640px"
+                      className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute top-3 left-3 bg-red-600 text-white text-xs lg:text-sm px-3 py-1 rounded-full font-medium flex items-center gap-1">
                       <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
@@ -417,17 +422,21 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {popularPosts.map(post => (
-                <Link 
-                  key={post.id} 
+                <Link
+                  key={post.id}
                   to={`/post-detail?id=${post.id}`}
                   className="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex gap-3 p-4">
-                    <img 
-                      src={post.image}
-                      alt={post.title}
-                      className="w-24 h-20 rounded-xl object-cover object-top flex-shrink-0"
-                    />
+                    <div className="relative w-24 h-20 flex-shrink-0">
+                      <Image
+                        src={post.image}
+                        alt={post.title}
+                        fill
+                        sizes="96px"
+                        className="rounded-xl object-cover object-top"
+                      />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-gray-900 text-sm line-clamp-2">{post.title}</h3>
                       <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
@@ -471,11 +480,15 @@ export default function Home() {
                       {item.rank}
                     </div>
 
-                    <img 
-                      src={item.image}
-                      alt={item.artist}
-                      className="w-14 h-14 rounded-lg object-cover object-top flex-shrink-0"
-                    />
+                    <div className="relative w-14 h-14 flex-shrink-0">
+                      <Image
+                        src={item.image}
+                        alt={item.artist}
+                        fill
+                        sizes="56px"
+                        className="rounded-lg object-cover object-top"
+                      />
+                    </div>
 
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-gray-900 text-sm lg:text-base truncate">{item.title}</h3>
@@ -507,11 +520,13 @@ export default function Home() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
               {trendingArtists.map(artist => (
                 <div key={artist.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <div className="relative">
-                    <img 
+                  <div className="relative h-48 lg:h-56">
+                    <Image
                       src={artist.image}
                       alt={artist.name}
-                      className="w-full h-48 lg:h-56 object-cover object-top"
+                      fill
+                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 320px"
+                      className="object-cover object-top"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                   </div>
@@ -539,11 +554,15 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
               {upcomingEvents.map(event => (
                 <Link key={event.id} to="/concert" className="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <img 
-                    src={event.image}
-                    alt={event.title}
-                    className="w-full h-40 lg:h-48 object-cover object-top"
-                  />
+                  <div className="relative h-40 lg:h-48">
+                    <Image
+                      src={event.image}
+                      alt={event.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 640px"
+                      className="object-cover object-top"
+                    />
+                  </div>
                   <div className="p-4 lg:p-6">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="bg-purple-100 text-purple-700 text-xs lg:text-sm px-3 py-1 rounded-full font-medium">{event.type}</span>

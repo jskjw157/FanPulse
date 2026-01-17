@@ -160,15 +160,21 @@ export default function ConcertDetailPage() {
               {/* Bottom Action */}
               <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-40">
                 <div className="max-w-4xl mx-auto">
-                  <button
-                    disabled={!selectedDate || !selectedTicket}              className={`w-full py-4 rounded-full font-bold text-base ${
-                selectedDate && selectedTicket
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'bg-gray-200 text-gray-400'
-              }`}
-            >
-              티켓 예매하기
-            </button>
+                  {selectedDate && selectedTicket ? (
+                    <Link
+                      href={`/tickets/book?date=${selectedDate}&ticket=${selectedTicket}`}
+                      className="block w-full py-4 rounded-full font-bold text-base text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                    >
+                      티켓 예매하기
+                    </Link>
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full py-4 rounded-full font-bold text-base bg-gray-200 text-gray-400"
+                    >
+                      티켓 예매하기
+                    </button>
+                  )}
           </div>
         </div>
       </PageWrapper>

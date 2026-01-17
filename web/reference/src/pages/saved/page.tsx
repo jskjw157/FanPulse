@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Image from 'next/image';
 
 export default function SavedPage() {
   const [sortBy, setSortBy] = useState<'recent' | 'saved'>('recent');
@@ -156,9 +157,11 @@ export default function SavedPage() {
               {/* Author Info */}
               <div className="p-4 pb-3">
                 <div className="flex items-center gap-3 mb-3">
-                  <img 
+                  <Image
                     src={post.author.avatar}
                     alt={post.author.name}
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full object-cover"
                   />
                   <div className="flex-1">
@@ -195,11 +198,12 @@ export default function SavedPage() {
 
                   {/* Image */}
                   {post.image && (
-                    <div className="rounded-xl overflow-hidden mb-3">
-                      <img 
+                    <div className="rounded-xl overflow-hidden mb-3 relative h-48">
+                      <Image
                         src={post.image}
                         alt="Post"
-                        className="w-full h-48 object-cover object-top"
+                        fill
+                        className="object-cover object-top"
                       />
                     </div>
                   )}

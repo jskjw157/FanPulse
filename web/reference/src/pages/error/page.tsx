@@ -36,7 +36,7 @@ export default function ErrorPage() {
           Something went wrong
         </p>
         <p className="text-base text-gray-500 max-w-md">
-          We're sorry for the inconvenience. The page you're looking for might have been removed or is temporarily unavailable.
+          We&apos;re sorry for the inconvenience. The page you&apos;re looking for might have been removed or is temporarily unavailable.
         </p>
       </div>
 

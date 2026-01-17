@@ -1,6 +1,6 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Image from 'next/image';
 
 export default function Notifications() {
   const [filter, setFilter] = useState('all');
@@ -156,9 +156,11 @@ export default function Notifications() {
               }`}
             >
               <div className="relative flex-shrink-0">
-                <img 
+                <Image
                   src={notification.avatar}
                   alt={notification.user}
+                  width={48}
+                  height={48}
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center">
