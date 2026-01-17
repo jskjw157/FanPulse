@@ -1,5 +1,5 @@
-
 import { Link } from 'react-router-dom';
+import Image from 'next/image';
 
 export default function MyPage() {
   const user = {
@@ -54,9 +54,11 @@ export default function MyPage() {
       <div className="pt-16 bg-gradient-to-r from-purple-600 to-pink-600 pb-6">
         <div className="px-4">
           <div className="flex items-center gap-4 mb-4">
-            <img
+            <Image
               src={user.avatar}
               alt={user.name}
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-full object-cover border-4 border-white"
             />
             <div className="flex-1">

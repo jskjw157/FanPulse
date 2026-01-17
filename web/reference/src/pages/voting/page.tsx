@@ -1,11 +1,29 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Image from 'next/image';
+
+interface Candidate {
+  id: number;
+  name: string;
+  image: string;
+  votes: number;
+  percentage: number;
+}
+
+interface Poll {
+  id: number;
+  title: string;
+  category: string;
+  endDate: string;
+  totalVotes: string;
+  candidates: Candidate[];
+}
 
 export default function Voting() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showRankingsModal, setShowRankingsModal] = useState(false);
-  const [selectedPoll, setSelectedPoll] = useState<any>(null);
+  const [selectedPoll, setSelectedPoll] = useState<Poll | null>(null);
   const [votedCandidates, setVotedCandidates] = useState<Set<string>>(new Set());
   const [votingPower, setVotingPower] = useState({
     daily: 10,
@@ -148,7 +166,7 @@ export default function Voting() {
     ? activePolls 
     : activePolls.filter(poll => poll.category === selectedCategory);
 
-  const handleViewFullRankings = (poll: any) => {
+  const handleViewFullRankings = (poll: Poll) => {
     setSelectedPoll(poll);
     setShowRankingsModal(true);
   };
@@ -558,11 +576,13 @@ export default function Voting() {
                   {poll.candidates.map(candidate => (
                     <div key={candidate.id} className="relative">
                       {/* Candidate Card */}
-                      <div className="relative rounded-xl overflow-hidden">
-                        <img
+                      <div className="relative rounded-xl overflow-hidden h-48">
+                        <Image
                           src={candidate.image}
                           alt={candidate.name}
-                          className="w-full h-48 object-cover object-top"
+                          fill
+                          className="object-cover object-top"
+                          unoptimized
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                         
@@ -643,7 +663,7 @@ export default function Voting() {
             {/* Rankings List */}
             <div className="overflow-y-auto max-h-[calc(80vh-80px)] p-4">
               <div className="space-y-3">
-                {selectedPoll.candidates.map((candidate: any, index: number) => (
+                {selectedPoll.candidates.map((candidate: Candidate, index: number) => (
                   <div key={candidate.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                     <div className={`w-8 h-8 flex items-center justify-center font-bold ${
                       index === 0 ? 'text-yellow-500' :
@@ -653,11 +673,15 @@ export default function Voting() {
                     }`}>
                       {index + 1}
                     </div>
-                    <img
-                      src={candidate.image}
-                      alt={candidate.name}
-                      className="w-12 h-12 rounded-lg object-cover object-top"
-                    />
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+                      <Image
+                        src={candidate.image}
+                        alt={candidate.name}
+                        fill
+                        className="object-cover object-top"
+                        unoptimized
+                      />
+                    </div>
                     <div className="flex-1">
                       <h4 className="font-bold text-gray-900">{candidate.name}</h4>
                       <div className="flex items-center gap-2 mt-1">

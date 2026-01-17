@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Image from 'next/image';
 
 interface Artist {
   id: number;
@@ -135,11 +136,13 @@ export default function FavoritesPage() {
             {artists.map((artist) => (
               <div key={artist.id} className="bg-white rounded-2xl overflow-hidden shadow-sm">
                 <div className="flex gap-3 p-3">
-                  <Link to="/artist-detail" className="flex-shrink-0">
-                    <img
+                  <Link to="/artist-detail" className="flex-shrink-0 relative w-20 h-20">
+                    <Image
                       src={artist.image}
                       alt={artist.name}
-                      className="w-20 h-20 rounded-xl object-cover"
+                      fill
+                      sizes="80px"
+                      className="rounded-xl object-cover"
                     />
                   </Link>
                   <div className="flex-1 min-w-0">

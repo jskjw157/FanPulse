@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 export default function Community() {
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'popular'>('all');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedArtist, setSelectedArtist] = useState('all');
   const [showArtistModal, setShowArtistModal] = useState(false);
@@ -520,8 +520,42 @@ export default function Community() {
 
       {/* Main Content */}
       <div className="pt-16 lg:ml-64 max-w-7xl lg:max-w-5xl mx-auto">
+        {/* Tab Filter */}
+        <div className="pt-4 px-4 sticky top-16 bg-gradient-to-b from-purple-50 to-pink-50 z-30">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  activeTab === 'all'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-600 border border-gray-200'
+                }`}
+              >
+                All Posts
+              </button>
+              <button
+                onClick={() => setActiveTab('popular')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  activeTab === 'popular'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-600 border border-gray-200'
+                }`}
+              >
+                🔥 Popular
+              </button>
+            </div>
+            <button
+              onClick={() => setShowArtistModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-white rounded-full border border-gray-200 text-sm"
+            >
+              <i className="ri-filter-line text-purple-600"></i>
+              <span className="text-gray-700">{currentArtist?.name || 'All'}</span>
+            </button>
+          </div>
+        </div>
         {/* Content */}
-        <div className={selectedArtist !== 'all' ? 'pt-52' : 'pt-40'}>
+        <div className={selectedArtist !== 'all' ? 'pt-12' : 'pt-4'}>
           <div className="space-y-3 px-4">
             {filteredPosts.map(post => (
               <Link

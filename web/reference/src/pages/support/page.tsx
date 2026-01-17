@@ -154,14 +154,12 @@ export default function Support() {
       <div className="pt-16 px-4">
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-4 mt-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <p className="text-white/90 text-xs">평균 응답 시간</p>
-              <p className="text-white text-2xl font-bold mt-1">2시간</p>
-            </div>
-            <div className="text-center">
-              <p className="text-white/90 text-xs">문의 해결률</p>
-              <p className="text-white text-2xl font-bold mt-1">98%</p>
-            </div>
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <p className="text-white/90 text-xs">{stat.label}</p>
+                <p className="text-white text-2xl font-bold mt-1">{stat.value}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

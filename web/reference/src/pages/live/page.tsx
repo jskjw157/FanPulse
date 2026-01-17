@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Image from 'next/image';
 
 export default function Live() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -51,7 +52,7 @@ export default function Live() {
     }
   ];
 
-  const handleGetTickets = (concert: any) => {
+  const handleGetTickets = (concert: { id: number; title: string; date: string; location: string; image: string; status: string }) => {
     navigate('/concert-detail', { 
       state: { 
         concert: {
@@ -400,11 +401,14 @@ export default function Live() {
         <div className="max-w-6xl mx-auto">
           {/* Featured Live */}
           <div className="mt-4 mb-6">
-            <div className="relative rounded-2xl overflow-hidden">
-              <img
+            <div className="relative rounded-2xl overflow-hidden h-64 md:h-80 lg:h-96">
+              <Image
                 src={liveStreams[0].thumbnail}
                 alt={liveStreams[0].title}
-                className="w-full h-64 md:h-80 lg:h-96 object-cover object-top"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 100vw, 1200px"
+                className="object-cover object-top"
+                priority
               />
               <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
@@ -425,11 +429,13 @@ export default function Live() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {liveStreams.slice(1).map(stream => (
               <div key={stream.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
-                <div className="relative">
-                  <img
+                <div className="relative h-40">
+                  <Image
                     src={stream.thumbnail}
                     alt={stream.title}
-                    className="w-full h-40 object-cover object-top"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 400px"
+                    className="object-cover object-top"
                   />
                   <div className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                     <span className="w-1 h-1 bg-white rounded-full"></span>
@@ -452,16 +458,18 @@ export default function Live() {
           <h3 className="font-bold text-gray-900 mb-3 text-lg">Upcoming Concerts</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-6">
             {concerts.map(concert => (
-              <div 
-                key={concert.id} 
+              <div
+                key={concert.id}
                 className="bg-white rounded-xl overflow-hidden shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => handleGetTickets(concert)}
               >
-                <div className="relative">
-                  <img
+                <div className="relative h-40">
+                  <Image
                     src={concert.image}
                     alt={concert.title}
-                    className="w-full h-40 object-cover object-top"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 400px"
+                    className="object-cover object-top"
                   />
                   <div className={`absolute top-2 right-2 text-white text-xs px-2 py-1 rounded-full font-medium ${
                     concert.status === 'Sold Out' ? 'bg-gray-800' : 'bg-green-600'
