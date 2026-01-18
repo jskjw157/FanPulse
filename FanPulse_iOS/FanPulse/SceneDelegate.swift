@@ -31,6 +31,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.makeKeyAndVisible()
     }
 
+
     // MARK: - Login Restore
 
     private func restorePreviousSignIn() {
