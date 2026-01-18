@@ -113,6 +113,8 @@ export $(cat .env | xargs) && ./gradlew bootRun
 | `DB_NAME` | fanpulse | 데이터베이스 이름 |
 | `DB_USERNAME` | fanpulse | DB 사용자명 |
 | `DB_PASSWORD` | fanpulse | DB 비밀번호 |
+| `JWT_SECRET` | (required) | JWT 서명 키 (256비트 이상) |
+| `GOOGLE_CLIENT_ID` | (required) | Google OAuth 클라이언트 ID |
 
 ## 데이터베이스 마이그레이션
 
@@ -236,6 +238,16 @@ resilience4j:
 - 지수 백오프: 2초 → 4초
 
 ## API 엔드포인트
+
+### Authentication
+
+| 엔드포인트 | 메서드 | 설명 |
+|-----------|--------|------|
+| `/api/v1/auth/signup` | POST | 이메일/비밀번호 회원가입 |
+| `/api/v1/auth/login` | POST | 이메일/비밀번호 로그인 |
+| `/api/v1/auth/google` | POST | Google OAuth 로그인 |
+| `/api/v1/auth/refresh` | POST | 리프레시 토큰으로 액세스 토큰 갱신 |
+| `/api/v1/auth/logout` | POST | 로그아웃 |
 
 ### Actuator
 
