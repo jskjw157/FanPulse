@@ -11,6 +11,11 @@ interface ArtistChannelRepository : JpaRepository<ArtistChannel, UUID>, ArtistCh
     override fun findByPlatformAndIsActiveTrue(platform: StreamingPlatform): List<ArtistChannel>
     override fun findByArtistId(artistId: UUID): List<ArtistChannel>
 
+    /**
+     * Finds a channel by platform and handle (for duplicate check).
+     */
+    fun findByPlatformAndChannelHandle(platform: StreamingPlatform, channelHandle: String): ArtistChannel?
+
     /** P0-3: JpaRepository.saveAll을 Port 인터페이스에 맞게 위임 */
     @Suppress("UNCHECKED_CAST")
     override fun <S : ArtistChannel> saveAll(entities: Iterable<S>): List<S>

@@ -4,7 +4,7 @@ import com.fanpulse.application.service.LiveDiscoveryService
 import com.fanpulse.domain.discovery.ArtistChannel
 import com.fanpulse.domain.discovery.ArtistChannelRepository
 import com.fanpulse.domain.streaming.StreamingEvent
-import com.fanpulse.domain.streaming.StreamingEventRepository
+import com.fanpulse.infrastructure.persistence.streaming.StreamingEventJpaRepository as StreamingEventRepository
 import com.fanpulse.domain.streaming.StreamingPlatform
 import com.fanpulse.domain.streaming.StreamingStatus
 import kotlinx.coroutines.runBlocking
