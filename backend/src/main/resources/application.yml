@@ -26,6 +26,12 @@ spring:
     out-of-order: false
     clean-disabled: true
 
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:default-secret-key-that-is-at-least-256-bits-long-for-hs256-algorithm-please-change-in-production}
+  access-expiration: 3600000    # 1시간 (밀리초)
+  refresh-expiration: 604800000  # 7일 (밀리초)
+
 fanpulse:
   youtube:
     oembed:

@@ -1,0 +1,36 @@
+package com.fanpulse.infrastructure.persistence.content
+
+import com.fanpulse.domain.content.Artist
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
+import java.util.*
+
+/**
+ * Spring Data JPA Repository for Artist entity.
+ * Infrastructure layer implementation.
+ */
+interface ArtistJpaRepository : JpaRepository<Artist, UUID> {
+
+    /**
+     * Find artist by exact name match.
+     */
+    fun findByName(name: String): Artist?
+
+    /**
+     * Find all active artists with pagination.
+     */
+    fun findByActiveTrue(pageable: Pageable): Page<Artist>
+
+    /**
+     * Search artists by name containing the query (case-insensitive).
+     */
+    @Query("""
+        SELECT a FROM Artist a
+        WHERE LOWER(a.name) LIKE LOWER(CONCAT('%', :query, '%'))
+        OR LOWER(a.englishName) LIKE LOWER(CONCAT('%', :query, '%'))
+    """)
+    fun searchByName(@Param("query") query: String, pageable: Pageable): Page<Artist>
+}
