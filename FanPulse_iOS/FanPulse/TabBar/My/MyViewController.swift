@@ -123,7 +123,7 @@ final class MyViewController: BaseViewController {
         let label = UILabel()
         label.text = "12,450P"
         label.font = .systemFont(ofSize: 28, weight: .bold)
-        label.textColor = UIColor(hex: "#8B5CF6")
+        label.textColor = UIColor(hex: "#9333EA")
         return label
     }()
     
@@ -132,7 +132,7 @@ final class MyViewController: BaseViewController {
         button.setTitle("포인트 적립", for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
         button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = UIColor(hex: "#8B5CF6")
+        button.backgroundColor = UIColor(hex: "#9333EA")
         button.layer.cornerRadius = 20
         return button
     }()
@@ -155,8 +155,8 @@ final class MyViewController: BaseViewController {
     private let viewAllButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("전체 내역 보기 〉", for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
-        button.setTitleColor(UIColor(hex: "#8B5CF6"), for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        button.setTitleColor(UIColor(hex: "#9333EA"), for: .normal)
         return button
     }()
     
@@ -421,8 +421,8 @@ final class MyViewController: BaseViewController {
         
         viewAllButton.snp.makeConstraints { make in
             make.top.equalTo(pointHistoryStackView.snp.bottom).offset(12)
-            make.trailing.equalToSuperview().inset(20)
-            make.bottom.equalToSuperview().inset(20)
+            make.centerX.equalToSuperview()
+            make.bottom.equalToSuperview().inset(17)
         }
     }
     
