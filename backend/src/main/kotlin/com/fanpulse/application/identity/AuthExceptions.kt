@@ -22,3 +22,7 @@ class InvalidTokenException(
 class UserNotFoundException(
     message: String = "User not found"
 ) : AuthException(message)
+
+class InvalidPasswordException(
+    message: String = "Current password is incorrect"
+) : AuthException(message)

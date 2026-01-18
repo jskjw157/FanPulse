@@ -1,5 +1,6 @@
 package com.fanpulse.application.identity
 
+import com.fanpulse.application.identity.command.RegisterUserHandler
 import com.fanpulse.domain.common.DomainEventPublisher
 import com.fanpulse.domain.identity.*
 import com.fanpulse.domain.identity.event.UserLoggedIn
@@ -33,6 +34,7 @@ class AuthServiceTest {
     private lateinit var tokenPort: TokenPort
     private lateinit var passwordEncoder: PasswordEncoder
     private lateinit var eventPublisher: DomainEventPublisher
+    private lateinit var registerUserHandler: RegisterUserHandler
 
     @BeforeEach
     fun setUp() {
@@ -42,6 +44,7 @@ class AuthServiceTest {
         tokenPort = mockk()
         passwordEncoder = mockk()
         eventPublisher = mockk(relaxed = true)
+        registerUserHandler = mockk()
 
         authService = AuthService(
             userPort = userPort,
@@ -49,7 +52,8 @@ class AuthServiceTest {
             oAuthAccountPort = oAuthAccountPort,
             tokenPort = tokenPort,
             passwordEncoder = passwordEncoder,
-            eventPublisher = eventPublisher
+            eventPublisher = eventPublisher,
+            registerUserHandler = registerUserHandler
         )
     }
 
@@ -66,17 +70,13 @@ class AuthServiceTest {
                 username = "newuser",
                 password = "Password123!"
             )
-            val encodedPassword = "encoded_password_hash"
-            val userId = UUID.randomUUID()
+            val user = User.register(
+                email = Email.of(request.email),
+                username = Username.of(request.username),
+                encodedPassword = "encoded_password"
+            )
 
-            every { userPort.existsByEmail(request.email) } returns false
-            every { userPort.existsByUsername(request.username) } returns false
-            every { passwordEncoder.encode(request.password) } returns encodedPassword
-            every { userPort.save(any()) } answers {
-                val user = firstArg<User>()
-                user
-            }
-            every { userSettingsPort.save(any()) } answers { firstArg() }
+            every { registerUserHandler.handle(any()) } returns user
             every { tokenPort.generateAccessToken(any()) } returns "access_token"
             every { tokenPort.generateRefreshToken(any()) } returns "refresh_token"
 
@@ -90,8 +90,7 @@ class AuthServiceTest {
             assertEquals(request.email, result.email)
             assertEquals(request.username, result.username)
 
-            verify { userPort.save(any()) }
-            verify { userSettingsPort.save(any()) }
+            verify { registerUserHandler.handle(any()) }
         }
 
         @Test
@@ -103,7 +102,7 @@ class AuthServiceTest {
                 username = "newuser",
                 password = "Password123!"
             )
-            every { userPort.existsByEmail(request.email) } returns true
+            every { registerUserHandler.handle(any()) } throws EmailAlreadyExistsException("existing@example.com")
 
             // When & Then
             val exception = assertThrows<EmailAlreadyExistsException> {
@@ -121,8 +120,7 @@ class AuthServiceTest {
                 username = "existinguser",
                 password = "Password123!"
             )
-            every { userPort.existsByEmail(request.email) } returns false
-            every { userPort.existsByUsername(request.username) } returns true
+            every { registerUserHandler.handle(any()) } throws UsernameAlreadyExistsException("existinguser")
 
             // When & Then
             val exception = assertThrows<UsernameAlreadyExistsException> {
@@ -270,20 +268,21 @@ class AuthServiceTest {
     inner class DomainEventPublishing {
 
         @Test
-        @DisplayName("회원가입 시 UserRegistered 이벤트를 발행해야 한다")
-        fun `should publish UserRegistered event on registration`() {
+        @DisplayName("회원가입 시 RegisterUserHandler를 호출해야 한다")
+        fun `should call RegisterUserHandler on registration`() {
             // Given
             val request = RegisterRequest(
                 email = "newuser@example.com",
                 username = "newuser",
                 password = "Password123!"
             )
+            val user = User.register(
+                email = Email.of(request.email),
+                username = Username.of(request.username),
+                encodedPassword = "encoded_password"
+            )
 
-            every { userPort.existsByEmail(any()) } returns false
-            every { userPort.existsByUsername(any()) } returns false
-            every { passwordEncoder.encode(any()) } returns "encoded_password"
-            every { userPort.save(any()) } answers { firstArg() }
-            every { userSettingsPort.save(any()) } answers { firstArg() }
+            every { registerUserHandler.handle(any()) } returns user
             every { tokenPort.generateAccessToken(any()) } returns "access_token"
             every { tokenPort.generateRefreshToken(any()) } returns "refresh_token"
 
@@ -292,12 +291,10 @@ class AuthServiceTest {
 
             // Then
             verify(exactly = 1) {
-                eventPublisher.publishAll(match { events ->
-                    events.any { event ->
-                        event is UserRegistered &&
-                        event.email == request.email &&
-                        event.username == request.username
-                    }
+                registerUserHandler.handle(match { command ->
+                    command.email == request.email &&
+                    command.username == request.username &&
+                    command.password == request.password
                 })
             }
         }

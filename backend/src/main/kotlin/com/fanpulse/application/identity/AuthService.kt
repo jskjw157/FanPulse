@@ -1,5 +1,7 @@
 package com.fanpulse.application.identity
 
+import com.fanpulse.application.identity.command.RegisterUserCommand
+import com.fanpulse.application.identity.command.RegisterUserHandler
 import com.fanpulse.domain.common.DomainEventPublisher
 import com.fanpulse.domain.identity.*
 import com.fanpulse.domain.identity.event.LoginType
@@ -16,9 +18,9 @@ import org.springframework.transaction.annotation.Transactional
 private val logger = KotlinLogging.logger {}
 
 /**
- * Authentication and Authorization Service.
+ * Authentication and Authorization Service (Facade).
  *
- * Handles user registration, login, and token management.
+ * Delegates business logic to Command Handlers and manages token generation.
  */
 @Service
 class AuthService(
@@ -27,11 +29,14 @@ class AuthService(
     private val oAuthAccountPort: OAuthAccountPort,
     private val tokenPort: TokenPort,
     private val passwordEncoder: PasswordEncoder,
-    private val eventPublisher: DomainEventPublisher
+    private val eventPublisher: DomainEventPublisher,
+    private val registerUserHandler: RegisterUserHandler
 ) {
 
     /**
      * Registers a new user with email/password.
+     *
+     * Delegates user creation to RegisterUserHandler and manages token generation.
      *
      * @param request Registration request containing email, username, and password
      * @return AuthResponse with tokens and user info
@@ -42,42 +47,26 @@ class AuthService(
     fun register(request: RegisterRequest): AuthResponse {
         logger.debug { "Registering new user: ${request.email}" }
 
-        // Validate uniqueness
-        if (userPort.existsByEmail(request.email)) {
-            throw EmailAlreadyExistsException(request.email)
-        }
-        if (userPort.existsByUsername(request.username)) {
-            throw UsernameAlreadyExistsException(request.username)
-        }
-
-        // Create user
-        val encodedPassword = passwordEncoder.encode(request.password)
-        val user = User.register(
-            email = Email.of(request.email),
-            username = Username.of(request.username),
-            encodedPassword = encodedPassword
+        // Create command
+        val command = RegisterUserCommand(
+            email = request.email,
+            username = request.username,
+            password = request.password
         )
 
-        // Save user
-        val savedUser = userPort.save(user)
-
-        // Publish domain events
-        eventPublisher.publishAll(savedUser.pullDomainEvents())
-
-        // Create default settings
-        val settings = UserSettings.createDefault(savedUser.id)
-        userSettingsPort.save(settings)
+        // Delegate to handler
+        val user = registerUserHandler.handle(command)
 
         // Generate tokens
-        val accessToken = tokenPort.generateAccessToken(savedUser.id)
-        val refreshToken = tokenPort.generateRefreshToken(savedUser.id)
+        val accessToken = tokenPort.generateAccessToken(user.id)
+        val refreshToken = tokenPort.generateRefreshToken(user.id)
 
-        logger.info { "User registered successfully: ${savedUser.id}" }
+        logger.info { "User registered successfully: ${user.id}" }
 
         return AuthResponse(
-            userId = savedUser.id,
-            email = savedUser.email,
-            username = savedUser.username,
+            userId = user.id,
+            email = user.email,
+            username = user.username,
             accessToken = accessToken,
             refreshToken = refreshToken
         )
