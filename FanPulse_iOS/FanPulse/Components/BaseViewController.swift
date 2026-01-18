@@ -196,7 +196,7 @@ class BaseViewController: UIViewController {
         navigationController?.popViewController(animated: true)
     }
 
-    func configureNavigationBar(type: NavigationBarPageType, setBgImage: Bool = false) {
+    func configureNavigationBar(type: NavigationBarPageType, _ setBgImage: Bool = false) {
         currentPageType = type
         let visibleButtons = type.buttons
 
