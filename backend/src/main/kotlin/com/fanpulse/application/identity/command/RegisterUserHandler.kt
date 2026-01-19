@@ -22,6 +22,24 @@ private val logger = KotlinLogging.logger {}
  * - Create default UserSettings
  * - Publish domain events
  * - Return created User
+ *
+ * ## Transaction Boundary Notes
+ *
+ * UserSettings creation happens AFTER user is saved and events are published.
+ * If UserSettings creation fails, the User entity remains in the database (partial state).
+ *
+ * **Design Decision**: This is acceptable because:
+ * - UserSettings can be recreated on-demand if missing (see UserService.getSettings)
+ * - Settings are non-critical data (UI preferences, not core business logic)
+ * - Alternative Saga pattern would add unnecessary complexity for this use case
+ *
+ * **Recovery Strategy**:
+ * - Application detects missing settings on first login
+ * - Auto-creates default settings lazily
+ * - No manual intervention required
+ *
+ * @throws EmailAlreadyExistsException if email is already registered
+ * @throws UsernameAlreadyExistsException if username is already taken
  */
 @Component
 class RegisterUserHandler(
@@ -44,7 +62,9 @@ class RegisterUserHandler(
         }
 
         // Create user
-        val encodedPassword = passwordEncoder.encode(command.password)
+        // Validate password strength before encoding
+        val password = Password.of(command.password)
+        val encodedPassword = passwordEncoder.encode(password.value)
         val user = User.register(
             email = Email.of(command.email),
             username = Username.of(command.username),

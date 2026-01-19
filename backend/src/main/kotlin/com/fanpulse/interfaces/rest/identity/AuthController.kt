@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
@@ -42,9 +43,19 @@ class AuthController(
         ApiResponse(responseCode = "200", description = "Login successful"),
         ApiResponse(responseCode = "401", description = "Invalid credentials")
     )
-    fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<AuthResponse> {
+    fun login(
+        @Valid @RequestBody request: LoginRequest,
+        httpRequest: HttpServletRequest
+    ): ResponseEntity<AuthResponse> {
         logger.debug { "Login request for: ${request.email}" }
-        val response = authService.login(request)
+
+        // Extract client context for audit trail
+        val requestContext = RequestContext(
+            ipAddress = httpRequest.remoteAddr,
+            userAgent = httpRequest.getHeader("User-Agent")
+        )
+
+        val response = authService.login(request, requestContext)
         return ResponseEntity.ok(response)
     }
 

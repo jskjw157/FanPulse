@@ -3,6 +3,7 @@ package com.fanpulse.application.identity.command
 import com.fanpulse.application.identity.InvalidPasswordException
 import com.fanpulse.application.identity.UserNotFoundException
 import com.fanpulse.domain.common.DomainEventPublisher
+import com.fanpulse.domain.identity.Password
 import com.fanpulse.domain.identity.port.UserPort
 import mu.KotlinLogging
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -36,17 +37,18 @@ class ChangePasswordHandler(
             ?: throw UserNotFoundException("User not found: ${command.userId}")
 
         // Verify current password
-        if (user.passwordHash == null) {
-            throw IllegalStateException("Cannot change password for OAuth-only users")
-        }
+        val passwordHash = user.passwordHash
+            ?: throw IllegalStateException("Cannot change password for OAuth-only users")
 
-        if (!passwordEncoder.matches(command.currentPassword, user.passwordHash!!)) {
+        if (!passwordEncoder.matches(command.currentPassword, passwordHash)) {
             logger.debug { "Invalid current password for user: ${command.userId}" }
             throw InvalidPasswordException()
         }
 
         // Change password
-        val newPasswordHash = passwordEncoder.encode(command.newPassword)
+        // Validate new password strength before encoding
+        val newPassword = Password.of(command.newPassword)
+        val newPasswordHash = passwordEncoder.encode(newPassword.value)
         user.changePassword(newPasswordHash)
 
         // Save user

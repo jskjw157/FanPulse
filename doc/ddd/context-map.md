@@ -12,29 +12,30 @@
 
 ### Core Domain
 
-| Context | 설명 | 담당 팀 |
-|---------|------|---------|
-| Voting | 팬 참여형 투표, 투표권 관리, 실시간 랭킹 | Backend Team |
-| Community | 아티스트별 팬 페이지, 게시글/댓글, 좋아요 | Backend Team |
-| Streaming | 라이브 스트리밍, 실시간 채팅, 하트 | Backend Team |
+| Context | 설명 | 담당 팀 | 구현 상태 |
+|---------|------|---------|----------|
+| Voting | 팬 참여형 투표, 투표권 관리, 실시간 랭킹 | Backend Team | Planning |
+| Community | 아티스트별 팬 페이지, 게시글/댓글, 좋아요 | Backend Team | Planning |
+| Streaming | 라이브 스트리밍 이벤트 조회, 메타데이터 갱신 | Backend Team | **In Progress** |
 
 ### Supporting Subdomain
 
-| Context | 설명 | 담당 팀 |
-|---------|------|---------|
-| Identity | 회원가입, 로그인, OAuth, 사용자 설정 | Backend Team |
-| Content | 뉴스, 차트 순위, 아티스트 정보 (크롤링) | Backend Team |
-| Concert | 콘서트 일정, 티켓 예매 | Backend Team |
-| Reward | 포인트 적립/사용, 광고, 굿즈 교환 | Backend Team |
-| Membership | VIP 구독, 혜택 관리 | Backend Team |
-| Notification | 푸시 알림, 알림 관리 | Backend Team |
+| Context | 설명 | 담당 팀 | 구현 상태 |
+|---------|------|---------|----------|
+| Identity | 회원가입, 로그인, OAuth, 사용자 설정 | Backend Team | **In Progress** |
+| Discovery | 아티스트 채널 관리, 라이브 스트림 자동 발견 | Backend Team | **In Progress** |
+| Content | 뉴스(News), 차트(Chart), 아티스트(Artist) 정보 관리 | Backend Team | **Planning** |
+| Concert | 콘서트 일정, 티켓 예매 | Backend Team | Planning |
+| Reward | 포인트 적립/사용, 광고, 굿즈 교환 | Backend Team | Planning |
+| Membership | VIP 구독, 혜택 관리 | Backend Team | Planning |
+| Notification | 푸시 알림, 알림 관리 | Backend Team | Planning |
 
 ### Generic Subdomain
 
-| Context | 설명 | 담당 팀/서비스 |
-|---------|------|---------------|
-| Support | FAQ, 1:1 문의, 공지사항 | Backend Team |
-| Search | 통합 검색, 검색 기록 | Backend Team (Elasticsearch) |
+| Context | 설명 | 담당 팀/서비스 | 구현 상태 |
+|---------|------|---------------|----------|
+| Support | FAQ, 1:1 문의, 공지사항 | Backend Team | Planning |
+| Search | 통합 검색, 검색 기록 | Backend Team (Elasticsearch) | Planning |
 
 ## Context Map 다이어그램
 
@@ -191,31 +192,87 @@ Voting Context와 Reward Context는 사용자의 VIP 멤버십 상태를 조회�
 
 ---
 
-### 5. External → Content (News/Chart/Concert)
+### 5. External → Content (News/Chart/Artist)
 
 | 항목 | 내용 |
 |------|------|
 | **패턴** | Anti-Corruption Layer (ACL) |
 | **통신 방식** | 배치 크롤링 + DB Upsert |
-| **데이터 흐름** | 외부 뉴스/차트/콘서트 정보 → 내부 도메인 모델 |
+| **데이터 흐름** | 외부 뉴스/차트 정보 → 내부 도메인 모델 |
 
 **상세 설명**:
-외부 소스(뉴스 사이트, Billboard, Melon, 공연 정보 사이트)에서 데이터를 크롤링하여 내부 도메인 모델로 변환합니다. ACL을 통해 외부 모델의 변경이 내부 도메인에 영향을 미치지 않도록 격리합니다.
+외부 소스(뉴스 사이트, Billboard, Melon 등)에서 데이터를 크롤링하여 내부 도메인 모델로 변환합니다. ACL을 통해 외부 모델의 변경이 내부 도메인에 영향을 미치지 않도록 격리합니다.
+
+**Aggregates**:
+- `News`: K-POP 뉴스 콘텐츠 (NewsId, title, content, thumbnailUrl, originalUrl, source, publishedAt)
+- `Chart`: 음원 차트 순위 (ChartId, source, period, asOf, entries)
+- `Artist`: 아티스트 정보 (ArtistId, name, debutDate, agency, fandomName)
 
 **ACL 변환 예시**:
 ```kotlin
 class NewsAclTranslator {
     fun translate(external: CrawledNewsDto): News {
-        return News(
-            id = NewsId.generate(),
-            title = external.title,
-            content = sanitize(external.content),
-            source = NewsSource(external.source),
-            publishedAt = parseDate(external.publishedAt)
+        return News.create(
+            CreateNewsCommand(
+                title = external.title,
+                content = sanitize(external.content),
+                thumbnailUrl = external.thumbnailUrl,
+                originalUrl = external.url,
+                source = external.source,
+                sourceType = mapSourceType(external.source),
+                publishedAt = parseDate(external.publishedAt)
+            )
         )
     }
 }
+
+class ChartAclTranslator {
+    fun translate(externals: List<CrawledChartDto>): Chart {
+        val entries = externals.map { dto ->
+            ChartEntry(
+                rank = dto.rank,
+                previousRank = dto.previousRank,
+                rankChange = RankChange.calculate(dto.rank, dto.previousRank),
+                artistName = dto.artist,
+                songTitle = dto.song
+            )
+        }
+        return Chart(source, period, asOf, entries)
+    }
+}
 ```
+
+### 5-1. Content → Community (아티스트 정보)
+
+| 항목 | 내용 |
+|------|------|
+| **패턴** | Published Language (PL) |
+| **통신 방식** | REST API (동기) |
+| **데이터 흐름** | 아티스트 기본 정보 → 팬 페이지 |
+
+**상세 설명**:
+Community Context의 팬 페이지는 Content Context의 아티스트 정보를 조회하여 표시합니다.
+
+**Published Language**:
+```kotlin
+data class ArtistInfo(
+    val artistId: UUID,
+    val name: String,
+    val profileImageUrl: String?,
+    val fandomName: String?
+)
+```
+
+### 5-2. Content → Streaming (아티스트 정보)
+
+| 항목 | 내용 |
+|------|------|
+| **패턴** | Published Language (PL) |
+| **통신 방식** | REST API (동기) |
+| **데이터 흐름** | 아티스트 정보 → 라이브 스트리밍 |
+
+**상세 설명**:
+Streaming Context는 라이브 이벤트에 연결된 아티스트 정보를 Content Context에서 조회합니다.
 
 ---
 
@@ -269,6 +326,9 @@ class NewsAclTranslator {
 | External (Concert) | Concert | ACL | Crawling |
 | External (Google) | Identity | ACL | OAuth |
 | External (YouTube/Weverse Live) | Streaming | ACL | Embed URL |
+| Content | Community | PL | REST API (아티스트 정보) |
+| Content | Streaming | PL | REST API (아티스트 정보) |
+| Identity | Content | OHS/PL | REST API (인증) |
 
 ## 이벤트 흐름
 
@@ -381,8 +441,60 @@ class GoogleOAuthAclTranslator {
 }
 ```
 
+## Discovery Context (신규)
+
+Discovery Context는 Streaming Context를 지원하는 역할로, 아티스트 채널을 관리하고 라이브 스트림을 자동으로 발견합니다.
+
+### Streaming과의 관계
+
+```mermaid
+graph LR
+    subgraph Discovery["Discovery Context"]
+        AC[ArtistChannel]
+        LD[LiveDiscoveryService]
+    end
+
+    subgraph Streaming["Streaming Context"]
+        SE[StreamingEvent]
+        MR[MetadataRefreshService]
+    end
+
+    subgraph External["External"]
+        YT[YouTube API / yt-dlp]
+    end
+
+    AC -->|provides channels| LD
+    LD -->|discovers streams| YT
+    YT -->|stream data| LD
+    LD -->|creates/updates| SE
+    SE -->|provides videoId| MR
+    MR -->|fetches metadata| YT
+```
+
+### 책임 분리
+
+| 역할 | Discovery | Streaming |
+|------|-----------|-----------|
+| 채널 관리 | O | - |
+| 라이브 발견 | O | - |
+| 스트림 저장 | - | O |
+| 메타데이터 갱신 | - | O |
+| API 제공 | Admin Only | Public |
+
+### 통합 포인트
+
+| Upstream | Downstream | 방식 |
+|----------|------------|------|
+| Discovery | Streaming | Direct DB Write (같은 DB) |
+| Streaming | Search | Event → ACL → Elasticsearch |
+| Streaming | Notification | Event → Push Notification |
+
+---
+
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 내용 | 작성자 |
 |------|------|----------|--------|
 | 1.0.0 | 2025-12-28 | 최초 작성 | 정지원 |
+| 1.1.0 | 2026-01-17 | Discovery Context 추가, 구현 상태 컬럼 추가 | Claude |
+| 1.2.0 | 2026-01-17 | Content Context 상세화 (News, Chart, Artist Aggregate), Context 간 관계 추가 | Claude |

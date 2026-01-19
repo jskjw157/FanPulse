@@ -113,9 +113,18 @@ class User(
 
     /**
      * Updates the user's profile information.
+     * Publishes UserProfileUpdated event for audit trail.
      */
     fun updateProfile(newUsername: Username) {
+        val oldUsername = this.username
         this.username = newUsername.value
+        registerEvent(
+            com.fanpulse.domain.identity.event.UserProfileUpdated(
+                userId = id,
+                oldUsername = oldUsername,
+                newUsername = newUsername.value
+            )
+        )
     }
 
     /**
