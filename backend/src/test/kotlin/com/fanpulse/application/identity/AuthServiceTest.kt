@@ -6,6 +6,7 @@ import com.fanpulse.domain.identity.*
 import com.fanpulse.domain.identity.event.UserLoggedIn
 import com.fanpulse.domain.identity.event.UserRegistered
 import com.fanpulse.domain.identity.port.OAuthAccountPort
+import com.fanpulse.domain.identity.port.RefreshTokenPort
 import com.fanpulse.domain.identity.port.TokenPort
 import com.fanpulse.domain.identity.port.UserPort
 import com.fanpulse.domain.identity.port.UserSettingsPort
@@ -32,6 +33,7 @@ class AuthServiceTest {
     private lateinit var userSettingsPort: UserSettingsPort
     private lateinit var oAuthAccountPort: OAuthAccountPort
     private lateinit var tokenPort: TokenPort
+    private lateinit var refreshTokenPort: RefreshTokenPort
     private lateinit var passwordEncoder: PasswordEncoder
     private lateinit var eventPublisher: DomainEventPublisher
     private lateinit var registerUserHandler: RegisterUserHandler
@@ -42,6 +44,7 @@ class AuthServiceTest {
         userSettingsPort = mockk()
         oAuthAccountPort = mockk()
         tokenPort = mockk()
+        refreshTokenPort = mockk(relaxed = true)
         passwordEncoder = mockk()
         eventPublisher = mockk(relaxed = true)
         registerUserHandler = mockk()
@@ -51,6 +54,7 @@ class AuthServiceTest {
             userSettingsPort = userSettingsPort,
             oAuthAccountPort = oAuthAccountPort,
             tokenPort = tokenPort,
+            refreshTokenPort = refreshTokenPort,
             passwordEncoder = passwordEncoder,
             eventPublisher = eventPublisher,
             registerUserHandler = registerUserHandler

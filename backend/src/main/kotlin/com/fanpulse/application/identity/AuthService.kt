@@ -7,9 +7,11 @@ import com.fanpulse.domain.identity.*
 import com.fanpulse.domain.identity.event.LoginType
 import com.fanpulse.domain.identity.event.UserLoggedIn
 import com.fanpulse.domain.identity.port.OAuthAccountPort
+import com.fanpulse.domain.identity.port.RefreshTokenPort
 import com.fanpulse.domain.identity.port.TokenPort
 import com.fanpulse.domain.identity.port.UserPort
 import com.fanpulse.domain.identity.port.UserSettingsPort
+import java.time.Instant
 import mu.KotlinLogging
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -28,10 +30,14 @@ class AuthService(
     private val userSettingsPort: UserSettingsPort,
     private val oAuthAccountPort: OAuthAccountPort,
     private val tokenPort: TokenPort,
+    private val refreshTokenPort: RefreshTokenPort,
     private val passwordEncoder: PasswordEncoder,
     private val eventPublisher: DomainEventPublisher,
     private val registerUserHandler: RegisterUserHandler
 ) {
+    companion object {
+        private const val REFRESH_TOKEN_EXPIRATION_DAYS = 7L
+    }
 
     /**
      * Registers a new user with email/password.
@@ -60,6 +66,10 @@ class AuthService(
         // Generate tokens
         val accessToken = tokenPort.generateAccessToken(user.id)
         val refreshToken = tokenPort.generateRefreshToken(user.id)
+
+        // Store refresh token for rotation tracking
+        val expiresAt = Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
+        refreshTokenPort.save(user.id, refreshToken, expiresAt)
 
         logger.info { "User registered successfully: ${user.id}" }
 
@@ -108,6 +118,10 @@ class AuthService(
         val accessToken = tokenPort.generateAccessToken(user.id)
         val refreshToken = tokenPort.generateRefreshToken(user.id)
 
+        // Store refresh token for rotation tracking
+        val expiresAt = Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
+        refreshTokenPort.save(user.id, refreshToken, expiresAt)
+
         logger.info { "User logged in successfully: ${user.id}" }
 
         return AuthResponse(
@@ -121,16 +135,22 @@ class AuthService(
 
     /**
      * Refreshes access token using a valid refresh token.
+     * Implements Refresh Token Rotation for security.
+     *
+     * ## Refresh Token Rotation
+     * - 토큰 사용 시 이전 토큰은 무효화하고 새 토큰 발급
+     * - 이미 무효화된 토큰 재사용 시 모든 토큰 무효화 (보안 침해 감지)
      *
      * @param refreshToken Valid refresh token
      * @return TokenResponse with new access and refresh tokens
      * @throws InvalidTokenException if token is invalid or not a refresh token
+     * @throws RefreshTokenReusedException if token was already used (security breach)
      */
-    @Transactional(readOnly = true)
+    @Transactional
     fun refreshToken(refreshToken: String): TokenResponse {
         logger.debug { "Token refresh request" }
 
-        // Validate token
+        // Validate JWT signature and expiration
         if (!tokenPort.validateToken(refreshToken)) {
             throw InvalidTokenException("Token is invalid or expired")
         }
@@ -141,8 +161,28 @@ class AuthService(
             throw InvalidTokenException("Not a refresh token")
         }
 
-        // Get user ID and verify user exists
+        // Get user ID
         val userId = tokenPort.getUserIdFromToken(refreshToken)
+
+        // Check token in rotation store
+        val tokenRecord = refreshTokenPort.findByToken(refreshToken)
+
+        if (tokenRecord == null) {
+            // Token not in store - could be old token from before rotation was implemented
+            // Allow it but log warning
+            logger.warn { "Refresh token not found in rotation store for user: $userId" }
+        } else if (tokenRecord.invalidated) {
+            // SECURITY BREACH: Token was already used!
+            // Invalidate ALL tokens for this user
+            logger.warn { "Refresh token reuse detected for user: $userId - invalidating all tokens" }
+            refreshTokenPort.invalidateAllByUserId(userId)
+            throw RefreshTokenReusedException()
+        } else {
+            // Invalidate the current token (rotation)
+            refreshTokenPort.invalidate(refreshToken)
+        }
+
+        // Verify user exists
         val user = userPort.findById(userId)
             ?: throw InvalidTokenException("User not found")
 
@@ -150,12 +190,28 @@ class AuthService(
         val newAccessToken = tokenPort.generateAccessToken(userId)
         val newRefreshToken = tokenPort.generateRefreshToken(userId)
 
+        // Store new refresh token
+        val expiresAt = Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
+        refreshTokenPort.save(userId, newRefreshToken, expiresAt)
+
         logger.debug { "Tokens refreshed for user: $userId" }
 
         return TokenResponse(
             accessToken = newAccessToken,
             refreshToken = newRefreshToken
         )
+    }
+
+    /**
+     * Logs out a user by invalidating all their refresh tokens.
+     *
+     * @param userId User ID to logout
+     */
+    @Transactional
+    fun logout(userId: java.util.UUID) {
+        logger.debug { "Logout request for user: $userId" }
+        refreshTokenPort.invalidateAllByUserId(userId)
+        logger.info { "User logged out: $userId" }
     }
 
     /**

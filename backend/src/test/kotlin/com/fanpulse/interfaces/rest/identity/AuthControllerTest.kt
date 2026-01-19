@@ -3,6 +3,7 @@ package com.fanpulse.interfaces.rest.identity
 import com.fanpulse.application.identity.*
 import com.fanpulse.infrastructure.security.JwtAuthenticationFilter
 import com.fanpulse.infrastructure.security.JwtTokenProvider
+import com.fanpulse.infrastructure.security.RateLimitFilter
 import com.fanpulse.infrastructure.security.SecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
@@ -22,6 +23,7 @@ import java.util.*
  */
 @WebMvcTest(AuthController::class)
 @Import(SecurityConfig::class, com.fanpulse.interfaces.rest.GlobalExceptionHandler::class)
+@org.springframework.test.context.ActiveProfiles("test")
 @DisplayName("AuthController")
 class AuthControllerTest {
 
@@ -93,7 +95,12 @@ class AuthControllerTest {
                 content = objectMapper.writeValueAsString(request)
             }.andExpect {
                 status { isConflict() }
-                jsonPath("$.error") { value("Email already exists: ${request.email}") }
+                content { contentType("application/problem+json") }
+                jsonPath("$.type") { value("https://api.fanpulse.com/errors/email-already-exists") }
+                jsonPath("$.errorCode") { value("EMAIL_ALREADY_EXISTS") }
+                jsonPath("$.status") { value(409) }
+                jsonPath("$.errors[0].field") { value("email") }
+                jsonPath("$.errors[0].code") { value("already_exists") }
             }
         }
     }

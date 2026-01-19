@@ -29,4 +29,34 @@ interface ArtistChannelPort {
      * Batch save support.
      */
     fun <S : ArtistChannel> saveAll(entities: Iterable<S>): List<S>
+
+    /**
+     * Finds all channels.
+     */
+    fun findAll(): List<ArtistChannel>
+
+    /**
+     * Finds a channel by ID.
+     */
+    fun findById(id: UUID): ArtistChannel?
+
+    /**
+     * Checks if a channel exists by ID.
+     */
+    fun existsById(id: UUID): Boolean
+
+    /**
+     * Deletes a channel by ID.
+     */
+    fun deleteById(id: UUID)
+
+    /**
+     * Deletes all channels.
+     */
+    fun deleteAll()
+
+    /**
+     * Finds a channel by platform and handle.
+     */
+    fun findByPlatformAndChannelHandle(platform: StreamingPlatform, channelHandle: String): ArtistChannel?
 }
