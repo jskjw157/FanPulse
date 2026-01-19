@@ -43,7 +43,7 @@
 graph TB
     subgraph External["External Systems"]
         GOOGLE[Google OAuth]
-        YOUTUBE[YouTube/Weverse Live]
+        YOUTUBE[YouTube Live (MVP) / Weverse Live (Next)]
         NEWS_SOURCE[News Sources]
         CHART_SOURCE[Chart Sources]
         CONCERT_SOURCE[Concert Sources]
@@ -325,7 +325,7 @@ Streaming Context는 라이브 이벤트에 연결된 아티스트 정보를 Con
 | External (Chart) | Content | ACL | Crawling |
 | External (Concert) | Concert | ACL | Crawling |
 | External (Google) | Identity | ACL | OAuth |
-| External (YouTube/Weverse Live) | Streaming | ACL | Embed URL |
+| External (YouTube Live (MVP) / Weverse Live (Next)) | Streaming | ACL | Embed URL |
 | Content | Community | PL | REST API (아티스트 정보) |
 | Content | Streaming | PL | REST API (아티스트 정보) |
 | Identity | Content | OHS/PL | REST API (인증) |
