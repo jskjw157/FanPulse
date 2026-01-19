@@ -1,27 +1,51 @@
 package com.aos.fanpulse.presentation.navigation
 
+import androidx.annotation.DrawableRes
 import androidx.navigation.NavHostController
+import com.aos.fanpulse.R
 
-sealed class Screen(
-    val route: String
-) {
-    object Auth : Screen("auth")
-    object Main : Screen("main")
+sealed class Screen(val route: String)
+sealed class MainTabScreen(
+    route: String,
+    val title: String,
+    @DrawableRes val iconRes: Int
+) : Screen(route) {
+    object Home : MainTabScreen("home", "Home", R.drawable.icon_home)
+    object Community : MainTabScreen("community", "Community", R.drawable.icon_community)
+    object Live : MainTabScreen("live", "Live", R.drawable.icon_live)
+    object Voting : MainTabScreen("voting", "Voting", R.drawable.icon_voting)
+    object My : MainTabScreen("my", "My", R.drawable.icon_my)
 
-    object Detail : Screen("detail/{taskId}?title={title}") {
-        fun createRoute(
-            taskId: Int,
-            title: String
-        ): String {
+    companion object {
+        val tabItems get() = listOf(Home, Community, Live, Voting, My)
+    }
+}
+
+sealed class SubScreen(route: String) : Screen(route) {
+    object Login : SubScreen("login")
+    object CommunityPost : SubScreen("communityPost")
+    object CommunityPostDetail : SubScreen("communityPostDetail")
+
+    object Detail : SubScreen("detail/{taskId}?title={title}") {
+        fun createRoute(taskId: Int, title: String): String {
             return "detail/$taskId?title=$title"
         }
     }
 }
-
 class NavigationActions(private val navController: NavHostController){
-    fun navigateMain() {
-        navController.navigate(Screen.Main.route) {
-            popUpTo(Screen.Auth.route) { inclusive = true }
+    fun navigateHome() {
+        navController.navigate(MainTabScreen.Home.route) {
+            popUpTo(SubScreen.Login.route) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+    fun navigateCommunityPost(){
+        navController.navigate(SubScreen.CommunityPost.route){
+            launchSingleTop = true
+        }
+    }
+    fun navigateCommunityPostDetail(){
+        navController.navigate(SubScreen.CommunityPostDetail.route){
             launchSingleTop = true
         }
     }

@@ -4,41 +4,28 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
@@ -50,381 +37,347 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aos.fanpulse.R
-import com.aos.fanpulse.presentation.login.LoginState
 
-enum class HomeTab {
-    HOME, COMMUNITY, LIVE, VOTING, MY
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen () {
-    Box(
+fun HomeScreen() {
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .paint(
-                painter = painterResource(id = R.drawable.loginscreen_bg),
-                contentScale = ContentScale.Crop
-            )
+            .background(colorResource(id = R.color.color_12))
     ) {
-        Scaffold (
-            containerColor = Color.Transparent,
-            topBar = {
-                TopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent
-                    ),
-                    title = {
-                        IconButton(
-                            onClick = { /* 검색 클릭 이벤트 */ },
-                            modifier = Modifier
-                                .height(28.dp)
-                                .width(81.dp)
-                        ) {
-                            Icon(painter = painterResource(id = R.drawable.home_title), contentDescription = "검색", tint = Color.Unspecified) }
-                    },
-                    actions = {
-                        // 오른쪽 아이콘들 (순서대로 배치됨)
-                        IconButton(onClick = { /* 검색 클릭 이벤트 */ }) {
-                            Icon(painter = painterResource(id = R.drawable.icon_search), contentDescription = "검색", tint = Color.Unspecified)
-                        }
-                        IconButton(onClick = { /* 알림 클릭 이벤트 */ }) {
-                            Icon(painter = painterResource(id = R.drawable.icon_alarm_inactive), contentDescription = "알림", tint = Color.Unspecified)
-                        }
-                        IconButton(onClick = { /* 설정 클릭 이벤트 */ }) {
-                            Icon(painter = painterResource(id = R.drawable.icon_inventory), contentDescription = "인벤", tint = Color.Unspecified)
-                        }
-                    }
+        // 1. 메인 썸네일
+        item {
+            Box(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .height(192.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp)),
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.home_ex1),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
-            },
-            bottomBar = {
-                HomeTabNavigation()
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(20.dp)
+                ) {
+                    Text(
+                        modifier = Modifier,
+                        text = "Welcome to FanPulse",
+                        textAlign = TextAlign.Center,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.SansSerif,
+                        color = Color.White,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        modifier = Modifier,
+                        text = "글로벌 K-POP 팬들의 인터랙티브 플랫폼",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = Color.White,
+                    )
+                }
             }
-        ) { innerPadding ->
+        }
+
+        item {
+            //                //  최신 뉴스
             Column(
                 modifier = Modifier
-                    .padding(innerPadding)
-                    .background(colorResource(id = R.color.color_6))
-                    .fillMaxHeight()
-//                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = 16.dp
+                    )
+                    .background(
+                        color = colorResource(R.color.white),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .fillMaxWidth()
             ) {
-//                //  메인 썸네일
-//                Box(
-//                    modifier = Modifier
-//                        .padding(16.dp)
-//                        .height(192.dp)
-//                        .fillMaxWidth()
-//                        .clip(RoundedCornerShape(16.dp)),
-//                ) {
-//                    Image(
-//                        painter = painterResource(id = R.drawable.home_ex1),
-//                        contentDescription = null,
-//                        modifier = Modifier.fillMaxSize(),
-//                        contentScale = ContentScale.Crop
-//                    )
-//                    Column (
-//                        modifier = Modifier
-//                            .align(Alignment.BottomStart)
-//                            .padding(20.dp)
-//                    ){
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "Welcome to FanPulse",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 24.sp,
-//                            fontWeight = FontWeight.Bold,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = Color.White,
-//                        )
-//                        Spacer(modifier = Modifier.height(4.dp))
-//                        Text(
-//                            modifier = Modifier,
-//                            text ="글로벌 K-POP 팬들의 인터랙티브 플랫폼",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = Color.White,
-//                        )
-//                    }
-//                }
-//
-//                //  최신 뉴스
-//                Column (
-//                    modifier = Modifier
-//                        .padding(
-//                            start = 16.dp,
-//                            end = 16.dp,
-//                            bottom = 16.dp
-//                        )
-//                        .background(
-//                            color = colorResource(R.color.white),
-//                            shape = RoundedCornerShape(12.dp)
-//                        )
-//                        .fillMaxWidth()
-//                ) {
-//                    Row (
-//                        modifier = Modifier
-//                            .padding(16.dp)
-//                    ){
-//                        Icon(
-//                            painter = painterResource(id = R.drawable.icon_news),
-//                            contentDescription = "검색",
-//                            tint = Color.Unspecified
-//                        )
-//                        Spacer(Modifier.width(8.dp))
-//                        Text(
-//                            modifier = Modifier,
-//                            text ="최신 뉴스",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = Color.Black,
-//                        )
-//                    }
-//                    Row (
-//                        modifier = Modifier
-//                            .padding(16.dp)
-//                    ){
-//                        Text(
-//                            modifier = Modifier,
-//                            text ="뉴스",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = colorResource(id = R.color.color_1),
-//                        )
-//                        Spacer(Modifier.width(8.dp))
-//                        Text(
-//                            modifier = Modifier,
-//                            text ="BTS 새 앨범 발매 예정",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = Color.Black,
-//                        )
-//                        Spacer(modifier = Modifier.weight(1f))
-//                        Text(
-//                            modifier = Modifier,
-//                            text ="1 시간 전",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = colorResource(id = R.color.color_text_4),
-//                        )
-//                    }
-//                    Row (
-//                        modifier = Modifier
-//                            .padding(16.dp)
-//                    ){
-//                        Text(
-//                            modifier = Modifier,
-//                            text ="공연",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = colorResource(id = R.color.color_1),
-//                        )
-//                        Spacer(Modifier.width(8.dp))
-//                        Text(
-//                            modifier = Modifier,
-//                            text ="BLACKPINK 월드투어 추가 공연",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = Color.Black,
-//                        )
-//                        Spacer(modifier = Modifier.weight(1f))
-//                        Text(
-//                            modifier = Modifier,
-//                            text ="1 시간 전",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = colorResource(id = R.color.color_text_4),
-//                        )
-//                    }
-//                }
-//
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.icon_news),
+                        contentDescription = "검색",
+                        tint = Color.Unspecified
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        modifier = Modifier,
+                        text = "최신 뉴스",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = Color.Black,
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        modifier = Modifier,
+                        text = "뉴스",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = colorResource(id = R.color.color_1),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        modifier = Modifier,
+                        text = "BTS 새 앨범 발매 예정",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = Color.Black,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        modifier = Modifier,
+                        text = "1 시간 전",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = colorResource(id = R.color.color_text_4),
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        modifier = Modifier,
+                        text = "공연",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = colorResource(id = R.color.color_1),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        modifier = Modifier,
+                        text = "BLACKPINK 월드투어 추가 공연",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = Color.Black,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        modifier = Modifier,
+                        text = "1 시간 전",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = colorResource(id = R.color.color_text_4),
+                    )
+                }
+            }
+        }
+        item {
 //                //  Live Now
-//                Column(
-//                    modifier = Modifier.padding(
-//                            start = 16.dp,
-//                            top = 8.dp,
-//                            bottom = 16.dp
-//                        )
-//                ) {
-//                    Row (
-//                        modifier = Modifier.padding(
-//                            end = 16.dp)
-//                    ) {
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "\uD83D\uDD34 Live Now",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 18.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = Color.Black,
-//                        )
-//                        Spacer(modifier = Modifier.weight(1f))
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "View All",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = colorResource(id = R.color.color_1),
-//                        )
-//                    }
-//                    Spacer(Modifier.height(12.dp))
-//                    LazyRow {
-//                        items(10) { index ->
-//                            SetLiveNowItem()
-//                        }
-//                    }
-//                }
-//
-//                //  인기 게시글
-//                Column(
-//                    modifier = Modifier.padding(
-//                        start = 16.dp,
-//                        top = 24.dp,
-//                        end = 16.dp)
-//                        .fillMaxWidth()
-//                ){
-//                    Row (
-//                        modifier = Modifier.padding(
-//                            end = 16.dp)
-//                    ) {
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "\uD83D\uDD25 인기 게시글",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 18.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = Color.Black,
-//                        )
-//                        Spacer(modifier = Modifier.weight(1f))
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "더보기",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = colorResource(id = R.color.color_1),
-//                        )
-//                    }
-//
+            Column(
+                modifier = Modifier.padding(
+                    start = 16.dp,
+                    top = 8.dp,
+                    bottom = 16.dp
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(
+                        end = 16.dp
+                    )
+                ) {
+                    Text(
+                        modifier = Modifier,
+                        text = "\uD83D\uDD34 Live Now",
+                        textAlign = TextAlign.Center,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = Color.Black,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        modifier = Modifier,
+                        text = "View All",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = colorResource(id = R.color.color_1),
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                LazyRow {
+                    items(10) { index ->
+                        SetLiveNowItem()
+                    }
+                }
+            }
+        }
+        item {
+            //  인기 게시글
+            Column(
+                modifier = Modifier
+                    .padding(
+                        start = 16.dp,
+                        top = 24.dp,
+                        end = 16.dp
+                    )
+                    .fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(
+                        end = 16.dp
+                    )
+                ) {
+                    Text(
+                        modifier = Modifier,
+                        text = "\uD83D\uDD25 인기 게시글",
+                        textAlign = TextAlign.Center,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = Color.Black,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        modifier = Modifier,
+                        text = "더보기",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = colorResource(id = R.color.color_1),
+                    )
+                }
+                SetPopularPostItem()
 //                    LazyColumn {
 //                        items(3) { index ->
 //                            SetPopularPostItem()
 //                        }
 //                    }
-//                }
+            }
+        }
+        item {
+            //  실시간 차트
+            Column(
+                modifier = Modifier
+                    .padding(
+                        start = 16.dp,
+                        top = 24.dp,
+                        end = 16.dp
+                    )
+                    .fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(
+                        end = 16.dp
+                    )
+                ) {
+                    Text(
+                        modifier = Modifier,
+                        text = "\uD83D\uDCCA 실시간 차트",
+                        textAlign = TextAlign.Center,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = Color.Black,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        modifier = Modifier,
+                        text = "전체보기",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = colorResource(id = R.color.color_1),
+                    )
+                }
 
-                //  실시간 차트
-//                Column(
-//                    modifier = Modifier.padding(
-//                        start = 16.dp,
-//                        top = 24.dp,
-//                        end = 16.dp)
-//                        .fillMaxWidth()
-//                ) {
-//                    Row(
-//                        modifier = Modifier.padding(
-//                            end = 16.dp
-//                        )
-//                    ) {
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "\uD83D\uDCCA 실시간 차트",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 18.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = Color.Black,
-//                        )
-//                        Spacer(modifier = Modifier.weight(1f))
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "전체보기",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = colorResource(id = R.color.color_1),
-//                        )
-//                    }
-//
-//                    Spacer((Modifier.height(12.dp)))
-//
-//                    Column(
-//                        modifier = Modifier
-//                            .background(
-//                                color = colorResource(R.color.white),
-//                                shape = RoundedCornerShape(12.dp)
-//                            )
-//                    ) {
-//                        Column(
-//                            modifier = Modifier.padding(16.dp)
-//                        ){
-//                            LazyColumn (
+                Spacer((Modifier.height(12.dp)))
+
+                Column(
+                    modifier = Modifier
+                        .background(
+                            color = colorResource(R.color.white),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        SetRealTimeChartItem(1)
+//                            LazyColumn(
 //                                verticalArrangement = Arrangement.spacedBy(12.dp)
-//                            ){
+//                            ) {
 //                                items(5) { index ->
 //                                    SetRealTimeChartItem(index)
 //                                }
 //                            }
-//                        }
-//                    }
-//                }
-
-                //  Best Male Group
-//                Column(
-//                    modifier = Modifier.padding(
-//                        start = 16.dp,
-//                        top = 24.dp,
-//                        end = 16.dp)
-//                        .fillMaxWidth()
-//                ) {
-//                    Row(
-//                        modifier = Modifier.padding(
-//                            end = 16.dp
-//                        )
-//                    ) {
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "Best Male Group 2024",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 18.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = Color.Black,
-//                        )
-//                        Spacer(modifier = Modifier.weight(1f))
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "Vote Now",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = colorResource(id = R.color.color_1),
-//                        )
-//                    }
-//                    Spacer((Modifier.height(12.dp)))
-//
+                    }
+                }
+            }
+        }
+        item {
+            //  Best Male Group
+            Column(
+                modifier = Modifier
+                    .padding(
+                        start = 16.dp,
+                        top = 24.dp,
+                        end = 16.dp
+                    )
+                    .fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(
+                        end = 16.dp
+                    )
+                ) {
+                    Text(
+                        modifier = Modifier,
+                        text = "Best Male Group 2024",
+                        textAlign = TextAlign.Center,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = Color.Black,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        modifier = Modifier,
+                        text = "Vote Now",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = colorResource(id = R.color.color_1),
+                    )
+                }
+                Spacer((Modifier.height(12.dp)))
+                SetBestGroupItem()
 //                    LazyVerticalGrid(
 //                        columns = GridCells.Fixed(2), // 2열
 //                        modifier = Modifier.fillMaxSize(),
@@ -435,103 +388,110 @@ fun HomeScreen () {
 //                            SetBestGroupItem()
 //                        }
 //                    }
-//                }
-                //  Upcoming Events
-//                Column(
-//                    modifier = Modifier.padding(
-//                        start = 16.dp,
-//                        top = 24.dp,
-//                        end = 16.dp)
-//                        .fillMaxWidth()
-//                ) {
-//                    Row(
-//                        modifier = Modifier.padding(
-//                            end = 16.dp
-//                        )
-//                    ) {
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "\uD83D\uDCC5 Upcoming Events",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 18.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = Color.Black,
-//                        )
-//                        Spacer(modifier = Modifier.weight(1f))
-//                        Text(
-//                            modifier = Modifier,
-//                            text = "See All",
-//                            textAlign = TextAlign.Center,
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.Normal,
-//                            fontFamily = FontFamily.SansSerif,
-//                            color = colorResource(id = R.color.color_1),
-//                        )
-//                    }
-//                    Spacer((Modifier.height(12.dp)))
-//
-//                    Column {
-//                        LazyColumn (
+            }
+        }
+        item {
+            //  Upcoming Events
+            Column(
+                modifier = Modifier
+                    .padding(
+                        start = 16.dp,
+                        top = 24.dp,
+                        end = 16.dp
+                    )
+                    .fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(
+                        end = 16.dp
+                    )
+                ) {
+                    Text(
+                        modifier = Modifier,
+                        text = "\uD83D\uDCC5 Upcoming Events",
+                        textAlign = TextAlign.Center,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = Color.Black,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        modifier = Modifier,
+                        text = "See All",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif,
+                        color = colorResource(id = R.color.color_1),
+                    )
+                }
+                Spacer((Modifier.height(12.dp)))
+
+                Column {
+                    SetUpcomingEventsItem()
+//                        LazyColumn(
 //                            verticalArrangement = Arrangement.spacedBy(12.dp)
-//                        ){
+//                        ) {
 //                            items(2) { index ->
 //                                SetUpcomingEventsItem()
 //                            }
 //                        }
-//                    }
-//                }
-
-                //
-                Row (
-                    modifier = Modifier.padding(
+                }
+            }
+        }
+        item {
+            //
+            Row(
+                modifier = Modifier
+                    .padding(
                         start = 16.dp,
                         top = 24.dp,
                         end = 16.dp,
-                        bottom = 24.dp)
-                        .fillMaxWidth()
-                ){
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .clickable { }
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.btn_earn_rewards),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                    Spacer((Modifier.width(12.dp)))
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .clickable { }
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.btn_vip_club),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                    Spacer((Modifier.width(12.dp)))
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .clickable { }
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.btn_community),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                        bottom = 24.dp
+                    )
+                    .fillMaxWidth()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                        .clickable { }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.btn_earn_rewards),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                Spacer((Modifier.width(12.dp)))
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                        .clickable { }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.btn_vip_club),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                Spacer((Modifier.width(12.dp)))
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                        .clickable { }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.btn_community),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
                 }
             }
         }
@@ -896,38 +856,6 @@ fun SetBestGroupItem(){
         }
     }
 }
-
-@Composable
-fun HomeTabNavigation(){
-    var selectedTab by rememberSaveable {
-        mutableStateOf(HomeTab.HOME)
-    }
-
-}
-
-//@Composable
-//fun RowScope.MainNavigationItem(
-//    onClick: () -> Unit,
-//    selected: Boolean,
-//    @StringRes labelRes: Int,
-//    @DrawableRes iconRes: Int,
-//    modifier: Modifier = Modifier,
-//) {
-//    BottomNavigationItem(
-//        modifier = modifier,
-//        icon = {
-//            Icon(painter = painterResource(id = iconRes), contentDescription = null)
-//        },
-//        label = {
-//            Text(text = stringResource(id = labelRes))
-//        },
-//        unselectedContentColor = colorResource(id = R.color.black),
-//        selectedContentColor = colorResource(id = R.color.white),
-//        onClick = onClick,
-//        selected = selected,
-//        alwaysShowLabel = false
-//    )
-//}
 
 @Preview(showBackground = true)
 @Composable
