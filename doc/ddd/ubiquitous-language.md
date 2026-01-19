@@ -91,17 +91,20 @@
 
 | 한글 | 영문 | 정의 | 사용 예시 |
 |------|------|------|----------|
-| 뉴스 | News | K-POP 관련 최신 소식 | "새로운 뉴스가 있습니다" |
-| 뉴스 출처 | News Source | 뉴스의 원본 매체 | "출처: Naver News" |
-| 차트 | Chart | 음악 순위표 | "Billboard 차트 업데이트" |
-| 차트 순위 | Chart Rank | 특정 차트에서의 순위 | "차트 1위를 차지했습니다" |
-| 순위 변동 | Rank Change | 이전 대비 순위의 변화 | "3계단 상승" |
-| 실시간 차트 | Realtime Chart | 실시간으로 업데이트되는 차트 | "실시간 차트 확인" |
-| 주간 차트 | Weekly Chart | 주 단위로 집계되는 차트 | "주간 차트 발표" |
+| 뉴스 | News | K-POP 관련 최신 소식 (크롤링 데이터) | "새로운 뉴스가 있습니다" |
+| 뉴스 출처 | NewsSource | 뉴스의 원본 매체 (Naver, Google News 등) | "출처: Naver News" |
+| 원본 URL | OriginalUrl | 뉴스의 원본 링크 | "원본 기사 보기" |
+| 차트 | Chart | 음원 순위표 (Billboard, Melon 등) | "Billboard 차트 업데이트" |
+| 차트 엔트리 | ChartEntry | 특정 시점의 차트 순위 정보 (rank, artist, song) | "차트 1위를 차지했습니다" |
+| 차트 출처 | ChartSource | 차트 데이터 제공 플랫폼 | "Melon 차트 기준" |
+| 차트 기간 | ChartPeriod | 차트 집계 기간 (REALTIME, WEEKLY) | "실시간 차트 확인" |
+| 순위 변동 | RankChange | 이전 대비 순위의 변화 (UP, DOWN, UNCHANGED, NEW) | "3계단 상승" |
+| 기준 시각 | AsOf | 차트 집계 기준 시점 | "2026-01-17 12:00 기준" |
 | 아티스트 | Artist | K-POP 가수 또는 그룹 | "아티스트 정보 보기" |
 | 소속사 | Agency | 아티스트가 소속된 연예 기획사 | "소속사: HYBE" |
-| 팬덤명 | Fandom Name | 아티스트 팬클럽의 공식 명칭 | "BTS 팬덤: ARMY" |
-| 데뷔일 | Debut Date | 아티스트의 공식 데뷔 날짜 | "2013년 6월 13일 데뷔" |
+| 팬덤명 | FandomName | 아티스트 팬클럽의 공식 명칭 | "BTS 팬덤: ARMY" |
+| 데뷔일 | DebutDate | 아티스트의 공식 데뷔 날짜 | "2013년 6월 13일 데뷔" |
+| 프로필 이미지 | ProfileImageUrl | 아티스트 대표 이미지 URL | "프로필 이미지 변경" |
 
 ---
 
@@ -221,3 +224,4 @@
 |------|------|----------|--------|
 | 1.0.0 | 2025-12-28 | 최초 작성 - 전체 Context 용어 정의 | 정지원 |
 | 1.1.0 | 2026-01-11 | Streaming Context에 메타데이터 갱신 관련 용어 추가 | 정지원 |
+| 1.2.0 | 2026-01-17 | Content Context 용어 상세화 (ChartEntry, ChartSource, ChartPeriod, RankChange 등) | Claude |

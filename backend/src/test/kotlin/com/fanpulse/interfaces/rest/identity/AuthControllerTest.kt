@@ -119,7 +119,7 @@ class AuthControllerTest {
                 refreshToken = "refresh_token"
             )
 
-            every { authService.login(any()) } returns response
+            every { authService.login(any(), any()) } returns response
 
             // When & Then
             mockMvc.post("/api/v1/auth/login") {
@@ -141,7 +141,7 @@ class AuthControllerTest {
                 password = "WrongPassword"
             )
 
-            every { authService.login(any()) } throws InvalidCredentialsException()
+            every { authService.login(any(), any()) } throws InvalidCredentialsException()
 
             // When & Then
             mockMvc.post("/api/v1/auth/login") {

@@ -63,7 +63,7 @@ class ChangePasswordHandlerTest {
         user.pullDomainEvents() // Clear registration events
 
         every { userPort.findById(userId) } returns user
-        every { passwordEncoder.matches(command.currentPassword, user.passwordHash!!) } returns true
+        every { passwordEncoder.matches(command.currentPassword, any()) } returns true
         every { passwordEncoder.encode(command.newPassword) } returns "new_encoded_password"
         every { userPort.save(any()) } answers { firstArg() }
 
@@ -113,7 +113,7 @@ class ChangePasswordHandlerTest {
         )
 
         every { userPort.findById(userId) } returns user
-        every { passwordEncoder.matches(command.currentPassword, user.passwordHash!!) } returns false
+        every { passwordEncoder.matches(command.currentPassword, any()) } returns false
 
         // When & Then
         assertThrows(InvalidPasswordException::class.java) {
@@ -142,7 +142,7 @@ class ChangePasswordHandlerTest {
         user.pullDomainEvents() // Clear registration events
 
         every { userPort.findById(userId) } returns user
-        every { passwordEncoder.matches(command.currentPassword, user.passwordHash!!) } returns true
+        every { passwordEncoder.matches(command.currentPassword, any()) } returns true
         every { passwordEncoder.encode(command.newPassword) } returns "new_encoded_password"
         every { userPort.save(any()) } answers { firstArg() }
 

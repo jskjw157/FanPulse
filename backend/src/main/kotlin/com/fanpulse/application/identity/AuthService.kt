@@ -76,11 +76,12 @@ class AuthService(
      * Authenticates a user with email/password.
      *
      * @param request Login request containing email and password
+     * @param requestContext Optional context containing IP address and user agent for audit trail
      * @return AuthResponse with tokens and user info
      * @throws InvalidCredentialsException if credentials are invalid
      */
-    @Transactional(readOnly = true)
-    fun login(request: LoginRequest): AuthResponse {
+    @Transactional
+    fun login(request: LoginRequest, requestContext: RequestContext? = null): AuthResponse {
         logger.debug { "Login attempt for: ${request.email}" }
 
         // Find user
@@ -93,13 +94,13 @@ class AuthService(
             throw InvalidCredentialsException()
         }
 
-        // Publish login event
+        // Publish login event with client context
         eventPublisher.publish(
             UserLoggedIn(
                 userId = user.id,
                 loginType = LoginType.EMAIL,
-                ipAddress = null,  // TODO: Extract from HttpServletRequest
-                userAgent = null
+                ipAddress = requestContext?.ipAddress,
+                userAgent = requestContext?.userAgent
             )
         )
 
