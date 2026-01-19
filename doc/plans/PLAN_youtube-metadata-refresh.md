@@ -39,7 +39,7 @@ YouTube oEmbed API를 활용하여 메타데이터를 주기적으로 자동 갱
 
 ### 2.2 Out of Scope (Next Phase)
 - [ ] YouTube Data API v3 연동 (시청자 수 정확한 조회)
-- [ ] Weverse Live 메타데이터 갱신
+- [ ] Weverse Live 메타데이터 갱신 (Next)
 - [ ] 실시간 WebSocket 기반 상태 업데이트
 - [ ] 알림 서비스 연동 (라이브 시작 알림)
 
