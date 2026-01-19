@@ -12,10 +12,9 @@ import javax.inject.Inject
 class GoogleSignInDataSourceImpl @Inject constructor(
     private val credentialManager: CredentialManager,
     private val googleIdOption: GetGoogleIdOption,
-    @ApplicationContext private val context: Context
 ) : GoogleSignInDataSource {
 
-    override suspend fun signIn(): Result<Credential> {
+    override suspend fun signIn(activityContext: Context): Result<Credential> {
         return try {
             // Credential 요청 생성
             val request = GetCredentialRequest.Builder()
@@ -25,7 +24,7 @@ class GoogleSignInDataSourceImpl @Inject constructor(
             // CredentialManager로 요청 실행
             val response = credentialManager.getCredential(
                 request = request,
-                context = context
+                context = activityContext
             )
 
             // 응답에서 Credential 추출
