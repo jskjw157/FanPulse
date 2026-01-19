@@ -28,6 +28,10 @@ spring:
     clean-disabled: false  # Allow clean in test environment
 
 fanpulse:
+  security:
+    rate-limit:
+      enabled: false  # Disable rate limiting in integration tests
+
   youtube:
     oembed:
       base-url: http://localhost:8089/oembed

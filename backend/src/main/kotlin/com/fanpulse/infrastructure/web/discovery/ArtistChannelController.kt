@@ -4,7 +4,7 @@ import com.fanpulse.application.dto.discovery.*
 import com.fanpulse.application.service.LiveDiscoveryResult
 import com.fanpulse.application.service.LiveDiscoveryService
 import com.fanpulse.domain.discovery.ArtistChannel
-import com.fanpulse.domain.discovery.ArtistChannelRepository
+import com.fanpulse.domain.discovery.port.ArtistChannelPort
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -25,7 +25,7 @@ import java.util.UUID
 @Tag(name = "Artist Channels (Admin)", description = "Artist channel management for live stream discovery")
 @SecurityRequirement(name = "bearerAuth")
 class ArtistChannelController(
-    private val artistChannelRepository: ArtistChannelRepository,
+    private val artistChannelPort: ArtistChannelPort,
     private val liveDiscoveryService: LiveDiscoveryService
 ) {
 
@@ -42,7 +42,7 @@ class ArtistChannelController(
         )
     )
     fun getAllChannels(): ResponseEntity<ArtistChannelListResponse> {
-        val channels = artistChannelRepository.findAll()
+        val channels = artistChannelPort.findAll()
         val response = ArtistChannelListResponse(
             content = channels.map { ArtistChannelResponse.from(it) },
             totalElements = channels.size.toLong()
@@ -67,7 +67,7 @@ class ArtistChannelController(
         @Parameter(description = "Channel ID")
         @PathVariable id: UUID
     ): ResponseEntity<ArtistChannelResponse> {
-        val channel = artistChannelRepository.findById(id).orElse(null)
+        val channel = artistChannelPort.findById(id)
             ?: return ResponseEntity.notFound().build()
         return ResponseEntity.ok(ArtistChannelResponse.from(channel))
     }
@@ -81,7 +81,7 @@ class ArtistChannelController(
         @Parameter(description = "Artist ID")
         @PathVariable artistId: UUID
     ): ResponseEntity<ArtistChannelListResponse> {
-        val channels = artistChannelRepository.findByArtistId(artistId)
+        val channels = artistChannelPort.findByArtistId(artistId)
         val response = ArtistChannelListResponse(
             content = channels.map { ArtistChannelResponse.from(it) },
             totalElements = channels.size.toLong()
@@ -107,7 +107,7 @@ class ArtistChannelController(
         @Valid @RequestBody request: CreateArtistChannelRequest
     ): ResponseEntity<ArtistChannelResponse> {
         // Check for duplicate
-        val existing = artistChannelRepository.findByPlatformAndChannelHandle(
+        val existing = artistChannelPort.findByPlatformAndChannelHandle(
             request.platform,
             request.channelHandle
         )
@@ -125,7 +125,7 @@ class ArtistChannelController(
             isActive = request.isActive
         )
 
-        val saved = artistChannelRepository.save(channel)
+        val saved = artistChannelPort.save(channel)
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ArtistChannelResponse.from(saved))
     }
@@ -148,7 +148,7 @@ class ArtistChannelController(
         @PathVariable id: UUID,
         @Valid @RequestBody request: UpdateArtistChannelRequest
     ): ResponseEntity<ArtistChannelResponse> {
-        val channel = artistChannelRepository.findById(id).orElse(null)
+        val channel = artistChannelPort.findById(id)
             ?: return ResponseEntity.notFound().build()
 
         request.channelHandle?.let { channel.channelHandle = it }
@@ -157,7 +157,7 @@ class ArtistChannelController(
         request.isOfficial?.let { channel.isOfficial = it }
         request.isActive?.let { channel.isActive = it }
 
-        val updated = artistChannelRepository.save(channel)
+        val updated = artistChannelPort.save(channel)
         return ResponseEntity.ok(ArtistChannelResponse.from(updated))
     }
 
@@ -174,10 +174,10 @@ class ArtistChannelController(
         @Parameter(description = "Channel ID")
         @PathVariable id: UUID
     ): ResponseEntity<Void> {
-        if (!artistChannelRepository.existsById(id)) {
+        if (!artistChannelPort.existsById(id)) {
             return ResponseEntity.notFound().build()
         }
-        artistChannelRepository.deleteById(id)
+        artistChannelPort.deleteById(id)
         return ResponseEntity.noContent().build()
     }
 

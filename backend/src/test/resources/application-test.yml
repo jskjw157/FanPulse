@@ -20,6 +20,10 @@ spring:
     enabled: false  # Disable Flyway for H2-based tests (use integration-test profile for Flyway tests)
 
 fanpulse:
+  security:
+    rate-limit:
+      enabled: false  # Disable rate limiting in tests
+
   youtube:
     oembed:
       base-url: http://localhost:8089/oembed

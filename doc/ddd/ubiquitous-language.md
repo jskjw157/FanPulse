@@ -224,4 +224,4 @@
 |------|------|----------|--------|
 | 1.0.0 | 2025-12-28 | 최초 작성 - 전체 Context 용어 정의 | 정지원 |
 | 1.1.0 | 2026-01-11 | Streaming Context에 메타데이터 갱신 관련 용어 추가 | 정지원 |
-| 1.2.0 | 2026-01-17 | Content Context 용어 상세화 (ChartEntry, ChartSource, ChartPeriod, RankChange 등) | Claude |
+| 1.2.0 | 2026-01-17 | Content Context 용어 상세화 (ChartEntry, ChartSource, ChartPeriod, RankChange 등) | 정지원 |
