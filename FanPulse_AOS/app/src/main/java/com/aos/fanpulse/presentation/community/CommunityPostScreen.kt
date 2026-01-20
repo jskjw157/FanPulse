@@ -60,9 +60,12 @@ fun CommunityPostScreen(
 ) {
     val scrollState = rememberScrollState()
 
-    Column {
+    Column (modifier = Modifier
+            .fillMaxSize()
+        .background(color = colorResource(R.color.white))
+    ){
         TopAppBar(
-            modifier = Modifier.height(48.dp),
+//            modifier = Modifier.height(48.dp),
             navigationIcon = {
                 Box(
                     modifier = Modifier,

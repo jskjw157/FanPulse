@@ -1,5 +1,6 @@
 package com.aos.fanpulse.presentation.login
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Tab
@@ -102,15 +104,12 @@ fun LoginScreen (
                 color = Color.White,
             )
 
-            Button(
-                onClick = {
-                    onGoHome()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, Color.Gray, RoundedCornerShape(100.dp)),
+            OutlinedButton(
+                onClick = { onGoHome() },
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(
+                border = BorderStroke(1.dp, Color.Gray),
+                colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = Color.White,
                     contentColor = Color.Black
                 )

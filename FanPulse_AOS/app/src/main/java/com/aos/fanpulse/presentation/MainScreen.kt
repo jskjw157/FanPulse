@@ -121,9 +121,6 @@ fun MainScreen() {
                             }
                         )
                     }
-                    MainTabScreen.Live.route -> {
-
-                    }
                     MainTabScreen.Voting.route -> {
 
                     }

@@ -115,10 +115,12 @@ fun CommunityScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(5) { index ->
-                    CommunityItem(){
-                        //  게시물에 대한 정보가 필요
-                        goPostDetailScreen
-                    }
+                    CommunityItem(
+                        goPostDetailScreen = {
+                            //  게시물에 대한 정보가 필요
+                            goPostDetailScreen()
+                        }
+                    )
                 }
             }
         }
@@ -225,7 +227,7 @@ fun CommunityItem(
                 shape = RoundedCornerShape(16.dp)
             )
             .clickable{
-
+                goPostDetailScreen()
             }
     ){
         Row (
