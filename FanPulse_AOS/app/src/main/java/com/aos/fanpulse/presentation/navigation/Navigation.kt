@@ -12,19 +12,18 @@ sealed class MainTabScreen(
 ) : Screen(route) {
     object Home : MainTabScreen("home", "Home", R.drawable.icon_home)
     object Community : MainTabScreen("community", "Community", R.drawable.icon_community)
-    object Live : MainTabScreen("live", "Live", R.drawable.icon_live)
     object Voting : MainTabScreen("voting", "Voting", R.drawable.icon_voting)
     object My : MainTabScreen("my", "My", R.drawable.icon_my)
 
     companion object {
-        val tabItems get() = listOf(Home, Community, Live, Voting, My)
+        val tabItems get() = listOf(Home, Community, Voting, My)
     }
 }
 
 sealed class SubScreen(route: String) : Screen(route) {
     object Login : SubScreen("login")
-    object CommunityPost : SubScreen("communityPost")
-    object CommunityPostDetail : SubScreen("communityPostDetail")
+    object CommunityPost : SubScreen("community_post")
+    object CommunityPostDetail : SubScreen("community_post_detail")
 
     object Detail : SubScreen("detail/{taskId}?title={title}") {
         fun createRoute(taskId: Int, title: String): String {

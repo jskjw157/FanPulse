@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -52,11 +53,14 @@ fun CommunityPostDetailScreen (
     onCancel: () -> Unit,
     onPost: () -> Unit
 ){
-    Column {
+    Column (modifier = Modifier
+        .fillMaxSize()
+        .background(color = colorResource(R.color.white))
+    ){
         TopAppBar(
             navigationIcon = {
                 IconButton(onClick = {
-
+                    onCancel()
                 }) {
                     Icon(painter = painterResource(id = R.drawable.icon_left_arrow), contentDescription = null, tint = Color.Black)
                 }
@@ -132,6 +136,7 @@ fun CommunityPostDetailScreen (
                     .background(Color.White, shape = RoundedCornerShape(16.dp))
                     .fillMaxWidth()
                     .height(256.dp),
+                contentScale = ContentScale.Crop,
                 painter = painterResource(id = R.drawable.home_ex1),
                 contentDescription = null,
             )

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -39,7 +40,9 @@ import java.nio.file.WatchEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen (){
+fun SettingsScreen (
+    onCancel: () -> Unit,
+){
     val robotoBold16 = TextStyle(
         fontFamily = FontFamily.SansSerif, // Roboto 기본 적용
         fontWeight = FontWeight.W700,      // Bold
@@ -53,11 +56,14 @@ fun SettingsScreen (){
             trim = LineHeightStyle.Trim.None
         )
     )
-    Column {
+    Column (modifier = Modifier
+        .fillMaxSize()
+        .background(color = colorResource(R.color.white))
+    ){
         TopAppBar(
             navigationIcon = {
                 IconButton(onClick = {
-
+                    onCancel()
                 }) {
                     Icon(painter = painterResource(id = R.drawable.icon_left_arrow), contentDescription = null, tint = Color.Black)
                 }
@@ -340,5 +346,5 @@ fun SettingsScreen (){
 @Preview(showBackground = true)
 @Composable
 fun SettingsScreenPreview() {
-    SettingsScreen()
+    SettingsScreen(){}
 }
