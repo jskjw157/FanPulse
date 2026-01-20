@@ -48,19 +48,15 @@ final class MainTabBarController: UITabBarController {
                 selectedSystemImage: "vote_sel",
                 rootViewController:
                     ErrorViewController(
-                    title: "문제가 발생했어요",
-                    message: "네트워크 오류",
-                    description: "인터넷 연결을 확인한 후 다시 시도해주세요.",
-                    primaryButtonTitle: "다시 시도",
-                    secondaryButtonTitle: "닫기",
-                    footerText: "에러 코드: NET_001",
-                    primaryAction: {
-                        print("다시 시도 버튼 탭")
-                    },
-                    secondaryAction: {
-                        print("닫기 버튼 탭")
-                    }
-                )
+                        message: "Something went wrong",
+                        description: "We're sorry for the inconvenience. The page you're looking for might have been removed or is temporarily unavailable.",
+                        secondaryAction: {
+                            // Go Back 동작 (옵션)
+                        },
+                        supportAction: {
+                            // 고객 지원 페이지로 이동
+                        }
+                    )
             ),
             makeTab(
                 title: "My",

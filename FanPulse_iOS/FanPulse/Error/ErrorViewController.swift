@@ -33,40 +33,30 @@ final class ErrorViewController: UIViewController {
     )
     
     private let secondaryButton = UIButton(type: .system)
+    
     private let footerLabel = UILabel()
+    private let supportButton = UIButton(type: .system)
     
     // MARK: - Properties
     
-    private let titleText: String
     private let messageText: String
     private let descriptionText: String
-    private let primaryButtonTitle: String
-    private let secondaryButtonTitle: String
-    private let footerText: String?
     
-    private let primaryAction: (() -> Void)?
     private let secondaryAction: (() -> Void)?
+    private let supportAction: (() -> Void)?
     
     // MARK: - Init
     
     init(
-        title: String,
         message: String,
         description: String,
-        primaryButtonTitle: String,
-        secondaryButtonTitle: String,
-        footerText: String? = nil,
-        primaryAction: (() -> Void)? = nil,
-        secondaryAction: (() -> Void)? = nil
+        secondaryAction: (() -> Void)? = nil,
+        supportAction: (() -> Void)? = nil
     ) {
-        self.titleText = title
         self.messageText = message
         self.descriptionText = description
-        self.primaryButtonTitle = primaryButtonTitle
-        self.secondaryButtonTitle = secondaryButtonTitle
-        self.footerText = footerText
-        self.primaryAction = primaryAction
         self.secondaryAction = secondaryAction
+        self.supportAction = supportAction
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -87,7 +77,7 @@ private extension ErrorViewController {
     func setupUI() {
         view.backgroundColor = .clear
         
-        titleLabel.text = titleText
+        titleLabel.text = "Oops!"
         titleLabel.font = .systemFont(ofSize: 30, weight: .bold)
         titleLabel.textAlignment = .center
         titleLabel.textColor = .label
@@ -103,10 +93,16 @@ private extension ErrorViewController {
         descriptionLabel.textColor = .tertiaryLabel
         descriptionLabel.numberOfLines = 0
         
-        primaryButton.setTitle(primaryButtonTitle, for: .normal)
+        primaryButton.setTitle("Go to Home", for: .normal)
+        primaryButton.setImage(UIImage(systemName: "house.fill"), for: .normal)
+        primaryButton.tintColor = .white
+        primaryButton.semanticContentAttribute = .forceLeftToRight
+        primaryButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 8)
         
-        secondaryButton.setTitle(secondaryButtonTitle, for: .normal)
+        secondaryButton.setTitle("Go Back", for: .normal)
+        secondaryButton.setImage(UIImage(systemName: "arrow.left"), for: .normal)
         secondaryButton.setTitleColor(.label, for: .normal)
+        secondaryButton.tintColor = .label
         secondaryButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
         secondaryButton.backgroundColor = .white
         secondaryButton.layer.cornerRadius = 24
@@ -114,12 +110,17 @@ private extension ErrorViewController {
         secondaryButton.layer.shadowOpacity = 0.08
         secondaryButton.layer.shadowOffset = CGSize(width: 0, height: 4)
         secondaryButton.layer.shadowRadius = 8
+        secondaryButton.semanticContentAttribute = .forceLeftToRight
+        secondaryButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 8)
         
-        footerLabel.text = footerText
+        footerLabel.text = "Need help? Contact our "
         footerLabel.font = .systemFont(ofSize: 13)
         footerLabel.textAlignment = .center
         footerLabel.textColor = .secondaryLabel
-        footerLabel.numberOfLines = 0
+        
+        supportButton.setTitle("support team", for: .normal)
+        supportButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
+        supportButton.setTitleColor(UIColor(hex: "#9333EA"), for: .normal)
     }
 }
 
@@ -128,14 +129,14 @@ private extension ErrorViewController {
     func setupLayout() {
         view.addSubview(backgroundView)
         backgroundView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        
         [
             iconView,
             titleLabel,
             messageLabel,
             descriptionLabel,
             primaryButton,
-            secondaryButton,
-            footerLabel
+            secondaryButton
         ].forEach { view.addSubview($0) }
         
         iconView.snp.makeConstraints {
@@ -171,9 +172,16 @@ private extension ErrorViewController {
             $0.height.equalTo(52)
         }
         
-        footerLabel.snp.makeConstraints {
+        // Footer 컨테이너
+        let footerContainer = UIStackView(arrangedSubviews: [footerLabel, supportButton])
+        footerContainer.axis = .horizontal
+        footerContainer.spacing = 0
+        footerContainer.alignment = .center
+        view.addSubview(footerContainer)
+        
+        footerContainer.snp.makeConstraints {
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
-            $0.leading.trailing.equalToSuperview().inset(32)
+            $0.centerX.equalToSuperview()
         }
     }
 }
@@ -181,15 +189,29 @@ private extension ErrorViewController {
 private extension ErrorViewController {
     
     func bind() {
-        primaryButton.addTarget(self, action: #selector(didTapPrimary), for: .touchUpInside)
+        primaryButton.addTarget(self, action: #selector(didTapGoToHome), for: .touchUpInside)
         secondaryButton.addTarget(self, action: #selector(didTapSecondary), for: .touchUpInside)
+        supportButton.addTarget(self, action: #selector(didTapSupport), for: .touchUpInside)
     }
     
-    @objc func didTapPrimary() {
-        primaryAction?()
+    @objc func didTapGoToHome() {
+        // 탭바 컨트롤러로 이동 (홈 탭 선택)
+        if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
+           let window = sceneDelegate.window,
+           let tabBarController = window.rootViewController as? UITabBarController {
+            tabBarController.selectedIndex = 0 // 홈 탭
+            dismiss(animated: true)
+        } else {
+            // 네비게이션 스택을 루트로 되돌림
+            navigationController?.popToRootViewController(animated: true)
+        }
     }
     
     @objc func didTapSecondary() {
         secondaryAction?()
+    }
+    
+    @objc func didTapSupport() {
+        supportAction?()
     }
 }
