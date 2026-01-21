@@ -2,11 +2,11 @@ package com.fanpulse.application.service.identity
 
 import com.fanpulse.application.dto.identity.*
 import com.fanpulse.domain.identity.*
+import com.fanpulse.domain.identity.port.JwtTokenPort
 import com.fanpulse.domain.identity.port.OAuthAccountPort
 import com.fanpulse.domain.identity.port.OAuthTokenVerifierPort
 import com.fanpulse.domain.identity.port.UserPort
 import com.fanpulse.domain.identity.port.UserSettingsPort
-import com.fanpulse.infrastructure.security.jwt.JwtTokenProvider
 import mu.KotlinLogging
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
@@ -23,9 +23,26 @@ class AuthServiceImpl(
     private val userPort: UserPort,
     private val userSettingsPort: UserSettingsPort,
     private val oAuthAccountPort: OAuthAccountPort,
-    private val jwtTokenProvider: JwtTokenProvider,
+    private val jwtTokenPort: JwtTokenPort,
     private val googleTokenVerifier: OAuthTokenVerifierPort
 ) : AuthService {
+
+    companion object {
+        /** Access Token 유효 시간 (초) - 1시간 */
+        private const val ACCESS_TOKEN_EXPIRES_IN_SECONDS = 3600L
+
+        /** Refresh Token 유효 시간 (초) - 7일 */
+        private const val REFRESH_TOKEN_EXPIRES_IN_SECONDS = 604800L
+
+        /** Username base 최대 길이 */
+        private const val USERNAME_BASE_MAX_LENGTH = 20
+
+        /** Username suffix 최대값 (초과 시 UUID 사용) */
+        private const val USERNAME_SUFFIX_MAX = 10000
+
+        /** UUID suffix 길이 */
+        private const val UUID_SUFFIX_LENGTH = 8
+    }
 
     /**
      * Google OAuth 로그인 처리 (보안 개선)
@@ -139,8 +156,9 @@ class AuthServiceImpl(
             val existing = oAuthAccountPort.findByProviderAndProviderUserId(
                 OAuthProvider.GOOGLE,
                 googleUser.providerUserId
-            )!!
-            return userPort.findById(existing.userId)!!
+            ) ?: throw OAuthAccountNotFoundException("OAuth account not found after concurrent creation")
+            return userPort.findById(existing.userId)
+                ?: throw UserNotFoundException("User not found for OAuth account")
         }
 
         return userToSave
@@ -182,8 +200,9 @@ class AuthServiceImpl(
             val existing = oAuthAccountPort.findByProviderAndProviderUserId(
                 OAuthProvider.GOOGLE,
                 googleUser.providerUserId
-            )!!
-            return userPort.findById(existing.userId)!!
+            ) ?: throw OAuthAccountNotFoundException("OAuth account not found after concurrent registration")
+            return userPort.findById(existing.userId)
+                ?: throw UserNotFoundException("User not found for OAuth account")
         }
 
         logger.info { "New user created with Google OAuth: ${savedUser.id}" }
@@ -212,16 +231,16 @@ class AuthServiceImpl(
         logger.debug { "Token refresh attempt" }
 
         // 토큰 검증
-        if (!jwtTokenProvider.validateToken(request.refreshToken)) {
+        if (!jwtTokenPort.validateToken(request.refreshToken)) {
             throw InvalidTokenException("Invalid refresh token")
         }
 
-        if (!jwtTokenProvider.isRefreshToken(request.refreshToken)) {
+        if (!jwtTokenPort.isRefreshToken(request.refreshToken)) {
             throw InvalidTokenException("Token is not a refresh token")
         }
 
         // 사용자 ID 추출
-        val userId = jwtTokenProvider.getUserIdFromToken(request.refreshToken)
+        val userId = jwtTokenPort.getUserIdFromToken(request.refreshToken)
             ?: throw InvalidTokenException("Cannot extract user ID from token")
 
         // 사용자 존재 확인
@@ -248,15 +267,15 @@ class AuthServiceImpl(
      * User ID로 TokenResponse 생성
      */
     private fun createTokenResponse(userId: UUID): TokenResponse {
-        val accessToken = jwtTokenProvider.generateAccessToken(userId)
-        val refreshToken = jwtTokenProvider.generateRefreshToken(userId)
+        val accessToken = jwtTokenPort.generateAccessToken(userId)
+        val refreshToken = jwtTokenPort.generateRefreshToken(userId)
 
         return TokenResponse(
             accessToken = accessToken,
             tokenType = "Bearer",
-            expiresIn = 3600,  // 1 hour
+            expiresIn = ACCESS_TOKEN_EXPIRES_IN_SECONDS,
             refreshToken = refreshToken,
-            refreshExpiresIn = 604800  // 7 days
+            refreshExpiresIn = REFRESH_TOKEN_EXPIRES_IN_SECONDS
         )
     }
 
@@ -267,8 +286,8 @@ class AuthServiceImpl(
      * 개선: 단일 쿼리로 최대 suffix 조회
      */
     private fun generateUniqueUsernameOptimized(email: String, name: String?): String {
-        val base = (name?.replace(" ", "_")?.take(20)
-            ?: email.substringBefore("@").take(20))
+        val base = (name?.replace(" ", "_")?.take(USERNAME_BASE_MAX_LENGTH)
+            ?: email.substringBefore("@").take(USERNAME_BASE_MAX_LENGTH))
             .lowercase()
             .replace(Regex("[^a-z0-9_]"), "")  // 안전한 문자만 허용
 
@@ -282,8 +301,8 @@ class AuthServiceImpl(
         val nextSuffix = maxSuffix + 1
 
         // 3. 안전장치: suffix가 너무 크면 UUID 사용
-        return if (nextSuffix > 10000) {
-            "${base}_${UUID.randomUUID().toString().take(8)}"
+        return if (nextSuffix > USERNAME_SUFFIX_MAX) {
+            "${base}_${UUID.randomUUID().toString().take(UUID_SUFFIX_LENGTH)}"
         } else {
             "${base}_$nextSuffix"
         }

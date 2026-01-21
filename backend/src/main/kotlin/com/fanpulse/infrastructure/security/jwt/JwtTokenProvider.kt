@@ -1,5 +1,6 @@
 package com.fanpulse.infrastructure.security.jwt
 
+import com.fanpulse.domain.identity.port.JwtTokenPort
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
@@ -16,6 +17,7 @@ private val logger = KotlinLogging.logger {}
  * JWT 토큰 제공자
  *
  * JWT 토큰의 생성과 검증을 담당합니다.
+ * JwtTokenPort 인터페이스를 구현하여 Application 계층에서 사용됩니다.
  */
 @Component
 class JwtTokenProvider(
@@ -27,13 +29,13 @@ class JwtTokenProvider(
 
     @Value("\${fanpulse.jwt.refresh-expiration}")
     private val refreshExpiration: Long
-) {
+) : JwtTokenPort {
     private val key = Keys.hmacShaKeyFor(secret.toByteArray(StandardCharsets.UTF_8))
 
     /**
      * 액세스 토큰 생성
      */
-    fun generateAccessToken(userId: UUID): String {
+    override fun generateAccessToken(userId: UUID): String {
         val now = Instant.now()
         val expiryDate = Date.from(now.plusMillis(accessExpiration))
 
@@ -49,7 +51,7 @@ class JwtTokenProvider(
     /**
      * 리프레시 토큰 생성
      */
-    fun generateRefreshToken(userId: UUID): String {
+    override fun generateRefreshToken(userId: UUID): String {
         val now = Instant.now()
         val expiryDate = Date.from(now.plusMillis(refreshExpiration))
 
@@ -65,7 +67,7 @@ class JwtTokenProvider(
     /**
      * 토큰에서 사용자 ID 추출
      */
-    fun getUserIdFromToken(token: String): UUID? {
+    override fun getUserIdFromToken(token: String): UUID? {
         return try {
             val claims = getClaims(token)
             UUID.fromString(claims.subject)
@@ -78,7 +80,7 @@ class JwtTokenProvider(
     /**
      * 토큰 유효성 검증
      */
-    fun validateToken(token: String): Boolean {
+    override fun validateToken(token: String): Boolean {
         return try {
             getClaims(token)
             true
@@ -91,7 +93,7 @@ class JwtTokenProvider(
     /**
      * 액세스 토큰인지 확인
      */
-    fun isAccessToken(token: String): Boolean {
+    override fun isAccessToken(token: String): Boolean {
         return try {
             val claims = getClaims(token)
             claims["type"] == "access"
@@ -103,7 +105,7 @@ class JwtTokenProvider(
     /**
      * 리프레시 토큰인지 확인
      */
-    fun isRefreshToken(token: String): Boolean {
+    override fun isRefreshToken(token: String): Boolean {
         return try {
             val claims = getClaims(token)
             claims["type"] == "refresh"
@@ -115,7 +117,7 @@ class JwtTokenProvider(
     /**
      * 토큰 만료 시간 가져오기
      */
-    fun getExpirationFromToken(token: String): Date? {
+    override fun getExpirationFromToken(token: String): Date? {
         return try {
             val claims = getClaims(token)
             claims.expiration

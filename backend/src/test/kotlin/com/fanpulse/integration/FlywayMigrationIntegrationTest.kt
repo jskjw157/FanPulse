@@ -3,6 +3,7 @@ package com.fanpulse.integration
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
@@ -22,9 +23,11 @@ import java.util.*
  * 5. 시딩 데이터가 올바르게 삽입되는지 검증
  *
  * 로컬 PostgreSQL이 application-integration-test.yml 설정으로 실행되어 있어야 합니다.
+ * CI 환경에서는 SKIP_FLYWAY_TESTS=true로 스킵 가능합니다.
  */
 @SpringBootTest
 @ActiveProfiles("integration-test")
+@DisabledIfEnvironmentVariable(named = "SKIP_FLYWAY_TESTS", matches = "true")
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 @DisplayName("Flyway Migration Integration Tests")
 class FlywayMigrationIntegrationTest {

@@ -185,7 +185,7 @@ class LiveDiscoveryServiceImpl(
                     ?: stream.endedAt
                     ?: Instant.now()
 
-                val event = StreamingEvent(
+                val event = StreamingEvent.create(
                     title = stream.title,
                     description = stream.description,
                     platform = stream.platform,
