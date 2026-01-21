@@ -53,6 +53,7 @@ fun MainScreen() {
             containerColor = when (currentRoute) {
                 MainTabScreen.Home.route -> Color.Transparent
                 MainTabScreen.Community.route -> Color.White
+                MainTabScreen.My.route -> Color.White
                 else -> Color.Transparent
             },
             topBar = {
@@ -71,7 +72,7 @@ fun MainScreen() {
                                 ) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.home_title),
-                                        contentDescription = "검색",
+                                        contentDescription = null,
                                         tint = Color.Unspecified
                                     )
                                 }
@@ -81,21 +82,21 @@ fun MainScreen() {
                                 IconButton(onClick = { /* 검색 클릭 이벤트 */ }) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.icon_search),
-                                        contentDescription = "검색",
+                                        contentDescription = null,
                                         tint = Color.Unspecified
                                     )
                                 }
                                 IconButton(onClick = { /* 알림 클릭 이벤트 */ }) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.icon_alarm_inactive),
-                                        contentDescription = "알림",
+                                        contentDescription = null,
                                         tint = Color.Unspecified
                                     )
                                 }
                                 IconButton(onClick = { /* 설정 클릭 이벤트 */ }) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.icon_inventory),
-                                        contentDescription = "인벤",
+                                        contentDescription = null,
                                         tint = Color.Unspecified
                                     )
                                 }
@@ -113,10 +114,10 @@ fun MainScreen() {
                             actions = {
                                 // 오른쪽 아이콘들 (순서대로 배치됨)
                                 IconButton(onClick = { /* 검색 클릭 이벤트 */ }) {
-                                    Icon(painter = painterResource(id = R.drawable.icon_search), contentDescription = "검색", tint = Color.Black)
+                                    Icon(painter = painterResource(id = R.drawable.icon_search), contentDescription = null, tint = Color.Black)
                                 }
                                 IconButton(onClick = { /* 알림 클릭 이벤트 */ }) {
-                                    Icon(painter = painterResource(id = R.drawable.icon_alarm_inactive), contentDescription = "알림", tint = Color.Black)
+                                    Icon(painter = painterResource(id = R.drawable.icon_alarm_inactive), contentDescription = null, tint = Color.Black)
                                 }
                             }
                         )
@@ -125,7 +126,19 @@ fun MainScreen() {
 
                     }
                     MainTabScreen.My.route -> {
-
+                        TopAppBar(
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = Color.Transparent
+                            ),
+                            title = {
+                                Text(text = "My Profile")
+                            },
+                            actions = {
+                                IconButton(onClick = { /* 알림 클릭 이벤트 */ }) {
+                                    Icon(painter = painterResource(id = R.drawable.icon_settings), contentDescription = null, tint = Color.Black)
+                                }
+                            }
+                        )
                     }
                 }
             },

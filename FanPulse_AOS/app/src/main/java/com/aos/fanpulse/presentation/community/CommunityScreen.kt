@@ -240,7 +240,7 @@ fun CommunityItem(
                     .width(40.dp)
                     .height(40.dp)
                     .clip(RoundedCornerShape(100.dp)),
-                painter = painterResource(id = R.drawable.ex_person),
+                painter = painterResource(id = R.drawable.person_ex1),
                 contentDescription = null,
                 contentScale = ContentScale.Crop)
             Spacer(Modifier.width(8.dp))

@@ -15,11 +15,14 @@
     <color name="color_10">#FACC15</color>
     <color name="color_11">#D1D5DB</color>
     <color name="color_12">#FAF5FF</color>
+    <color name="color_13">#22C55E</color>
+    <color name="color_14">#EF4444</color>
     <color name="color_text_1">#374151</color>
     <color name="color_text_2">#F9FAFB</color>
     <color name="color_text_3">#6B7280</color>
     <color name="color_text_4">#9CA3AF</color>
     <color name="color_text_5">#581C87</color>
+    <color name="color_text_6">#EA580C</color>
 
     <color name="color_new_1">#111827</color>
 </resources>
