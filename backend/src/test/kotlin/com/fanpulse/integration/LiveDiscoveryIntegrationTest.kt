@@ -2,11 +2,11 @@ package com.fanpulse.integration
 
 import com.fanpulse.application.service.LiveDiscoveryService
 import com.fanpulse.domain.discovery.ArtistChannel
-import com.fanpulse.domain.discovery.ArtistChannelRepository
+import com.fanpulse.domain.discovery.port.ArtistChannelPort
 import com.fanpulse.domain.streaming.StreamingEvent
-import com.fanpulse.domain.streaming.StreamingEventRepository
 import com.fanpulse.domain.streaming.StreamingPlatform
 import com.fanpulse.domain.streaming.StreamingStatus
+import com.fanpulse.domain.streaming.port.StreamingEventPort
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
@@ -48,10 +48,10 @@ class LiveDiscoveryIntegrationTest {
     private lateinit var liveDiscoveryService: LiveDiscoveryService
 
     @Autowired
-    private lateinit var channelRepository: ArtistChannelRepository
+    private lateinit var channelRepository: ArtistChannelPort
 
     @Autowired
-    private lateinit var eventRepository: StreamingEventRepository
+    private lateinit var eventRepository: StreamingEventPort
 
     @BeforeEach
     fun setUp() {
@@ -82,7 +82,7 @@ class LiveDiscoveryIntegrationTest {
         @DisplayName("should handle inactive channels correctly")
         fun shouldHandleInactiveChannelsCorrectly() {
             // given - only inactive channel
-            val inactiveChannel = ArtistChannel(
+            val inactiveChannel = ArtistChannel.create(
                 artistId = UUID.randomUUID(),
                 platform = StreamingPlatform.YOUTUBE,
                 channelHandle = "@InactiveChannel",
@@ -107,13 +107,13 @@ class LiveDiscoveryIntegrationTest {
         @DisplayName("should find channels by platform and active status")
         fun shouldFindChannelsByPlatformAndActiveStatus() {
             // given
-            val activeYouTube = ArtistChannel(
+            val activeYouTube = ArtistChannel.create(
                 artistId = UUID.randomUUID(),
                 platform = StreamingPlatform.YOUTUBE,
                 channelHandle = "@ActiveYouTube",
                 isActive = true
             )
-            val inactiveYouTube = ArtistChannel(
+            val inactiveYouTube = ArtistChannel.create(
                 artistId = UUID.randomUUID(),
                 platform = StreamingPlatform.YOUTUBE,
                 channelHandle = "@InactiveYouTube",
@@ -134,7 +134,7 @@ class LiveDiscoveryIntegrationTest {
         @DisplayName("should find streaming event by platform and external ID")
         fun shouldFindEventByPlatformAndExternalId() {
             // given
-            val event = StreamingEvent(
+            val event = StreamingEvent.create(
                 title = "Test Stream",
                 platform = StreamingPlatform.YOUTUBE,
                 externalId = "uniqueVideoId",
@@ -161,7 +161,7 @@ class LiveDiscoveryIntegrationTest {
         @DisplayName("should find streaming event by stream URL (legacy support)")
         fun shouldFindEventByStreamUrl() {
             // given
-            val legacyEvent = StreamingEvent(
+            val legacyEvent = StreamingEvent.create(
                 title = "Legacy Stream",
                 platform = null, // legacy data without platform
                 externalId = null, // legacy data without externalId
@@ -202,7 +202,7 @@ class LiveDiscoveryIntegrationTest {
         @DisplayName("should process channel during discovery run")
         fun shouldProcessChannelDuringDiscoveryRun() {
             // given
-            val channel = ArtistChannel(
+            val channel = ArtistChannel.create(
                 artistId = UUID.randomUUID(),
                 platform = StreamingPlatform.YOUTUBE,
                 channelHandle = "@TestChannel",
@@ -238,7 +238,7 @@ class LiveDiscoveryIntegrationTest {
         @DisplayName("should create new event when externalId not found")
         fun shouldCreateNewEventWhenExternalIdNotFound() {
             // given - pre-existing event with different externalId
-            val existingEvent = StreamingEvent(
+            val existingEvent = StreamingEvent.create(
                 title = "Existing Stream",
                 platform = StreamingPlatform.YOUTUBE,
                 externalId = "existingId",
@@ -259,7 +259,7 @@ class LiveDiscoveryIntegrationTest {
             assertNull(found)
 
             // Verify we can create a new event with the new ID
-            val newEvent = StreamingEvent(
+            val newEvent = StreamingEvent.create(
                 title = "New Stream",
                 platform = StreamingPlatform.YOUTUBE,
                 externalId = "newVideoId",
@@ -277,7 +277,7 @@ class LiveDiscoveryIntegrationTest {
         fun shouldUpdateExistingEventWhenExternalIdMatches() {
             // given
             val artistId = UUID.randomUUID()
-            val existingEvent = StreamingEvent(
+            val existingEvent = StreamingEvent.create(
                 title = "Old Title",
                 platform = StreamingPlatform.YOUTUBE,
                 externalId = "sameVideoId",
@@ -320,7 +320,7 @@ class LiveDiscoveryIntegrationTest {
         fun shouldHandleMultipleChannelsSavedInBatch() {
             // given
             val channels = (1..5).map { i ->
-                ArtistChannel(
+                ArtistChannel.create(
                     artistId = UUID.randomUUID(),
                     platform = StreamingPlatform.YOUTUBE,
                     channelHandle = "@Channel$i",

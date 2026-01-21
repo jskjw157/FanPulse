@@ -2,8 +2,8 @@ package com.fanpulse.integration
 
 import com.fanpulse.application.service.MetadataRefreshService
 import com.fanpulse.domain.streaming.StreamingEvent
-import com.fanpulse.domain.streaming.StreamingEventRepository
 import com.fanpulse.domain.streaming.StreamingStatus
+import com.fanpulse.domain.streaming.port.StreamingEventPort
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
@@ -52,7 +52,7 @@ class MetadataRefreshIntegrationTest {
     private lateinit var metadataRefreshService: MetadataRefreshService
 
     @Autowired
-    private lateinit var repository: StreamingEventRepository
+    private lateinit var repository: StreamingEventPort
 
     @BeforeEach
     fun setUp() {
@@ -65,7 +65,7 @@ class MetadataRefreshIntegrationTest {
     fun shouldRefreshLiveEventMetadata() {
         // given
         val videoId = "testVideo12"
-        val event = StreamingEvent(
+        val event = StreamingEvent.create(
             id = UUID.randomUUID(),
             title = "Old Title",
             streamUrl = "https://www.youtube.com/embed/$videoId",
@@ -114,7 +114,7 @@ class MetadataRefreshIntegrationTest {
     fun shouldHandleDeletedVideoGracefully() {
         // given
         val videoId = "deletedVid1"
-        val event = StreamingEvent(
+        val event = StreamingEvent.create(
             id = UUID.randomUUID(),
             title = "Title",
             streamUrl = "https://www.youtube.com/embed/$videoId",
@@ -179,7 +179,7 @@ class MetadataRefreshIntegrationTest {
     }
 
     private fun createEvent(videoId: String, status: StreamingStatus): StreamingEvent {
-        return StreamingEvent(
+        return StreamingEvent.create(
             id = UUID.randomUUID(),
             title = "Old Title",
             streamUrl = "https://www.youtube.com/embed/$videoId",

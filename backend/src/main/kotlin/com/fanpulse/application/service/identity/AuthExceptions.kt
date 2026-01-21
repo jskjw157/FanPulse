@@ -68,3 +68,10 @@ class OAuthAccountAlreadyExistsException(
     provider: String,
     providerUserId: String
 ) : AuthException("OAuth account already exists: $provider:$providerUserId")
+
+/**
+ * OAuth 계정을 찾을 수 없음 예외
+ */
+class OAuthAccountNotFoundException(
+    message: String = "OAuth account not found"
+) : AuthException(message)

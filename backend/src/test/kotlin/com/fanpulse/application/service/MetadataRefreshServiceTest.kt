@@ -295,7 +295,7 @@ class MetadataRefreshServiceTest {
         status: StreamingStatus,
         streamUrl: String
     ): StreamingEvent {
-        return StreamingEvent(
+        return StreamingEvent.create(
             id = id,
             title = title,
             description = null,

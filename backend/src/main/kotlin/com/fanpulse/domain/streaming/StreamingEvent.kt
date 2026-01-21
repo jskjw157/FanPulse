@@ -1,92 +1,149 @@
 package com.fanpulse.domain.streaming
 
-import jakarta.persistence.*
 import java.time.Instant
 import java.util.*
 
-@Entity
-@Table(name = "streaming_events")
-class StreamingEvent(
-    @Id
-    @Column(columnDefinition = "uuid")
-    val id: UUID = UUID.randomUUID(),
-
+/**
+ * 스트리밍 이벤트 도메인 모델
+ *
+ * K-Pop 아티스트의 라이브 스트리밍 이벤트를 나타냅니다.
+ * 이 클래스는 순수한 도메인 로직만 포함하며, JPA 어노테이션이 없습니다.
+ *
+ * Clean Architecture 원칙:
+ * - 도메인 계층은 외부 프레임워크(JPA)에 의존하지 않습니다
+ * - 비즈니스 로직은 도메인 모델에 캡슐화됩니다
+ * - 영속성은 Infrastructure 계층의 Entity와 Mapper를 통해 처리됩니다
+ */
+class StreamingEvent private constructor(
+    val id: UUID,
     title: String,
-
-    description: String? = null,
-
-    platform: StreamingPlatform? = null,
-
-    externalId: String? = null,
-
-    @Column(name = "stream_url", columnDefinition = "TEXT", nullable = false)
+    description: String?,
+    platform: StreamingPlatform?,
+    externalId: String?,
     val streamUrl: String,
-
-    sourceUrl: String? = null,
-
-    thumbnailUrl: String? = null,
-
-    @Column(name = "artist_id", columnDefinition = "uuid", nullable = false)
+    sourceUrl: String?,
+    thumbnailUrl: String?,
     val artistId: UUID,
-
     scheduledAt: Instant,
-
-    startedAt: Instant? = null,
-
-    endedAt: Instant? = null,
-
-    status: StreamingStatus = StreamingStatus.SCHEDULED,
-
-    viewerCount: Int = 0,
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now()
+    startedAt: Instant?,
+    endedAt: Instant?,
+    status: StreamingStatus,
+    viewerCount: Int,
+    val createdAt: Instant
 ) {
-    @Column(nullable = false, length = 255)
     var title: String = title
         private set
 
-    @Column(columnDefinition = "TEXT")
     var description: String? = description
         private set
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
     var platform: StreamingPlatform? = platform
         private set
 
-    @Column(name = "external_id", length = 100)
     var externalId: String? = externalId
         private set
 
-    @Column(name = "source_url", columnDefinition = "TEXT")
     var sourceUrl: String? = sourceUrl
         private set
 
-    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     var thumbnailUrl: String? = thumbnailUrl
         private set
 
-    @Column(name = "scheduled_at", nullable = false)
     var scheduledAt: Instant = scheduledAt
         private set
 
-    @Column(name = "started_at")
     var startedAt: Instant? = startedAt
         private set
 
-    @Column(name = "ended_at")
     var endedAt: Instant? = endedAt
         private set
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
     var status: StreamingStatus = status
         private set
 
-    @Column(name = "viewer_count")
     var viewerCount: Int = viewerCount
         private set
+
+    companion object {
+        /**
+         * 새로운 스트리밍 이벤트를 생성합니다.
+         */
+        fun create(
+            id: UUID = UUID.randomUUID(),
+            title: String,
+            description: String? = null,
+            platform: StreamingPlatform? = null,
+            externalId: String? = null,
+            streamUrl: String,
+            sourceUrl: String? = null,
+            thumbnailUrl: String? = null,
+            artistId: UUID,
+            scheduledAt: Instant,
+            startedAt: Instant? = null,
+            endedAt: Instant? = null,
+            status: StreamingStatus = StreamingStatus.SCHEDULED,
+            viewerCount: Int = 0,
+            createdAt: Instant = Instant.now()
+        ): StreamingEvent {
+            return StreamingEvent(
+                id = id,
+                title = title,
+                description = description,
+                platform = platform,
+                externalId = externalId,
+                streamUrl = streamUrl,
+                sourceUrl = sourceUrl,
+                thumbnailUrl = thumbnailUrl,
+                artistId = artistId,
+                scheduledAt = scheduledAt,
+                startedAt = startedAt,
+                endedAt = endedAt,
+                status = status,
+                viewerCount = viewerCount,
+                createdAt = createdAt
+            )
+        }
+
+        /**
+         * 영속성 계층에서 복원할 때 사용합니다.
+         * Mapper에서만 사용해야 합니다.
+         */
+        fun reconstitute(
+            id: UUID,
+            title: String,
+            description: String?,
+            platform: StreamingPlatform?,
+            externalId: String?,
+            streamUrl: String,
+            sourceUrl: String?,
+            thumbnailUrl: String?,
+            artistId: UUID,
+            scheduledAt: Instant,
+            startedAt: Instant?,
+            endedAt: Instant?,
+            status: StreamingStatus,
+            viewerCount: Int,
+            createdAt: Instant
+        ): StreamingEvent {
+            return StreamingEvent(
+                id = id,
+                title = title,
+                description = description,
+                platform = platform,
+                externalId = externalId,
+                streamUrl = streamUrl,
+                sourceUrl = sourceUrl,
+                thumbnailUrl = thumbnailUrl,
+                artistId = artistId,
+                scheduledAt = scheduledAt,
+                startedAt = startedAt,
+                endedAt = endedAt,
+                status = status,
+                viewerCount = viewerCount,
+                createdAt = createdAt
+            )
+        }
+    }
 
     /**
      * Updates metadata from external source (e.g., YouTube oEmbed).
@@ -203,8 +260,26 @@ class StreamingEvent(
     fun updateDescription(newDescription: String?) {
         this.description = newDescription
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as StreamingEvent
+        return id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+
+    override fun toString(): String {
+        return "StreamingEvent(id=$id, title='$title', status=$status, platform=$platform)"
+    }
 }
 
+/**
+ * 스트리밍 상태
+ */
 enum class StreamingStatus {
     SCHEDULED,
     LIVE,

@@ -14,6 +14,8 @@ interface StreamingEventPort {
 
     fun findEventById(id: UUID): StreamingEvent?
 
+    fun findById(id: UUID): java.util.Optional<StreamingEvent>
+
     fun findByStatus(status: StreamingStatus): List<StreamingEvent>
 
     fun findByStatusNot(status: StreamingStatus): List<StreamingEvent>
@@ -27,4 +29,8 @@ interface StreamingEventPort {
     fun findByStreamUrl(streamUrl: String): StreamingEvent?
 
     fun save(event: StreamingEvent): StreamingEvent
+
+    fun saveAll(events: Iterable<StreamingEvent>): List<StreamingEvent>
+
+    fun deleteAll()
 }
