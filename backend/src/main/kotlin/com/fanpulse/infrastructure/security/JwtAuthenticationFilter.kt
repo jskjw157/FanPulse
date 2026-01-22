@@ -38,6 +38,8 @@ class JwtAuthenticationFilter(
             if (token != null && authenticateToken(token)) {
                 val userId = jwtTokenProvider.getUserIdFromToken(token)
                 setAuthentication(userId.toString())
+                // Set userId as request attribute for @RequestAttribute("userId") in controllers
+                request.setAttribute("userId", userId)
                 logger.debug { "Authenticated user: $userId" }
             }
         } catch (e: Exception) {
