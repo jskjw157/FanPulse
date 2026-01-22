@@ -44,7 +44,7 @@ class JwtAuthenticationFilterTest {
     inner class ValidToken {
 
         @Test
-        @DisplayName("유효한 JWT → 인증 성공, SecurityContext에 Authentication 설정")
+        @DisplayName("유효한 Access Token → 인증 성공, SecurityContext에 Authentication 설정")
         fun shouldSetAuthenticationWhenValidToken() {
             // given
             val userId = UUID.randomUUID()
@@ -52,6 +52,7 @@ class JwtAuthenticationFilterTest {
             request.addHeader("Authorization", "Bearer $validToken")
 
             every { jwtTokenPort.validateToken(validToken) } returns true
+            every { jwtTokenPort.isAccessToken(validToken) } returns true
             every { jwtTokenPort.getUserIdFromToken(validToken) } returns userId
 
             // when
@@ -63,6 +64,26 @@ class JwtAuthenticationFilterTest {
             assertEquals(userId.toString(), authentication.principal)
             assertTrue(authentication.isAuthenticated)
             verify { filterChain.doFilter(request, response) }
+        }
+
+        @Test
+        @DisplayName("Refresh Token을 Authorization 헤더에 사용 시도 → SecurityContext에 Authentication 없음")
+        fun shouldRejectRefreshTokenInAuthorizationHeader() {
+            // given
+            val refreshToken = "valid.refresh.token"
+            request.addHeader("Authorization", "Bearer $refreshToken")
+
+            every { jwtTokenPort.validateToken(refreshToken) } returns true
+            every { jwtTokenPort.isAccessToken(refreshToken) } returns false  // Refresh Token
+
+            // when
+            filter.doFilter(request, response, filterChain)
+
+            // then
+            val authentication = SecurityContextHolder.getContext().authentication
+            assertNull(authentication)  // Refresh Token은 인증에 사용 불가
+            verify { filterChain.doFilter(request, response) }
+            verify(exactly = 0) { jwtTokenPort.getUserIdFromToken(any()) }  // userId 추출 시도 안함
         }
     }
 
@@ -189,6 +210,7 @@ class JwtAuthenticationFilterTest {
             request.addHeader("Authorization", "Bearer $validToken")
 
             every { jwtTokenPort.validateToken(validToken) } returns true
+            every { jwtTokenPort.isAccessToken(validToken) } returns true
             every { jwtTokenPort.getUserIdFromToken(validToken) } returns null
 
             // when

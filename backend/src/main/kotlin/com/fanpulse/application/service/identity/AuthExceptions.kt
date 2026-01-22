@@ -75,3 +75,12 @@ class OAuthAccountAlreadyExistsException(
 class OAuthAccountNotFoundException(
     message: String = "OAuth account not found"
 ) : AuthException(message)
+
+/**
+ * Username 충돌 예외 (409 Conflict)
+ *
+ * 동시 가입 시 username 생성 재시도 실패 시 발생
+ */
+class UsernameConflictException(
+    message: String = "Username conflict, please try again"
+) : AuthException(message)
