@@ -116,6 +116,18 @@ class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response)
     }
 
+    @ExceptionHandler(UsernameConflictException::class)
+    fun handleUsernameConflict(ex: UsernameConflictException): ResponseEntity<ErrorResponse> {
+        logger.warn { "Username conflict: ${ex.message}" }
+        val response = ErrorResponse(
+            error = ErrorDetail(
+                code = "AUTH_USERNAME_CONFLICT",
+                message = ex.message ?: "Username conflict, please try again"
+            )
+        )
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response)
+    }
+
     @ExceptionHandler(Exception::class)
     fun handleGenericException(ex: Exception): ResponseEntity<ErrorResponse> {
         logger.error(ex) { "Unexpected error occurred" }

@@ -166,16 +166,13 @@ class AuthServiceImpl(
 
     /**
      * 신규 사용자 + OAuth 계정 생성
+     *
+     * SECURITY: Username race condition 방어
+     * - 동시 가입 시 같은 username suffix가 선택될 수 있음
+     * - DataIntegrityViolationException 발생 시 재시도
      */
     private fun createNewUserWithOAuth(googleUser: com.fanpulse.domain.identity.port.OAuthUserInfo): User {
-        // Username 생성 (N+1 쿼리 최적화)
-        val username = generateUniqueUsernameOptimized(googleUser.email, googleUser.name)
-
-        val newUser = User.registerWithOAuth(
-            email = Email.of(googleUser.email),
-            username = Username.of(username)
-        )
-        val savedUser = userPort.save(newUser)
+        val savedUser = saveNewUserWithRetry(googleUser)
 
         // 기본 설정 생성
         val settings = UserSettings.createDefault(savedUser.id)
@@ -221,6 +218,38 @@ class AuthServiceImpl(
             logger.info { "OAuth account already exists (race condition): ${e.message}" }
             null
         }
+    }
+
+    /**
+     * 신규 사용자 저장 (Username race condition 방어)
+     *
+     * SECURITY: 동시 가입 시 같은 username suffix 충돌 처리
+     * - DataIntegrityViolationException 발생 시 최대 3회 재시도
+     * - 재시도마다 새로운 username 생성
+     */
+    private fun saveNewUserWithRetry(
+        googleUser: com.fanpulse.domain.identity.port.OAuthUserInfo,
+        maxRetries: Int = 3
+    ): User {
+        var lastException: DataIntegrityViolationException? = null
+
+        repeat(maxRetries) { attempt ->
+            try {
+                val username = generateUniqueUsernameOptimized(googleUser.email, googleUser.name)
+                val newUser = User.registerWithOAuth(
+                    email = Email.of(googleUser.email),
+                    username = Username.of(username)
+                )
+                return userPort.save(newUser)
+            } catch (e: DataIntegrityViolationException) {
+                logger.warn { "Username collision on attempt ${attempt + 1}/$maxRetries: ${e.message}" }
+                lastException = e
+            }
+        }
+
+        // 모든 재시도 실패 시 409 Conflict 반환
+        logger.error { "Failed to create user after $maxRetries attempts due to username collision" }
+        throw UsernameConflictException("Unable to generate unique username, please try again")
     }
 
     /**

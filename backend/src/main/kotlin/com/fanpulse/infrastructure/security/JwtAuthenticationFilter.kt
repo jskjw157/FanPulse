@@ -87,10 +87,19 @@ class JwtAuthenticationFilter(
 
     /**
      * 토큰을 검증하고 SecurityContext에 인증 정보를 설정합니다.
+     *
+     * SECURITY: Refresh Token은 Access Token보다 유효기간이 길기 때문에,
+     * Authorization 헤더에 Refresh Token을 사용하는 것을 명시적으로 거부합니다.
      */
     private fun authenticateWithToken(token: String) {
         if (!jwtTokenPort.validateToken(token)) {
             log.debug("유효하지 않은 JWT 토큰")
+            return
+        }
+
+        // SECURITY: Refresh Token은 인증에 사용할 수 없음
+        if (!jwtTokenPort.isAccessToken(token)) {
+            log.warn("Refresh token을 Authorization 헤더에 사용 시도 감지 - 거부됨")
             return
         }
 
