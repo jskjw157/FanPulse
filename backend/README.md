@@ -235,7 +235,27 @@ resilience4j:
 - 최대 3회 재시도
 - 지수 백오프: 2초 → 4초
 
+## API 문서 (Swagger)
+
+애플리케이션 실행 후 Swagger UI에서 전체 API를 테스트할 수 있습니다.
+
+| URL | 설명 |
+|-----|------|
+| http://localhost:8080/swagger-ui/index.html | Swagger UI (인터랙티브 문서) |
+| http://localhost:8080/v3/api-docs | OpenAPI 3.0 JSON |
+| http://localhost:8080/v3/api-docs.yaml | OpenAPI 3.0 YAML |
+
 ## API 엔드포인트
+
+### Identity API (인증 및 사용자 관리)
+
+| 엔드포인트 | 메서드 | 설명 |
+|-----------|--------|------|
+| `/api/v1/auth/register` | POST | 회원가입 |
+| `/api/v1/auth/login` | POST | 로그인 |
+| `/api/v1/auth/validate` | POST | 토큰 검증 |
+
+자세한 API 명세는 [API Specification v1](doc/api/api-spec-v1.md)을 참조하세요.
 
 ### Actuator
 
@@ -245,6 +265,175 @@ resilience4j:
 | `GET /actuator/metrics` | 메트릭 조회 |
 | `GET /actuator/prometheus` | Prometheus 형식 |
 | `GET /actuator/circuitbreakers` | Circuit Breaker 상태 |
+
+## 에러 처리 (RFC 7807)
+
+FanPulse API는 [RFC 7807 Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc7807) 표준을 따릅니다.
+
+### 에러 응답 구조
+
+모든 에러는 `application/problem+json` Content-Type으로 반환됩니다:
+
+```json
+{
+  "type": "https://api.fanpulse.com/errors/email-already-exists",
+  "title": "Email Already Exists",
+  "status": 409,
+  "detail": "The email 'user@example.com' is already registered",
+  "instance": "/api/v1/auth/register",
+  "timestamp": "2026-01-19T22:10:00Z",
+  "errorCode": "EMAIL_ALREADY_EXISTS",
+  "errors": [
+    {
+      "field": "email",
+      "code": "already_exists",
+      "message": "Email already exists",
+      "rejectedValue": "user@example.com"
+    }
+  ]
+}
+```
+
+### 주요 필드
+
+| 필드 | 설명 | 필수 |
+|------|------|------|
+| `type` | 에러 타입을 식별하는 URI | O |
+| `title` | 사람이 읽을 수 있는 에러 요약 | O |
+| `status` | HTTP 상태 코드 | O |
+| `detail` | 이번 에러 발생에 대한 구체적 설명 | X |
+| `instance` | 에러가 발생한 요청 URI | X |
+| `timestamp` | 에러 발생 시각 (ISO 8601) | O |
+| `errorCode` | 머신 리더블한 에러 코드 | X |
+| `errors` | 필드별 검증 에러 목록 | X |
+
+### 에러 타입 목록
+
+#### 인증 에러 (401)
+
+- `INVALID_CREDENTIALS`: 잘못된 이메일 또는 비밀번호
+- `INVALID_TOKEN`: 유효하지 않은 토큰
+- `TOKEN_EXPIRED`: 만료된 토큰
+
+#### 검증 에러 (400)
+
+- `VALIDATION_FAILED`: 요청 데이터 검증 실패
+- `INVALID_REQUEST`: 잘못된 요청 형식
+- `INVALID_PASSWORD`: 비밀번호 정책 위반
+
+#### Not Found 에러 (404)
+
+- `USER_NOT_FOUND`: 사용자를 찾을 수 없음
+- `RESOURCE_NOT_FOUND`: 리소스를 찾을 수 없음
+
+#### 충돌 에러 (409)
+
+- `EMAIL_ALREADY_EXISTS`: 이메일 중복
+- `USERNAME_ALREADY_EXISTS`: 사용자명 중복
+
+#### 서버 에러 (500)
+
+- `INTERNAL_ERROR`: 내부 서버 오류
+
+### 프론트엔드 에러 처리 예시
+
+#### TypeScript (Axios)
+
+```typescript
+import axios from 'axios';
+
+interface ProblemDetail {
+  type: string;
+  title: string;
+  status: number;
+  detail?: string;
+  instance?: string;
+  timestamp: string;
+  errorCode?: string;
+  errors?: Array<{
+    field: string;
+    code: string;
+    message: string;
+    rejectedValue?: any;
+  }>;
+}
+
+async function registerUser(email: string, password: string) {
+  try {
+    const response = await axios.post('/api/v1/auth/register', {
+      email,
+      password,
+      username: 'user123'
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const problem: ProblemDetail = error.response.data;
+
+      // 에러 타입별 처리
+      switch (problem.errorCode) {
+        case 'EMAIL_ALREADY_EXISTS':
+          console.error('이미 사용 중인 이메일입니다.');
+          break;
+        case 'VALIDATION_FAILED':
+          problem.errors?.forEach(err => {
+            console.error(`${err.field}: ${err.message}`);
+          });
+          break;
+        default:
+          console.error(`에러 발생: ${problem.detail}`);
+      }
+    }
+    throw error;
+  }
+}
+```
+
+#### JavaScript (Fetch API)
+
+```javascript
+async function registerUser(email, password) {
+  try {
+    const response = await fetch('/api/v1/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password, username: 'user123' })
+    });
+
+    if (!response.ok) {
+      const problem = await response.json();
+
+      if (problem.errorCode === 'EMAIL_ALREADY_EXISTS') {
+        alert('이미 사용 중인 이메일입니다.');
+      } else if (problem.errorCode === 'VALIDATION_FAILED') {
+        const fieldErrors = problem.errors
+          .map(err => `${err.field}: ${err.message}`)
+          .join('\n');
+        alert(fieldErrors);
+      } else {
+        alert(problem.detail || problem.title);
+      }
+
+      throw new Error(problem.detail);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Registration failed:', error);
+    throw error;
+  }
+}
+```
+
+### 에러 처리 Best Practices
+
+1. **errorCode 기반 분기**: `errorCode` 필드를 사용하여 클라이언트에서 에러 타입 식별
+2. **필드 에러 표시**: `errors` 배열을 순회하여 각 필드별 검증 메시지 출력
+3. **사용자 친화적 메시지**: `detail` 필드를 그대로 사용하거나 i18n으로 번역
+4. **trace ID 활용**: 서버 로그와 매칭하기 위해 `traceId` 저장 (있는 경우)
+5. **재시도 로직**: 500번대 에러는 exponential backoff로 재시도 고려
 
 ## 테스트
 
