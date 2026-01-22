@@ -2,9 +2,9 @@ package com.fanpulse.integration
 
 import com.fanpulse.application.service.LiveDiscoveryService
 import com.fanpulse.domain.discovery.ArtistChannel
-import com.fanpulse.domain.discovery.ArtistChannelRepository
+import com.fanpulse.domain.discovery.port.ArtistChannelPort
 import com.fanpulse.domain.streaming.StreamingEvent
-import com.fanpulse.domain.streaming.StreamingEventRepository
+import com.fanpulse.infrastructure.persistence.streaming.StreamingEventJpaRepository as StreamingEventRepository
 import com.fanpulse.domain.streaming.StreamingPlatform
 import com.fanpulse.domain.streaming.StreamingStatus
 import kotlinx.coroutines.runBlocking
@@ -48,7 +48,7 @@ class LiveDiscoveryIntegrationTest {
     private lateinit var liveDiscoveryService: LiveDiscoveryService
 
     @Autowired
-    private lateinit var channelRepository: ArtistChannelRepository
+    private lateinit var channelRepository: ArtistChannelPort
 
     @Autowired
     private lateinit var eventRepository: StreamingEventRepository
@@ -220,7 +220,7 @@ class LiveDiscoveryIntegrationTest {
             // then - the result should reflect that discovery was attempted
             // Even if it fails, the service should have tried to process the channel
             // The actual lastCrawledAt update depends on the service implementation
-            val updatedChannel = channelRepository.findById(savedChannel.id).orElse(null)
+            val updatedChannel = channelRepository.findById(savedChannel.id)
             assertNotNull(updatedChannel)
 
             // Note: If the service updates lastCrawledAt even on failure, verify it

@@ -59,6 +59,7 @@ FanPulse는 K-POP 팬을 위한 플랫폼으로, MVP에서는 로그인 후 **�
 
 ## 7) 데이터/운영
 - seed 기반 적재로 `artists`, `streaming_events`, `crawled_news`를 유지
+- MVP 크롤링 범위는 Live/News만 포함(차트/콘서트/광고는 Next)
 - 운영 플로우: artists → live/news 순서로 upsert
 
 ---

@@ -1,0 +1,1618 @@
+openapi: 3.0.3
+info:
+  title: FanPulse API
+  description: |
+    K-Pop 팬을 위한 라이브 스트리밍 및 커뮤니티 플랫폼 API
+
+    ## Bounded Contexts
+    - **Identity**: 사용자 인증 및 계정 관리
+    - **Streaming**: 라이브 스트리밍 이벤트 조회
+    - **Content**: 뉴스, 차트, 아티스트 정보
+    - **Discovery**: 아티스트 채널 관리 (Admin)
+
+    ## Authentication
+    `/api/v1/auth/*` 엔드포인트를 제외한 모든 API는 JWT Bearer 토큰 인증이 필요합니다.
+  version: 1.0.0
+  contact:
+    name: FanPulse Team
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development
+  - url: https://api.fanpulse.app
+    description: Production
+
+tags:
+  - name: Authentication
+    description: 사용자 인증 및 토큰 관리
+  - name: User Profile
+    description: 현재 사용자 프로필 및 설정
+  - name: Streaming Events
+    description: 라이브 스트리밍 이벤트 조회
+  - name: News
+    description: K-POP 뉴스 조회
+  - name: Charts
+    description: 음원 차트 순위 조회
+  - name: Artists
+    description: 아티스트 정보 조회
+  - name: Artist Channels (Admin)
+    description: 아티스트 채널 관리 (관리자 전용)
+
+paths:
+  # ========================================
+  # Identity Context - Authentication
+  # ========================================
+  /api/v1/auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: 회원가입
+      description: 이메일과 비밀번호로 새 계정을 생성합니다.
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: 유효하지 않은 요청 (이메일 형식 오류, 비밀번호 약함, 중복 이메일/유저네임)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: 로그인
+      description: 이메일과 비밀번호로 로그인합니다.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: 인증 실패 (잘못된 이메일 또는 비밀번호)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/google:
+    post:
+      tags:
+        - Authentication
+      summary: Google OAuth 로그인
+      description: Google ID 토큰으로 로그인하거나 새 계정을 생성합니다.
+      operationId: googleLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleAuthRequest'
+      responses:
+        '200':
+          description: 인증 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: 유효하지 않은 Google 토큰
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: 토큰 갱신
+      description: Refresh 토큰으로 새 Access 토큰을 발급받습니다.
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: 토큰 갱신 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: 유효하지 않거나 만료된 Refresh 토큰
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: 로그아웃
+      description: 현재 Access 토큰을 무효화합니다.
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 로그아웃 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: 인증되지 않음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========================================
+  # Identity Context - User Profile
+  # ========================================
+  /api/v1/me:
+    get:
+      tags:
+        - User Profile
+      summary: 내 프로필 조회
+      description: 현재 로그인한 사용자의 프로필 정보를 반환합니다.
+      operationId: getMyProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 프로필 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          description: 인증되지 않음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+        - User Profile
+      summary: 내 프로필 수정
+      description: 현재 로그인한 사용자의 프로필을 수정합니다.
+      operationId: updateMyProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: 프로필 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '400':
+          description: 유효하지 않은 요청 (유저네임 중복 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증되지 않음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/me/password:
+    patch:
+      tags:
+        - User Profile
+      summary: 비밀번호 변경
+      description: 현재 비밀번호를 확인하고 새 비밀번호로 변경합니다.
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: 비밀번호 변경 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: 현재 비밀번호 불일치 또는 새 비밀번호 약함
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: OAuth 전용 계정 (비밀번호 없음)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/me/settings:
+    get:
+      tags:
+        - User Profile
+      summary: 내 설정 조회
+      description: 현재 사용자의 설정(테마, 언어, 알림)을 반환합니다.
+      operationId: getMySettings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 설정 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSettingsResponse'
+        '401':
+          description: 인증되지 않음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+        - User Profile
+      summary: 내 설정 수정
+      description: 현재 사용자의 설정을 수정합니다.
+      operationId: updateMySettings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+      responses:
+        '200':
+          description: 설정 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSettingsResponse'
+        '400':
+          description: 유효하지 않은 테마/언어 값
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========================================
+  # Streaming Context
+  # ========================================
+  /api/v1/streaming-events:
+    get:
+      tags:
+        - Streaming Events
+      summary: 스트리밍 이벤트 목록
+      description: 필터 및 페이지네이션을 지원하는 스트리밍 이벤트 목록을 반환합니다.
+      operationId: getStreamingEvents
+      parameters:
+        - name: status
+          in: query
+          description: 상태 필터
+          schema:
+            $ref: '#/components/schemas/StreamingStatus'
+        - name: platform
+          in: query
+          description: 플랫폼 필터
+          schema:
+            $ref: '#/components/schemas/StreamingPlatform'
+        - name: artistId
+          in: query
+          description: 아티스트 ID 필터
+          schema:
+            type: string
+            format: uuid
+        - name: scheduledAfter
+          in: query
+          description: 이 시간 이후 예정된 이벤트
+          schema:
+            type: string
+            format: date-time
+        - name: scheduledBefore
+          in: query
+          description: 이 시간 이전 예정된 이벤트
+          schema:
+            type: string
+            format: date-time
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortDirParam'
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamingEventListResponse'
+
+  /api/v1/streaming-events/{id}:
+    get:
+      tags:
+        - Streaming Events
+      summary: 스트리밍 이벤트 상세
+      description: 특정 스트리밍 이벤트의 상세 정보를 반환합니다.
+      operationId: getStreamingEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 스트리밍 이벤트 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamingEventDetailResponse'
+        '404':
+          description: 이벤트를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/streaming-events/live:
+    get:
+      tags:
+        - Streaming Events
+      summary: 라이브 중인 이벤트
+      description: 현재 라이브 중인 스트리밍 이벤트 목록을 시청자 수 내림차순으로 반환합니다.
+      operationId: getLiveStreamingEvents
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamingEventListResponse'
+
+  /api/v1/streaming-events/scheduled:
+    get:
+      tags:
+        - Streaming Events
+      summary: 예정된 이벤트
+      description: 예정된 스트리밍 이벤트 목록을 시간순으로 반환합니다.
+      operationId: getScheduledStreamingEvents
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamingEventListResponse'
+
+  /api/v1/streaming-events/artist/{artistId}:
+    get:
+      tags:
+        - Streaming Events
+      summary: 아티스트별 이벤트
+      description: 특정 아티스트의 스트리밍 이벤트 목록을 반환합니다.
+      operationId: getStreamingEventsByArtist
+      parameters:
+        - name: artistId
+          in: path
+          required: true
+          description: 아티스트 ID
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamingEventListResponse'
+
+  # ========================================
+  # Content Context - News
+  # ========================================
+  /api/v1/news:
+    get:
+      tags:
+        - News
+      summary: 뉴스 목록
+      description: K-POP 관련 뉴스 목록을 반환합니다.
+      operationId: getNews
+      parameters:
+        - name: source
+          in: query
+          description: 뉴스 출처 필터
+          schema:
+            $ref: '#/components/schemas/NewsSourceType'
+        - name: keyword
+          in: query
+          description: 검색 키워드
+          schema:
+            type: string
+        - name: publishedAfter
+          in: query
+          description: 이 시간 이후 게시된 뉴스
+          schema:
+            type: string
+            format: date-time
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsListResponse'
+
+  /api/v1/news/{id}:
+    get:
+      tags:
+        - News
+      summary: 뉴스 상세
+      description: 특정 뉴스의 상세 정보를 반환합니다.
+      operationId: getNewsDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 뉴스 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsDetailResponse'
+        '404':
+          description: 뉴스를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========================================
+  # Content Context - Charts
+  # ========================================
+  /api/v1/charts:
+    get:
+      tags:
+        - Charts
+      summary: 차트 목록
+      description: 사용 가능한 차트 소스 및 최신 차트 요약을 반환합니다.
+      operationId: getCharts
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartSummaryListResponse'
+
+  /api/v1/charts/{source}:
+    get:
+      tags:
+        - Charts
+      summary: 특정 소스 차트
+      description: 특정 소스의 차트 순위를 반환합니다.
+      operationId: getChartBySource
+      parameters:
+        - name: source
+          in: path
+          required: true
+          description: 차트 소스
+          schema:
+            $ref: '#/components/schemas/ChartSource'
+        - name: period
+          in: query
+          description: 차트 기간
+          schema:
+            $ref: '#/components/schemas/ChartPeriod'
+        - name: limit
+          in: query
+          description: 반환할 순위 수 (기본 10)
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartDetailResponse'
+        '404':
+          description: 차트를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========================================
+  # Content Context - Artists
+  # ========================================
+  /api/v1/artists:
+    get:
+      tags:
+        - Artists
+      summary: 아티스트 목록
+      description: 아티스트 목록을 반환합니다.
+      operationId: getArtists
+      parameters:
+        - name: keyword
+          in: query
+          description: 검색 키워드 (이름, 팬덤명)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistListResponse'
+
+  /api/v1/artists/{id}:
+    get:
+      tags:
+        - Artists
+      summary: 아티스트 상세
+      description: 특정 아티스트의 상세 정보를 반환합니다.
+      operationId: getArtistDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 아티스트 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistDetailResponse'
+        '404':
+          description: 아티스트를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========================================
+  # Discovery Context (Admin)
+  # ========================================
+  /admin/artist-channels:
+    get:
+      tags:
+        - Artist Channels (Admin)
+      summary: 채널 목록
+      description: 등록된 모든 아티스트 채널 목록을 반환합니다.
+      operationId: getArtistChannels
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistChannelListResponse'
+        '401':
+          description: 인증되지 않음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 권한 없음 (관리자 전용)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Artist Channels (Admin)
+      summary: 채널 생성
+      description: 새 아티스트 채널을 등록합니다.
+      operationId: createArtistChannel
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateArtistChannelRequest'
+      responses:
+        '201':
+          description: 채널 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistChannelResponse'
+        '409':
+          description: 채널 중복 (동일 플랫폼/핸들)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/artist-channels/{id}:
+    get:
+      tags:
+        - Artist Channels (Admin)
+      summary: 채널 상세
+      description: 특정 아티스트 채널의 상세 정보를 반환합니다.
+      operationId: getArtistChannel
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 채널 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistChannelResponse'
+        '404':
+          description: 채널을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+        - Artist Channels (Admin)
+      summary: 채널 수정
+      description: 아티스트 채널 정보를 수정합니다.
+      operationId: updateArtistChannel
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 채널 ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateArtistChannelRequest'
+      responses:
+        '200':
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistChannelResponse'
+    delete:
+      tags:
+        - Artist Channels (Admin)
+      summary: 채널 삭제
+      description: 아티스트 채널을 삭제합니다.
+      operationId: deleteArtistChannel
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 채널 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 삭제 성공
+        '404':
+          description: 채널을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/artist-channels/artist/{artistId}:
+    get:
+      tags:
+        - Artist Channels (Admin)
+      summary: 아티스트별 채널
+      description: 특정 아티스트의 모든 채널 목록을 반환합니다.
+      operationId: getArtistChannelsByArtist
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: artistId
+          in: path
+          required: true
+          description: 아티스트 ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtistChannelListResponse'
+
+  /admin/artist-channels/discover:
+    post:
+      tags:
+        - Artist Channels (Admin)
+      summary: 라이브 발견 트리거
+      description: 모든 활성 채널에서 라이브 스트림 발견을 수동으로 실행합니다.
+      operationId: triggerDiscovery
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 발견 완료
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryResultResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token from /api/v1/auth/login or /api/v1/auth/google
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: 페이지 번호 (0부터 시작)
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+    SizeParam:
+      name: size
+      in: query
+      description: 페이지 크기
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+    SortByParam:
+      name: sortBy
+      in: query
+      description: 정렬 기준 필드
+      schema:
+        type: string
+        default: scheduledAt
+    SortDirParam:
+      name: sortDir
+      in: query
+      description: 정렬 방향
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+
+  schemas:
+    # ========================================
+    # Common
+    # ========================================
+    ErrorResponse:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+        - path
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-17T14:30:00Z"
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: "Bad Request"
+        message:
+          type: string
+          example: "Validation failed"
+        path:
+          type: string
+          example: "/api/v1/auth/signup"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    MessageResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "Operation completed successfully"
+
+    PageInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 0
+        size:
+          type: integer
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          example: 42
+        totalPages:
+          type: integer
+          example: 3
+
+    # ========================================
+    # Identity - Authentication
+    # ========================================
+    SignupRequest:
+      type: object
+      required:
+        - email
+        - username
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "fan@example.com"
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: "^[a-zA-Z0-9_]+$"
+          example: "kpop_fan123"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "myPassword123"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "fan@example.com"
+        password:
+          type: string
+          format: password
+          example: "myPassword123"
+
+    GoogleAuthRequest:
+      type: object
+      required:
+        - idToken
+      properties:
+        idToken:
+          type: string
+          description: Google ID token
+          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6Ikp..."
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          example: "dGhpcyBpcyBhIHJlZnJlc2..."
+
+    AuthResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+        - expiresIn
+        - refreshToken
+        - refreshExpiresIn
+      properties:
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIs..."
+        tokenType:
+          type: string
+          enum: [Bearer]
+          example: "Bearer"
+        expiresIn:
+          type: integer
+          description: Access token 만료 시간 (초)
+          example: 3600
+        refreshToken:
+          type: string
+          example: "dGhpcyBpcyBhIHJlZnJlc2..."
+        refreshExpiresIn:
+          type: integer
+          description: Refresh token 만료 시간 (초)
+          example: 604800
+
+    # ========================================
+    # Identity - User Profile
+    # ========================================
+    UserProfileResponse:
+      type: object
+      required:
+        - id
+        - email
+        - username
+        - hasPassword
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        email:
+          type: string
+          format: email
+          example: "fan@example.com"
+        username:
+          type: string
+          example: "kpop_fan123"
+        hasPassword:
+          type: boolean
+          description: 비밀번호 설정 여부 (OAuth 전용 계정은 false)
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          example: "new_username"
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          format: password
+          example: "oldPassword123"
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: "newPassword456"
+
+    UserSettingsResponse:
+      type: object
+      required:
+        - theme
+        - language
+        - pushEnabled
+        - updatedAt
+      properties:
+        theme:
+          $ref: '#/components/schemas/Theme'
+        language:
+          $ref: '#/components/schemas/Language'
+        pushEnabled:
+          type: boolean
+          example: true
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    UpdateSettingsRequest:
+      type: object
+      properties:
+        theme:
+          $ref: '#/components/schemas/Theme'
+        language:
+          $ref: '#/components/schemas/Language'
+        pushEnabled:
+          type: boolean
+
+    Theme:
+      type: string
+      enum: [light, dark, system]
+      example: "light"
+
+    Language:
+      type: string
+      enum: [ko, en, ja]
+      example: "ko"
+
+    # ========================================
+    # Streaming
+    # ========================================
+    StreamingStatus:
+      type: string
+      enum: [SCHEDULED, LIVE, ENDED]
+      example: "LIVE"
+
+    StreamingPlatform:
+      type: string
+      enum: [YOUTUBE]
+      example: "YOUTUBE"
+
+    # ========================================
+    # Content - News
+    # ========================================
+    NewsSourceType:
+      type: string
+      enum: [NAVER, GOOGLE_NEWS, SPORTS_DONGA, OTHER]
+      example: "NAVER"
+
+    NewsSummary:
+      type: object
+      required:
+        - id
+        - title
+        - source
+        - publishedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "BTS 정국, 솔로 앨범 발표 예정"
+        thumbnailUrl:
+          type: string
+          format: uri
+          example: "https://cdn.news.com/images/bts-jk.jpg"
+        source:
+          type: string
+          example: "Naver News"
+        publishedAt:
+          type: string
+          format: date-time
+          example: "2026-01-17T09:00:00Z"
+
+    NewsDetailResponse:
+      type: object
+      required:
+        - id
+        - title
+        - content
+        - source
+        - originalUrl
+        - publishedAt
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "BTS 정국, 솔로 앨범 발표 예정"
+        content:
+          type: string
+          example: "BTS 멤버 정국이 새로운 솔로 앨범을 준비 중인 것으로 알려졌다..."
+        thumbnailUrl:
+          type: string
+          format: uri
+        source:
+          type: string
+          example: "Naver News"
+        sourceType:
+          $ref: '#/components/schemas/NewsSourceType'
+        originalUrl:
+          type: string
+          format: uri
+          example: "https://news.naver.com/article/123456"
+        publishedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    NewsListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - content
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/NewsSummary'
+
+    # ========================================
+    # Content - Charts
+    # ========================================
+    ChartSource:
+      type: string
+      enum: [BILLBOARD, MELON, SPOTIFY, BUGS]
+      example: "MELON"
+
+    ChartPeriod:
+      type: string
+      enum: [REALTIME, WEEKLY]
+      example: "REALTIME"
+
+    RankChangeType:
+      type: string
+      enum: [UP, DOWN, UNCHANGED, NEW]
+      example: "UP"
+
+    ChartEntry:
+      type: object
+      required:
+        - rank
+        - artistName
+        - songTitle
+      properties:
+        rank:
+          type: integer
+          example: 1
+        previousRank:
+          type: integer
+          example: 3
+        rankChange:
+          type: integer
+          description: 순위 변화 (음수=상승, 양수=하락)
+          example: -2
+        rankChangeType:
+          $ref: '#/components/schemas/RankChangeType'
+        artistName:
+          type: string
+          example: "NewJeans"
+        songTitle:
+          type: string
+          example: "Super Shy"
+
+    ChartSummary:
+      type: object
+      required:
+        - source
+        - period
+        - asOf
+        - topEntry
+      properties:
+        source:
+          $ref: '#/components/schemas/ChartSource'
+        period:
+          $ref: '#/components/schemas/ChartPeriod'
+        asOf:
+          type: string
+          format: date-time
+          description: 차트 기준 시각
+        topEntry:
+          $ref: '#/components/schemas/ChartEntry'
+
+    ChartSummaryListResponse:
+      type: object
+      required:
+        - charts
+      properties:
+        charts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartSummary'
+
+    ChartDetailResponse:
+      type: object
+      required:
+        - source
+        - period
+        - asOf
+        - entries
+        - updatedAt
+      properties:
+        source:
+          $ref: '#/components/schemas/ChartSource'
+        period:
+          $ref: '#/components/schemas/ChartPeriod'
+        asOf:
+          type: string
+          format: date-time
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartEntry'
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ========================================
+    # Content - Artists
+    # ========================================
+    ArtistSummary:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "NewJeans"
+        profileImageUrl:
+          type: string
+          format: uri
+          example: "https://cdn.fanpulse.app/artists/newjeans.jpg"
+        fandomName:
+          type: string
+          example: "Bunnies"
+
+    ArtistDetailResponse:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "NewJeans"
+        debutDate:
+          type: string
+          format: date
+          example: "2022-07-22"
+        agency:
+          type: string
+          example: "ADOR"
+        genre:
+          type: string
+          example: "K-POP"
+        fandomName:
+          type: string
+          example: "Bunnies"
+        profileImageUrl:
+          type: string
+          format: uri
+        description:
+          type: string
+          example: "NewJeans는 2022년 데뷔한 5인조 걸그룹입니다."
+        createdAt:
+          type: string
+          format: date-time
+
+    ArtistListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - content
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ArtistSummary'
+
+    StreamingEventSummary:
+      type: object
+      required:
+        - id
+        - title
+        - artistId
+        - scheduledAt
+        - status
+        - platform
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "NewJeans Live"
+        thumbnailUrl:
+          type: string
+          format: uri
+          example: "https://i.ytimg.com/vi/xxx/hqdefault.jpg"
+        artistId:
+          type: string
+          format: uuid
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/StreamingStatus'
+        viewerCount:
+          type: integer
+          example: 15000
+        platform:
+          $ref: '#/components/schemas/StreamingPlatform'
+
+    StreamingEventDetailResponse:
+      type: object
+      required:
+        - id
+        - title
+        - artistId
+        - scheduledAt
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "NewJeans Live - OMG MV Reaction"
+        description:
+          type: string
+          example: "Let's watch OMG MV together!"
+        platform:
+          $ref: '#/components/schemas/StreamingPlatform'
+        externalId:
+          type: string
+          description: 플랫폼별 고유 ID (예: YouTube video ID)
+          example: "dQw4w9WgXcQ"
+        streamUrl:
+          type: string
+          format: uri
+          example: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+        sourceUrl:
+          type: string
+          format: uri
+          example: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        thumbnailUrl:
+          type: string
+          format: uri
+          example: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
+        artistId:
+          type: string
+          format: uuid
+        scheduledAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/StreamingStatus'
+        viewerCount:
+          type: integer
+          example: 15000
+        createdAt:
+          type: string
+          format: date-time
+
+    StreamingEventListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - content
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/StreamingEventSummary'
+
+    # ========================================
+    # Discovery (Admin)
+    # ========================================
+    ArtistChannelResponse:
+      type: object
+      required:
+        - id
+        - artistId
+        - platform
+        - channelHandle
+        - isOfficial
+        - isActive
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        artistId:
+          type: string
+          format: uuid
+        platform:
+          $ref: '#/components/schemas/StreamingPlatform'
+        channelHandle:
+          type: string
+          example: "@NewJeans_official"
+        channelId:
+          type: string
+          example: "UC3b_-jFthFWNLt_eFzAU6mg"
+        channelUrl:
+          type: string
+          format: uri
+          example: "https://www.youtube.com/@NewJeans_official"
+        isOfficial:
+          type: boolean
+          example: true
+        isActive:
+          type: boolean
+          example: true
+        lastCrawledAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    ArtistChannelListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - content
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ArtistChannelResponse'
+
+    CreateArtistChannelRequest:
+      type: object
+      required:
+        - artistId
+        - platform
+        - channelHandle
+      properties:
+        artistId:
+          type: string
+          format: uuid
+        platform:
+          $ref: '#/components/schemas/StreamingPlatform'
+        channelHandle:
+          type: string
+          example: "@IVEstarship"
+        channelId:
+          type: string
+          example: "UC_XXX"
+        channelUrl:
+          type: string
+          format: uri
+        isOfficial:
+          type: boolean
+          default: true
+        isActive:
+          type: boolean
+          default: true
+
+    UpdateArtistChannelRequest:
+      type: object
+      properties:
+        channelHandle:
+          type: string
+        channelId:
+          type: string
+        channelUrl:
+          type: string
+          format: uri
+        isOfficial:
+          type: boolean
+        isActive:
+          type: boolean
+
+    DiscoveryResultResponse:
+      type: object
+      required:
+        - total
+        - upserted
+        - failed
+      properties:
+        total:
+          type: integer
+          description: 처리된 총 채널 수
+          example: 10
+        upserted:
+          type: integer
+          description: 생성/갱신된 스트림 수
+          example: 3
+        failed:
+          type: integer
+          description: 실패한 채널 수
+          example: 0
+        errors:
+          type: array
+          items:
+            type: string
+          example: []
+
+security:
+  - bearerAuth: []
