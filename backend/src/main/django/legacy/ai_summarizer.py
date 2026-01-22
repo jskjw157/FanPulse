@@ -18,7 +18,6 @@
 # - transformers, torch, sentencepiece 패키지 필요
 #######################
 """
-import torch
 import logging
 
 logger = logging.getLogger(__name__)
@@ -66,42 +65,6 @@ def _get_pipeline():
 
     return _pipeline
 
-#######################
-# 환경 점검 및 LLM 모델 로딩
-#######################
-def _get_llm_model(model_name):
-    import sys
-
-    print("===== ENV CHECK =====")
-    print("Python exe :", sys.executable)
-    print("Torch ver  :", torch.__version__)
-    print("CUDA avail :", torch.cuda.is_available())
-    print("CUDA ver   :", torch.version.cuda)
-    print("GPU name   :", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
-    print("=====================")
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        BitsAndBytesConfig
-    )
-
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.float16,
-    )
-
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        quantization_config=bnb_config,
-        device_map="auto"
-    )
-
-    model.eval()
-    return tokenizer, model
 
 #######################
 # 모델 로딩 및 캐싱
@@ -126,56 +89,50 @@ def _get_model(language='ko'):
     """
     global _models
 
-    if language in _models:
-        return _models[language]
-
-    if language == 'ko':
-        model_name = "mistralai/Mistral-7B-Instruct-v0.3"
-
-        tokenizer, model = _get_llm_model(model_name)
-
-        _models[language] = {
-            "type": "llm",
-            "tokenizer": tokenizer,
-            "model": model
-        }
-
-    else:
+    # 이미 로드된 모델이 있으면 반환
+    if language not in _models:
         pipeline_fn = _get_pipeline()
-        _models[language] = {
-            "type": "pipeline",
-            "model": pipeline_fn(
-                task="summarization",
-                model="facebook/bart-large-cnn",
-                device=0 if torch.cuda.is_available() else -1
+
+        #######################
+        # GPU/CPU 자동 선택
+        #######################
+        try:
+            import torch
+            # CUDA GPU 사용 가능하면 GPU(device=0), 아니면 CPU(device=-1)
+            device = 0 if torch.cuda.is_available() else -1
+            device_name = "GPU" if device == 0 else "CPU"
+        except ImportError:
+            device = -1
+            device_name = "CPU"
+
+        #######################
+        # 언어별 모델 선택
+        #######################
+        if language == 'ko':
+            # 한국어 요약 모델 (T5 기반)
+            model_name = 'eenzeenee/t5-base-korean-summarization'
+        else:
+            # 영어 요약 모델 (BART 기반)
+            model_name = 'facebook/bart-large-cnn'
+
+        logger.info(f"Loading model: {model_name} on {device_name}")
+
+        #######################
+        # 모델 로딩
+        #######################
+        try:
+            _models[language] = pipeline_fn(
+                'summarization',  # 요약 태스크
+                model=model_name,
+                device=device
             )
-        }
+            logger.info(f"Model {model_name} loaded successfully")
+        except Exception as e:
+            logger.error(f"Failed to load model {model_name}: {e}")
+            raise RuntimeError(f"Failed to load summarization model: {e}")
 
     return _models[language]
 
-#######################
-# LLM 뉴스 요약 프롬프트
-#######################
-def build_news_prompt(text: str) -> str:
-    return f"""
-너는 뉴스 요약 AI다.
-아래 기사에 **있는 정보만 사용**하여 요약하라.
-추측, 해석, 평가, 배경 설명은 절대 추가하지 마라.
-
-요약 규칙:
-- 사실만 사용
-- 인물, 날짜, 수치는 원문 그대로
-- 최대 1문장
-- 불필요한 형용사 및 기호 제거
-- 결과물 첫단어는 무조건 "[요약]"로 시작
-
-기사:
-\"\"\"
-{text}
-\"\"\"
-
-요약:
-"""
 
 #######################
 # AI 요약기 클래스
@@ -228,62 +185,68 @@ class AISummarizer:
     # 메인 요약 함수
     #######################
     def summarize(self, text, max_length=200, min_length=50):
+        """
+        AI 모델을 사용하여 텍스트 요약
+
+        Args:
+            text: 요약할 원문 텍스트
+            max_length: 요약 최대 길이 (토큰 수 기준)
+            min_length: 요약 최소 길이 (토큰 수 기준)
+
+        Returns:
+            dict: {
+                'summary': 생성된 요약,
+                'bullets': 핵심 포인트 목록,
+                'keywords': 추출된 키워드 목록
+            }
+
+        Raises:
+            RuntimeError: 요약 실패 시
+        """
         try:
-            model_bundle = self._ensure_model()
+            # 모델 로드 (처음 호출 시에만 실제 로딩)
+            model = self._ensure_model()
 
-            prompt = build_news_prompt(text)
+            #######################
+            # 입력 길이 제한
+            #######################
+            # 모델마다 입력 길이 제한이 있음 (보통 512~1024 토큰)
+            # 긴 텍스트는 잘라서 처리
+            max_input_length = 1024
+            if len(text) > max_input_length:
+                text = text[:max_input_length]
+                logger.warning(f"Input truncated to {max_input_length} characters")
 
-            # =========================
-            # LLM 분기 (Mistral)
-            # =========================
-            if model_bundle["type"] == "llm":
-                tokenizer = model_bundle["tokenizer"]
-                model = model_bundle["model"]
+            #######################
+            # AI 요약 생성
+            #######################
+            result = model(
+                text,
+                max_length=max_length,   # 요약 최대 길이
+                min_length=min_length,   # 요약 최소 길이
+                do_sample=False,         # 결정적 생성 (항상 같은 결과)
+                truncation=True          # 입력이 길면 자르기
+            )
 
-                inputs = tokenizer(
-                    prompt,
-                    return_tensors="pt"
-                ).to(model.device)
+            # 생성된 요약 추출
+            summary = result[0]['summary_text']
 
-                with torch.no_grad():
-                    outputs = model.generate(
-                        **inputs,
-                        max_new_tokens=max_length,
-                        do_sample=False,
-                        temperature=0.0,
-                        top_p=1.0,
-                        repetition_penalty=1.1,
-                        pad_token_id=tokenizer.eos_token_id
-                    )
-
-                summary = tokenizer.decode(
-                    outputs[0][inputs["input_ids"].shape[-1]:],
-                    skip_special_tokens=True
-                ).strip()
-
-            # =========================
-            # Pipeline 분기 (T5 / BART)
-            # =========================
-            else:
-                pipeline_model = model_bundle["model"]
-
-                result = pipeline_model(
-                    text,
-                    max_length=max_length,
-                    min_length=min_length
-                )
-
-                summary = result[0]["summary_text"].strip()
-
-            # ===== 이후 로직은 동일 =====
+            #######################
+            # 핵심 포인트 추출
+            #######################
+            # 요약 텍스트를 문장 단위로 분리하여 불릿 생성
             bullets = self._extract_bullets(summary)
+
+            #######################
+            # 키워드 추출
+            #######################
+            # 원문에서 주요 키워드 추출
             keywords = self._extract_keywords(text)
 
             return {
-                "summary": summary,
-                "bullets": bullets,
-                "keywords": keywords,
-                "model_type": model_bundle["type"]
+                'summary': summary,
+                'bullets': bullets,
+                'keywords': keywords
             }
 
         except Exception as e:
