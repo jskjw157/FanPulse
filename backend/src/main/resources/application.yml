@@ -27,6 +27,14 @@ spring:
     clean-disabled: true
 
 fanpulse:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-expiration: 3600000      # 1 hour in milliseconds
+    refresh-expiration: 604800000   # 7 days in milliseconds
+
+  google:
+    client-id: ${GOOGLE_CLIENT_ID}
+
   youtube:
     oembed:
       base-url: https://www.youtube.com/oembed

@@ -406,7 +406,7 @@ class LiveDiscoveryServiceTest {
         handle: String,
         artistId: UUID = UUID.randomUUID()
     ): ArtistChannel {
-        return ArtistChannel(
+        return ArtistChannel.create(
             artistId = artistId,
             platform = StreamingPlatform.YOUTUBE,
             channelHandle = handle
@@ -434,7 +434,7 @@ class LiveDiscoveryServiceTest {
         title: String = "Event Title",
         status: StreamingStatus = StreamingStatus.LIVE
     ): StreamingEvent {
-        return StreamingEvent(
+        return StreamingEvent.create(
             title = title,
             description = null,
             platform = if (externalId != null) StreamingPlatform.YOUTUBE else null,

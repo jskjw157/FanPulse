@@ -453,7 +453,7 @@ class TransactionalMetadataUpdaterTest {
         title: String = "Test Title",
         thumbnailUrl: String? = "https://example.com/thumb.jpg"
     ): StreamingEvent {
-        return StreamingEvent(
+        return StreamingEvent.create(
             id = id,
             title = title,
             description = "Test description",
