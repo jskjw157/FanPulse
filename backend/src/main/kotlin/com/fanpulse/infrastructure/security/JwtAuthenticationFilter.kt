@@ -8,6 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
+import org.springframework.util.AntPathMatcher
 import org.springframework.web.filter.OncePerRequestFilter
 
 private val logger = KotlinLogging.logger {}
@@ -16,15 +17,34 @@ private val logger = KotlinLogging.logger {}
  * JWT Authentication Filter.
  *
  * Extracts JWT from Authorization header and sets authentication in SecurityContext.
+ * Public 경로는 필터를 건너뛰어 불필요한 토큰 검증을 방지합니다.
  */
 @Component
 class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider
 ) : OncePerRequestFilter() {
 
+    private val pathMatcher = AntPathMatcher()
+
     companion object {
         private const val AUTHORIZATION_HEADER = "Authorization"
         private const val BEARER_PREFIX = "Bearer "
+
+        /** Public 경로 - 인증 없이 접근 가능 */
+        private val PUBLIC_PATHS = listOf(
+            "/api/v1/auth/**",
+            "/actuator/**",
+            "/swagger-ui/**",
+            "/v3/api-docs/**"
+        )
+    }
+
+    /**
+     * Public 경로는 필터 적용하지 않음
+     */
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean {
+        val path = request.servletPath
+        return PUBLIC_PATHS.any { pattern -> pathMatcher.match(pattern, path) }
     }
 
     override fun doFilterInternal(
@@ -66,14 +86,25 @@ class JwtAuthenticationFilter(
 
     /**
      * Validates the token and checks if it's an access token.
+     *
+     * SECURITY: Refresh Token은 Access Token보다 유효기간이 길기 때문에,
+     * Authorization 헤더에 Refresh Token을 사용하는 것을 명시적으로 거부합니다.
      */
     private fun authenticateToken(token: String): Boolean {
         if (!jwtTokenProvider.validateToken(token)) {
+            logger.debug { "Invalid JWT token" }
             return false
         }
 
-        val tokenType = jwtTokenProvider.getTokenType(token)
-        return tokenType == "access"
+        // SECURITY: Refresh Token은 인증에 사용할 수 없음
+        if (!jwtTokenProvider.isAccessToken(token)) {
+            if (jwtTokenProvider.isRefreshToken(token)) {
+                logger.warn { "Refresh token을 Authorization 헤더에 사용 시도 감지 - 거부됨" }
+            }
+            return false
+        }
+
+        return true
     }
 
     /**

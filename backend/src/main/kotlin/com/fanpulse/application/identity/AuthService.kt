@@ -1,19 +1,12 @@
 package com.fanpulse.application.identity
 
-import com.fanpulse.application.identity.command.RegisterUserCommand
-import com.fanpulse.application.identity.command.RegisterUserHandler
-import com.fanpulse.domain.common.DomainEventPublisher
-import com.fanpulse.domain.identity.*
-import com.fanpulse.domain.identity.event.LoginType
-import com.fanpulse.domain.identity.event.UserLoggedIn
-import com.fanpulse.domain.identity.port.OAuthAccountPort
+import com.fanpulse.application.identity.command.GoogleLoginCommand
+import com.fanpulse.application.identity.command.GoogleLoginHandler
 import com.fanpulse.domain.identity.port.RefreshTokenPort
 import com.fanpulse.domain.identity.port.TokenPort
 import com.fanpulse.domain.identity.port.UserPort
-import com.fanpulse.domain.identity.port.UserSettingsPort
 import java.time.Instant
 import mu.KotlinLogging
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -22,46 +15,34 @@ private val logger = KotlinLogging.logger {}
 /**
  * Authentication and Authorization Service (Facade).
  *
- * Delegates business logic to Command Handlers and manages token generation.
+ * Supports Google OAuth login and token management.
  */
 @Service
 class AuthService(
     private val userPort: UserPort,
-    private val userSettingsPort: UserSettingsPort,
-    private val oAuthAccountPort: OAuthAccountPort,
     private val tokenPort: TokenPort,
     private val refreshTokenPort: RefreshTokenPort,
-    private val passwordEncoder: PasswordEncoder,
-    private val eventPublisher: DomainEventPublisher,
-    private val registerUserHandler: RegisterUserHandler
+    private val googleLoginHandler: GoogleLoginHandler
 ) {
     companion object {
         private const val REFRESH_TOKEN_EXPIRATION_DAYS = 7L
     }
 
     /**
-     * Registers a new user with email/password.
+     * Authenticates a user with Google OAuth.
      *
-     * Delegates user creation to RegisterUserHandler and manages token generation.
-     *
-     * @param request Registration request containing email, username, and password
+     * @param request Google login request containing the ID token
      * @return AuthResponse with tokens and user info
-     * @throws EmailAlreadyExistsException if email is already registered
-     * @throws UsernameAlreadyExistsException if username is already taken
+     * @throws InvalidGoogleTokenException if token verification fails
+     * @throws OAuthEmailNotVerifiedException if Google didn't verify the email
      */
     @Transactional
-    fun register(request: RegisterRequest): AuthResponse {
-        logger.debug { "Registering new user: ${request.email}" }
-
-        // Create command
-        val command = RegisterUserCommand(
-            email = request.email,
-            username = request.username,
-            password = request.password
-        )
+    fun googleLogin(request: GoogleLoginRequest): AuthResponse {
+        logger.debug { "Google login attempt" }
 
         // Delegate to handler
-        val user = registerUserHandler.handle(command)
+        val command = GoogleLoginCommand(idToken = request.idToken)
+        val user = googleLoginHandler.handle(command)
 
         // Generate tokens
         val accessToken = tokenPort.generateAccessToken(user.id)
@@ -71,58 +52,7 @@ class AuthService(
         val expiresAt = Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
         refreshTokenPort.save(user.id, refreshToken, expiresAt)
 
-        logger.info { "User registered successfully: ${user.id}" }
-
-        return AuthResponse(
-            userId = user.id,
-            email = user.email,
-            username = user.username,
-            accessToken = accessToken,
-            refreshToken = refreshToken
-        )
-    }
-
-    /**
-     * Authenticates a user with email/password.
-     *
-     * @param request Login request containing email and password
-     * @param requestContext Optional context containing IP address and user agent for audit trail
-     * @return AuthResponse with tokens and user info
-     * @throws InvalidCredentialsException if credentials are invalid
-     */
-    @Transactional
-    fun login(request: LoginRequest, requestContext: RequestContext? = null): AuthResponse {
-        logger.debug { "Login attempt for: ${request.email}" }
-
-        // Find user
-        val user = userPort.findByEmail(request.email)
-            ?: throw InvalidCredentialsException()
-
-        // Verify password
-        if (!passwordEncoder.matches(request.password, user.passwordHash)) {
-            logger.debug { "Invalid password for: ${request.email}" }
-            throw InvalidCredentialsException()
-        }
-
-        // Publish login event with client context
-        eventPublisher.publish(
-            UserLoggedIn(
-                userId = user.id,
-                loginType = LoginType.EMAIL,
-                ipAddress = requestContext?.ipAddress,
-                userAgent = requestContext?.userAgent
-            )
-        )
-
-        // Generate tokens
-        val accessToken = tokenPort.generateAccessToken(user.id)
-        val refreshToken = tokenPort.generateRefreshToken(user.id)
-
-        // Store refresh token for rotation tracking
-        val expiresAt = Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
-        refreshTokenPort.save(user.id, refreshToken, expiresAt)
-
-        logger.info { "User logged in successfully: ${user.id}" }
+        logger.info { "Google login successful: ${user.id}" }
 
         return AuthResponse(
             userId = user.id,

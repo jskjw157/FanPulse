@@ -5,10 +5,8 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import mu.KotlinLogging
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -24,38 +22,16 @@ class AuthController(
     private val authService: AuthService
 ) {
 
-    @PostMapping("/register")
-    @Operation(summary = "Register a new user")
+    @PostMapping("/google")
+    @Operation(summary = "Login with Google OAuth")
     @ApiResponses(
-        ApiResponse(responseCode = "201", description = "User registered successfully"),
-        ApiResponse(responseCode = "409", description = "Email or username already exists"),
-        ApiResponse(responseCode = "400", description = "Invalid request")
+        ApiResponse(responseCode = "200", description = "Google login successful"),
+        ApiResponse(responseCode = "401", description = "Invalid Google ID token"),
+        ApiResponse(responseCode = "400", description = "Email not verified by Google")
     )
-    fun register(@Valid @RequestBody request: RegisterRequest): ResponseEntity<AuthResponse> {
-        logger.debug { "Register request for: ${request.email}" }
-        val response = authService.register(request)
-        return ResponseEntity.status(HttpStatus.CREATED).body(response)
-    }
-
-    @PostMapping("/login")
-    @Operation(summary = "Login with email and password")
-    @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Login successful"),
-        ApiResponse(responseCode = "401", description = "Invalid credentials")
-    )
-    fun login(
-        @Valid @RequestBody request: LoginRequest,
-        httpRequest: HttpServletRequest
-    ): ResponseEntity<AuthResponse> {
-        logger.debug { "Login request for: ${request.email}" }
-
-        // Extract client context for audit trail
-        val requestContext = RequestContext(
-            ipAddress = httpRequest.remoteAddr,
-            userAgent = httpRequest.getHeader("User-Agent")
-        )
-
-        val response = authService.login(request, requestContext)
+    fun googleLogin(@Valid @RequestBody request: GoogleLoginRequest): ResponseEntity<AuthResponse> {
+        logger.debug { "Google login request" }
+        val response = authService.googleLogin(request)
         return ResponseEntity.ok(response)
     }
 

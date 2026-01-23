@@ -68,6 +68,9 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
 
+    // Google ID Token Verification
+    implementation("com.google.api-client:google-api-client:2.2.0")
+
     // Rate Limiting (Bucket4j)
     implementation("com.bucket4j:bucket4j-core:8.7.0")
 

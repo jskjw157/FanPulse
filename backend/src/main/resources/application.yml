@@ -33,6 +33,9 @@ jwt:
   refresh-expiration: 604800000  # 7일 (밀리초)
 
 fanpulse:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:test-google-client-id.apps.googleusercontent.com}
+
   youtube:
     oembed:
       base-url: https://www.youtube.com/oembed

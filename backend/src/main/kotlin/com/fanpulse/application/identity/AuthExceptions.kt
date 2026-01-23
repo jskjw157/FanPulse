@@ -42,3 +42,24 @@ class RateLimitExceededException(
     val retryAfterSeconds: Long,
     message: String = "Too many requests. Please try again later."
 ) : AuthException(message)
+
+/**
+ * Google ID Token 검증 실패
+ */
+class InvalidGoogleTokenException(
+    message: String = "Invalid or expired Google ID token"
+) : AuthException(message)
+
+/**
+ * OAuth 제공자가 이메일을 검증하지 않은 경우
+ */
+class OAuthEmailNotVerifiedException(
+    message: String = "Email not verified by OAuth provider"
+) : AuthException(message)
+
+/**
+ * Username 충돌 (race condition 발생 시)
+ */
+class UsernameConflictException(
+    message: String = "Username conflict. Please try again."
+) : AuthException(message)
