@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -46,7 +47,9 @@ import com.aos.fanpulse.R
 import com.aos.fanpulse.presentation.membership.RecentActivityItem
 
 @Composable
-fun MyScreen (){
+fun MyScreen (
+    goSettingScreen: () -> Unit
+){
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -244,45 +247,93 @@ fun MyScreen (){
             Column(
                 modifier = Modifier
             ) {
-                Column(
-                    modifier = Modifier
-                        .background(
-                            color = colorResource(R.color.white),
-                            shape = RoundedCornerShape(16.dp)
+                Surface (
+                    shadowElevation = 10.dp,
+                    shape = RoundedCornerShape(16.dp)
+                ){
+                    Column(
+                        modifier = Modifier
+                            .background(
+                                color = colorResource(R.color.white),
+                            )
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                    ) {
+                        Row {
+                            Column (
+                                modifier = Modifier.weight(1f)
+                            ){
+                                Text(
+                                    "보유 포인트",
+                                    style = TextStyle(
+                                        fontFamily = FontFamily.Default,
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 14.sp,
+                                        lineHeight = 20.sp,
+                                        letterSpacing = 0.sp,
+                                        platformStyle = PlatformTextStyle(
+                                            includeFontPadding = false
+                                        )
+                                    )
+                                )
+                                Text(
+                                    "12,450P",
+                                    style = TextStyle(
+                                        fontFamily = FontFamily.Default,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 24.sp,
+                                        lineHeight = 32.sp,
+                                        letterSpacing = 0.sp,
+                                        platformStyle = PlatformTextStyle(
+                                            includeFontPadding = false
+                                        )
+                                    ),
+                                    color = colorResource(R.color.color_1)
+                                )
+                            }
+                            Button(
+                                onClick = {},
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = colorResource(R.color.color_1),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(100.dp)) {
+                                Text("포인트 적립")
+                            }
+                        }
+                        Spacer(Modifier.height(25.dp))
+                        Text(
+                            "최근 포인트 내역",
+                            style = TextStyle(
+                                fontFamily = FontFamily.Default,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp,
+                                letterSpacing = 0.sp,
+                                platformStyle = PlatformTextStyle(
+                                    includeFontPadding = false
+                                )
+                            )
                         )
-                        .shadow(
-                            elevation = 3.dp,
-                            shape = RoundedCornerShape(16.dp),
-                            clip = false // 그림자가 잘리지 않도록 false 설정
-                        )
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                ) {
-                    Row {
-                        Column (
-                            modifier = Modifier.weight(1f)
+                        Spacer(Modifier.height(8.dp))
+                        SetRecentList("광고 시청", true, 500)
+                        SetRecentList("굿즈 구매", false, 2000)
+                        SetRecentList("투표 참여", true, 1000)
+                        Spacer(Modifier.height(12.dp))
+                        Row (
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ){
                             Text(
-                                "보유 포인트",
+                                modifier = Modifier.fillMaxWidth(),
+                                text = "전체 내역 보기 >",
                                 style = TextStyle(
                                     fontFamily = FontFamily.Default,
-                                    fontWeight = FontWeight.Normal,
+                                    fontWeight = FontWeight.Medium,
                                     fontSize = 14.sp,
                                     lineHeight = 20.sp,
                                     letterSpacing = 0.sp,
-                                    platformStyle = PlatformTextStyle(
-                                        includeFontPadding = false
-                                    )
-                                )
-                            )
-                            Text(
-                                "12,450P",
-                                style = TextStyle(
-                                    fontFamily = FontFamily.Default,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 24.sp,
-                                    lineHeight = 32.sp,
-                                    letterSpacing = 0.sp,
+                                    textAlign = TextAlign.Center,
                                     platformStyle = PlatformTextStyle(
                                         includeFontPadding = false
                                     )
@@ -290,57 +341,9 @@ fun MyScreen (){
                                 color = colorResource(R.color.color_1)
                             )
                         }
-                        Button(
-                            onClick = {},
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colorResource(R.color.color_1),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(100.dp)) {
-                            Text("포인트 적립")
-                        }
-                    }
-                    Spacer(Modifier.height(25.dp))
-                    Text(
-                        "최근 포인트 내역",
-                        style = TextStyle(
-                            fontFamily = FontFamily.Default,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 12.sp,
-                            lineHeight = 16.sp,
-                            letterSpacing = 0.sp,
-                            platformStyle = PlatformTextStyle(
-                                includeFontPadding = false
-                            )
-                        )
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    SetRecentList("광고 시청", true, 500)
-                    SetRecentList("굿즈 구매", false, 2000)
-                    SetRecentList("투표 참여", true, 1000)
-                    Spacer(Modifier.height(12.dp))
-                    Row (
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        Text(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = "전체 내역 보기 >",
-                            style = TextStyle(
-                                fontFamily = FontFamily.Default,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 14.sp,
-                                lineHeight = 20.sp,
-                                letterSpacing = 0.sp,
-                                textAlign = TextAlign.Center,
-                                platformStyle = PlatformTextStyle(
-                                    includeFontPadding = false
-                                )
-                            ),
-                            color = colorResource(R.color.color_1)
-                        )
                     }
                 }
+
             }
 
             Spacer(Modifier.height(16.dp))
@@ -355,7 +358,7 @@ fun MyScreen (){
                 LazyColumn {
                     items(1) { index ->
                         MyScreenItem(R.drawable.icon_settings, "설정", onClick = {
-
+                            goSettingScreen()
                         })
                     }
                 }
@@ -468,5 +471,5 @@ fun SetRecentList(title: String, plus: Boolean, value: Int){
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    MyScreen()
+    MyScreen(){}
 }
