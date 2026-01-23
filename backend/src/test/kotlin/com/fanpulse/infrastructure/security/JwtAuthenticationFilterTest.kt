@@ -55,7 +55,8 @@ class JwtAuthenticationFilterTest {
 
             request.addHeader("Authorization", "Bearer $token")
             every { jwtTokenProvider.validateToken(token) } returns true
-            every { jwtTokenProvider.getTokenType(token) } returns "access"
+            every { jwtTokenProvider.isAccessToken(token) } returns true
+            every { jwtTokenProvider.isRefreshToken(token) } returns false
             every { jwtTokenProvider.getUserIdFromToken(token) } returns userId
             every { filterChain.doFilter(request, response) } just runs
 
@@ -136,7 +137,8 @@ class JwtAuthenticationFilterTest {
 
             request.addHeader("Authorization", "Bearer $token")
             every { jwtTokenProvider.validateToken(token) } returns true
-            every { jwtTokenProvider.getTokenType(token) } returns "refresh"
+            every { jwtTokenProvider.isAccessToken(token) } returns false
+            every { jwtTokenProvider.isRefreshToken(token) } returns true
             every { filterChain.doFilter(request, response) } just runs
 
             // When

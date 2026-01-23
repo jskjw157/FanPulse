@@ -9,15 +9,6 @@ import java.util.UUID
  */
 
 /**
- * Register a new user with email/password.
- */
-data class RegisterUserCommand(
-    val email: String,
-    val username: String,
-    val password: String
-)
-
-/**
  * Change user's password.
  */
 data class ChangePasswordCommand(
@@ -32,4 +23,12 @@ data class ChangePasswordCommand(
 data class UpdateUserProfileCommand(
     val userId: UUID,
     val username: String
+)
+
+/**
+ * Login with Google OAuth.
+ * idToken is the Google ID Token received from the client.
+ */
+data class GoogleLoginCommand(
+    val idToken: String
 )

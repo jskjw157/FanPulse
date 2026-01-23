@@ -162,6 +162,36 @@ class JwtTokenProvider(
     }
 
     /**
+     * 토큰이 Access Token인지 확인합니다.
+     * 예외를 던지지 않고 boolean을 반환합니다.
+     *
+     * @param token JWT 토큰
+     * @return Access Token이면 true, 그렇지 않으면 false
+     */
+    fun isAccessToken(token: String): Boolean {
+        return try {
+            getTokenType(token) == TOKEN_TYPE_ACCESS
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * 토큰이 Refresh Token인지 확인합니다.
+     * 예외를 던지지 않고 boolean을 반환합니다.
+     *
+     * @param token JWT 토큰
+     * @return Refresh Token이면 true, 그렇지 않으면 false
+     */
+    fun isRefreshToken(token: String): Boolean {
+        return try {
+            getTokenType(token) == TOKEN_TYPE_REFRESH
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
      * 토큰을 파싱하여 Claims를 반환합니다.
      *
      * @param token JWT 토큰

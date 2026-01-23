@@ -75,6 +75,34 @@ class GlobalExceptionHandler {
         )
     }
 
+    // === OAuth Exceptions ===
+
+    @ExceptionHandler(InvalidGoogleTokenException::class)
+    fun handleInvalidGoogleToken(
+        ex: InvalidGoogleTokenException,
+        request: WebRequest
+    ): ResponseEntity<ProblemDetail> {
+        logger.debug { "Invalid Google token: ${ex.message}" }
+        return createResponse(
+            ErrorType.INVALID_GOOGLE_TOKEN,
+            detail = ex.message,
+            request = request
+        )
+    }
+
+    @ExceptionHandler(OAuthEmailNotVerifiedException::class)
+    fun handleOAuthEmailNotVerified(
+        ex: OAuthEmailNotVerifiedException,
+        request: WebRequest
+    ): ResponseEntity<ProblemDetail> {
+        logger.debug { "OAuth email not verified: ${ex.message}" }
+        return createResponse(
+            ErrorType.OAUTH_EMAIL_NOT_VERIFIED,
+            detail = ex.message,
+            request = request
+        )
+    }
+
     // === Conflict Exceptions ===
 
     @ExceptionHandler(EmailAlreadyExistsException::class)

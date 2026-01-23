@@ -41,6 +41,18 @@ enum class ErrorType(
         status = HttpStatus.UNAUTHORIZED.value(),
         code = "REFRESH_TOKEN_REUSED"
     ),
+    INVALID_GOOGLE_TOKEN(
+        slug = "invalid-google-token",
+        title = "Invalid Google Token",
+        status = HttpStatus.UNAUTHORIZED.value(),
+        code = "INVALID_GOOGLE_TOKEN"
+    ),
+    OAUTH_EMAIL_NOT_VERIFIED(
+        slug = "oauth-email-not-verified",
+        title = "OAuth Email Not Verified",
+        status = HttpStatus.BAD_REQUEST.value(),
+        code = "OAUTH_EMAIL_NOT_VERIFIED"
+    ),
 
     // === Rate Limiting Errors (429) ===
     RATE_LIMIT_EXCEEDED(
