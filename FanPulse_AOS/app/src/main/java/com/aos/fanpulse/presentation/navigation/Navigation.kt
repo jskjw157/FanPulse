@@ -24,6 +24,7 @@ sealed class SubScreen(route: String) : Screen(route) {
     object Login : SubScreen("login")
     object CommunityPost : SubScreen("community_post")
     object CommunityPostDetail : SubScreen("community_post_detail")
+    object Settings : SubScreen("settings")
 
     object Detail : SubScreen("detail/{taskId}?title={title}") {
         fun createRoute(taskId: Int, title: String): String {
@@ -45,6 +46,11 @@ class NavigationActions(private val navController: NavHostController){
     }
     fun navigateCommunityPostDetail(){
         navController.navigate(SubScreen.CommunityPostDetail.route){
+            launchSingleTop = true
+        }
+    }
+    fun navigateSettings(){
+        navController.navigate(SubScreen.Settings.route){
             launchSingleTop = true
         }
     }

@@ -45,7 +45,9 @@ fun NavGraph(
                 )
             }
             composable(MainTabScreen.Voting.route) { VotingScreen() }
-            composable(MainTabScreen.My.route) { MyScreen() }
+            composable(MainTabScreen.My.route) { MyScreen(
+                { NavigationActions(navController).navigateSettings() }
+            )}
         }
 
         composable(SubScreen.CommunityPost.route) {
@@ -62,6 +64,12 @@ fun NavGraph(
             CommunityPostDetailScreen({
                 navController.popBackStack()
             },{})
+        }
+
+        composable (SubScreen.Settings.route){
+            SettingsScreen({
+                navController.popBackStack()
+            })
         }
     }
 }
