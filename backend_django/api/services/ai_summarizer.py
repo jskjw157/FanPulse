@@ -245,16 +245,31 @@ class AISummarizer:
                     return_tensors="pt"
                 ).to(model.device)
 
+                #######################
+                # 종화 모델 변경안
+                #######################
+                # do_sample=False (greedy decoding)일 때는 temperature/top_p 무시됨
                 with torch.no_grad():
                     outputs = model.generate(
                         **inputs,
                         max_new_tokens=max_length,
-                        do_sample=False,
-                        temperature=0.0,
-                        top_p=1.0,
+                        do_sample=False,  # greedy decoding: 항상 최고 확률 토큰 선택
                         repetition_penalty=1.1,
                         pad_token_id=tokenizer.eos_token_id
                     )
+                #######################
+                # 원본 (temperature 경고 발생)
+                #######################
+                # with torch.no_grad():
+                #     outputs = model.generate(
+                #         **inputs,
+                #         max_new_tokens=max_length,
+                #         do_sample=False,
+                #         temperature=0.0,
+                #         top_p=1.0,
+                #         repetition_penalty=1.1,
+                #         pad_token_id=tokenizer.eos_token_id
+                #     )
 
                 summary = tokenizer.decode(
                     outputs[0][inputs["input_ids"].shape[-1]:],
