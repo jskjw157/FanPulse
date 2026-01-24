@@ -19,12 +19,16 @@
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 #######################
 # 기본 경로 설정
 #######################
 # BASE_DIR: 프로젝트 루트 디렉토리 (manage.py가 있는 위치)
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# .env 파일 로드
+load_dotenv(BASE_DIR / '.env')
 
 
 #######################

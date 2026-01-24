@@ -231,7 +231,7 @@ class ArticleExtractor:
             #######################
             # HTML 파싱
             #######################
-            soup = BeautifulSoup(response.content, 'html5lib')
+            soup = BeautifulSoup(response.content, 'lxml')
 
             #######################
             # 제목 추출
