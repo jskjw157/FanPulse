@@ -1,5 +1,6 @@
 package com.fanpulse.interfaces.rest.identity
 
+import com.fanpulse.application.dto.identity.RefreshTokenRequest
 import com.fanpulse.application.identity.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -41,16 +42,9 @@ class AuthController(
         ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
         ApiResponse(responseCode = "401", description = "Invalid refresh token")
     )
-    fun refresh(@RequestBody request: RefreshTokenRequest): ResponseEntity<TokenResponse> {
+    fun refresh(@Valid @RequestBody request: RefreshTokenRequest): ResponseEntity<TokenResponse> {
         logger.debug { "Token refresh request" }
         val response = authService.refreshToken(request.refreshToken)
         return ResponseEntity.ok(response)
     }
 }
-
-/**
- * Request DTO for token refresh.
- */
-data class RefreshTokenRequest(
-    val refreshToken: String
-)

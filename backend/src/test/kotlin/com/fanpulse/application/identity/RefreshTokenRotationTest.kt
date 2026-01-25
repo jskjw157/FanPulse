@@ -4,12 +4,14 @@ import com.fanpulse.domain.common.DomainEventPublisher
 import com.fanpulse.domain.identity.Email
 import com.fanpulse.domain.identity.User
 import com.fanpulse.domain.identity.Username
+import com.fanpulse.application.identity.command.GoogleLoginHandler
 import com.fanpulse.domain.identity.port.RefreshTokenPort
 import com.fanpulse.domain.identity.port.RefreshTokenRecord
 import com.fanpulse.domain.identity.port.TokenPort
 import com.fanpulse.domain.identity.port.UserPort
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
@@ -36,7 +38,7 @@ class RefreshTokenRotationTest {
     private lateinit var userPort: UserPort
     private lateinit var tokenPort: TokenPort
     private lateinit var refreshTokenPort: RefreshTokenPort
-    private lateinit var eventPublisher: DomainEventPublisher
+    private lateinit var googleLoginHandler: GoogleLoginHandler
 
     private val testUserId = UUID.randomUUID()
     private val testUser = User.register(
@@ -55,15 +57,18 @@ class RefreshTokenRotationTest {
         userPort = mockk(relaxed = true)
         tokenPort = mockk(relaxed = true)
         refreshTokenPort = mockk(relaxed = true)
-        eventPublisher = mockk(relaxed = true)
+        googleLoginHandler = mockk(relaxed = true)
 
-        // Note: AuthService will need to be modified to accept RefreshTokenPort
-        // This test will fail until the implementation is complete
+        authService = AuthService(
+            userPort = userPort,
+            tokenPort = tokenPort,
+            refreshTokenPort = refreshTokenPort,
+            googleLoginHandler = googleLoginHandler
+        )
     }
 
     @Nested
     @DisplayName("Token Rotation 기본 동작")
-    @Disabled("TODO: AuthService 통합 후 테스트 완성 필요")
     inner class BasicRotation {
 
         @Test
@@ -89,11 +94,13 @@ class RefreshTokenRotationTest {
             every { tokenPort.generateRefreshToken(testUserId) } returns newRefreshToken
 
             // When
-            // TODO: Call authService.refreshToken with rotation support
+            val result = authService.refreshToken(oldRefreshToken)
 
             // Then
             verify { refreshTokenPort.invalidate(oldRefreshToken) }
             verify { refreshTokenPort.save(testUserId, newRefreshToken, any()) }
+            assertEquals(newAccessToken, result.accessToken)
+            assertEquals(newRefreshToken, result.refreshToken)
         }
 
         @Test
@@ -102,6 +109,7 @@ class RefreshTokenRotationTest {
             // Given
             val oldRefreshToken = "old_refresh_token"
             val newRefreshToken = "new_refresh_token"
+            val newAccessToken = "new_access_token"
 
             every { tokenPort.validateToken(oldRefreshToken) } returns true
             every { tokenPort.getTokenType(oldRefreshToken) } returns "refresh"
@@ -114,19 +122,20 @@ class RefreshTokenRotationTest {
                 expiresAt = Instant.now().plusSeconds(3600),
                 invalidated = false
             )
+            every { tokenPort.generateAccessToken(testUserId) } returns newAccessToken
             every { tokenPort.generateRefreshToken(testUserId) } returns newRefreshToken
 
             // When
-            // TODO: Call authService.refreshToken with rotation support
+            val result = authService.refreshToken(oldRefreshToken)
 
             // Then
             verify { refreshTokenPort.save(testUserId, newRefreshToken, any()) }
+            assertEquals(newRefreshToken, result.refreshToken)
         }
     }
 
     @Nested
     @DisplayName("Token 재사용 탐지 (Reuse Detection)")
-    @Disabled("TODO: 통합 테스트로 전환 필요")
     inner class ReuseDetection {
 
         @Test
@@ -147,17 +156,19 @@ class RefreshTokenRotationTest {
             )
 
             // When & Then
-            // TODO: Should throw RefreshTokenReusedException
-            // TODO: Should call refreshTokenPort.invalidateAllByUserId(testUserId)
             assertThrows<RefreshTokenReusedException> {
-                // authService.refreshToken(invalidatedToken)
-                throw RefreshTokenReusedException() // Placeholder
+                authService.refreshToken(invalidatedToken)
             }
+
+            // Verify all tokens invalidated for security
+            verify { refreshTokenPort.invalidateAllByUserId(testUserId) }
         }
 
         @Test
         @DisplayName("토큰 재사용 탐지 시 보안 이벤트가 발행되어야 한다")
+        @Disabled("보안 이벤트 발행 기능이 AuthService에 아직 구현되지 않음")
         fun `should publish security event when token reuse detected`() {
+            // Note: 이 테스트는 AuthService에 DomainEventPublisher가 통합된 후 활성화
             // Given
             val invalidatedToken = "invalidated_refresh_token"
 
@@ -172,39 +183,41 @@ class RefreshTokenRotationTest {
                 invalidated = true
             )
 
-            // When
-            // TODO: Call authService.refreshToken
-
-            // Then
-            // TODO: Verify security event published
+            // When & Then
+            // TODO: 보안 이벤트 발행 기능 구현 후 테스트 활성화
+            // assertThrows<RefreshTokenReusedException> { authService.refreshToken(invalidatedToken) }
             // verify { eventPublisher.publish(match { it is RefreshTokenReuseDetected }) }
         }
     }
 
     @Nested
     @DisplayName("로그인 시 Refresh Token 저장")
-    @Disabled("TODO: 통합 테스트로 전환 필요")
     inner class LoginTokenStorage {
 
         @Test
-        @DisplayName("로그인 성공 시 refresh token이 저장되어야 한다")
-        fun `should store refresh token on successful login`() {
+        @DisplayName("Google 로그인 성공 시 refresh token이 저장되어야 한다")
+        fun `should store refresh token on successful google login`() {
             // Given
             val refreshToken = "new_refresh_token"
+            val accessToken = "new_access_token"
+            val idToken = "google_id_token"
 
-            every { tokenPort.generateRefreshToken(any()) } returns refreshToken
+            every { googleLoginHandler.handle(any()) } returns testUser
+            every { tokenPort.generateAccessToken(testUserId) } returns accessToken
+            every { tokenPort.generateRefreshToken(testUserId) } returns refreshToken
 
             // When
-            // TODO: Call authService.login with RefreshTokenPort integration
+            val result = authService.googleLogin(GoogleLoginRequest(idToken = idToken))
 
             // Then
-            verify { refreshTokenPort.save(any(), refreshToken, any()) }
+            verify { refreshTokenPort.save(testUserId, refreshToken, any()) }
+            assertEquals(refreshToken, result.refreshToken)
+            assertEquals(accessToken, result.accessToken)
         }
     }
 
     @Nested
     @DisplayName("로그아웃 시 Token 무효화")
-    @Disabled("TODO: 통합 테스트로 전환 필요")
     inner class LogoutTokenInvalidation {
 
         @Test
@@ -214,10 +227,10 @@ class RefreshTokenRotationTest {
             val userId = testUserId
 
             // When
-            // TODO: Call authService.logout(userId)
+            authService.logout(userId)
 
             // Then
-            verify { refreshTokenPort.invalidateAllByUserId(userId) }
+            verify(exactly = 1) { refreshTokenPort.invalidateAllByUserId(userId) }
         }
     }
 }
