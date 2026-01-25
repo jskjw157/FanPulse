@@ -15,6 +15,8 @@ import java.util.*
  */
 interface NewsJpaRepository : JpaRepository<News, UUID> {
 
+    fun findBySourceUrl(sourceUrl: String): News?
+
     /**
      * Find news by artist ID with pagination.
      */

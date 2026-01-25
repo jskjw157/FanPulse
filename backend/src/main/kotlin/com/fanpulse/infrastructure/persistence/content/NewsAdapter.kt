@@ -27,6 +27,10 @@ class NewsAdapter(
         return repository.findById(id).orElse(null)
     }
 
+    override fun findBySourceUrl(sourceUrl: String): News? {
+        return repository.findBySourceUrl(sourceUrl)
+    }
+
     override fun findByArtistId(artistId: UUID, pageRequest: PageRequest): PageResult<News> {
         val pageable = PaginationConverter.toSpringPageable(pageRequest)
         val page = repository.findByArtistId(artistId, pageable)

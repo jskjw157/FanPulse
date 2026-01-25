@@ -13,6 +13,7 @@ import java.util.*
 interface NewsPort {
     fun save(news: News): News
     fun findById(id: UUID): News?
+    fun findBySourceUrl(sourceUrl: String): News?
     fun findByArtistId(artistId: UUID, pageRequest: PageRequest): PageResult<News>
     fun findByCategory(category: NewsCategory, pageRequest: PageRequest): PageResult<News>
     fun findAllVisible(pageRequest: PageRequest): PageResult<News>
