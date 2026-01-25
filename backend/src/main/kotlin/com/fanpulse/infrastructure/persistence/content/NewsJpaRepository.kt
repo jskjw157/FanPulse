@@ -49,4 +49,17 @@ interface NewsJpaRepository : JpaRepository<News, UUID> {
         AND LOWER(n.title) LIKE LOWER(CONCAT('%', :query, '%'))
     """)
     fun searchByTitle(@Param("query") query: String, pageable: Pageable): Page<News>
+
+    /**
+     * Search news by title or content containing the query (case-insensitive).
+     */
+    @Query("""
+        SELECT n FROM News n
+        WHERE n.visible = true
+        AND (
+            LOWER(n.title) LIKE LOWER(CONCAT('%', :query, '%'))
+            OR LOWER(n.content) LIKE LOWER(CONCAT('%', :query, '%'))
+        )
+    """)
+    fun searchByTitleOrContent(@Param("query") query: String, pageable: Pageable): Page<News>
 }

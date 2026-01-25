@@ -88,4 +88,14 @@ class StreamingEventAdapter(
         )
         return PaginationConverter.toDomainPageResult(page, pageRequest)
     }
+
+    override fun searchByTitleOrArtistName(
+        query: String,
+        status: StreamingStatus,
+        pageRequest: PageRequest
+    ): PageResult<StreamingEvent> {
+        val pageable = PaginationConverter.toSpringPageable(pageRequest)
+        val page = repository.searchByTitleOrArtistName(query, status, pageable)
+        return PaginationConverter.toDomainPageResult(page, pageRequest)
+    }
 }

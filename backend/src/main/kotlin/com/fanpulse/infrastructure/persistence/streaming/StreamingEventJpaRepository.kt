@@ -61,4 +61,25 @@ interface StreamingEventJpaRepository : JpaRepository<StreamingEvent, UUID> {
         @Param("scheduledBefore") scheduledBefore: Instant?,
         pageable: Pageable
     ): Page<StreamingEvent>
+
+    /**
+     * Unified search: search by event title OR artist name (case-insensitive).
+     *
+     * Note: StreamingEvent has only artistId, so we join via the Artist entity.
+     */
+    @Query("""
+        SELECT e FROM StreamingEvent e, Artist a
+        WHERE a.id = e.artistId
+        AND e.status = :status
+        AND (
+            LOWER(e.title) LIKE LOWER(CONCAT('%', :query, '%'))
+            OR LOWER(a.name) LIKE LOWER(CONCAT('%', :query, '%'))
+            OR (a.englishName IS NOT NULL AND LOWER(a.englishName) LIKE LOWER(CONCAT('%', :query, '%')))
+        )
+    """)
+    fun searchByTitleOrArtistName(
+        @Param("query") query: String,
+        @Param("status") status: StreamingStatus,
+        pageable: Pageable
+    ): Page<StreamingEvent>
 }

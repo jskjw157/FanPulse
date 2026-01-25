@@ -56,6 +56,12 @@ class NewsAdapter(
         return PaginationConverter.toDomainPageResult(page, pageRequest)
     }
 
+    override fun searchByTitleOrContent(query: String, pageRequest: PageRequest): PageResult<News> {
+        val pageable = PaginationConverter.toSpringPageable(pageRequest)
+        val page = repository.searchByTitleOrContent(query, pageable)
+        return PaginationConverter.toDomainPageResult(page, pageRequest)
+    }
+
     override fun delete(news: News) {
         repository.delete(news)
     }

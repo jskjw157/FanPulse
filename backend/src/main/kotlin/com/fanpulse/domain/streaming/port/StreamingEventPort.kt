@@ -70,4 +70,15 @@ interface StreamingEventPort {
         scheduledBefore: Instant? = null,
         pageRequest: PageRequest
     ): PageResult<StreamingEvent>
+
+    /**
+     * Unified search: search events by title OR artist name (case-insensitive).
+     *
+     * Status is required to support per-status ordering semantics.
+     */
+    fun searchByTitleOrArtistName(
+        query: String,
+        status: StreamingStatus,
+        pageRequest: PageRequest
+    ): PageResult<StreamingEvent>
 }

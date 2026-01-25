@@ -44,6 +44,7 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/news/**").permitAll()
                     .requestMatchers("/api/v1/charts/**").permitAll()
                     .requestMatchers("/api/v1/artists/**").permitAll()
+                    .requestMatchers("/api/v1/search/**").permitAll()
 
                     // Actuator endpoints
                     .requestMatchers("/actuator/**").permitAll()
