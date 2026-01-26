@@ -1,6 +1,7 @@
 package com.fanpulse.interfaces.rest
 
 import com.fanpulse.application.identity.*
+import com.fanpulse.application.service.search.SearchServiceException
 import com.fanpulse.interfaces.rest.error.*
 import mu.KotlinLogging
 import org.springframework.http.MediaType
@@ -144,6 +145,21 @@ class GlobalExceptionHandler {
                     rejectedValue = ex.username
                 )
             )
+        )
+    }
+
+    // === Service Exceptions ===
+
+    @ExceptionHandler(SearchServiceException::class)
+    fun handleSearchServiceException(
+        ex: SearchServiceException,
+        request: WebRequest
+    ): ResponseEntity<ProblemDetail> {
+        logger.error(ex) { "Search service error: ${ex.message}" }
+        return createResponse(
+            ErrorType.SEARCH_SERVICE_UNAVAILABLE,
+            detail = ex.message,
+            request = request
         )
     }
 

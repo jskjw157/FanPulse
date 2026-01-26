@@ -2,12 +2,18 @@ package com.fanpulse.application.service.search
 
 import com.fanpulse.application.dto.search.*
 import com.fanpulse.domain.common.PageRequest
+import com.fanpulse.domain.common.PageResult
 import com.fanpulse.domain.common.Sort
 import com.fanpulse.domain.content.port.ArtistPort
 import com.fanpulse.domain.content.port.NewsPort
+import com.fanpulse.domain.streaming.StreamingEvent
 import com.fanpulse.domain.streaming.StreamingStatus
 import com.fanpulse.domain.streaming.port.StreamingEventPort
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.springframework.dao.DataAccessException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -25,17 +31,35 @@ class SearchQueryServiceImpl(
         val safeLimit = limit.coerceIn(1, 10)
         logger.debug { "Unified search query='$query', limit=$safeLimit" }
 
-        val liveResult = searchStreamingEventsByStatus(query, StreamingStatus.LIVE, safeLimit)
-        val scheduledResult = searchStreamingEventsByStatus(query, StreamingStatus.SCHEDULED, safeLimit)
-        val endedResult = searchStreamingEventsByStatus(query, StreamingStatus.ENDED, safeLimit)
+        return try {
+            executeSearch(query, safeLimit)
+        } catch (e: DataAccessException) {
+            logger.error(e) { "Database error during search: query=$query" }
+            throw SearchServiceException("Search temporarily unavailable", e)
+        }
+    }
+
+    private fun executeSearch(query: String, safeLimit: Int): SearchResponse {
+        // P1: Parallel processing using Kotlin Coroutines
+        val (liveResult, scheduledResult, endedResult) = runBlocking(Dispatchers.IO) {
+            val liveDeferred = async { searchStreamingEventsByStatus(query, StreamingStatus.LIVE, safeLimit) }
+            val scheduledDeferred = async { searchStreamingEventsByStatus(query, StreamingStatus.SCHEDULED, safeLimit) }
+            val endedDeferred = async { searchStreamingEventsByStatus(query, StreamingStatus.ENDED, safeLimit) }
+
+            Triple(liveDeferred.await(), scheduledDeferred.await(), endedDeferred.await())
+        }
 
         val liveTotalCount = liveResult.totalElements + scheduledResult.totalElements + endedResult.totalElements
 
         val orderedEvents = (liveResult.content + scheduledResult.content + endedResult.content)
             .take(safeLimit)
 
+        // P0: Batch loading to avoid N+1 query problem
+        val artistIds = orderedEvents.map { it.artistId }.toSet()
+        val artistMap = artistPort.findByIds(artistIds).associateBy { it.id }
+
         val liveItems = orderedEvents.map { event ->
-            val artistName = artistPort.findById(event.artistId)?.name ?: "Unknown"
+            val artistName = artistMap[event.artistId]?.name ?: "Unknown"
             SearchLiveItem(
                 id = event.id,
                 title = event.title,
@@ -80,7 +104,7 @@ class SearchQueryServiceImpl(
         query: String,
         status: StreamingStatus,
         limit: Int
-    ): com.fanpulse.domain.common.PageResult<com.fanpulse.domain.streaming.StreamingEvent> {
+    ): PageResult<StreamingEvent> {
         val sort = when (status) {
             StreamingStatus.LIVE -> Sort(property = "viewerCount", direction = Sort.Direction.DESC)
             StreamingStatus.SCHEDULED -> Sort(property = "scheduledAt", direction = Sort.Direction.ASC)
