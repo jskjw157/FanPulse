@@ -237,22 +237,40 @@ docker-compose up -d
 cp .env.example .env
 ```
 
-기본값:
+기본값 (`.env.example`):
 ```
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=fanpulse
 DB_USERNAME=fanpulse
 DB_PASSWORD=fanpulse
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 ```
+
+> **Note**: `spring-dotenv` 라이브러리가 `.env` 파일을 자동으로 로드합니다.
 
 ### 4. 애플리케이션 실행
 
 ```bash
-export $(cat .env | xargs) && ./gradlew bootRun
+# 개발 환경 (ddl-auto: update - 스키마 자동 생성/업데이트)
+./gradlew bootRun --args='--spring.profiles.active=dev'
+
+# 프로덕션 환경 (ddl-auto: validate - 스키마 검증만)
+./gradlew bootRun
 ```
 
 서버: http://localhost:8080
+
+### 환경별 설정
+
+| 환경 | 프로파일 | ddl-auto | 설명 |
+|------|---------|----------|------|
+| 개발 | `dev` | `update` | Hibernate가 스키마 자동 생성/업데이트 |
+| 프로덕션 | (기본) | `validate` | Flyway 마이그레이션만 사용, 스키마 검증 |
+
+**IntelliJ에서 개발 프로파일 설정:**
+1. Run Configuration 열기
+2. VM options에 `-Dspring.profiles.active=dev` 추가
 
 ## 환경 변수
 
@@ -263,6 +281,7 @@ export $(cat .env | xargs) && ./gradlew bootRun
 | `DB_NAME` | fanpulse | 데이터베이스 이름 |
 | `DB_USERNAME` | fanpulse | DB 사용자명 |
 | `DB_PASSWORD` | fanpulse | DB 비밀번호 |
+| `GOOGLE_CLIENT_ID` | - | Google OAuth 클라이언트 ID |
 
 ## 데이터베이스 마이그레이션
 
@@ -769,8 +788,17 @@ INFO  Live discovery completed in 12345ms: total=150, upserted=42, failed=0
 ```bash
 git clone https://github.com/your-org/FanPulse.git
 cd FanPulse/backend
+
+# 1. DB 실행 (Docker 또는 Podman)
 docker-compose up -d
-./gradlew bootRun
+# 또는: podman-compose up -d
+
+# 2. 환경 변수 설정
+cp .env.example .env
+# .env 파일에서 GOOGLE_CLIENT_ID 설정
+
+# 3. 개발 모드로 실행
+./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
 
 ### 코드 스타일
