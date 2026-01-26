@@ -163,4 +163,32 @@ class AuthService(
 
         return tokenPort.getUserIdFromToken(token)
     }
+
+    /**
+     * Validates an access token and returns the user.
+     *
+     * @param token Access token to validate
+     * @return User if valid
+     * @throws InvalidTokenException if token is invalid or user not found
+     */
+    fun validateTokenAndGetUser(token: String): UserInfo {
+        val userId = validateAccessToken(token)
+        val user = userPort.findById(userId)
+            ?: throw InvalidTokenException("User not found")
+
+        return UserInfo(
+            id = user.id,
+            email = user.email,
+            username = user.username
+        )
+    }
 }
+
+/**
+ * User info DTO for auth status response.
+ */
+data class UserInfo(
+    val id: java.util.UUID,
+    val email: String,
+    val username: String
+)

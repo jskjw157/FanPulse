@@ -10,6 +10,7 @@ dev-debug.log
 node_modules/
 
 # Environment variables
+.env*.local
 backend/.env
 
 # Editor directories and files
@@ -42,6 +43,9 @@ __pycache__/
 .claude_agent_farm_state.json
 .claude_agent_farm_backups/
 agent_farm_report_*.html
+
+# OpenCode / Sisyphus working files
+.sisyphus/
 
 # Claude Code local settings
 .claude/settings.local.json

@@ -11,7 +11,7 @@ vi.mock('next/navigation', () => ({
 describe('AdsPage', () => {
   it('renders page header', () => {
     render(<AdsPage />)
-    expect(screen.getByText('Earn Rewards')).toBeInTheDocument()
+    expect(screen.getByText('Ads & Rewards')).toBeInTheDocument()
   })
 
   it('renders reward missions skeleton', () => {

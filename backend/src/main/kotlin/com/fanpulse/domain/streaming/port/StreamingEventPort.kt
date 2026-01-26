@@ -1,5 +1,7 @@
 package com.fanpulse.domain.streaming.port
 
+import com.fanpulse.domain.common.CursorPageResult
+import com.fanpulse.domain.common.DecodedCursor
 import com.fanpulse.domain.common.PageRequest
 import com.fanpulse.domain.common.PageResult
 import com.fanpulse.domain.streaming.StreamingEvent
@@ -81,4 +83,29 @@ interface StreamingEventPort {
         status: StreamingStatus,
         pageRequest: PageRequest
     ): PageResult<StreamingEvent>
+
+    // === Cursor-based Pagination (MVP API Spec) ===
+
+    /**
+     * Finds events with cursor-based pagination.
+     * Uses composite cursor (scheduledAt, id) for stable ordering.
+     *
+     * @param status Optional status filter (LIVE/SCHEDULED/ENDED)
+     * @param limit Number of items to fetch
+     * @param cursor Decoded cursor for pagination (null for first page)
+     * @return Cursor page result with items, nextCursor, and hasMore flag
+     */
+    fun findWithCursor(
+        status: StreamingStatus?,
+        limit: Int,
+        cursor: DecodedCursor?
+    ): CursorPageResult<StreamingEvent>
+
+    /**
+     * Finds event by ID with artist name joined.
+     *
+     * @param id Event ID
+     * @return Pair of (StreamingEvent, artistName) or null if not found
+     */
+    fun findByIdWithArtist(id: UUID): Pair<StreamingEvent, String>?
 }

@@ -17,8 +17,9 @@ describe('ArtistDetailPage', () => {
     expect(screen.getByText('Artist Profile')).toBeInTheDocument()
   })
 
-  it('renders profile section skeleton', () => {
+  it('renders artist overview section', () => {
     render(<ArtistDetailPage />)
-    expect(screen.getByTestId('artist-profile-skeleton')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'BTS' })).toBeInTheDocument()
+    expect(screen.getByText('소개')).toBeInTheDocument()
   })
 })

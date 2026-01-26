@@ -56,6 +56,9 @@ dependencies {
     // Logging
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
 
+    // Dotenv (.env 파일 자동 로드)
+    implementation("me.paulschwarz:spring-dotenv:4.0.0")
+
     // SpringDoc OpenAPI (Swagger)
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 

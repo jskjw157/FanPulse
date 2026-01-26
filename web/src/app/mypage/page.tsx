@@ -2,13 +2,19 @@
 
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
 export default function MyPage() {
+  const { logout, user: authUser } = useAuth();
+
+  // AuthContext에서 가져온 사용자 정보와 추가 프로필 정보 결합
   const user = {
-    name: 'Sarah Kim',
-    email: 'sarah.kim@example.com',
+    name: authUser?.username || authUser?.email?.split('@')[0] || '사용자',
+    email: authUser?.email || '',
     avatar: 'https://readdy.ai/api/search-image?query=young%20asian%20woman%20profile%20photo%2C%20friendly%20smile%2C%20casual%20style%2C%20professional%20portrait%20photography%2C%20natural%20lighting%2C%20clean%20background&width=300&height=300&seq=mypage001&orientation=squarish',
+    // TODO: 아래 정보는 추후 프로필 API에서 가져오도록 수정
     membership: 'VIP',
     points: 12450,
     level: 15
@@ -36,9 +42,9 @@ export default function MyPage() {
   ];
 
   return (
-    <>
-      <PageHeader 
-        title="마이페이지" 
+    <ProtectedRoute>
+      <PageHeader
+        title="마이페이지"
         showBack={false}
         rightAction={
           <div className="flex items-center gap-2">
@@ -155,13 +161,16 @@ export default function MyPage() {
           </div>
 
           {/* Logout Button */}
-          <div className="mb-6 lg:hidden">
-            <button className="w-full bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-medium hover:bg-gray-50 transition-colors">
+          <div className="mb-6">
+            <button
+              onClick={logout}
+              className="w-full bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-medium hover:bg-gray-50 transition-colors"
+            >
               로그아웃
             </button>
           </div>
         </div>
       </PageWrapper>
-    </>
+    </ProtectedRoute>
   );
 }

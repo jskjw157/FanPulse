@@ -59,4 +59,15 @@ class ArtistAdapter(
     override fun delete(artist: Artist) {
         repository.delete(artist)
     }
+
+    override fun findNamesByIds(ids: Collection<UUID>): Map<UUID, String> {
+        if (ids.isEmpty()) return emptyMap()
+
+        val results = repository.findNamesByIds(ids)
+        return results.associate { row ->
+            val id = row[0] as UUID
+            val name = row[1] as String
+            id to name
+        }
+    }
 }

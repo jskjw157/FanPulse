@@ -19,4 +19,12 @@ interface ArtistPort {
     fun searchByName(query: String, pageRequest: PageRequest): PageResult<Artist>
     fun existsById(id: UUID): Boolean
     fun delete(artist: Artist)
+
+    /**
+     * Batch lookup artist names by IDs (prevents N+1 query problem).
+     *
+     * @param ids Collection of artist IDs
+     * @return Map of artistId to artistName
+     */
+    fun findNamesByIds(ids: Collection<UUID>): Map<UUID, String>
 }
