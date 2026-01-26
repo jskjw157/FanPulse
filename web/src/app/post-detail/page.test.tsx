@@ -17,9 +17,10 @@ describe('PostDetailPage', () => {
     expect(screen.getByText('Post Detail')).toBeInTheDocument()
   })
 
-  it('renders post content and comments skeleton', () => {
+  it('renders post content and comments section', () => {
     render(<PostDetailPage />)
-    expect(screen.getByTestId('post-content-skeleton')).toBeInTheDocument()
-    expect(screen.getByTestId('comments-skeleton')).toBeInTheDocument()
+    expect(screen.getByText('ARMY_Forever')).toBeInTheDocument()
+    expect(screen.getByText('댓글 3')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('댓글을 입력하세요...')).toBeInTheDocument()
   })
 })

@@ -2,6 +2,7 @@ package com.fanpulse.domain.content
 
 import jakarta.persistence.*
 import java.time.Instant
+import java.time.LocalDate
 import java.util.*
 
 /**
@@ -39,7 +40,7 @@ class Artist private constructor(
         private set
 
     @Column(name = "debut_date")
-    var debutDate: Instant? = null
+    var debutDate: LocalDate? = null
         private set
 
     @Column(nullable = false)
@@ -85,7 +86,7 @@ class Artist private constructor(
         this.profileImageUrl = imageUrl
     }
 
-    fun updateDebutDate(date: Instant?) {
+    fun updateDebutDate(date: LocalDate?) {
         this.debutDate = date
     }
 

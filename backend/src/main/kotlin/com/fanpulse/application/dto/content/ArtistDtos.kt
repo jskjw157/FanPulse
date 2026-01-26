@@ -3,6 +3,7 @@ package com.fanpulse.application.dto.content
 import com.fanpulse.domain.content.Artist
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
+import java.time.LocalDate
 import java.util.*
 
 // === Response DTOs ===
@@ -37,7 +38,7 @@ data class ArtistResponse(
     val active: Boolean,
 
     @Schema(description = "Debut date")
-    val debutDate: Instant?,
+    val debutDate: LocalDate?,
 
     @Schema(description = "Creation timestamp")
     val createdAt: Instant

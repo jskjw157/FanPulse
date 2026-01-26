@@ -11,7 +11,7 @@ vi.mock('next/navigation', () => ({
 describe('MembershipPage', () => {
   it('renders page header', () => {
     render(<MembershipPage />)
-    expect(screen.getByText('VIP Membership')).toBeInTheDocument()
+    expect(screen.getByText('My Profile')).toBeInTheDocument()
   })
 
   it('renders benefit list skeleton', () => {

@@ -49,7 +49,9 @@ describe('Smoke Test - All Pages Render', () => {
 
   it('renders Saved Page', () => {
     render(<SavedPage />)
-    expect(screen.getByText('저장한 게시물')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: '저장한 게시물' }),
+    ).toBeInTheDocument()
   })
 
   it('renders Tickets Page', () => {
