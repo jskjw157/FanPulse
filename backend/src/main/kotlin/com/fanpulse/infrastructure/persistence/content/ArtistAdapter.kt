@@ -25,6 +25,11 @@ class ArtistAdapter(
         return repository.findById(id).orElse(null)
     }
 
+    override fun findByIds(ids: Set<UUID>): List<Artist> {
+        if (ids.isEmpty()) return emptyList()
+        return repository.findByIdIn(ids)
+    }
+
     override fun findByName(name: String): Artist? {
         return repository.findByName(name)
     }

@@ -11,6 +11,7 @@ import com.fanpulse.domain.streaming.port.StreamingEventPort
 import com.fanpulse.infrastructure.common.PaginationConverter
 import org.springframework.data.domain.PageRequest as SpringPageRequest
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.util.*
 
@@ -23,60 +24,72 @@ class StreamingEventAdapter(
     private val repository: StreamingEventJpaRepository
 ) : StreamingEventPort {
 
+    @Transactional(readOnly = true)
     override fun findEventById(id: UUID): StreamingEvent? {
         return repository.findById(id).orElse(null)
     }
 
+    @Transactional(readOnly = true)
     override fun findByStatus(status: StreamingStatus): List<StreamingEvent> {
         return repository.findByStatus(status)
     }
 
+    @Transactional(readOnly = true)
     override fun findByStatusNot(status: StreamingStatus): List<StreamingEvent> {
         return repository.findByStatusNot(status)
     }
 
+    @Transactional(readOnly = true)
     override fun findByPlatformAndExternalId(platform: StreamingPlatform, externalId: String): StreamingEvent? {
         return repository.findByPlatformAndExternalId(platform, externalId)
     }
 
+    @Transactional(readOnly = true)
     override fun findByStreamUrl(streamUrl: String): StreamingEvent? {
         return repository.findByStreamUrl(streamUrl)
     }
 
+    @Transactional
     override fun save(event: StreamingEvent): StreamingEvent {
         return repository.save(event)
     }
 
+    @Transactional(readOnly = true)
     override fun findAll(pageRequest: PageRequest): PageResult<StreamingEvent> {
         val pageable = PaginationConverter.toSpringPageable(pageRequest)
         val page = repository.findAll(pageable)
         return PaginationConverter.toDomainPageResult(page, pageRequest)
     }
 
+    @Transactional(readOnly = true)
     override fun findByStatus(status: StreamingStatus, pageRequest: PageRequest): PageResult<StreamingEvent> {
         val pageable = PaginationConverter.toSpringPageable(pageRequest)
         val page = repository.findByStatusPaged(status, pageable)
         return PaginationConverter.toDomainPageResult(page, pageRequest)
     }
 
+    @Transactional(readOnly = true)
     override fun findLiveOrderByViewerCountDesc(pageRequest: PageRequest): PageResult<StreamingEvent> {
         val pageable = PaginationConverter.toSpringPageable(pageRequest)
         val page = repository.findLiveOrderByViewerCountDesc(pageable)
         return PaginationConverter.toDomainPageResult(page, pageRequest)
     }
 
+    @Transactional(readOnly = true)
     override fun findScheduledOrderByScheduledAtAsc(pageRequest: PageRequest): PageResult<StreamingEvent> {
         val pageable = PaginationConverter.toSpringPageable(pageRequest)
         val page = repository.findScheduledOrderByScheduledAtAsc(pageable)
         return PaginationConverter.toDomainPageResult(page, pageRequest)
     }
 
+    @Transactional(readOnly = true)
     override fun findByArtistId(artistId: UUID, pageRequest: PageRequest): PageResult<StreamingEvent> {
         val pageable = PaginationConverter.toSpringPageable(pageRequest)
         val page = repository.findByArtistId(artistId, pageable)
         return PaginationConverter.toDomainPageResult(page, pageRequest)
     }
 
+    @Transactional(readOnly = true)
     override fun findWithFilters(
         status: StreamingStatus?,
         platform: StreamingPlatform?,
@@ -89,6 +102,17 @@ class StreamingEventAdapter(
         val page = repository.findWithFilters(
             status, platform, artistId, scheduledAfter, scheduledBefore, pageable
         )
+        return PaginationConverter.toDomainPageResult(page, pageRequest)
+    }
+
+    @Transactional(readOnly = true)
+    override fun searchByTitleOrArtistName(
+        query: String,
+        status: StreamingStatus,
+        pageRequest: PageRequest
+    ): PageResult<StreamingEvent> {
+        val pageable = PaginationConverter.toSpringPageable(pageRequest)
+        val page = repository.searchByTitleOrArtistName(query, status, pageable)
         return PaginationConverter.toDomainPageResult(page, pageRequest)
     }
 
