@@ -25,7 +25,7 @@ class RefreshTokenEntity(
     @Column(name = "user_id", nullable = false)
     val userId: UUID,
 
-    @Column(name = "token", nullable = false, unique = true)
+    @Column(name = "token", nullable = false, unique = true, length = 512)
     val token: String,
 
     @Column(name = "expires_at", nullable = false)
@@ -55,15 +55,15 @@ interface RefreshTokenJpaRepositoryInterface : JpaRepository<RefreshTokenEntity,
 
     fun findByToken(token: String): RefreshTokenEntity?
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE RefreshTokenEntity r SET r.invalidated = true WHERE r.token = :token")
     fun invalidateByToken(token: String): Int
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE RefreshTokenEntity r SET r.invalidated = true WHERE r.userId = :userId")
     fun invalidateAllByUserId(userId: UUID): Int
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM RefreshTokenEntity r WHERE r.expiresAt < :now")
     fun deleteExpiredBefore(now: Instant): Int
 }

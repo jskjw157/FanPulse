@@ -3,9 +3,9 @@ package com.fanpulse.application.event
 import com.fanpulse.domain.common.DomainEvent
 import com.fanpulse.domain.common.DomainEventPublisher
 import com.fanpulse.domain.identity.RegistrationType
+import com.fanpulse.domain.identity.event.LoginType
 import com.fanpulse.domain.identity.event.UserLoggedIn
 import com.fanpulse.domain.identity.event.UserRegistered
-import com.fanpulse.domain.identity.event.LoginType
 import com.fanpulse.infrastructure.event.SpringDomainEventPublisher
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*

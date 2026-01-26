@@ -62,6 +62,12 @@ resilience4j:
         failureRateThreshold: 100
         waitDurationInOpenState: 1s
 
+# JWT Configuration for tests
+jwt:
+  secret: test-secret-key-that-is-at-least-256-bits-long-for-hs256-algorithm
+  access-expiration: 3600000    # 1시간 (밀리초)
+  refresh-expiration: 604800000  # 7일 (밀리초)
+
 logging:
   level:
     com.fanpulse: DEBUG

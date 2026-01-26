@@ -61,4 +61,51 @@ interface StreamingEventJpaRepository : JpaRepository<StreamingEvent, UUID> {
         @Param("scheduledBefore") scheduledBefore: Instant?,
         pageable: Pageable
     ): Page<StreamingEvent>
+
+    // === Cursor-based Pagination (MVP API Spec) ===
+
+    /**
+     * Finds first page with cursor-based pagination.
+     * Orders by scheduledAt DESC, id DESC for stable ordering.
+     */
+    @Query("""
+        SELECT e FROM StreamingEvent e
+        WHERE (:status IS NULL OR e.status = :status)
+        ORDER BY e.scheduledAt DESC, e.id DESC
+    """)
+    fun findFirstPageWithCursor(
+        @Param("status") status: StreamingStatus?,
+        pageable: Pageable
+    ): List<StreamingEvent>
+
+    /**
+     * Finds next page with cursor-based pagination.
+     * Uses composite cursor (scheduledAt, id) for stable ordering.
+     * Composite WHERE clause ensures consistent pagination even with concurrent writes.
+     */
+    @Query("""
+        SELECT e FROM StreamingEvent e
+        WHERE (:status IS NULL OR e.status = :status)
+        AND (e.scheduledAt < :cursorScheduledAt
+             OR (e.scheduledAt = :cursorScheduledAt AND e.id < :cursorId))
+        ORDER BY e.scheduledAt DESC, e.id DESC
+    """)
+    fun findNextPageWithCursor(
+        @Param("status") status: StreamingStatus?,
+        @Param("cursorScheduledAt") cursorScheduledAt: Instant,
+        @Param("cursorId") cursorId: UUID,
+        pageable: Pageable
+    ): List<StreamingEvent>
+
+    /**
+     * Finds event with artist name joined (for detail API).
+     * Uses LEFT JOIN to return event even if artist is missing.
+     */
+    @Query("""
+        SELECT e, a.name
+        FROM StreamingEvent e
+        LEFT JOIN Artist a ON e.artistId = a.id
+        WHERE e.id = :id
+    """)
+    fun findByIdWithArtistName(@Param("id") id: UUID): List<Array<Any>>?
 }
