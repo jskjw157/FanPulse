@@ -1,5 +1,6 @@
 package com.fanpulse.interfaces.rest.identity
 
+import com.fanpulse.application.dto.identity.RefreshTokenRequest
 import com.fanpulse.application.identity.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -68,20 +69,23 @@ class AuthController(
     )
     fun refresh(
         request: HttpServletRequest,
-        response: HttpServletResponse
-    ): ResponseEntity<Unit> {
+        response: HttpServletResponse,
+        @RequestBody(required = false) body: RefreshTokenRequest?
+    ): ResponseEntity<TokenResponse> {
         logger.debug { "Token refresh request" }
 
-        // 쿠키에서 refresh token 추출
+        // 1순위: 쿠키, 2순위: request body (모바일 앱 지원)
         val refreshToken = request.cookies?.find { it.name == REFRESH_TOKEN_COOKIE }?.value
+            ?: body?.refreshToken
             ?: return ResponseEntity.status(401).build()
 
         val tokenResponse = authService.refreshToken(refreshToken)
 
-        // 새 토큰으로 쿠키 갱신
+        // 웹: 쿠키 갱신
         setAuthCookies(response, tokenResponse.accessToken, tokenResponse.refreshToken)
 
-        return ResponseEntity.ok().build()
+        // 모바일: 응답 바디로 토큰 반환
+        return ResponseEntity.ok(tokenResponse)
     }
 
     @PostMapping("/logout")
@@ -105,7 +109,9 @@ class AuthController(
         ApiResponse(responseCode = "401", description = "Not authenticated")
     )
     fun getCurrentUser(request: HttpServletRequest): ResponseEntity<AuthStatusResponse> {
-        val accessToken = request.cookies?.find { it.name == ACCESS_TOKEN_COOKIE }?.value
+        // 1순위: Authorization 헤더 (모바일 앱), 2순위: 쿠키 (웹)
+        val accessToken = extractTokenFromHeader(request)
+            ?: request.cookies?.find { it.name == ACCESS_TOKEN_COOKIE }?.value
             ?: return ResponseEntity.ok(AuthStatusResponse(authenticated = false))
 
         return try {
@@ -156,6 +162,15 @@ class AuthController(
                 this.domain = cookieDomain
             }
             setAttribute("SameSite", "Lax")
+        }
+    }
+
+    private fun extractTokenFromHeader(request: HttpServletRequest): String? {
+        val authHeader = request.getHeader("Authorization") ?: return null
+        return if (authHeader.startsWith("Bearer ", ignoreCase = true)) {
+            authHeader.substring(7)
+        } else {
+            null
         }
     }
 }
