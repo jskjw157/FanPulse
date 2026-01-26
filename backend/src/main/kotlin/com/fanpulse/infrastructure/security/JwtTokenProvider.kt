@@ -70,6 +70,7 @@ class JwtTokenProvider(
         return Jwts.builder()
             .subject(userId.toString())
             .claim(TOKEN_TYPE_CLAIM, TOKEN_TYPE_ACCESS)
+            .id(UUID.randomUUID().toString())  // Add jti claim for token uniqueness
             .issuedAt(now)
             .expiration(expiration)
             .signWith(key)
@@ -89,6 +90,7 @@ class JwtTokenProvider(
         return Jwts.builder()
             .subject(userId.toString())
             .claim(TOKEN_TYPE_CLAIM, TOKEN_TYPE_REFRESH)
+            .id(UUID.randomUUID().toString())  // Add jti claim for token uniqueness
             .issuedAt(now)
             .expiration(expiration)
             .signWith(key)

@@ -135,6 +135,105 @@ data class StreamingEventListResponse(
     val totalPages: Int
 )
 
+// === Cursor-based Pagination DTOs (for MVP API spec) ===
+
+@Schema(description = "Standard API response wrapper")
+data class ApiResponse<T>(
+    @Schema(description = "Request success status")
+    val success: Boolean,
+
+    @Schema(description = "Response data")
+    val data: T
+) {
+    companion object {
+        fun <T> success(data: T): ApiResponse<T> = ApiResponse(success = true, data = data)
+    }
+}
+
+@Schema(description = "Cursor-based pagination response")
+data class CursorPageResponse<T>(
+    @Schema(description = "List of items")
+    val items: List<T>,
+
+    @Schema(description = "Cursor for next page (null if no more pages)")
+    val nextCursor: String?,
+
+    @Schema(description = "Whether more items exist")
+    val hasMore: Boolean
+)
+
+@Schema(description = "Streaming event item for list views (with artist name)")
+data class StreamingEventListItem(
+    @Schema(description = "Event ID")
+    val id: UUID,
+
+    @Schema(description = "Event title")
+    val title: String,
+
+    @Schema(description = "Artist ID")
+    val artistId: UUID,
+
+    @Schema(description = "Artist name (joined from artists table)")
+    val artistName: String,
+
+    @Schema(description = "Thumbnail URL")
+    val thumbnailUrl: String?,
+
+    @Schema(description = "Event status", example = "LIVE")
+    val status: String,
+
+    @Schema(description = "Scheduled time")
+    val scheduledAt: Instant,
+
+    @Schema(description = "Actual start time (LIVE/ENDED only)")
+    val startedAt: Instant?,
+
+    @Schema(description = "Current viewer count")
+    val viewerCount: Int
+)
+
+@Schema(description = "Streaming event detail (with artist name)")
+data class StreamingEventDetailResponse(
+    @Schema(description = "Event ID")
+    val id: UUID,
+
+    @Schema(description = "Event title")
+    val title: String,
+
+    @Schema(description = "Event description")
+    val description: String?,
+
+    @Schema(description = "Artist ID")
+    val artistId: UUID,
+
+    @Schema(description = "Artist name")
+    val artistName: String,
+
+    @Schema(description = "Thumbnail URL")
+    val thumbnailUrl: String?,
+
+    @Schema(description = "YouTube embed URL with parameters")
+    val streamUrl: String,
+
+    @Schema(description = "Event status")
+    val status: String,
+
+    @Schema(description = "Scheduled time")
+    val scheduledAt: Instant,
+
+    @Schema(description = "Actual start time")
+    val startedAt: Instant?,
+
+    @Schema(description = "End time")
+    val endedAt: Instant?,
+
+    @Schema(description = "Current viewer count")
+    val viewerCount: Int,
+
+    @Schema(description = "Creation timestamp")
+    val createdAt: Instant
+)
+
 // === Query Parameters ===
 
 @Schema(description = "Filter criteria for streaming events")

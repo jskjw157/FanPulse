@@ -33,4 +33,11 @@ interface ArtistJpaRepository : JpaRepository<Artist, UUID> {
         OR LOWER(a.englishName) LIKE LOWER(CONCAT('%', :query, '%'))
     """)
     fun searchByName(@Param("query") query: String, pageable: Pageable): Page<Artist>
+
+    /**
+     * Batch fetch artist names by IDs (prevents N+1 query).
+     * Returns a list of [id, name] arrays.
+     */
+    @Query("SELECT a.id, a.name FROM Artist a WHERE a.id IN :ids")
+    fun findNamesByIds(@Param("ids") ids: Collection<UUID>): List<Array<Any>>
 }
