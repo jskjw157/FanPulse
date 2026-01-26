@@ -42,3 +42,8 @@ __pycache__/
 .claude_agent_farm_state.json
 .claude_agent_farm_backups/
 agent_farm_report_*.html
+
+# Claude Code local settings
+.claude/settings.local.json
+.mcp.json
+.playwright-mcp/
