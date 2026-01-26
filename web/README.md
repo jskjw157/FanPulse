@@ -17,6 +17,22 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Local Backend
+
+This app calls the FanPulse backend API. For local end-to-end testing, configure the API base URL.
+
+Recommended (avoid browser CORS by using a Next.js rewrite proxy):
+
+```bash
+# In web/.env.local
+NEXT_PUBLIC_API_BASE_URL=/api/v1
+
+# Optional: override the proxy target (defaults to http://localhost:8080)
+API_PROXY_TARGET=http://localhost:8080
+```
+
+With this setup, frontend requests to `/api/v1/*` are proxied to the backend.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
