@@ -29,6 +29,7 @@ class JwtAuthenticationFilter(
     companion object {
         private const val AUTHORIZATION_HEADER = "Authorization"
         private const val BEARER_PREFIX = "Bearer "
+        private const val ACCESS_TOKEN_COOKIE = "fanpulse_access_token"
 
         /** Public 경로 - 인증 없이 접근 가능 */
         private val PUBLIC_PATHS = listOf(
@@ -72,16 +73,21 @@ class JwtAuthenticationFilter(
     }
 
     /**
-     * Extracts JWT token from Authorization header.
+     * Extracts JWT token from Authorization header or Cookie.
+     *
+     * 우선순위:
+     * 1. Authorization 헤더 (모바일 앱)
+     * 2. httpOnly 쿠키 (웹 브라우저)
      */
     private fun extractToken(request: HttpServletRequest): String? {
+        // 1. Authorization 헤더에서 추출 (모바일 앱용)
         val header = request.getHeader(AUTHORIZATION_HEADER)
-
-        if (header.isNullOrBlank() || !header.startsWith(BEARER_PREFIX)) {
-            return null
+        if (!header.isNullOrBlank() && header.startsWith(BEARER_PREFIX)) {
+            return header.substring(BEARER_PREFIX.length)
         }
 
-        return header.substring(BEARER_PREFIX.length)
+        // 2. 쿠키에서 추출 (웹 브라우저용)
+        return request.cookies?.find { it.name == ACCESS_TOKEN_COOKIE }?.value
     }
 
     /**

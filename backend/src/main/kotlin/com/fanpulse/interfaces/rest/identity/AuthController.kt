@@ -5,8 +5,12 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.Cookie
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -19,8 +23,15 @@ private val logger = KotlinLogging.logger {}
 @RequestMapping("/api/v1/auth")
 @Tag(name = "Authentication", description = "User authentication operations")
 class AuthController(
-    private val authService: AuthService
+    private val authService: AuthService,
+    @Value("\${app.cookie.secure:false}") private val cookieSecure: Boolean,
+    @Value("\${app.cookie.domain:}") private val cookieDomain: String,
+    @Value("\${app.cookie.max-age:604800}") private val cookieMaxAge: Int // 7일
 ) {
+    companion object {
+        const val ACCESS_TOKEN_COOKIE = "fanpulse_access_token"
+        const val REFRESH_TOKEN_COOKIE = "fanpulse_refresh_token"
+    }
 
     @PostMapping("/google")
     @Operation(summary = "Login with Google OAuth")
@@ -29,10 +40,24 @@ class AuthController(
         ApiResponse(responseCode = "401", description = "Invalid Google ID token"),
         ApiResponse(responseCode = "400", description = "Email not verified by Google")
     )
-    fun googleLogin(@Valid @RequestBody request: GoogleLoginRequest): ResponseEntity<AuthResponse> {
+    fun googleLogin(
+        @Valid @RequestBody request: GoogleLoginRequest,
+        response: HttpServletResponse
+    ): ResponseEntity<GoogleLoginResponse> {
         logger.debug { "Google login request" }
-        val response = authService.googleLogin(request)
-        return ResponseEntity.ok(response)
+        val authResponse = authService.googleLogin(request)
+
+        // httpOnly 쿠키로 토큰 설정
+        setAuthCookies(response, authResponse.accessToken, authResponse.refreshToken)
+
+        // 응답에는 토큰 제외하고 사용자 정보만 반환
+        return ResponseEntity.ok(
+            GoogleLoginResponse(
+                userId = authResponse.userId,
+                email = authResponse.email,
+                username = authResponse.username
+            )
+        )
     }
 
     @PostMapping("/refresh")
@@ -41,16 +66,116 @@ class AuthController(
         ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
         ApiResponse(responseCode = "401", description = "Invalid refresh token")
     )
-    fun refresh(@RequestBody request: RefreshTokenRequest): ResponseEntity<TokenResponse> {
+    fun refresh(
+        request: HttpServletRequest,
+        response: HttpServletResponse
+    ): ResponseEntity<Unit> {
         logger.debug { "Token refresh request" }
-        val response = authService.refreshToken(request.refreshToken)
-        return ResponseEntity.ok(response)
+
+        // 쿠키에서 refresh token 추출
+        val refreshToken = request.cookies?.find { it.name == REFRESH_TOKEN_COOKIE }?.value
+            ?: return ResponseEntity.status(401).build()
+
+        val tokenResponse = authService.refreshToken(refreshToken)
+
+        // 새 토큰으로 쿠키 갱신
+        setAuthCookies(response, tokenResponse.accessToken, tokenResponse.refreshToken)
+
+        return ResponseEntity.ok().build()
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout and clear auth cookies")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Logout successful")
+    )
+    fun logout(response: HttpServletResponse): ResponseEntity<Unit> {
+        logger.debug { "Logout request" }
+
+        // 쿠키 삭제
+        clearAuthCookies(response)
+
+        return ResponseEntity.ok().build()
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Get current authenticated user")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "User info retrieved"),
+        ApiResponse(responseCode = "401", description = "Not authenticated")
+    )
+    fun getCurrentUser(request: HttpServletRequest): ResponseEntity<AuthStatusResponse> {
+        val accessToken = request.cookies?.find { it.name == ACCESS_TOKEN_COOKIE }?.value
+            ?: return ResponseEntity.ok(AuthStatusResponse(authenticated = false))
+
+        return try {
+            val user = authService.validateTokenAndGetUser(accessToken)
+            ResponseEntity.ok(
+                AuthStatusResponse(
+                    authenticated = true,
+                    user = AuthUserResponse(
+                        id = user.id.toString(),
+                        email = user.email,
+                        username = user.username
+                    )
+                )
+            )
+        } catch (e: Exception) {
+            logger.debug { "Token validation failed: ${e.message}" }
+            ResponseEntity.ok(AuthStatusResponse(authenticated = false))
+        }
+    }
+
+    private fun setAuthCookies(
+        response: HttpServletResponse,
+        accessToken: String,
+        refreshToken: String
+    ) {
+        val accessCookie = createCookie(ACCESS_TOKEN_COOKIE, accessToken, cookieMaxAge)
+        val refreshCookie = createCookie(REFRESH_TOKEN_COOKIE, refreshToken, cookieMaxAge * 2)
+
+        response.addCookie(accessCookie)
+        response.addCookie(refreshCookie)
+    }
+
+    private fun clearAuthCookies(response: HttpServletResponse) {
+        val accessCookie = createCookie(ACCESS_TOKEN_COOKIE, "", 0)
+        val refreshCookie = createCookie(REFRESH_TOKEN_COOKIE, "", 0)
+
+        response.addCookie(accessCookie)
+        response.addCookie(refreshCookie)
+    }
+
+    private fun createCookie(name: String, value: String, maxAge: Int): Cookie {
+        return Cookie(name, value).apply {
+            this.isHttpOnly = true
+            this.secure = cookieSecure
+            this.path = "/"
+            this.maxAge = maxAge
+            if (cookieDomain.isNotBlank()) {
+                this.domain = cookieDomain
+            }
+            setAttribute("SameSite", "Lax")
+        }
     }
 }
 
 /**
- * Request DTO for token refresh.
+ * Response DTOs (토큰 제외)
  */
-data class RefreshTokenRequest(
-    val refreshToken: String
+data class GoogleLoginResponse(
+    val userId: java.util.UUID,
+    val email: String,
+    val username: String
+)
+
+data class AuthStatusResponse(
+    val authenticated: Boolean,
+    val user: AuthUserResponse? = null
+)
+
+data class AuthUserResponse(
+    val id: String,
+    val email: String,
+    val username: String
 )
