@@ -197,10 +197,14 @@ class StreamingEventQueryServiceImpl(
      * @return URL with embedded parameters appended (if not already present)
      */
     private fun formatStreamUrl(rawUrl: String): String {
-        // If already has parameters, return as-is
-        if (rawUrl.contains("?")) return rawUrl
+        val embedParams = "rel=0&modestbranding=1&playsinline=1"
 
-        // Add YouTube embed parameters
-        return "$rawUrl?rel=0&modestbranding=1&playsinline=1"
+        return if (rawUrl.contains("?")) {
+            // Already has parameters, append with &
+            "$rawUrl&$embedParams"
+        } else {
+            // No parameters, add with ?
+            "$rawUrl?$embedParams"
+        }
     }
 }

@@ -99,11 +99,12 @@ interface StreamingEventJpaRepository : JpaRepository<StreamingEvent, UUID> {
 
     /**
      * Finds event with artist name joined (for detail API).
+     * Uses LEFT JOIN to return event even if artist is missing.
      */
     @Query("""
         SELECT e, a.name
         FROM StreamingEvent e
-        JOIN Artist a ON e.artistId = a.id
+        LEFT JOIN Artist a ON e.artistId = a.id
         WHERE e.id = :id
     """)
     fun findByIdWithArtistName(@Param("id") id: UUID): List<Array<Any>>?

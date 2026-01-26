@@ -134,7 +134,7 @@ class StreamingEventAdapter(
 
         val row = result[0]
         val event = row[0] as StreamingEvent
-        val artistName = row[1] as String
+        val artistName = (row[1] as? String) ?: "Unknown Artist"
 
         return Pair(event, artistName)
     }
