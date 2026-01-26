@@ -110,6 +110,14 @@ enum class ErrorType(
         code = "USERNAME_ALREADY_EXISTS"
     ),
 
+    // === Service Unavailable Errors (503) ===
+    SEARCH_SERVICE_UNAVAILABLE(
+        slug = "search-service-unavailable",
+        title = "Search Service Unavailable",
+        status = HttpStatus.SERVICE_UNAVAILABLE.value(),
+        code = "SEARCH_SERVICE_UNAVAILABLE"
+    ),
+
     // === Server Errors (500) ===
     INTERNAL_ERROR(
         slug = "internal-error",

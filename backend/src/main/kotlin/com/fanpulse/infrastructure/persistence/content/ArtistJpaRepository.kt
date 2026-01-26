@@ -20,6 +20,12 @@ interface ArtistJpaRepository : JpaRepository<Artist, UUID> {
     fun findByName(name: String): Artist?
 
     /**
+     * Find all artists by a set of IDs (batch loading to avoid N+1).
+     */
+    @Query("SELECT a FROM Artist a WHERE a.id IN :ids")
+    fun findByIdIn(@Param("ids") ids: Set<UUID>): List<Artist>
+
+    /**
      * Find all active artists with pagination.
      */
     fun findByActiveTrue(pageable: Pageable): Page<Artist>
