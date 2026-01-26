@@ -1,6 +1,7 @@
--- V112__add_search_indexes.sql
+-- V116__add_search_indexes.sql
 -- Search performance optimization indexes using pg_trgm for LIKE queries
 -- Related: REVIEW_search-api-code-review.md Section 4.1
+-- Note: Must run after V114 (english_name column) and V115 (charts tables)
 
 -- =====================================================
 -- ENABLE pg_trgm EXTENSION
@@ -14,15 +15,15 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 COMMENT ON EXTENSION pg_trgm IS 'Trigram matching for efficient text search with LIKE patterns';
 
 -- =====================================================
--- NEWS TABLE SEARCH INDEX
+-- CRAWLED_NEWS TABLE SEARCH INDEX
 -- =====================================================
 -- Optimizes: LOWER(n.title) LIKE LOWER(CONCAT('%', :query, '%'))
 -- Used in: NewsJpaRepository.searchByTitle(), searchByTitleOrContent()
 -- Expected improvement: 10-40x for pattern matching queries
 
-CREATE INDEX idx_news_title_trgm ON news USING GIN (title gin_trgm_ops);
+CREATE INDEX idx_crawled_news_title_trgm ON crawled_news USING GIN (title gin_trgm_ops);
 
-COMMENT ON INDEX idx_news_title_trgm IS 'GIN trigram index for news title search optimization';
+COMMENT ON INDEX idx_crawled_news_title_trgm IS 'GIN trigram index for crawled_news title search optimization';
 
 -- =====================================================
 -- STREAMING_EVENTS TABLE SEARCH INDEX
