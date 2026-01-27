@@ -577,7 +577,7 @@ class GeminiReviewer:
                 prompt,
                 generation_config=genai.GenerationConfig(
                     temperature=0.1,
-                    max_output_tokens=4096
+                    max_output_tokens=8192  # 증가: JSON 응답이 잘리지 않도록
                 )
             )
             
@@ -638,7 +638,8 @@ Output Format (JSON):
   ]
 }
 
-Be thorough but focus on significant issues. Avoid nitpicks."""
+Be thorough but focus on significant issues. Avoid nitpicks.
+IMPORTANT: Respond ONLY with valid JSON. Keep descriptions concise (max 100 chars each). Limit to top 5 issues."""
         
         MAX_DIFF_SIZE = 50000
         truncated = len(diff) > MAX_DIFF_SIZE
@@ -660,7 +661,7 @@ Be thorough but focus on significant issues. Avoid nitpicks."""
         return prompt
     
     def _parse_response(self, response: str) -> List[ReviewIssue]:
-        """응답에서 이슈 파싱"""
+        """응답에서 이슈 파싱 (불완전한 JSON fallback 포함)"""
         issues = []
         data = self._extract_json(response)
 
@@ -679,6 +680,26 @@ Be thorough but focus on significant issues. Avoid nitpicks."""
                     ))
                 except (ValueError, KeyError) as e:
                     print(f"⚠️  Skipping invalid issue: {e}")
+        else:
+            # Fallback: 불완전한 JSON에서 개별 issue 객체 추출
+            print("[DEBUG] Gemini: Trying individual issue extraction fallback")
+            issue_pattern = r'\{\s*"file"\s*:\s*"([^"]+)"[^}]*"severity"\s*:\s*"([^"]+)"[^}]*"title"\s*:\s*"([^"]+)"[^}]*"description"\s*:\s*"([^"]+)"'
+            for match in re.finditer(issue_pattern, response, re.DOTALL):
+                try:
+                    issues.append(ReviewIssue(
+                        file_path=match.group(1),
+                        line_number=None,
+                        severity=Severity(match.group(2)),
+                        category="suggestion",
+                        title=match.group(3),
+                        description=match.group(4),
+                        suggestion=None,
+                        source="gemini"
+                    ))
+                except (ValueError, IndexError) as e:
+                    print(f"⚠️  Fallback issue extraction failed: {e}")
+            if issues:
+                print(f"[DEBUG] Gemini fallback extracted {len(issues)} issues")
 
         return issues
 
