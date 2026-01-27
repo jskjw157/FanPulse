@@ -788,13 +788,18 @@ class ChunkedReviewer:
         groups = group_chunks_by_size(code_chunks, self.MAX_CHUNK_SIZE)
         print(f"   📦 {len(groups)}개 그룹으로 분할")
 
-        # 3. 각 그룹별 병렬 리뷰
+        # 3. 각 그룹별 병렬 리뷰 (GLM + Gemini 동시 실행)
         all_issues: List[ReviewIssue] = []
+        all_summaries: List[str] = []  # 각 청크의 summary 수집
 
         # 동시 실행 제한
         groups_to_review = groups[:self.MAX_PARALLEL_CHUNKS]
         if len(groups) > self.MAX_PARALLEL_CHUNKS:
             print(f"   ⚠️ {len(groups) - self.MAX_PARALLEL_CHUNKS}개 그룹 스킵 (최대 {self.MAX_PARALLEL_CHUNKS}개)")
+
+        # 각 그룹 + 각 AI = 병렬 실행
+        # 예: 3그룹 x 2AI = 최대 6개 동시 실행
+        print(f"   🚀 병렬 리뷰 시작 (그룹당 GLM+Gemini 동시 실행)")
 
         with ThreadPoolExecutor(max_workers=self.MAX_PARALLEL_CHUNKS) as executor:
             futures = {}
@@ -809,7 +814,7 @@ class ChunkedReviewer:
                 if len(file_names) > 3:
                     print(f"      ... 외 {len(file_names) - 3}개")
 
-                # 리뷰 제출
+                # 리뷰 제출 (hybrid.review가 내부적으로 GLM+Gemini 병렬 실행)
                 future = executor.submit(
                     self._review_chunk,
                     group_diff,
@@ -817,21 +822,30 @@ class ChunkedReviewer:
                     use_glm,
                     use_gemini
                 )
-                futures[future] = i
+                futures[future] = (i, file_names)
 
             # 결과 수집
             for future in as_completed(futures):
-                group_idx = futures[future]
+                group_idx, file_names = futures[future]
                 try:
                     result = future.result(timeout=180)  # 3분 타임아웃
                     issues = result.merged_issues if hasattr(result, 'merged_issues') else []
                     all_issues.extend(issues)
+
+                    # Summary 수집 (AI 응답에서)
+                    if hasattr(result, 'glm_result') and result.glm_result and result.glm_result.summary:
+                        all_summaries.append(f"[GLM] {result.glm_result.summary}")
+                    if hasattr(result, 'gemini_result') and result.gemini_result and result.gemini_result.summary:
+                        all_summaries.append(f"[Gemini] {result.gemini_result.summary}")
+                    if hasattr(result, 'summary') and result.summary and not result.glm_result and not result.gemini_result:
+                        all_summaries.append(result.summary)
+
                     print(f"   ✅ 그룹 {group_idx + 1} 완료: {len(issues)}개 이슈")
                 except Exception as e:
                     print(f"   ❌ 그룹 {group_idx + 1} 실패: {e}")
 
         # 4. 결과 병합
-        return self._merge_chunked_results(all_issues, use_glm, use_gemini)
+        return self._merge_chunked_results(all_issues, all_summaries, use_glm, use_gemini)
 
     def _review_chunk(
         self,
@@ -866,6 +880,7 @@ class ChunkedReviewer:
     def _merge_chunked_results(
         self,
         all_issues: List[ReviewIssue],
+        all_summaries: List[str],
         use_glm: bool,
         use_gemini: bool
     ) -> MergedReview:
@@ -899,18 +914,30 @@ class ChunkedReviewer:
             "low": len([i for i in sorted_issues if i.severity == Severity.LOW]),
         }
 
-        # 요약 생성
-        parts = []
+        # 요약 생성 (통계 + AI 응답 summary 포함)
+        stat_parts = []
         if merged.stats["critical"] > 0:
-            parts.append(f"🔴 {merged.stats['critical']} critical")
+            stat_parts.append(f"🔴 {merged.stats['critical']} critical")
         if merged.stats["high"] > 0:
-            parts.append(f"🟠 {merged.stats['high']} high")
+            stat_parts.append(f"🟠 {merged.stats['high']} high")
         if merged.stats["medium"] > 0:
-            parts.append(f"🟡 {merged.stats['medium']} medium")
+            stat_parts.append(f"🟡 {merged.stats['medium']} medium")
         if merged.stats["low"] > 0:
-            parts.append(f"🟢 {merged.stats['low']} low")
+            stat_parts.append(f"🟢 {merged.stats['low']} low")
 
-        merged.summary = " | ".join(parts) if parts else "✅ No significant issues found. LGTM!"
+        stats_summary = " | ".join(stat_parts) if stat_parts else "✅ No significant issues found. LGTM!"
+
+        # AI summaries 병합
+        if all_summaries:
+            # 중복 제거 및 정리
+            unique_summaries = list(dict.fromkeys(s for s in all_summaries if s.strip()))
+            if unique_summaries:
+                ai_summary = "\n".join(unique_summaries[:5])  # 최대 5개
+                merged.summary = f"{stats_summary}\n\n### AI Analysis:\n{ai_summary}"
+            else:
+                merged.summary = stats_summary
+        else:
+            merged.summary = stats_summary
 
         return merged
 
