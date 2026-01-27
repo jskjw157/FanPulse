@@ -13,9 +13,12 @@ import androidx.navigation.compose.rememberNavController
 import com.aos.fanpulse.presentation.community.CommunityPostDetailScreen
 import com.aos.fanpulse.presentation.community.CommunityPostScreen
 import com.aos.fanpulse.presentation.community.CommunityScreen
+import com.aos.fanpulse.presentation.error.ErrorScreen
 import com.aos.fanpulse.presentation.home.HomeScreen
 import com.aos.fanpulse.presentation.login.LoginScreen
 import com.aos.fanpulse.presentation.my.MyScreen
+import com.aos.fanpulse.presentation.news.NewsDetailScreen
+import com.aos.fanpulse.presentation.search.SearchScreen
 import com.aos.fanpulse.presentation.settings.SettingsScreen
 import com.aos.fanpulse.presentation.voting.VotingScreen
 
@@ -51,7 +54,6 @@ fun NavGraph(
         }
 
         composable(SubScreen.CommunityPost.route) {
-            // 실제 이동할 커뮤니티 포스트 작성/목록 화면 컴포저블
             CommunityPostScreen({
                 navController.popBackStack()
             },{
@@ -60,7 +62,6 @@ fun NavGraph(
         }
 
         composable(SubScreen.CommunityPostDetail.route) {
-            // 실제 이동할 상세 화면 컴포저블
             CommunityPostDetailScreen({
                 navController.popBackStack()
             },{})
@@ -70,6 +71,18 @@ fun NavGraph(
             SettingsScreen({
                 navController.popBackStack()
             })
+        }
+
+        composable (SubScreen.Error.route){
+            ErrorScreen()
+        }
+
+        composable (SubScreen.Search.route){
+            SearchScreen()
+        }
+
+        composable (SubScreen.NewsDetail.route){
+            NewsDetailScreen()
         }
     }
 }
