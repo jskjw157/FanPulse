@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.kapt")
     id("dagger.hilt.android.plugin")
     id("com.google.gms.google-services")
+    id("com.google.protobuf") version "0.9.6"
 }
 
 android {
@@ -39,8 +40,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin.compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
     buildFeatures {
         compose = true
@@ -89,8 +90,28 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     // Google Identity Services
     implementation(libs.googleid)
-}
 
+    // DataStore - Proto
+    implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.core)
+    implementation(libs.protobuf.kotlin.lite)
+    implementation(libs.protobuf.javalite)
+}
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:4.32.1"
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+                create("kotlin")
+            }
+        }
+    }
+}
 //  Hilt
 kapt {
     correctErrorTypes = true
