@@ -37,7 +37,6 @@ import os
 import json
 import subprocess
 import argparse
-import asyncio
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict, field
@@ -67,6 +66,103 @@ try:
 except ImportError:
     OPENAI_AVAILABLE = False
     print("[WARN] openai package not installed. GLM will be disabled.")
+
+# API Timeout 설정
+API_TIMEOUT_SECONDS = 180
+
+# ============================================================================
+# Meta-Review Prompt
+# ============================================================================
+
+META_REVIEW_PROMPT = '''You are performing a meta-review of AI-identified code issues.
+
+Your tasks:
+1. REMOVE false positives (issues that are not actually problems)
+2. MERGE duplicate issues that refer to the same problem
+3. PRIORITIZE by actual severity (critical > high > medium > low)
+4. Keep only TOP 10 most important issues
+
+IMPORTANT: Output MUST be valid JSON in this exact format:
+{"issues": [{"id": 0}, {"id": 3}, {"id": 5}]}
+
+Where each "id" is the original issue ID to KEEP.
+Only output the JSON object, nothing else.'''
+
+
+# ============================================================================
+# JSON 추출 공통 함수
+# ============================================================================
+
+def extract_json_from_response(response: str, provider: str = "unknown") -> Optional[dict]:
+    """
+    응답에서 JSON 안전하게 추출 (string-aware balanced braces)
+
+    Args:
+        response: AI 응답 텍스트
+        provider: AI 제공자 이름 (로깅용)
+
+    Returns:
+        파싱된 JSON dict 또는 None
+    """
+    # 1. JSON 코드 블록 시도 (backtick 사이의 전체 내용)
+    json_block = re.search(r'```json\s*(\{.+\})\s*```', response, re.DOTALL)
+    if json_block:
+        try:
+            parsed = json.loads(json_block.group(1))
+            print(f"[DEBUG] {provider} JSON extracted from code block ({len(json_block.group(1))} chars)")
+            return parsed
+        except json.JSONDecodeError as e:
+            print(f"[DEBUG] {provider} code block JSON parse failed: {e}")
+
+    # 2. Balanced braces 파싱 (string-aware)
+    start = response.find('{')
+    if start == -1:
+        print(f"[DEBUG] {provider}: No JSON object found in response")
+        return None
+
+    depth = 0
+    in_string = False
+    escape = False
+
+    for i in range(start, len(response)):
+        char = response[i]
+
+        # Escape 처리
+        if escape:
+            escape = False
+            continue
+        if char == '\\':
+            escape = True
+            continue
+
+        # 문자열 내부 체크
+        if char == '"':
+            in_string = not in_string
+            continue
+
+        # 중괄호는 문자열 밖에서만 카운트
+        if not in_string:
+            if char == '{':
+                depth += 1
+            elif char == '}':
+                depth -= 1
+                if depth == 0:
+                    json_str = response[start:i + 1]
+                    try:
+                        parsed = json.loads(json_str)
+                        print(f"[DEBUG] {provider} JSON extracted via balanced braces ({len(json_str)} chars)")
+                        return parsed
+                    except json.JSONDecodeError as e:
+                        print(f"[DEBUG] {provider} balanced braces JSON failed: {str(e)[:80]}")
+                        start = response.find('{', i + 1)
+                        if start == -1:
+                            return None
+                        depth = 0
+                        in_string = False
+                        continue
+
+    print(f"[DEBUG] {provider}: No valid JSON found (unbalanced braces)")
+    return None
 
 
 # ============================================================================
@@ -183,6 +279,196 @@ def split_large_chunk(chunk: DiffChunk, max_size: int = 30000) -> List[DiffChunk
 
     print(f"   ✅ Split into {len(chunks)} chunks: {[c.size for c in chunks]}")
     return chunks
+
+
+@dataclass
+class DiffCompressionStats:
+    """Diff 압축 통계"""
+    original_size: int
+    compressed_size: int
+    removed_context_lines: int
+    removed_whitespace_changes: int
+    removed_import_reorders: int
+
+    @property
+    def reduction_percent(self) -> float:
+        if self.original_size == 0:
+            return 0
+        return round((1 - self.compressed_size / self.original_size) * 100, 1)
+
+
+class DiffCompressor:
+    """Diff 압축기 - 토큰 절약을 위해 diff를 압축"""
+
+    def __init__(self, context_lines: int = 1):
+        self.context_lines = context_lines  # 유지할 context 라인 수
+
+    def compress(self, diff: str) -> Tuple[str, DiffCompressionStats]:
+        """
+        Diff 압축 전략:
+        1. Context 라인 축소 (3줄 → 1줄)
+        2. 공백만 변경된 라인 제거
+        3. Import 순서 변경 제거 (추가/삭제는 유지)
+
+        Args:
+            diff: 원본 diff 문자열
+
+        Returns:
+            (압축된 diff, 압축 통계)
+        """
+        stats = DiffCompressionStats(
+            original_size=len(diff),
+            compressed_size=0,
+            removed_context_lines=0,
+            removed_whitespace_changes=0,
+            removed_import_reorders=0
+        )
+
+        lines = diff.split('\n')
+        compressed_lines = []
+        i = 0
+
+        while i < len(lines):
+            line = lines[i]
+
+            # 1. Diff 헤더/메타데이터는 그대로 유지
+            if line.startswith(('diff --git', 'index ', '---', '+++', 'new file', 'deleted file', 'similarity', 'rename')):
+                compressed_lines.append(line)
+                i += 1
+                continue
+
+            # 2. Hunk 헤더 (@@ -X,Y +A,B @@) 처리
+            if line.startswith('@@'):
+                compressed_lines.append(line)
+                i += 1
+
+                # Context 라인 축소
+                context_buffer = []
+                while i < len(lines) and not lines[i].startswith('@@') and not lines[i].startswith('diff --git'):
+                    current = lines[i]
+
+                    # 변경된 라인 (+, -)
+                    if current.startswith(('+', '-')):
+                        # Context 버퍼 처리
+                        if context_buffer:
+                            # 앞뒤로 context_lines만큼만 유지
+                            if len(context_buffer) > self.context_lines * 2:
+                                # 앞부분 context
+                                compressed_lines.extend(context_buffer[:self.context_lines])
+                                # 생략 마커
+                                omitted = len(context_buffer) - (self.context_lines * 2)
+                                compressed_lines.append(f" ... ({omitted} context lines omitted)")
+                                stats.removed_context_lines += omitted
+                                # 뒷부분 context
+                                compressed_lines.extend(context_buffer[-self.context_lines:])
+                            else:
+                                compressed_lines.extend(context_buffer)
+                            context_buffer = []
+
+                        compressed_lines.append(current)
+                    else:
+                        # Context 라인 (변경 없는 라인)
+                        context_buffer.append(current)
+
+                    i += 1
+
+                # 마지막 context 버퍼 처리
+                if context_buffer:
+                    if len(context_buffer) > self.context_lines:
+                        compressed_lines.extend(context_buffer[:self.context_lines])
+                        stats.removed_context_lines += len(context_buffer) - self.context_lines
+                    else:
+                        compressed_lines.extend(context_buffer)
+                continue
+
+            # 3. 기타 라인
+            compressed_lines.append(line)
+            i += 1
+
+        # 4. 공백만 변경된 라인 제거
+        compressed_lines = self._remove_whitespace_only_changes(compressed_lines, stats)
+
+        # 5. Import 재정렬 제거
+        compressed_lines = self._remove_import_reorders(compressed_lines, stats)
+
+        compressed_diff = '\n'.join(compressed_lines)
+        stats.compressed_size = len(compressed_diff)
+
+        return compressed_diff, stats
+
+    def _remove_whitespace_only_changes(self, lines: List[str], stats: DiffCompressionStats) -> List[str]:
+        """공백만 변경된 라인 쌍 제거"""
+        result = []
+        skip_next = False
+
+        for i in range(len(lines)):
+            if skip_next:
+                skip_next = False
+                continue
+
+            line = lines[i]
+
+            # +/- 라인 쌍 체크
+            if i + 1 < len(lines) and line.startswith('-') and lines[i + 1].startswith('+'):
+                removed = line[1:]
+                added = lines[i + 1][1:]
+
+                # 공백 제거 후 동일하면 스킵
+                if removed.strip() == added.strip() and removed != added:
+                    stats.removed_whitespace_changes += 2
+                    skip_next = True
+                    continue
+
+            result.append(line)
+
+        return result
+
+    def _remove_import_reorders(self, lines: List[str], stats: DiffCompressionStats) -> List[str]:
+        """Import 재정렬 제거 (같은 import가 삭제되고 다시 추가된 경우)"""
+        result = []
+        removed_imports = []  # (index, import_content)
+        added_imports = []    # (index, import_content)
+
+        # 1. Import 변경 수집
+        import_patterns = [
+            r'^\+\s*import\s+',  # Python, Java, Kotlin
+            r'^\+\s*from\s+.*import',  # Python
+            r'^\+\s*#include\s+',  # C/C++
+            r'^\+\s*using\s+',  # C#
+        ]
+
+        for i, line in enumerate(lines):
+            # Import 제거
+            if line.startswith('-') and any(re.search(pat.replace(r'^\+', r'^-'), line) for pat in import_patterns):
+                removed_imports.append((i, line[1:].strip()))
+            # Import 추가
+            elif line.startswith('+') and any(re.search(pat, line) for pat in import_patterns):
+                added_imports.append((i, line[1:].strip()))
+
+        # 2. 재정렬만 된 import 찾기 (내용 동일, 순서만 변경)
+        removed_contents = {content for _, content in removed_imports}
+        added_contents = {content for _, content in added_imports}
+        reordered = removed_contents & added_contents
+
+        if not reordered:
+            return lines
+
+        # 3. 재정렬된 import 제거
+        skip_indices = set()
+        for idx, content in removed_imports:
+            if content in reordered:
+                skip_indices.add(idx)
+                stats.removed_import_reorders += 1
+        for idx, content in added_imports:
+            if content in reordered:
+                skip_indices.add(idx)
+                stats.removed_import_reorders += 1
+
+        for i, line in enumerate(lines):
+            if i not in skip_indices:
+                result.append(line)
+
+        return result
 
 
 def parse_diff_by_files(diff: str) -> List[DiffChunk]:
@@ -469,66 +755,8 @@ Focus on actionable feedback, not nitpicks."""
         return issues
     
     def _extract_json(self, response: str) -> Optional[dict]:
-        """응답에서 JSON 안전하게 추출 (string-aware balanced braces)"""
-        # 1. JSON 코드 블록 시도 (backtick 사이의 전체 내용)
-        json_block = re.search(r'```json\s*(\{.+\})\s*```', response, re.DOTALL)
-        if json_block:
-            try:
-                parsed = json.loads(json_block.group(1))
-                print(f"[DEBUG] GLM JSON extracted from code block ({len(json_block.group(1))} chars)")
-                return parsed
-            except json.JSONDecodeError as e:
-                print(f"[DEBUG] GLM code block JSON parse failed: {e}")
-
-        # 2. Balanced braces 파싱 (string-aware)
-        start = response.find('{')
-        if start == -1:
-            print("[DEBUG] GLM: No JSON object found in response")
-            return None
-
-        depth = 0
-        in_string = False
-        escape = False
-
-        for i in range(start, len(response)):
-            char = response[i]
-
-            # Escape 처리
-            if escape:
-                escape = False
-                continue
-            if char == '\\':
-                escape = True
-                continue
-
-            # 문자열 내부 체크
-            if char == '"':
-                in_string = not in_string
-                continue
-
-            # 중괄호는 문자열 밖에서만 카운트
-            if not in_string:
-                if char == '{':
-                    depth += 1
-                elif char == '}':
-                    depth -= 1
-                    if depth == 0:
-                        json_str = response[start:i + 1]
-                        try:
-                            parsed = json.loads(json_str)
-                            print(f"[DEBUG] GLM JSON extracted via balanced braces ({len(json_str)} chars)")
-                            return parsed
-                        except json.JSONDecodeError as e:
-                            print(f"[DEBUG] GLM balanced braces JSON failed: {str(e)[:80]}")
-                            start = response.find('{', i + 1)
-                            if start == -1:
-                                return None
-                            depth = 0
-                            in_string = False
-                            continue
-
-        print("[DEBUG] GLM: No valid JSON found (unbalanced braces)")
-        return None
+        """응답에서 JSON 안전하게 추출 (공통 함수 사용)"""
+        return extract_json_from_response(response, "GLM")
 
     def _extract_summary(self, response: str) -> str:
         """응답에서 요약 추출 (fallback 포함)"""
@@ -704,66 +932,8 @@ IMPORTANT: Respond ONLY with valid JSON. Keep descriptions concise (max 100 char
         return issues
 
     def _extract_json(self, response: str) -> Optional[dict]:
-        """응답에서 JSON 안전하게 추출 (string-aware balanced braces)"""
-        # 1. JSON 코드 블록 시도 (backtick 사이의 전체 내용)
-        json_block = re.search(r'```json\s*(\{.+\})\s*```', response, re.DOTALL)
-        if json_block:
-            try:
-                parsed = json.loads(json_block.group(1))
-                print(f"[DEBUG] Gemini JSON extracted from code block ({len(json_block.group(1))} chars)")
-                return parsed
-            except json.JSONDecodeError as e:
-                print(f"[DEBUG] Gemini code block JSON parse failed: {e}")
-
-        # 2. Balanced braces 파싱 (string-aware)
-        start = response.find('{')
-        if start == -1:
-            print("[DEBUG] Gemini: No JSON object found in response")
-            return None
-
-        depth = 0
-        in_string = False
-        escape = False
-
-        for i in range(start, len(response)):
-            char = response[i]
-
-            # Escape 처리
-            if escape:
-                escape = False
-                continue
-            if char == '\\':
-                escape = True
-                continue
-
-            # 문자열 내부 체크
-            if char == '"':
-                in_string = not in_string
-                continue
-
-            # 중괄호는 문자열 밖에서만 카운트
-            if not in_string:
-                if char == '{':
-                    depth += 1
-                elif char == '}':
-                    depth -= 1
-                    if depth == 0:
-                        json_str = response[start:i + 1]
-                        try:
-                            parsed = json.loads(json_str)
-                            print(f"[DEBUG] Gemini JSON extracted via balanced braces ({len(json_str)} chars)")
-                            return parsed
-                        except json.JSONDecodeError as e:
-                            print(f"[DEBUG] Gemini balanced braces JSON failed: {str(e)[:80]}")
-                            start = response.find('{', i + 1)
-                            if start == -1:
-                                return None
-                            depth = 0
-                            in_string = False
-                            continue
-
-        print("[DEBUG] Gemini: No valid JSON found (unbalanced braces)")
-        return None
+        """응답에서 JSON 안전하게 추출 (공통 함수 사용)"""
+        return extract_json_from_response(response, "Gemini")
 
     def _extract_summary(self, response: str) -> str:
         """응답에서 요약 추출 (fallback 포함)"""
@@ -805,7 +975,7 @@ class HybridReviewer:
                 for future in as_completed(futures):
                     provider = futures[future]
                     try:
-                        result = future.result(timeout=120)
+                        result = future.result(timeout=API_TIMEOUT_SECONDS)
                         if provider == "glm":
                             glm_result = result
                         else:
@@ -913,15 +1083,20 @@ class ChunkedReviewer:
     큰 diff를 파일별로 나눠서 병렬로 리뷰하고 결과를 병합합니다.
     """
 
+    # Meta-review 활성화 (오탐 제거)
+    ENABLE_META_REVIEW = True
+
     # 청킹 임계값 (이 크기 이상이면 파일별 분리)
     CHUNK_THRESHOLD = 40000  # 40KB
     MAX_CHUNK_SIZE = 30000   # 각 청크 최대 30KB
     MAX_PARALLEL_CHUNKS = 5  # 동시 리뷰 최대 청크 수
 
-    def __init__(self, glm_key: str = None, gemini_key: str = None):
+    def __init__(self, glm_key: str = None, gemini_key: str = None, enable_compression: bool = True, context_lines: int = 1):
         self.hybrid = HybridReviewer(glm_key, gemini_key)
         self.glm = self.hybrid.glm
         self.gemini = self.hybrid.gemini
+        self.enable_compression = enable_compression
+        self.diff_compressor = DiffCompressor(context_lines=context_lines) if enable_compression else None
 
     def review(
         self,
@@ -939,6 +1114,14 @@ class ChunkedReviewer:
             use_glm: GLM 사용 여부
             use_gemini: Gemini 사용 여부
         """
+        # Diff 압축 (활성화된 경우)
+        if self.enable_compression and self.diff_compressor:
+            print(f"🗜️  압축 활성화됨 (context lines: {self.diff_compressor.context_lines})")
+            compressed_diff, stats = self.diff_compressor.compress(diff)
+            print(f"   📊 압축 결과: {stats.original_size:,} → {stats.compressed_size:,} chars ({stats.reduction_percent}% 절감)")
+            print(f"   📉 제거: context={stats.removed_context_lines}, whitespace={stats.removed_whitespace_changes}, imports={stats.removed_import_reorders}")
+            diff = compressed_diff
+
         diff_size = len(diff)
 
         # 작은 diff는 일반 리뷰
@@ -1035,7 +1218,7 @@ class ChunkedReviewer:
             for future in as_completed(futures):
                 group_idx, file_names = futures[future]
                 try:
-                    result = future.result(timeout=180)  # 3분 타임아웃
+                    result = future.result(timeout=API_TIMEOUT_SECONDS)
                     issues = result.merged_issues if hasattr(result, 'merged_issues') else []
                     all_issues.extend(issues)
 
@@ -1073,7 +1256,11 @@ class ChunkedReviewer:
                 except Exception as e:
                     print(f"   ❌ 그룹 {group_idx + 1} 실패: {e}")
 
-        # 4. 결과 병합
+        # 4. Meta-review (오탐 제거)
+        if self.ENABLE_META_REVIEW and len(all_issues) > 3:
+            all_issues = self._meta_review(all_issues)
+
+        # 5. 결과 병합
         return self._merge_chunked_results(all_issues, all_summaries, use_glm, use_gemini)
 
     def _review_chunk(
@@ -1085,6 +1272,88 @@ class ChunkedReviewer:
     ) -> MergedReview:
         """단일 청크 리뷰"""
         return self._single_review(diff, context, use_glm, use_gemini)
+    def _meta_review(self, issues: List[ReviewIssue]) -> List[ReviewIssue]:
+        """Gemini로 이슈 재검토 - 오탐 제거 및 우선순위 정렬"""
+        # Gemini를 사용할 수 없거나 이슈가 3개 이하면 스킵
+        if not self.gemini.is_available or len(issues) <= 3:
+            return issues
+
+        print(f"   🔍 Meta-review: {len(issues)}개 이슈 재검토 중...")
+
+        try:
+            # 이슈를 간결한 JSON으로 변환 (description 200자 제한)
+            issues_json = []
+            for i, issue in enumerate(issues):
+                issues_json.append({
+                    "id": i,
+                    "file": issue.file_path,
+                    "line": issue.line_number,
+                    "severity": issue.severity.value,
+                    "category": issue.category,
+                    "title": issue.title,
+                    "description": issue.description[:200] if len(issue.description) > 200 else issue.description,
+                    "source": issue.source
+                })
+
+            # Gemini에 메타리뷰 요청
+            import json as json_module
+            issues_json_str = json_module.dumps(issues_json, indent=2, ensure_ascii=False)
+            prompt = f"""{META_REVIEW_PROMPT}
+
+```json
+{issues_json_str}
+```"""
+
+            response = self.gemini.model.generate_content(
+                prompt,
+                generation_config=genai.GenerationConfig(
+                    temperature=0.1,
+                    max_output_tokens=4096
+                )
+            )
+
+            raw_response = response.text
+            print(f"   [DEBUG] Meta-review response length: {len(raw_response)} chars")
+
+            # JSON 파싱
+            filtered_data = extract_json_from_response(raw_response, "meta-review")
+
+            if not filtered_data:
+                print(f"   ⚠️ Meta-review 실패: JSON 파싱 오류. 원본 유지")
+                print(f"   [DEBUG] Raw response: {raw_response[:200]}...")
+                return issues
+
+            # 응답 형식 유연하게 처리
+            if "issues" in filtered_data:
+                issue_list = filtered_data["issues"]
+            elif isinstance(filtered_data, list):
+                issue_list = filtered_data
+            else:
+                print(f"   ⚠️ Meta-review 실패: 예상치 못한 응답 형식. 원본 유지")
+                print(f"   [DEBUG] Response keys: {list(filtered_data.keys()) if isinstance(filtered_data, dict) else 'not a dict'}")
+                return issues
+
+            # 정제된 이슈 재구성 (ID 기반 매핑)
+            filtered_ids = set()
+            for item in issue_list:
+                if isinstance(item, dict) and "id" in item:
+                    filtered_ids.add(item["id"])
+                elif isinstance(item, int):
+                    filtered_ids.add(item)
+
+            filtered_issues = [issues[i] for i in sorted(filtered_ids) if i < len(issues)]
+
+            if not filtered_issues:
+                print(f"   ⚠️ Meta-review: 유효한 이슈 ID 없음. 원본 유지")
+                return issues
+
+            print(f"   ✅ Meta-review 완료: {len(issues)} → {len(filtered_issues)} 이슈 유지")
+            return filtered_issues[:10]  # 최대 10개
+
+        except Exception as e:
+            print(f"   ⚠️ Meta-review 실패: {e}. 원본 유지")
+            return issues
+
 
     def _wrap_single_result(self, result: ReviewResult, provider: str) -> MergedReview:
         """단일 리뷰 결과를 MergedReview로 래핑"""
@@ -1293,9 +1562,11 @@ def get_pr_diff(pr_number: int) -> Tuple[str, Dict[str, Any]]:
             ["gh", "pr", "view", str(pr_number), "--json", "title,body,files"],
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             timeout=30
         )
-        
+
         context = {}
         if result.returncode == 0:
             data = json.loads(result.stdout)
@@ -1303,17 +1574,19 @@ def get_pr_diff(pr_number: int) -> Tuple[str, Dict[str, Any]]:
                 "pr_title": data.get("title", ""),
                 "pr_description": data.get("body", ""),
             }
-        
+
         # Diff 가져오기
         diff_result = subprocess.run(
             ["gh", "pr", "diff", str(pr_number)],
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             timeout=60
         )
-        
+
         return diff_result.stdout, context
-        
+
     except Exception as e:
         print(f"⚠️  Error fetching PR: {e}")
         return "", {}
@@ -1347,6 +1620,10 @@ def main():
     parser.add_argument("--no-chunk", action="store_true", help="Disable file chunking for large diffs")
     parser.add_argument("--chunk-threshold", type=int, default=40000,
                        help="Diff size threshold for chunking (default: 40000 chars)")
+    parser.add_argument("--no-meta-review", action="store_true", help="Disable meta-review (false positive removal)")
+    parser.add_argument("--no-compress", action="store_true", help="Disable diff compression")
+    parser.add_argument("--context-lines", type=int, default=1,
+                       help="Number of context lines to keep when compressing (default: 1)")
 
     args = parser.parse_args()
     
@@ -1373,8 +1650,16 @@ def main():
     
     print(f"📝 Diff size: {len(diff):,} chars")
 
-    # 리뷰어 초기화 (청킹 지원)
-    reviewer = ChunkedReviewer()
+    # 리뷰어 초기화 (청킹 + 압축 지원)
+    enable_compression = not args.no_compress
+    reviewer = ChunkedReviewer(
+        enable_compression=enable_compression,
+        context_lines=args.context_lines
+    )
+
+    # 압축 설정 출력
+    if args.no_compress:
+        print("⚠️ 압축 비활성화됨 (--no-compress)")
 
     # 청킹 설정 적용
     if args.no_chunk:
@@ -1382,6 +1667,11 @@ def main():
         print("⚠️ 청킹 비활성화됨 (--no-chunk)")
     else:
         reviewer.CHUNK_THRESHOLD = args.chunk_threshold
+
+    # Meta-review 설정 적용
+    if args.no_meta_review:
+        reviewer.ENABLE_META_REVIEW = False
+        print("⚠️ Meta-review 비활성화됨 (--no-meta-review)")
 
     # 사용할 AI 결정
     use_glm = not args.gemini_only
@@ -1425,7 +1715,7 @@ def main():
     
     # 파일 출력
     if args.output:
-        Path(args.output).write_text(markdown)
+        Path(args.output).write_text(markdown, encoding='utf-8')
         print(f"📄 Review saved to: {args.output}")
     
     if args.json:
@@ -1439,7 +1729,7 @@ def main():
         for issue in json_data["issues"] + json_data["consensus_issues"]:
             issue["severity"] = issue["severity"].value if isinstance(issue["severity"], Severity) else issue["severity"]
         
-        Path(args.json).write_text(json.dumps(json_data, indent=2, ensure_ascii=False))
+        Path(args.json).write_text(json.dumps(json_data, indent=2, ensure_ascii=False), encoding='utf-8')
         print(f"📄 JSON saved to: {args.json}")
     
     # PR 코멘트 게시
