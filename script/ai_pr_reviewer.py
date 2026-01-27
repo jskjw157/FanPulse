@@ -87,6 +87,104 @@ class DiffChunk:
         return any(self.file_path.endswith(ext) for ext in code_extensions)
 
 
+# 언어별 함수/클래스 경계 패턴
+SPLIT_PATTERNS = {
+    '.kt': r'^[+-]?\s*(fun |class |object |interface |sealed |data class )',
+    '.java': r'^[+-]?\s*(public |private |protected )?(static )?(class |interface |void |@)',
+    '.py': r'^[+-]?(def |class |async def |@)',
+    '.ts': r'^[+-]?\s*(export |function |class |interface |const |async )',
+    '.tsx': r'^[+-]?\s*(export |function |class |interface |const |async )',
+    '.js': r'^[+-]?\s*(export |function |class |const |async )',
+    '.jsx': r'^[+-]?\s*(export |function |class |const |async )',
+    '.swift': r'^[+-]?\s*(func |class |struct |enum |protocol )',
+    '.go': r'^[+-]?\s*(func |type )',
+    '.rs': r'^[+-]?\s*(fn |struct |enum |impl |pub )',
+}
+
+
+def split_large_chunk(chunk: DiffChunk, max_size: int = 30000) -> List[DiffChunk]:
+    """
+    30KB 초과 파일을 라인 기반으로 분할
+
+    Args:
+        chunk: 분할할 DiffChunk
+        max_size: 청크당 최대 크기
+
+    Returns:
+        분할된 DiffChunk 리스트
+    """
+    if chunk.size <= max_size:
+        return [chunk]
+
+    lines = chunk.content.split('\n')
+
+    # diff 헤더 분리 (diff --git, index, ---, +++)
+    header_lines = []
+    content_start = 0
+    for i, line in enumerate(lines):
+        if line.startswith('@@') or (i > 5 and not line.startswith(('diff', 'index', '---', '+++', 'new', 'old', 'deleted', 'similarity'))):
+            content_start = i
+            break
+        header_lines.append(line)
+
+    header = '\n'.join(header_lines)
+    content_lines = lines[content_start:]
+
+    # 파일 확장자로 분할 패턴 선택
+    ext = '.' + chunk.file_path.rsplit('.', 1)[-1] if '.' in chunk.file_path else ''
+    split_pattern = SPLIT_PATTERNS.get(ext, r'^[+-]?\s*$')  # 기본: 빈 줄
+
+    # 청크 수 계산
+    num_chunks = (chunk.size // max_size) + 1
+    target_lines = len(content_lines) // num_chunks
+
+    print(f"   ✂️  Splitting large file: {chunk.file_path} ({chunk.size:,} bytes → {num_chunks} chunks)")
+
+    # 분할 지점 찾기
+    chunks = []
+    current_lines = []
+    current_size = len(header)
+
+    for i, line in enumerate(content_lines):
+        line_size = len(line) + 1  # +1 for newline
+
+        # 현재 청크가 목표 크기에 도달하고 분할 가능한 지점이면 분할
+        if current_size + line_size > max_size * 0.8:  # 80%에서 분할 지점 찾기 시작
+            # 함수/클래스 경계 또는 빈 줄에서 분할
+            is_split_point = re.match(split_pattern, line, re.MULTILINE) or line.strip() == ''
+
+            if is_split_point and current_lines:
+                # 현재 청크 저장
+                chunk_content = header + '\n' + '\n'.join(current_lines)
+                chunks.append(DiffChunk(
+                    file_path=f"{chunk.file_path} (part {len(chunks)+1})",
+                    content=chunk_content,
+                    size=len(chunk_content)
+                ))
+                current_lines = []
+                current_size = len(header)
+
+        current_lines.append(line)
+        current_size += line_size
+
+    # 마지막 청크
+    if current_lines:
+        chunk_content = header + '\n' + '\n'.join(current_lines)
+        chunks.append(DiffChunk(
+            file_path=f"{chunk.file_path} (part {len(chunks)+1})",
+            content=chunk_content,
+            size=len(chunk_content)
+        ))
+
+    # 분할 결과 없으면 원본 반환 (분할 실패)
+    if not chunks:
+        print(f"   ⚠️  Split failed, using truncated original")
+        return [chunk]
+
+    print(f"   ✅ Split into {len(chunks)} chunks: {[c.size for c in chunks]}")
+    return chunks
+
+
 def parse_diff_by_files(diff: str) -> List[DiffChunk]:
     """
     Git diff를 파일별로 분리
@@ -128,7 +226,7 @@ def parse_diff_by_files(diff: str) -> List[DiffChunk]:
 
 def group_chunks_by_size(chunks: List[DiffChunk], max_size: int = 30000) -> List[List[DiffChunk]]:
     """
-    청크들을 max_size 이하로 그룹화
+    청크들을 max_size 이하로 그룹화 (큰 파일은 자동 분할)
 
     Args:
         chunks: 파일별 diff 청크 리스트
@@ -144,11 +242,24 @@ def group_chunks_by_size(chunks: List[DiffChunk], max_size: int = 30000) -> List
     # 코드 파일만 필터링 (설정 파일 등 제외)
     code_chunks = [c for c in chunks if c.is_code_file]
 
+    # 큰 파일 분할 처리
+    all_chunks = []
+    for chunk in code_chunks:
+        if chunk.size > max_size:
+            # 큰 파일은 분할
+            split_chunks = split_large_chunk(chunk, max_size)
+            all_chunks.extend(split_chunks)
+        else:
+            all_chunks.append(chunk)
+
+    if len(all_chunks) != len(code_chunks):
+        print(f"   📊 Chunk splitting: {len(code_chunks)} files → {len(all_chunks)} chunks")
+
     # 크기순 정렬 (큰 파일 먼저 - bin packing)
-    sorted_chunks = sorted(code_chunks, key=lambda x: x.size, reverse=True)
+    sorted_chunks = sorted(all_chunks, key=lambda x: x.size, reverse=True)
 
     for chunk in sorted_chunks:
-        # 단일 파일이 max_size 초과하면 별도 그룹
+        # 분할 후에도 초과하면 별도 그룹 (안전장치)
         if chunk.size > max_size:
             if current_group:
                 groups.append(current_group)
@@ -358,43 +469,80 @@ Focus on actionable feedback, not nitpicks."""
         return issues
     
     def _extract_json(self, response: str) -> Optional[dict]:
-        """응답에서 JSON 안전하게 추출"""
-        # 1. JSON 코드 블록 우선 시도
-        json_block = re.search(r'```json\s*(\{[\s\S]*?\})\s*```', response)
+        """응답에서 JSON 안전하게 추출 (string-aware balanced braces)"""
+        # 1. JSON 코드 블록 시도 (backtick 사이의 전체 내용)
+        json_block = re.search(r'```json\s*(\{.+\})\s*```', response, re.DOTALL)
         if json_block:
             try:
-                return json.loads(json_block.group(1))
-            except json.JSONDecodeError:
-                pass
+                parsed = json.loads(json_block.group(1))
+                print(f"[DEBUG] GLM JSON extracted from code block ({len(json_block.group(1))} chars)")
+                return parsed
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG] GLM code block JSON parse failed: {e}")
 
-        # 2. 첫 번째 유효한 JSON 객체 찾기 (balanced braces)
+        # 2. Balanced braces 파싱 (string-aware)
         start = response.find('{')
         if start == -1:
+            print("[DEBUG] GLM: No JSON object found in response")
             return None
 
         depth = 0
+        in_string = False
+        escape = False
+
         for i in range(start, len(response)):
-            if response[i] == '{':
-                depth += 1
-            elif response[i] == '}':
-                depth -= 1
-                if depth == 0:
-                    try:
-                        return json.loads(response[start:i + 1])
-                    except json.JSONDecodeError:
-                        # 이 JSON이 유효하지 않으면 다음 시작점 찾기
-                        start = response.find('{', i + 1)
-                        if start == -1:
-                            return None
-                        depth = 0
-                        continue
+            char = response[i]
+
+            # Escape 처리
+            if escape:
+                escape = False
+                continue
+            if char == '\\':
+                escape = True
+                continue
+
+            # 문자열 내부 체크
+            if char == '"':
+                in_string = not in_string
+                continue
+
+            # 중괄호는 문자열 밖에서만 카운트
+            if not in_string:
+                if char == '{':
+                    depth += 1
+                elif char == '}':
+                    depth -= 1
+                    if depth == 0:
+                        json_str = response[start:i + 1]
+                        try:
+                            parsed = json.loads(json_str)
+                            print(f"[DEBUG] GLM JSON extracted via balanced braces ({len(json_str)} chars)")
+                            return parsed
+                        except json.JSONDecodeError as e:
+                            print(f"[DEBUG] GLM balanced braces JSON failed: {str(e)[:80]}")
+                            start = response.find('{', i + 1)
+                            if start == -1:
+                                return None
+                            depth = 0
+                            in_string = False
+                            continue
+
+        print("[DEBUG] GLM: No valid JSON found (unbalanced braces)")
         return None
 
     def _extract_summary(self, response: str) -> str:
-        """응답에서 요약 추출"""
+        """응답에서 요약 추출 (fallback 포함)"""
+        # 1. JSON에서 추출 시도
         data = self._extract_json(response)
-        if data:
-            return data.get("summary", "")
+        if data and data.get("summary"):
+            return data.get("summary", "").strip()
+
+        # 2. Fallback: "summary" 키워드 직접 추출
+        summary_match = re.search(r'"summary"\s*:\s*"([^"]+)"', response)
+        if summary_match:
+            print(f"[DEBUG] GLM summary via regex fallback")
+            return summary_match.group(1).strip()
+
         return ""
 
 
@@ -535,42 +683,80 @@ Be thorough but focus on significant issues. Avoid nitpicks."""
         return issues
 
     def _extract_json(self, response: str) -> Optional[dict]:
-        """응답에서 JSON 안전하게 추출"""
-        # 1. JSON 코드 블록 우선 시도
-        json_block = re.search(r'```json\s*(\{[\s\S]*?\})\s*```', response)
+        """응답에서 JSON 안전하게 추출 (string-aware balanced braces)"""
+        # 1. JSON 코드 블록 시도 (backtick 사이의 전체 내용)
+        json_block = re.search(r'```json\s*(\{.+\})\s*```', response, re.DOTALL)
         if json_block:
             try:
-                return json.loads(json_block.group(1))
-            except json.JSONDecodeError:
-                pass
+                parsed = json.loads(json_block.group(1))
+                print(f"[DEBUG] Gemini JSON extracted from code block ({len(json_block.group(1))} chars)")
+                return parsed
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG] Gemini code block JSON parse failed: {e}")
 
-        # 2. 첫 번째 유효한 JSON 객체 찾기 (balanced braces)
+        # 2. Balanced braces 파싱 (string-aware)
         start = response.find('{')
         if start == -1:
+            print("[DEBUG] Gemini: No JSON object found in response")
             return None
 
         depth = 0
+        in_string = False
+        escape = False
+
         for i in range(start, len(response)):
-            if response[i] == '{':
-                depth += 1
-            elif response[i] == '}':
-                depth -= 1
-                if depth == 0:
-                    try:
-                        return json.loads(response[start:i + 1])
-                    except json.JSONDecodeError:
-                        start = response.find('{', i + 1)
-                        if start == -1:
-                            return None
-                        depth = 0
-                        continue
+            char = response[i]
+
+            # Escape 처리
+            if escape:
+                escape = False
+                continue
+            if char == '\\':
+                escape = True
+                continue
+
+            # 문자열 내부 체크
+            if char == '"':
+                in_string = not in_string
+                continue
+
+            # 중괄호는 문자열 밖에서만 카운트
+            if not in_string:
+                if char == '{':
+                    depth += 1
+                elif char == '}':
+                    depth -= 1
+                    if depth == 0:
+                        json_str = response[start:i + 1]
+                        try:
+                            parsed = json.loads(json_str)
+                            print(f"[DEBUG] Gemini JSON extracted via balanced braces ({len(json_str)} chars)")
+                            return parsed
+                        except json.JSONDecodeError as e:
+                            print(f"[DEBUG] Gemini balanced braces JSON failed: {str(e)[:80]}")
+                            start = response.find('{', i + 1)
+                            if start == -1:
+                                return None
+                            depth = 0
+                            in_string = False
+                            continue
+
+        print("[DEBUG] Gemini: No valid JSON found (unbalanced braces)")
         return None
 
     def _extract_summary(self, response: str) -> str:
-        """응답에서 요약 추출"""
+        """응답에서 요약 추출 (fallback 포함)"""
+        # 1. JSON에서 추출 시도
         data = self._extract_json(response)
-        if data:
-            return data.get("summary", "")
+        if data and data.get("summary"):
+            return data.get("summary", "").strip()
+
+        # 2. Fallback: "summary" 키워드 직접 추출
+        summary_match = re.search(r'"summary"\s*:\s*"([^"]+)"', response)
+        if summary_match:
+            print(f"[DEBUG] Gemini summary via regex fallback")
+            return summary_match.group(1).strip()
+
         return ""
 
 
@@ -832,11 +1018,33 @@ class ChunkedReviewer:
                     issues = result.merged_issues if hasattr(result, 'merged_issues') else []
                     all_issues.extend(issues)
 
-                    # Summary 수집 (AI 응답에서)
-                    if hasattr(result, 'glm_result') and result.glm_result and result.glm_result.summary:
-                        all_summaries.append(f"[GLM] {result.glm_result.summary}")
-                    if hasattr(result, 'gemini_result') and result.gemini_result and result.gemini_result.summary:
-                        all_summaries.append(f"[Gemini] {result.gemini_result.summary}")
+                    # Summary 수집 (AI 응답에서) - 개선된 버전
+                    if hasattr(result, 'glm_result') and result.glm_result:
+                        glm_summary = result.glm_result.summary
+                        if glm_summary and glm_summary.strip():
+                            all_summaries.append(f"[GLM] {glm_summary.strip()}")
+                            print(f"   [DEBUG] GLM summary collected: {glm_summary[:60]}...")
+                        elif result.glm_result.raw_response:
+                            # Fallback: raw_response에서 직접 추출
+                            match = re.search(r'"summary"\s*:\s*"([^"]+)"', result.glm_result.raw_response)
+                            if match:
+                                fallback = match.group(1).strip()
+                                all_summaries.append(f"[GLM] {fallback}")
+                                print(f"   [DEBUG] GLM summary fallback: {fallback[:60]}...")
+
+                    if hasattr(result, 'gemini_result') and result.gemini_result:
+                        gemini_summary = result.gemini_result.summary
+                        if gemini_summary and gemini_summary.strip():
+                            all_summaries.append(f"[Gemini] {gemini_summary.strip()}")
+                            print(f"   [DEBUG] Gemini summary collected: {gemini_summary[:60]}...")
+                        elif result.gemini_result.raw_response:
+                            # Fallback: raw_response에서 직접 추출
+                            match = re.search(r'"summary"\s*:\s*"([^"]+)"', result.gemini_result.raw_response)
+                            if match:
+                                fallback = match.group(1).strip()
+                                all_summaries.append(f"[Gemini] {fallback}")
+                                print(f"   [DEBUG] Gemini summary fallback: {fallback[:60]}...")
+
                     if hasattr(result, 'summary') and result.summary and not result.glm_result and not result.gemini_result:
                         all_summaries.append(result.summary)
 
