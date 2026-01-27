@@ -1,4 +1,4 @@
-name: AI Code Review (Qwen + Gemini)
+name: AI Code Review (GLM + Gemini)
 
 on:
   pull_request:

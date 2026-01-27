@@ -1,7 +1,7 @@
 ---
 name: ai-pr-reviewer
 description: |
-  AI PR 코드 리뷰 에이전트. Qwen3-Coder와 Gemini 2.5 Flash를 동시에 사용하여 
+  AI PR 코드 리뷰 에이전트. GLM-4-Flash와 Gemini 2.5 Flash를 동시에 사용하여
   PR의 코드를 분석하고 버그, 보안 취약점, 성능 이슈를 찾아냅니다.
   사용 시기: (1) PR 생성 시 (2) 코드 리뷰 요청 시 (3) 머지 전 최종 검토 시
 tools: Read, Grep, Glob, Bash
@@ -10,7 +10,7 @@ model: sonnet
 
 # AI PR Code Reviewer Agent
 
-Qwen3-Coder (SWE-bench 69.6%) + Gemini 2.5 Flash 하이브리드 코드 리뷰어.
+GLM-4-Flash (Zhipu AI) + Gemini 2.5 Flash 하이브리드 코드 리뷰어.
 
 ## When to Use
 
@@ -29,12 +29,18 @@ git diff main | python script/ai_pr_reviewer.py
 
 # 결과를 파일로 저장
 python script/ai_pr_reviewer.py --pr 123 --output review.md --json review.json
+
+# Gemini만 사용
+python script/ai_pr_reviewer.py --pr 123 --gemini-only
+
+# GLM만 사용
+python script/ai_pr_reviewer.py --pr 123 --glm-only
 ```
 
 ## Execution Flow
 
 1. **Pre-analysis**: 기존 `pr_analyzer.py`로 파일별 리스크 평가
-2. **AI Review**: Qwen + Gemini 병렬 실행
+2. **AI Review**: GLM + Gemini 병렬 실행
 3. **Merge Results**: 두 AI 결과 병합, 합의 이슈 식별
 4. **Report**: 마크다운 리포트 생성
 
@@ -52,7 +58,7 @@ python script/ai_pr_reviewer.py --pr 123 --output .claude/ai-review.md
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `QWEN_API_KEY` | One of these | Qwen/DashScope API 키 |
+| `GLM_API_KEY` | One of these | Zhipu AI GLM API 키 |
 | `GEMINI_API_KEY` | One of these | Google Gemini API 키 |
 | `GITHUB_TOKEN` | For PR access | GitHub API 토큰 |
 
@@ -98,13 +104,17 @@ Tech Stack:
 
 ### API 키 오류
 ```bash
-# 환경 변수 확인
-echo $QWEN_API_KEY
+# Linux/macOS
+echo $GLM_API_KEY
 echo $GEMINI_API_KEY
+
+# PowerShell (Windows)
+echo $env:GLM_API_KEY
+echo $env:GEMINI_API_KEY
 ```
 
 ### Rate Limit
-- Qwen: 60 req/min, 2000 req/day (무료)
+- GLM: 가입 시 무료 크레딧 제공
 - Gemini: 15 req/min (무료 티어)
 
 ### 큰 PR 처리

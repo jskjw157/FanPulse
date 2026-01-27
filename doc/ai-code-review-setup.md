@@ -1,17 +1,17 @@
 # AI 코드 리뷰 봇 설정 가이드
 
-FanPulse 프로젝트를 위한 AI 코드 리뷰 봇 (Qwen + Gemini 하이브리드) 설정 가이드입니다.
+FanPulse 프로젝트를 위한 AI 코드 리뷰 봇 (GLM + Gemini 하이브리드) 설정 가이드입니다.
 
 ## 📋 개요
 
-이 봇은 **Qwen3-Coder**와 **Gemini 2.5 Flash**를 동시에 사용하여 PR을 리뷰합니다.
+이 봇은 **GLM-4-Flash**와 **Gemini 2.5 Flash**를 동시에 사용하여 PR을 리뷰합니다.
 
 ### 왜 두 개의 AI를 사용하나요?
 
-| AI | 강점 | SWE-bench |
-|----|------|-----------|
-| **Qwen3-Coder** | 실제 버그 찾기, 코드 수정 제안 | **69.6%** |
-| **Gemini 2.5 Flash** | 안정성, 빠른 응답, 넓은 컨텍스트 | ~51% |
+| AI | 강점 | 특징 |
+|----|------|------|
+| **GLM-4-Flash** | 빠른 응답, 코드 이해력, 무료 | Zhipu AI (중국) |
+| **Gemini 2.5 Flash** | 안정성, 빠른 응답, 넓은 컨텍스트 | Google |
 
 두 AI가 **동시에 지적한 이슈**는 높은 신뢰도를 가집니다.
 
@@ -19,16 +19,12 @@ FanPulse 프로젝트를 위한 AI 코드 리뷰 봇 (Qwen + Gemini 하이브리
 
 ## 🔑 1단계: API 키 발급
 
-### Qwen API 키 (Alibaba Cloud)
+### GLM API 키 (Zhipu AI)
 
-1. [https://dashscope.console.aliyun.com/](https://dashscope.console.aliyun.com/) 접속
-2. 회원가입 (알리바바 클라우드 계정 필요)
+1. [https://open.bigmodel.cn/](https://open.bigmodel.cn/) 접속
+2. 회원가입 (Zhipu AI 계정 필요)
 3. API Key 발급
-4. **무료 한도**: 2,000 요청/일
-
-또는 **Qwen Code CLI**를 통한 OAuth 인증:
-- [https://qwen.ai](https://qwen.ai) 에서 로그인
-- 자동으로 2,000 요청/일 무료 제공
+4. **무료 한도**: 신규 가입 시 무료 크레딧 제공
 
 ### Gemini API 키 (Google)
 
@@ -45,7 +41,7 @@ Repository Settings → Secrets and variables → Actions에서 추가:
 
 | Secret 이름 | 값 | 필수 여부 |
 |------------|-----|----------|
-| `QWEN_API_KEY` | Qwen/DashScope API 키 | 둘 중 하나 필수 |
+| `GLM_API_KEY` | Zhipu AI GLM API 키 | 둘 중 하나 필수 |
 | `GEMINI_API_KEY` | Google Gemini API 키 | 둘 중 하나 필수 |
 
 > **Note**: 두 키 모두 설정하면 하이브리드 모드로 동작합니다.
@@ -78,9 +74,13 @@ script/
 ### 로컬 테스트
 
 ```bash
-# 환경 변수 설정
-export QWEN_API_KEY="your-qwen-api-key"
+# 환경 변수 설정 (Linux/macOS)
+export GLM_API_KEY="your-glm-api-key"
 export GEMINI_API_KEY="your-gemini-api-key"
+
+# PowerShell (Windows)
+$env:GLM_API_KEY = "your-glm-api-key"
+$env:GEMINI_API_KEY = "your-gemini-api-key"
 
 # 로컬 diff로 테스트
 git diff main | python script/ai_pr_reviewer.py
@@ -92,6 +92,12 @@ python script/ai_pr_reviewer.py --pr 123
 python script/ai_pr_reviewer.py --pr 123 \
   --output review.md \
   --json review.json
+
+# Gemini만 사용
+python script/ai_pr_reviewer.py --pr 123 --gemini-only
+
+# GLM만 사용
+python script/ai_pr_reviewer.py --pr 123 --glm-only
 ```
 
 ### GitHub Actions 테스트
@@ -172,9 +178,13 @@ Tech Stack:
 ### "No AI providers configured" 오류
 
 ```bash
-# 환경 변수 확인
-echo $QWEN_API_KEY
+# 환경 변수 확인 (Linux/macOS)
+echo $GLM_API_KEY
 echo $GEMINI_API_KEY
+
+# PowerShell (Windows)
+echo $env:GLM_API_KEY
+echo $env:GEMINI_API_KEY
 
 # GitHub Secrets 확인
 # Repository → Settings → Secrets → Actions
@@ -184,13 +194,13 @@ echo $GEMINI_API_KEY
 
 | Provider | 무료 한도 | 해결책 |
 |----------|----------|--------|
-| Qwen | 60 req/min, 2000 req/day | 대기 후 재시도 |
+| GLM | 가입 시 무료 크레딧 | 대기 후 재시도 |
 | Gemini | 15 req/min | 대기 후 재시도 |
 
 ### 큰 PR 처리 실패
 
 Diff가 너무 크면 자동으로 잘립니다:
-- Qwen: 30,000자
+- GLM: 30,000자
 - Gemini: 50,000자
 
 해결책:
@@ -205,14 +215,14 @@ Diff가 너무 크면 자동으로 잘립니다:
 
 | Provider | 무료 한도 | 월 비용 |
 |----------|----------|--------|
-| Qwen (Qwen Code) | 2,000 req/일 | **$0** |
+| GLM-4-Flash | 가입 시 무료 크레딧 | **$0** |
 | Gemini | 무제한 (rate limit만) | **$0** |
 
 ---
 
 ## 📚 관련 문서
 
-- [Qwen3-Coder 공식 문서](https://qwenlm.github.io/blog/qwen3-coder/)
+- [GLM-4 API 문서](https://open.bigmodel.cn/dev/api)
 - [Gemini API 문서](https://ai.google.dev/gemini-api/docs)
 - [GitHub Actions 문서](https://docs.github.com/actions)
 - [FanPulse PR 가이드](./team_git_commit_convention_conventional_commits.md)
@@ -225,5 +235,6 @@ Diff가 너무 크면 자동으로 잘립니다:
 
 ---
 
-**Created**: 2026-01-27  
+**Created**: 2026-01-27
+**Updated**: 2026-01-27
 **Maintainer**: FanPulse Team
