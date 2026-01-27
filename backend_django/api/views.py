@@ -501,12 +501,12 @@ class SavedNewsListView(APIView):
         }, status=status.HTTP_200_OK)
 
         #######################
-        # MongoDB 조회 (주석 처리)
+        # PostgreSQL 조회 (주석 처리)
         #######################
         # query = request.query_params.get('query', '')
         # limit = int(request.query_params.get('limit', 100))
-        # skip = int(request.query_params.get('skip', 0))
-        # result = SavedNewsReader.list_from_mongo(query, limit, skip)
+        # offset = int(request.query_params.get('offset', 0))
+        # result = SavedNewsReader.list_from_postgres(query, limit, offset)
         # return Response(result, status=status.HTTP_200_OK if result['success'] else status.HTTP_500_INTERNAL_SERVER_ERROR)
         #######################
 
@@ -539,9 +539,9 @@ class SavedNewsDetailView(APIView):
             return Response(result, status=status.HTTP_404_NOT_FOUND)
 
         #######################
-        # MongoDB 조회 (주석 처리)
+        # PostgreSQL 조회 (주석 처리)
         #######################
-        # result = SavedNewsReader.get_from_mongo(filename)  # filename을 doc_id로 사용
+        # result = SavedNewsReader.get_from_postgres(filename)  # filename을 record_id로 사용
         # return Response(result, status=status.HTTP_200_OK if result['success'] else status.HTTP_404_NOT_FOUND)
         #######################
 
@@ -566,9 +566,9 @@ class SavedNewsDetailView(APIView):
             return Response(result, status=status.HTTP_404_NOT_FOUND)
 
         #######################
-        # MongoDB 삭제 (주석 처리)
+        # PostgreSQL 삭제 (주석 처리)
         #######################
-        # result = SavedNewsReader.delete_from_mongo(filename)  # filename을 doc_id로 사용
+        # result = SavedNewsReader.delete_from_postgres(filename)  # filename을 record_id로 사용
         # return Response(result, status=status.HTTP_200_OK if result['success'] else status.HTTP_404_NOT_FOUND)
         #######################
 
@@ -805,6 +805,116 @@ class SummarizedNewsDetailView(APIView):
         from .services.news_crawler import SummarizedNewsManager
 
         result = SummarizedNewsManager.delete_summarized_file(filename)
+
+        if result['success']:
+            return Response(result, status=status.HTTP_200_OK)
+        else:
+            return Response(result, status=status.HTTP_404_NOT_FOUND)
+
+
+#######################
+# DB 뉴스 조회 API
+#######################
+class DBNewsListView(APIView):
+    """
+    DB에 저장된 뉴스 목록 조회
+
+    경로: GET /api/news/db
+    """
+
+    @swagger_auto_schema(
+        operation_id='db_news_list',
+        operation_summary='DB 뉴스 목록',
+        operation_description='PostgreSQL DB에 저장된 뉴스 목록을 조회합니다.',
+        manual_parameters=[
+            openapi.Parameter('limit', openapi.IN_QUERY, description='조회 개수', type=openapi.TYPE_INTEGER, default=100),
+            openapi.Parameter('offset', openapi.IN_QUERY, description='시작 위치', type=openapi.TYPE_INTEGER, default=0),
+            openapi.Parameter('source', openapi.IN_QUERY, description='뉴스 출처 필터', type=openapi.TYPE_STRING),
+        ],
+        responses={
+            200: openapi.Response(
+                description='조회 성공',
+                examples={
+                    'application/json': {
+                        'success': True,
+                        'total': 150,
+                        'count': 100,
+                        'items': [
+                            {
+                                'id': 'uuid',
+                                'title': '뉴스 제목',
+                                'content': '본문...',
+                                'url': 'https://...',
+                                'source': 'naver',
+                                'published_at': '2026-01-26T12:00:00',
+                                'created_at': '2026-01-26T12:00:00'
+                            }
+                        ]
+                    }
+                }
+            )
+        },
+        tags=['News DB']
+    )
+    def get(self, request):
+        from .services.news_crawler import get_news_from_db
+
+        limit = int(request.query_params.get('limit', 100))
+        offset = int(request.query_params.get('offset', 0))
+        source = request.query_params.get('source')
+
+        result = get_news_from_db(limit=limit, offset=offset, source=source)
+
+        return Response({
+            'success': result['success'],
+            'total': result.get('total', 0),
+            'count': len(result.get('items', [])),
+            'items': result.get('items', []),
+            'error': result.get('error')
+        }, status=status.HTTP_200_OK if result['success'] else status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DBNewsDetailView(APIView):
+    """
+    DB에 저장된 뉴스 상세 조회
+
+    경로: GET /api/news/db/<news_id>
+    """
+
+    @swagger_auto_schema(
+        operation_id='db_news_detail',
+        operation_summary='DB 뉴스 상세',
+        operation_description='PostgreSQL DB에 저장된 특정 뉴스를 조회합니다.',
+        responses={
+            200: openapi.Response(description='조회 성공'),
+            404: openapi.Response(description='뉴스 없음')
+        },
+        tags=['News DB']
+    )
+    def get(self, request, news_id):
+        from .services.news_crawler import get_news_detail_from_db
+
+        result = get_news_detail_from_db(news_id)
+
+        if result['success']:
+            return Response(result, status=status.HTTP_200_OK)
+        else:
+            return Response(result, status=status.HTTP_404_NOT_FOUND)
+
+    @swagger_auto_schema(
+        operation_id='db_news_delete',
+        operation_summary='DB 뉴스 삭제',
+        operation_description='PostgreSQL DB에서 특정 뉴스를 삭제합니다.',
+        responses={
+            200: openapi.Response(description='삭제 성공'),
+            404: openapi.Response(description='뉴스 없음')
+        },
+        tags=['News DB']
+    )
+    def delete(self, request, news_id):
+        from .services.news_crawler import delete_news_from_db
+
+        result = delete_news_from_db(news_id)
 
         if result['success']:
             return Response(result, status=status.HTTP_200_OK)
