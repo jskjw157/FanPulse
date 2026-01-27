@@ -1745,8 +1745,7 @@ def main():
         print(markdown)
     
     # Exit code: critical 이슈가 있으면 1
-    if merged.stats.get("critical", 0) > 0:
-        return 1
+    # 리뷰 성공 시 항상 0 반환 (워크플로우에서 별도로 critical 체크)
     return 0
 
 
