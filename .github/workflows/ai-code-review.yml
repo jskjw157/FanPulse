@@ -25,6 +25,9 @@ jobs:
     outputs:
       should_review: ${{ steps.check.outputs.should_review }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Check for reviewable files
         id: check
         env:
