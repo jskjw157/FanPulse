@@ -32,7 +32,7 @@ FanPulse는 Fan(팬)과 Pulse(맥박)의 합성어로, K-Pop 팬 커뮤니티의
 ### 설계 결정사항 (Architecture Decision Records)
 
 **Issue**: #133 라이브 목록 및 상세 API 구현
-**관련 문서**: [PLAN_live-streaming-api-cursor-pagination.md](../docs/plans/PLAN_live-streaming-api-cursor-pagination.md)
+**관련 문서**: [PLAN_live-streaming-api-cursor-pagination.md](../doc/plans/PLAN_live-streaming-api-cursor-pagination.md)
 
 #### 1. 복합 커서 (Composite Cursor)
 
