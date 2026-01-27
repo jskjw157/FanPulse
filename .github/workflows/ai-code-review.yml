@@ -1,0 +1,188 @@
+name: AI Code Review (Qwen + Gemini)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    # 특정 브랜치만 리뷰 (선택사항)
+    # branches:
+    #   - main
+    #   - develop
+
+# 동시 실행 방지 - 같은 PR의 이전 리뷰 취소
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # 먼저 리뷰 대상 파일인지 확인
+  check-files:
+    name: Check Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      should_review: ${{ steps.check.outputs.should_review }}
+    steps:
+      - name: Check for reviewable files
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 변경된 파일 목록
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} --json files --jq '.files[].path')
+
+          # 리뷰 대상 파일 패턴
+          REVIEW_PATTERNS="\.kt$|\.java$|\.py$|\.ts$|\.tsx$|\.js$|\.jsx$|\.swift$"
+
+          # 패턴 매칭
+          if echo "$FILES" | grep -qE "$REVIEW_PATTERNS"; then
+            echo "should_review=true" >> $GITHUB_OUTPUT
+            echo "Found reviewable code files"
+          else
+            echo "should_review=false" >> $GITHUB_OUTPUT
+            echo "No code files to review (only config/docs changed)"
+          fi
+
+  ai-code-review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+    needs: check-files
+    # Draft PR 스킵 + 코드 파일 변경 시에만 실행
+    if: |
+      github.event.pull_request.draft == false &&
+      needs.check-files.outputs.should_review == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 전체 히스토리 (diff 계산용)
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install google-generativeai openai requests
+
+      - name: Get PR diff
+        id: diff
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # PR diff 가져오기
+          gh pr diff ${{ github.event.pull_request.number }} > pr_diff.txt
+
+          # Diff 크기 확인
+          DIFF_SIZE=$(wc -c < pr_diff.txt)
+          echo "diff_size=$DIFF_SIZE" >> $GITHUB_OUTPUT
+
+          # 너무 크면 스킵
+          if [ $DIFF_SIZE -gt 200000 ]; then
+            echo "::warning::Diff too large for AI review ($DIFF_SIZE bytes)"
+            echo "large_diff=skip" >> $GITHUB_OUTPUT
+            gh pr comment ${{ github.event.pull_request.number }} --body "AI Code Review: PR diff가 너무 큽니다 (200KB 초과). 작은 PR로 나눠주세요."
+          elif [ $DIFF_SIZE -gt 100000 ]; then
+            echo "::warning::Large diff detected: $DIFF_SIZE bytes"
+            echo "large_diff=true" >> $GITHUB_OUTPUT
+          else
+            echo "large_diff=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run AI Code Review
+        id: review
+        if: steps.diff.outputs.large_diff != 'skip'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Gemini만 사용하여 리뷰 실행
+          python script/ai_pr_reviewer.py \
+            --diff-file pr_diff.txt \
+            --output review_result.md \
+            --json review_result.json \
+            --gemini-only
+
+          # 결과 확인 (JSON 검증 포함)
+          if [ -f review_result.json ]; then
+            # JSON 유효성 검사
+            if ! jq empty review_result.json 2>/dev/null; then
+              echo "::warning::Invalid JSON in review result"
+              echo "critical=0" >> $GITHUB_OUTPUT
+              echo "high=0" >> $GITHUB_OUTPUT
+              echo "total=0" >> $GITHUB_OUTPUT
+            else
+              CRITICAL=$(jq -r '.stats.critical // 0' review_result.json)
+              HIGH=$(jq -r '.stats.high // 0' review_result.json)
+              TOTAL=$(jq -r '.stats.total_issues // 0' review_result.json)
+
+              echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+              echo "high=$HIGH" >> $GITHUB_OUTPUT
+              echo "total=$TOTAL" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "::warning::Review result file not found"
+            echo "critical=0" >> $GITHUB_OUTPUT
+            echo "high=0" >> $GITHUB_OUTPUT
+            echo "total=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post review comment
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f review_result.md ]; then
+            # 기존 AI 리뷰 코멘트 찾아서 삭제 (업데이트용)
+            EXISTING_COMMENT=$(gh pr view ${{ github.event.pull_request.number }} \
+              --json comments \
+              --jq '.comments[] | select(.body | contains("AI Code Review Results")) | .id' \
+              | head -1)
+
+            if [ -n "$EXISTING_COMMENT" ]; then
+              echo "Updating existing review comment..."
+              gh api -X DELETE "/repos/${{ github.repository }}/issues/comments/$EXISTING_COMMENT" || true
+            fi
+
+            # 새 코멘트 게시
+            gh pr comment ${{ github.event.pull_request.number }} --body-file review_result.md
+            echo "✅ Review comment posted"
+          else
+            echo "⚠️ No review result file found"
+            gh pr comment ${{ github.event.pull_request.number }} --body "⚠️ AI Code Review failed to generate results. Check the workflow logs for details."
+          fi
+
+      - name: Upload review artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-review-results
+          path: |
+            review_result.md
+            review_result.json
+            pr_diff.txt
+          retention-days: 7
+
+      - name: Set review status
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CRITICAL=${{ steps.review.outputs.critical || 0 }}
+          HIGH=${{ steps.review.outputs.high || 0 }}
+
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::Found $CRITICAL critical issue(s). Please review before merging."
+            # 선택: critical 이슈가 있으면 실패로 표시
+            # exit 1
+          elif [ "$HIGH" -gt 0 ]; then
+            echo "::warning::Found $HIGH high priority issue(s). Consider addressing them."
+          else
+            echo "No critical issues found"
+          fi

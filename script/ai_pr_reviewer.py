@@ -36,19 +36,27 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
 
 # Optional imports - graceful degradation
+import sys
+import io
+
+# Windows 콘솔 인코딩 문제 해결
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 try:
     import google.generativeai as genai
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
-    print("⚠️  google-generativeai not installed. Gemini will be disabled.")
+    print("[WARN] google-generativeai not installed. Gemini will be disabled.")
 
 try:
     from openai import OpenAI
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
-    print("⚠️  openai package not installed. Qwen will be disabled.")
+    print("[WARN] openai package not installed. Qwen will be disabled.")
 
 
 class Severity(Enum):
@@ -187,26 +195,33 @@ Be specific with file paths and line numbers when possible.
 Focus on actionable feedback, not nitpicks."""
     
     def _build_prompt(self, diff: str, context: Dict[str, Any] = None) -> str:
-        prompt = f"Review this code change:\n\n```diff\n{diff[:30000]}\n```"
-        
+        MAX_DIFF_SIZE = 30000
+        truncated = len(diff) > MAX_DIFF_SIZE
+
+        if truncated:
+            print(f"⚠️  Qwen: Diff truncated ({len(diff)} → {MAX_DIFF_SIZE} chars)")
+            diff_content = diff[:MAX_DIFF_SIZE] + "\n\n[... truncated, showing first 30KB ...]"
+        else:
+            diff_content = diff
+
+        prompt = f"Review this code change:\n\n```diff\n{diff_content}\n```"
+
         if context:
             if context.get("pr_title"):
                 prompt = f"PR: {context['pr_title']}\n\n" + prompt
             if context.get("pr_description"):
                 prompt += f"\n\nPR Description: {context['pr_description']}"
-        
+
         return prompt
     
     def _parse_response(self, response: str) -> List[ReviewIssue]:
         """응답에서 이슈 파싱"""
         issues = []
-        
-        # JSON 블록 찾기
-        json_match = re.search(r'\{[\s\S]*\}', response)
-        if json_match:
-            try:
-                data = json.loads(json_match.group())
-                for item in data.get("issues", []):
+        data = self._extract_json(response)
+
+        if data:
+            for item in data.get("issues", []):
+                try:
                     issues.append(ReviewIssue(
                         file_path=item.get("file", "unknown"),
                         line_number=item.get("line"),
@@ -217,20 +232,49 @@ Focus on actionable feedback, not nitpicks."""
                         suggestion=item.get("suggestion"),
                         source="qwen"
                     ))
-            except json.JSONDecodeError:
-                pass
-        
+                except (ValueError, KeyError) as e:
+                    print(f"⚠️  Skipping invalid issue: {e}")
+
         return issues
     
-    def _extract_summary(self, response: str) -> str:
-        """응답에서 요약 추출"""
-        json_match = re.search(r'\{[\s\S]*\}', response)
-        if json_match:
+    def _extract_json(self, response: str) -> Optional[dict]:
+        """응답에서 JSON 안전하게 추출"""
+        # 1. JSON 코드 블록 우선 시도
+        json_block = re.search(r'```json\s*(\{[\s\S]*?\})\s*```', response)
+        if json_block:
             try:
-                data = json.loads(json_match.group())
-                return data.get("summary", "")
+                return json.loads(json_block.group(1))
             except json.JSONDecodeError:
                 pass
+
+        # 2. 첫 번째 유효한 JSON 객체 찾기 (balanced braces)
+        start = response.find('{')
+        if start == -1:
+            return None
+
+        depth = 0
+        for i in range(start, len(response)):
+            if response[i] == '{':
+                depth += 1
+            elif response[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(response[start:i + 1])
+                    except json.JSONDecodeError:
+                        # 이 JSON이 유효하지 않으면 다음 시작점 찾기
+                        start = response.find('{', i + 1)
+                        if start == -1:
+                            return None
+                        depth = 0
+                        continue
+        return None
+
+    def _extract_summary(self, response: str) -> str:
+        """응답에서 요약 추출"""
+        data = self._extract_json(response)
+        if data:
+            return data.get("summary", "")
         return ""
 
 
@@ -243,7 +287,7 @@ class GeminiReviewer:
         
         if self.api_key and GEMINI_AVAILABLE:
             genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
+            self.model = genai.GenerativeModel('gemini-2.5-flash')
     
     @property
     def is_available(self) -> bool:
@@ -270,6 +314,14 @@ class GeminiReviewer:
             )
             
             raw_response = response.text
+
+            # 디버깅: raw response 출력
+            print(f"[DEBUG] Gemini raw response length: {len(raw_response)} chars")
+            if len(raw_response) < 500:
+                print(f"[DEBUG] Full response: {raw_response}")
+            else:
+                print(f"[DEBUG] Response preview: {raw_response[:500]}...")
+
             issues = self._parse_response(raw_response)
             
             return ReviewResult(
@@ -320,25 +372,33 @@ Output Format (JSON):
 
 Be thorough but focus on significant issues. Avoid nitpicks."""
         
-        prompt = f"{system_context}\n\n---\n\nReview this code change:\n\n```diff\n{diff[:50000]}\n```"
-        
+        MAX_DIFF_SIZE = 50000
+        truncated = len(diff) > MAX_DIFF_SIZE
+
+        if truncated:
+            print(f"⚠️  Gemini: Diff truncated ({len(diff)} → {MAX_DIFF_SIZE} chars)")
+            diff_content = diff[:MAX_DIFF_SIZE] + "\n\n[... truncated, showing first 50KB ...]"
+        else:
+            diff_content = diff
+
+        prompt = f"{system_context}\n\n---\n\nReview this code change:\n\n```diff\n{diff_content}\n```"
+
         if context:
             if context.get("pr_title"):
                 prompt += f"\n\nPR Title: {context['pr_title']}"
             if context.get("pr_description"):
                 prompt += f"\nPR Description: {context['pr_description']}"
-        
+
         return prompt
     
     def _parse_response(self, response: str) -> List[ReviewIssue]:
         """응답에서 이슈 파싱"""
         issues = []
-        
-        json_match = re.search(r'\{[\s\S]*\}', response)
-        if json_match:
-            try:
-                data = json.loads(json_match.group())
-                for item in data.get("issues", []):
+        data = self._extract_json(response)
+
+        if data:
+            for item in data.get("issues", []):
+                try:
                     issues.append(ReviewIssue(
                         file_path=item.get("file", "unknown"),
                         line_number=item.get("line"),
@@ -349,20 +409,48 @@ Be thorough but focus on significant issues. Avoid nitpicks."""
                         suggestion=item.get("suggestion"),
                         source="gemini"
                     ))
+                except (ValueError, KeyError) as e:
+                    print(f"⚠️  Skipping invalid issue: {e}")
+
+        return issues
+
+    def _extract_json(self, response: str) -> Optional[dict]:
+        """응답에서 JSON 안전하게 추출"""
+        # 1. JSON 코드 블록 우선 시도
+        json_block = re.search(r'```json\s*(\{[\s\S]*?\})\s*```', response)
+        if json_block:
+            try:
+                return json.loads(json_block.group(1))
             except json.JSONDecodeError:
                 pass
-        
-        return issues
-    
+
+        # 2. 첫 번째 유효한 JSON 객체 찾기 (balanced braces)
+        start = response.find('{')
+        if start == -1:
+            return None
+
+        depth = 0
+        for i in range(start, len(response)):
+            if response[i] == '{':
+                depth += 1
+            elif response[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(response[start:i + 1])
+                    except json.JSONDecodeError:
+                        start = response.find('{', i + 1)
+                        if start == -1:
+                            return None
+                        depth = 0
+                        continue
+        return None
+
     def _extract_summary(self, response: str) -> str:
         """응답에서 요약 추출"""
-        json_match = re.search(r'\{[\s\S]*\}', response)
-        if json_match:
-            try:
-                data = json.loads(json_match.group())
-                return data.get("summary", "")
-            except json.JSONDecodeError:
-                pass
+        data = self._extract_json(response)
+        if data:
+            return data.get("summary", "")
         return ""
 
 
@@ -677,7 +765,7 @@ def main():
     elif args.diff:
         diff = args.diff
     elif args.diff_file:
-        diff = Path(args.diff_file).read_text()
+        diff = Path(args.diff_file).read_text(encoding='utf-8')
     else:
         # stdin에서 읽기
         print("📥 Reading diff from stdin...")
@@ -698,20 +786,42 @@ def main():
         if not reviewer.qwen.is_available:
             print("❌ Qwen API not configured")
             return 1
-        print("🔍 Running Qwen-only review...")
+        print("Running Qwen-only review...")
         result = reviewer.qwen.review(diff, context)
         merged = MergedReview(qwen_result=result, gemini_result=None)
         merged.merged_issues = result.issues if result.success else []
-        merged.summary = result.summary if result.success else result.error
+        merged.summary = result.summary if result.success else (result.error or "Review failed")
+        # stats 초기화
+        merged.stats = {
+            "total_issues": len(merged.merged_issues),
+            "consensus_issues": 0,
+            "qwen_only": len(merged.merged_issues),
+            "gemini_only": 0,
+            "critical": len([i for i in merged.merged_issues if i.severity == Severity.CRITICAL]),
+            "high": len([i for i in merged.merged_issues if i.severity == Severity.HIGH]),
+            "medium": len([i for i in merged.merged_issues if i.severity == Severity.MEDIUM]),
+            "low": len([i for i in merged.merged_issues if i.severity == Severity.LOW]),
+        }
     elif args.gemini_only:
         if not reviewer.gemini.is_available:
             print("❌ Gemini API not configured")
             return 1
-        print("🔍 Running Gemini-only review...")
+        print("Running Gemini-only review...")
         result = reviewer.gemini.review(diff, context)
         merged = MergedReview(qwen_result=None, gemini_result=result)
         merged.merged_issues = result.issues if result.success else []
-        merged.summary = result.summary if result.success else result.error
+        merged.summary = result.summary if result.success else (result.error or "Review failed")
+        # stats 초기화
+        merged.stats = {
+            "total_issues": len(merged.merged_issues),
+            "consensus_issues": 0,
+            "qwen_only": 0,
+            "gemini_only": len(merged.merged_issues),
+            "critical": len([i for i in merged.merged_issues if i.severity == Severity.CRITICAL]),
+            "high": len([i for i in merged.merged_issues if i.severity == Severity.HIGH]),
+            "medium": len([i for i in merged.merged_issues if i.severity == Severity.MEDIUM]),
+            "low": len([i for i in merged.merged_issues if i.severity == Severity.LOW]),
+        }
     else:
         # 하이브리드 모드
         available = []
