@@ -11,6 +11,8 @@ from .views import (
     BatchSummarizeView,
     SummarizedNewsListView,
     SummarizedNewsDetailView,
+    DBNewsListView,
+    DBNewsDetailView,
 )
 
 urlpatterns = [
@@ -23,4 +25,7 @@ urlpatterns = [
     path('news/batch-summarize', BatchSummarizeView.as_view(), name='batch-summarize'),
     path('news/summarized', SummarizedNewsListView.as_view(), name='summarized-news-list'),
     path('news/summarized/<str:filename>', SummarizedNewsDetailView.as_view(), name='summarized-news-detail'),
+    # PostgreSQL DB 뉴스 조회
+    path('news/db', DBNewsListView.as_view(), name='db-news-list'),
+    path('news/db/<str:news_id>', DBNewsDetailView.as_view(), name='db-news-detail'),
 ]

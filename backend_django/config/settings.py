@@ -131,14 +131,30 @@ WSGI_APPLICATION = 'config.wsgi.application'
 #######################
 # 데이터베이스 설정
 #######################
-# 현재: SQLite (개발용, 파일 기반)
-# 프로덕션: PostgreSQL 또는 MongoDB 권장
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',  # SQLite 엔진
-        'NAME': BASE_DIR / 'db.sqlite3',         # DB 파일 경로
+# 환경 변수로 PostgreSQL 사용 여부 결정
+# USE_POSTGRES=true 설정 시 PostgreSQL 사용
+USE_POSTGRES = os.getenv('USE_POSTGRES', 'false').lower() == 'true'
+
+if USE_POSTGRES:
+    # PostgreSQL 설정 (프로덕션용)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'fanpulse'),
+            'USER': os.getenv('POSTGRES_USER', 'postgres'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+            'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    # SQLite 설정 (개발용)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 #######################

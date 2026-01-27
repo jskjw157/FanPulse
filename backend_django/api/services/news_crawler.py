@@ -4,7 +4,7 @@
 #######################
 # 네이버 검색 API를 사용하여 뉴스를 검색합니다.
 # JSON 파일로 저장 기능 포함 (비동기 지원)
-# MongoDB 저장 기능 준비 (주석 처리)
+# PostgreSQL 저장 기능 준비 (주석 처리)
 #######################
 """
 import os
@@ -29,26 +29,194 @@ SUMMARIZED_DATA_DIR = Path(__file__).parent.parent.parent / "summarized_data"
 _executor = ThreadPoolExecutor(max_workers=3)
 
 #######################
-# MongoDB 설정 (주석 처리)
+# Django ORM을 통한 DB 저장
 #######################
-# MongoDB를 사용하려면 아래 주석을 해제하고 pymongo를 설치하세요
-# pip install pymongo
-#
-# from pymongo import MongoClient
-#
-# MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-# MONGO_DB = os.getenv("MONGO_DB", "fanpulse")
-# MONGO_COLLECTION = "news_articles"
-#
-# def get_mongo_client():
-#     """MongoDB 클라이언트 반환"""
-#     return MongoClient(MONGO_URI)
-#
-# def get_mongo_collection():
-#     """MongoDB 컬렉션 반환"""
-#     client = get_mongo_client()
-#     db = client[MONGO_DB]
-#     return db[MONGO_COLLECTION]
+def save_news_to_db(items: list, source: str = 'naver') -> dict:
+    """
+    뉴스 데이터를 PostgreSQL DB에 저장 (Django ORM 사용)
+
+    Args:
+        items: 뉴스 아이템 리스트
+        source: 뉴스 출처 (기본값: 'naver')
+
+    Returns:
+        dict: {'success': bool, 'count': int, 'error': str}
+    """
+    try:
+        from api.models import CrawledNews
+        from dateutil import parser as date_parser
+
+        saved_count = 0
+        for item in items:
+            # 발행일 파싱
+            published_at = None
+            if item.get('pubDate'):
+                try:
+                    published_at = date_parser.parse(item['pubDate'])
+                except:
+                    pass
+
+            # 중복 체크 (URL 기준)
+            url = item.get('originallink') or item.get('link', '')
+            if CrawledNews.objects.filter(url=url).exists():
+                logger.info(f"중복 뉴스 스킵: {url[:50]}...")
+                continue
+
+            # DB에 저장
+            # origin_news: 원문 링크에서 추출한 뉴스 원본 데이터
+            origin_news = item.get('origainal_news') or item.get('original_news') or ''
+            CrawledNews.objects.create(
+                title=item.get('title', ''),
+                content=item.get('description', ''),
+                origin_news=origin_news,
+                url=url,
+                source=source,
+                published_at=published_at
+            )
+            saved_count += 1
+
+        logger.info(f"DB 저장 완료: {saved_count}개")
+        return {
+            'success': True,
+            'count': saved_count,
+            'error': None
+        }
+    except Exception as e:
+        logger.exception("DB 저장 오류")
+        return {
+            'success': False,
+            'count': 0,
+            'error': str(e)
+        }
+
+
+def get_news_from_db(limit: int = 100, offset: int = 0, source: str = None) -> dict:
+    """
+    DB에서 뉴스 목록 조회
+
+    Args:
+        limit: 조회 개수
+        offset: 시작 위치
+        source: 뉴스 출처 필터 (선택)
+
+    Returns:
+        dict: {'success': bool, 'items': list, 'total': int}
+    """
+    try:
+        from api.models import CrawledNews
+
+        queryset = CrawledNews.objects.all().order_by('-created_at')
+        if source:
+            queryset = queryset.filter(source=source)
+
+        total = queryset.count()
+        items = list(queryset[offset:offset + limit].values(
+            'id', 'title', 'content', 'origin_news', 'url', 'source', 'published_at', 'created_at'
+        ))
+
+        # UUID와 datetime을 문자열로 변환
+        for item in items:
+            item['id'] = str(item['id'])
+            if item['published_at']:
+                item['published_at'] = item['published_at'].isoformat()
+            if item['created_at']:
+                item['created_at'] = item['created_at'].isoformat()
+
+        return {
+            'success': True,
+            'items': items,
+            'total': total,
+            'error': None
+        }
+    except Exception as e:
+        logger.exception("DB 조회 오류")
+        return {
+            'success': False,
+            'items': [],
+            'total': 0,
+            'error': str(e)
+        }
+
+
+def get_news_detail_from_db(news_id: str) -> dict:
+    """
+    DB에서 뉴스 상세 조회
+
+    Args:
+        news_id: 뉴스 UUID
+
+    Returns:
+        dict: {'success': bool, 'item': dict}
+    """
+    try:
+        from api.models import CrawledNews
+
+        news = CrawledNews.objects.get(id=news_id)
+        item = {
+            'id': str(news.id),
+            'title': news.title,
+            'content': news.content,
+            'origin_news': news.origin_news,
+            'url': news.url,
+            'source': news.source,
+            'published_at': news.published_at.isoformat() if news.published_at else None,
+            'created_at': news.created_at.isoformat() if news.created_at else None,
+        }
+
+        return {
+            'success': True,
+            'item': item,
+            'error': None
+        }
+    except CrawledNews.DoesNotExist:
+        return {
+            'success': False,
+            'item': None,
+            'error': '뉴스를 찾을 수 없습니다.'
+        }
+    except Exception as e:
+        logger.exception("DB 상세 조회 오류")
+        return {
+            'success': False,
+            'item': None,
+            'error': str(e)
+        }
+
+
+def delete_news_from_db(news_id: str) -> dict:
+    """
+    DB에서 뉴스 삭제
+
+    Args:
+        news_id: 뉴스 UUID
+
+    Returns:
+        dict: {'success': bool, 'message': str}
+    """
+    try:
+        from api.models import CrawledNews
+
+        news = CrawledNews.objects.get(id=news_id)
+        news.delete()
+
+        return {
+            'success': True,
+            'message': '삭제 완료',
+            'error': None
+        }
+    except CrawledNews.DoesNotExist:
+        return {
+            'success': False,
+            'message': None,
+            'error': '뉴스를 찾을 수 없습니다.'
+        }
+    except Exception as e:
+        logger.exception("DB 삭제 오류")
+        return {
+            'success': False,
+            'message': None,
+            'error': str(e)
+        }
 #######################
 
 
@@ -174,7 +342,7 @@ class NaverNewsCrawler:
         return save_items
 
     def _save_to_json_sync(self, save_items: list, query: str) -> dict:
-        """JSON 파일로 동기 저장 (내부 함수)"""
+        """JSON 파일로 동기 저장 + DB 저장 (내부 함수)"""
         try:
             NEWS_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -186,12 +354,23 @@ class NaverNewsCrawler:
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(save_items, f, ensure_ascii=False, indent=2)
 
-            logger.info(f"뉴스 데이터 저장 완료: {file_path}")
+            logger.info(f"뉴스 데이터 JSON 저장 완료: {file_path}")
+
+            # DB에도 저장 (USE_POSTGRES 환경 변수가 true일 때)
+            db_result = {'success': False, 'count': 0}
+            if os.getenv('USE_POSTGRES', 'false').lower() == 'true':
+                db_result = save_news_to_db(save_items, source='naver')
+                if db_result['success']:
+                    logger.info(f"뉴스 데이터 DB 저장 완료: {db_result['count']}개")
+                else:
+                    logger.warning(f"뉴스 데이터 DB 저장 실패: {db_result.get('error')}")
 
             return {
                 'success': True,
                 'file_path': str(file_path),
                 'count': len(save_items),
+                'db_saved': db_result['success'],
+                'db_count': db_result.get('count', 0),
                 'error': None
             }
         except Exception as e:
@@ -200,35 +379,43 @@ class NaverNewsCrawler:
                 'success': False,
                 'file_path': None,
                 'count': 0,
+                'db_saved': False,
+                'db_count': 0,
                 'error': str(e)
             }
 
     #######################
-    # MongoDB 저장 (주석 처리)
+    # PostgreSQL 저장 (주석 처리)
     #######################
-    # def _save_to_mongo_sync(self, save_items: list, query: str) -> dict:
-    #     """MongoDB로 동기 저장 (내부 함수)"""
+    # def _save_to_postgres_sync(self, save_items: list, query: str) -> dict:
+    #     """PostgreSQL로 동기 저장 (내부 함수)"""
     #     try:
-    #         collection = get_mongo_collection()
+    #         conn = get_postgres_connection()
+    #         cursor = conn.cursor()
     #
-    #         # 각 아이템에 메타데이터 추가
+    #         inserted_ids = []
     #         for item in save_items:
-    #             item['_query'] = query
-    #             item['_created_at'] = datetime.now()
+    #             cursor.execute("""
+    #                 INSERT INTO news_articles (query, title, link, pub_date, content, created_at)
+    #                 VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+    #             """, (query, item.get('title'), item.get('link'), item.get('pubDate'),
+    #                   item.get('original_news'), datetime.now()))
+    #             inserted_ids.append(cursor.fetchone()['id'])
     #
-    #         # 일괄 삽입
-    #         result = collection.insert_many(save_items)
+    #         conn.commit()
+    #         cursor.close()
+    #         conn.close()
     #
-    #         logger.info(f"MongoDB 저장 완료: {len(result.inserted_ids)}개")
+    #         logger.info(f"PostgreSQL 저장 완료: {len(inserted_ids)}개")
     #
     #         return {
     #             'success': True,
-    #             'inserted_ids': [str(id) for id in result.inserted_ids],
-    #             'count': len(result.inserted_ids),
+    #             'inserted_ids': inserted_ids,
+    #             'count': len(inserted_ids),
     #             'error': None
     #         }
     #     except Exception as e:
-    #         logger.exception("MongoDB 저장 오류")
+    #         logger.exception("PostgreSQL 저장 오류")
     #         return {
     #             'success': False,
     #             'inserted_ids': [],
@@ -265,22 +452,22 @@ class NaverNewsCrawler:
         }
 
     #######################
-    # MongoDB 비동기 저장 (주석 처리)
+    # PostgreSQL 비동기 저장 (주석 처리)
     #######################
-    # def save_to_mongo_async(self, items: list, query: str, fetch_content: bool = True) -> dict:
+    # def save_to_postgres_async(self, items: list, query: str, fetch_content: bool = True) -> dict:
     #     """
-    #     검색 결과를 MongoDB로 비동기 저장
+    #     검색 결과를 PostgreSQL로 비동기 저장
     #     """
     #     def _async_save():
     #         save_items = self._prepare_save_items(items, query, fetch_content)
-    #         result = self._save_to_mongo_sync(save_items, query)
-    #         logger.info(f"MongoDB 비동기 저장 완료: {result}")
+    #         result = self._save_to_postgres_sync(save_items, query)
+    #         logger.info(f"PostgreSQL 비동기 저장 완료: {result}")
     #
     #     _executor.submit(_async_save)
     #
     #     return {
     #         'success': True,
-    #         'message': f'{len(items)}개 뉴스가 MongoDB에 저장 중입니다.',
+    #         'message': f'{len(items)}개 뉴스가 PostgreSQL에 저장 중입니다.',
     #         'async': True,
     #         'count': len(items)
     #     }
@@ -330,15 +517,15 @@ class NaverNewsCrawler:
             result['saved_count'] = save_result.get('count', 0)
 
         #######################
-        # MongoDB 저장 (주석 처리)
+        # PostgreSQL 저장 (주석 처리)
         #######################
-        # if use_mongo:
+        # if use_postgres:
         #     if async_save:
-        #         save_result = self.save_to_mongo_async(result['items'], query, fetch_content)
+        #         save_result = self.save_to_postgres_async(result['items'], query, fetch_content)
         #     else:
         #         save_items = self._prepare_save_items(result['items'], query, fetch_content)
-        #         save_result = self._save_to_mongo_sync(save_items, query)
-        #     result['saved_to_mongo'] = save_result['success']
+        #         save_result = self._save_to_postgres_sync(save_items, query)
+        #     result['saved_to_postgres'] = save_result['success']
         #######################
 
         return result
@@ -412,30 +599,34 @@ class SavedNewsReader:
             return {'success': False, 'error': str(e)}
 
     #######################
-    # MongoDB 조회 (주석 처리)
+    # PostgreSQL 조회 (주석 처리)
     #######################
     # @staticmethod
-    # def list_from_mongo(query: str = None, limit: int = 100, skip: int = 0) -> dict:
-    #     """MongoDB에서 저장된 뉴스 목록 조회"""
+    # def list_from_postgres(query: str = None, limit: int = 100, offset: int = 0) -> dict:
+    #     """PostgreSQL에서 저장된 뉴스 목록 조회"""
     #     try:
-    #         collection = get_mongo_collection()
+    #         conn = get_postgres_connection()
+    #         cursor = conn.cursor()
     #
     #         # 필터 조건
-    #         filter_query = {}
     #         if query:
-    #             filter_query['_query'] = {'$regex': query, '$options': 'i'}
+    #             cursor.execute("""
+    #                 SELECT * FROM news_articles WHERE query ILIKE %s
+    #                 ORDER BY created_at DESC LIMIT %s OFFSET %s
+    #             """, (f'%{query}%', limit, offset))
+    #         else:
+    #             cursor.execute("""
+    #                 SELECT * FROM news_articles ORDER BY created_at DESC LIMIT %s OFFSET %s
+    #             """, (limit, offset))
     #
-    #         # 조회
-    #         cursor = collection.find(filter_query).sort('_created_at', -1).skip(skip).limit(limit)
-    #         items = []
-    #         for doc in cursor:
-    #             doc['_id'] = str(doc['_id'])  # ObjectId를 문자열로 변환
-    #             if '_created_at' in doc:
-    #                 doc['_created_at'] = doc['_created_at'].isoformat()
-    #             items.append(doc)
+    #         items = cursor.fetchall()
     #
     #         # 전체 개수
-    #         total = collection.count_documents(filter_query)
+    #         cursor.execute("SELECT COUNT(*) as count FROM news_articles")
+    #         total = cursor.fetchone()['count']
+    #
+    #         cursor.close()
+    #         conn.close()
     #
     #         return {
     #             'success': True,
@@ -445,43 +636,50 @@ class SavedNewsReader:
     #             'error': None
     #         }
     #     except Exception as e:
-    #         logger.exception("MongoDB 조회 오류")
+    #         logger.exception("PostgreSQL 조회 오류")
     #         return {'success': False, 'total': 0, 'count': 0, 'items': [], 'error': str(e)}
     #
     # @staticmethod
-    # def get_from_mongo(doc_id: str) -> dict:
-    #     """MongoDB에서 특정 문서 조회"""
+    # def get_from_postgres(record_id: str) -> dict:
+    #     """PostgreSQL에서 특정 레코드 조회"""
     #     try:
-    #         from bson import ObjectId
-    #         collection = get_mongo_collection()
+    #         conn = get_postgres_connection()
+    #         cursor = conn.cursor()
     #
-    #         doc = collection.find_one({'_id': ObjectId(doc_id)})
-    #         if not doc:
-    #             return {'success': False, 'error': '문서를 찾을 수 없습니다.', 'item': None}
+    #         cursor.execute("SELECT * FROM news_articles WHERE id = %s", (record_id,))
+    #         item = cursor.fetchone()
     #
-    #         doc['_id'] = str(doc['_id'])
-    #         if '_created_at' in doc:
-    #             doc['_created_at'] = doc['_created_at'].isoformat()
+    #         cursor.close()
+    #         conn.close()
     #
-    #         return {'success': True, 'item': doc, 'error': None}
+    #         if not item:
+    #             return {'success': False, 'error': '레코드를 찾을 수 없습니다.', 'item': None}
+    #
+    #         return {'success': True, 'item': dict(item), 'error': None}
     #     except Exception as e:
-    #         logger.exception("MongoDB 문서 조회 오류")
+    #         logger.exception("PostgreSQL 레코드 조회 오류")
     #         return {'success': False, 'error': str(e), 'item': None}
     #
     # @staticmethod
-    # def delete_from_mongo(doc_id: str) -> dict:
-    #     """MongoDB에서 문서 삭제"""
+    # def delete_from_postgres(record_id: str) -> dict:
+    #     """PostgreSQL에서 레코드 삭제"""
     #     try:
-    #         from bson import ObjectId
-    #         collection = get_mongo_collection()
+    #         conn = get_postgres_connection()
+    #         cursor = conn.cursor()
     #
-    #         result = collection.delete_one({'_id': ObjectId(doc_id)})
-    #         if result.deleted_count > 0:
+    #         cursor.execute("DELETE FROM news_articles WHERE id = %s", (record_id,))
+    #         deleted = cursor.rowcount
+    #         conn.commit()
+    #
+    #         cursor.close()
+    #         conn.close()
+    #
+    #         if deleted > 0:
     #             return {'success': True, 'message': '삭제 완료'}
     #         else:
-    #             return {'success': False, 'error': '문서를 찾을 수 없습니다.'}
+    #             return {'success': False, 'error': '레코드를 찾을 수 없습니다.'}
     #     except Exception as e:
-    #         logger.exception("MongoDB 삭제 오류")
+    #         logger.exception("PostgreSQL 삭제 오류")
     #         return {'success': False, 'error': str(e)}
     #######################
 
@@ -610,53 +808,58 @@ class SummarizedNewsManager:
             return {'success': False, 'error': str(e)}
 
     #######################
-    # MongoDB 저장 (주석 처리)
+    # PostgreSQL 저장 (주석 처리)
     #######################
     # @staticmethod
-    # def save_to_mongo(items: list, method: str = 'rule') -> dict:
-    #     """요약 결과를 MongoDB에 저장"""
+    # def save_to_postgres(items: list, method: str = 'rule') -> dict:
+    #     """요약 결과를 PostgreSQL에 저장"""
     #     try:
-    #         collection = get_mongo_collection()
+    #         conn = get_postgres_connection()
+    #         cursor = conn.cursor()
     #
-    #         doc = {
-    #             'type': 'summarized',
-    #             'method': method,
-    #             'created_at': datetime.now(),
-    #             'count': len(items),
-    #             'items': items
-    #         }
+    #         cursor.execute("""
+    #             INSERT INTO summarized_news (method, created_at, count, items)
+    #             VALUES (%s, %s, %s, %s) RETURNING id
+    #         """, (method, datetime.now(), len(items), json.dumps(items, ensure_ascii=False)))
     #
-    #         result = collection.insert_one(doc)
-    #         logger.info(f"MongoDB 요약 저장 완료: {result.inserted_id}")
+    #         record_id = cursor.fetchone()['id']
+    #         conn.commit()
+    #
+    #         cursor.close()
+    #         conn.close()
+    #
+    #         logger.info(f"PostgreSQL 요약 저장 완료: {record_id}")
     #
     #         return {
     #             'success': True,
-    #             'doc_id': str(result.inserted_id),
+    #             'record_id': record_id,
     #             'count': len(items),
     #             'error': None
     #         }
     #     except Exception as e:
-    #         logger.exception("MongoDB 요약 저장 오류")
-    #         return {'success': False, 'doc_id': None, 'count': 0, 'error': str(e)}
+    #         logger.exception("PostgreSQL 요약 저장 오류")
+    #         return {'success': False, 'record_id': None, 'count': 0, 'error': str(e)}
     #
     # @staticmethod
-    # def list_from_mongo(limit: int = 50, skip: int = 0) -> dict:
-    #     """MongoDB에서 요약 목록 조회"""
+    # def list_from_postgres(limit: int = 50, offset: int = 0) -> dict:
+    #     """PostgreSQL에서 요약 목록 조회"""
     #     try:
-    #         collection = get_mongo_collection()
+    #         conn = get_postgres_connection()
+    #         cursor = conn.cursor()
     #
-    #         cursor = collection.find({'type': 'summarized'}).sort('created_at', -1).skip(skip).limit(limit)
-    #         items = []
-    #         for doc in cursor:
-    #             doc['_id'] = str(doc['_id'])
-    #             if 'created_at' in doc:
-    #                 doc['created_at'] = doc['created_at'].isoformat()
-    #             items.append(doc)
+    #         cursor.execute("""
+    #             SELECT * FROM summarized_news ORDER BY created_at DESC LIMIT %s OFFSET %s
+    #         """, (limit, offset))
+    #         items = cursor.fetchall()
     #
-    #         total = collection.count_documents({'type': 'summarized'})
+    #         cursor.execute("SELECT COUNT(*) as count FROM summarized_news")
+    #         total = cursor.fetchone()['count']
+    #
+    #         cursor.close()
+    #         conn.close()
     #
     #         return {'success': True, 'total': total, 'count': len(items), 'items': items, 'error': None}
     #     except Exception as e:
-    #         logger.exception("MongoDB 요약 목록 조회 오류")
+    #         logger.exception("PostgreSQL 요약 목록 조회 오류")
     #         return {'success': False, 'total': 0, 'count': 0, 'items': [], 'error': str(e)}
     #######################
