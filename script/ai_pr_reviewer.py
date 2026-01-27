@@ -1621,9 +1621,9 @@ def main():
     parser.add_argument("--chunk-threshold", type=int, default=40000,
                        help="Diff size threshold for chunking (default: 40000 chars)")
     parser.add_argument("--no-meta-review", action="store_true", help="Disable meta-review (false positive removal)")
-    parser.add_argument("--no-compress", action="store_true", help="Disable diff compression")
-    parser.add_argument("--context-lines", type=int, default=1,
-                       help="Number of context lines to keep when compressing (default: 1)")
+    parser.add_argument("--compress", action="store_true", help="Enable diff compression (reduces tokens but may affect accuracy)")
+    parser.add_argument("--context-lines", type=int, default=3,
+                       help="Number of context lines to keep when compressing (default: 3)")
 
     args = parser.parse_args()
     
@@ -1651,15 +1651,15 @@ def main():
     print(f"📝 Diff size: {len(diff):,} chars")
 
     # 리뷰어 초기화 (청킹 + 압축 지원)
-    enable_compression = not args.no_compress
+    enable_compression = args.compress  # 기본 OFF (정확도 우선)
     reviewer = ChunkedReviewer(
         enable_compression=enable_compression,
         context_lines=args.context_lines
     )
 
     # 압축 설정 출력
-    if args.no_compress:
-        print("⚠️ 압축 비활성화됨 (--no-compress)")
+    if args.compress:
+        print("📦 압축 활성화됨 (--compress) - 토큰 절감 모드")
 
     # 청킹 설정 적용
     if args.no_chunk:

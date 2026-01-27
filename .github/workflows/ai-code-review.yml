@@ -86,11 +86,10 @@ jobs:
           DIFF_SIZE=$(wc -c < pr_diff.txt)
           echo "diff_size=$DIFF_SIZE" >> $GITHUB_OUTPUT
 
-          # 너무 크면 스킵
-          if [ $DIFF_SIZE -gt 200000 ]; then
-            echo "::warning::Diff too large for AI review ($DIFF_SIZE bytes)"
-            echo "large_diff=skip" >> $GITHUB_OUTPUT
-            gh pr comment ${{ github.event.pull_request.number }} --body "AI Code Review: PR diff가 너무 큽니다 (200KB 초과). 작은 PR로 나눠주세요."
+          # 크기별 처리 (청킹으로 대용량도 처리 가능)
+          if [ $DIFF_SIZE -gt 500000 ]; then
+            echo "::warning::Very large diff detected: $DIFF_SIZE bytes (will use chunking)"
+            echo "large_diff=chunked" >> $GITHUB_OUTPUT
           elif [ $DIFF_SIZE -gt 100000 ]; then
             echo "::warning::Large diff detected: $DIFF_SIZE bytes"
             echo "large_diff=true" >> $GITHUB_OUTPUT
@@ -100,7 +99,6 @@ jobs:
 
       - name: Run AI Code Review
         id: review
-        if: steps.diff.outputs.large_diff != 'skip'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
