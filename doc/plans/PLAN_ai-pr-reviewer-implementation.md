@@ -169,6 +169,63 @@ python script/ai_pr_reviewer.py \
 
 ---
 
+## 성능 개선 및 설정 변경 (2026-01-27)
+
+### 정확도 우선 설정
+
+| 항목 | 변경 전 | 변경 후 | 이유 |
+|------|---------|---------|------|
+| Diff 압축 | 기본 ON | **기본 OFF** | Context 축소 시 AI 맥락 이해 저하 |
+| Context 라인 | 1줄 | **3줄** | 코드 맥락 보존으로 정확도 향상 |
+| 대용량 diff | 200KB 스킵 | **500KB 청킹** | 모든 PR 리뷰 가능 |
+
+```bash
+# 토큰 절감 모드 (정확도 하락 가능)
+--compress --context-lines 1
+
+# 정확도 우선 모드 (기본)
+# 옵션 없이 실행
+```
+
+### AI 리뷰어 선택
+
+| 모델 | 상태 | 이유 |
+|------|------|------|
+| **Gemini 2.5 Flash** | ✅ 사용 | 안정적, 적절한 정확도 |
+| GLM-4-Flash | ❌ 비활성화 | 오탐 많음 (Shebang 보안 위협 등 부적절한 이슈) |
+
+```yaml
+# 워크플로우 설정
+python script/ai_pr_reviewer.py --gemini-only
+```
+
+### Merge 차단 정책
+
+| 이슈 심각도 | 동작 | 설명 |
+|-------------|------|------|
+| 🔴 **Critical** | **Merge 차단** | 워크플로우 실패 (exit 1) |
+| 🟠 High | 경고 표시 | Merge 가능 |
+| 🟡 Medium | 표시만 | Merge 가능 |
+| 🟢 Low | 표시만 | Merge 가능 |
+
+**Branch Protection 설정 필요**:
+- Settings → Branches → Add rule
+- "Require status checks" 활성화
+- "AI Code Review" 체크
+
+### Rate Limiting 업데이트
+
+| 티어 | 제한 | 비고 |
+|------|------|------|
+| Gemini 무료 | **20 req/day** (모델당) | 일일 할당량 |
+| Gemini 유료 | 1000+ req/min | 권장 |
+
+**Rate Limit 초과 시**:
+- Meta-review 스킵 → 원본 이슈 반환
+- 다음 날 자동 리셋
+
+---
+
 ## 향후 개선사항
 
 1. **컨텍스트 확장**: PR description, 관련 이슈 내용 포함
