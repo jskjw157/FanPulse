@@ -101,14 +101,14 @@ jobs:
         id: review
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GLM_API_KEY: ${{ secrets.GLM_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # GLM + Gemini 하이브리드 리뷰 실행
+          # Gemini 단독 리뷰 실행
           python script/ai_pr_reviewer.py \
             --diff-file pr_diff.txt \
             --output review_result.md \
-            --json review_result.json
+            --json review_result.json \
+            --gemini-only
 
           # 결과 확인 (JSON 검증 포함)
           if [ -f review_result.json ]; then
@@ -180,8 +180,7 @@ jobs:
 
           if [ "$CRITICAL" -gt 0 ]; then
             echo "::error::Found $CRITICAL critical issue(s). Please review before merging."
-            # 선택: critical 이슈가 있으면 실패로 표시
-            # exit 1
+            exit 1  # Critical 이슈 → merge 차단
           elif [ "$HIGH" -gt 0 ]; then
             echo "::warning::Found $HIGH high priority issue(s). Consider addressing them."
           else
