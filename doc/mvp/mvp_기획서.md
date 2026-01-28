@@ -21,7 +21,7 @@
 - **Home**: 메인(H001)
   - Live Now/Upcoming, 최신 뉴스 섹션(요약 카드) 중심
 - **Live**: 라이브 & 이벤트(H006), 라이브 상세(H019)
-  - 외부 플랫폼(YouTube Live) **임베드 시청**
+  - 외부 플랫폼(YouTube Live) **임베드 시청** (MVP는 YouTube만)
   - 채팅/하트/투표/리워드 등은 제외
   - **임베드 방식**: Web은 iframe, 앱은 WebView 사용 (상세: `mvp_화면_정의서.md` H019 참조)
 - **News**: 뉴스 목록/상세(H001/H011)

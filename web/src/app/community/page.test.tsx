@@ -21,9 +21,9 @@ describe('CommunityPage', () => {
     expect(screen.getByText('인기')).toBeInTheDocument()
   })
 
-  it('renders post skeleton cards', () => {
+  it('renders posts', () => {
     render(<CommunityPage />)
-    const cards = screen.getAllByTestId('skeleton-card')
-    expect(cards.length).toBeGreaterThanOrEqual(3)
+    expect(screen.getByText('ARMY_Forever')).toBeInTheDocument()
+    expect(screen.getByText('Blink_Girl')).toBeInTheDocument()
   })
 })

@@ -14,9 +14,9 @@ describe('ChartPage', () => {
     expect(screen.getByText('Real-time Chart')).toBeInTheDocument()
   })
 
-  it('renders ranking items (skeleton horizontal cards)', () => {
+  it('renders ranking items', () => {
     render(<ChartPage />)
-    const cards = screen.getAllByTestId('skeleton-card')
-    expect(cards.length).toBeGreaterThanOrEqual(5)
+    expect(screen.getByText('Super Shy')).toBeInTheDocument()
+    expect(screen.getByText('Jungkook (BTS)')).toBeInTheDocument()
   })
 })

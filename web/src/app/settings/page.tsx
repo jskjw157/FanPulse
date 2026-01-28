@@ -2,15 +2,18 @@
 
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useState } from "react";
 
 export default function SettingsPage() {
+  const { logout } = useAuth();
   const [pushEnabled, setPushEnabled] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
 
   return (
-    <>
+    <ProtectedRoute>
       <PageHeader title="설정" />
       <PageWrapper>
         <div className="max-w-3xl mx-auto px-4 py-4">
@@ -172,7 +175,10 @@ export default function SettingsPage() {
 
           {/* Logout Button */}
           <div className="py-4">
-            <button className="w-full bg-white border border-gray-200 text-gray-700 py-3.5 rounded-2xl font-medium hover:bg-gray-50 transition-colors shadow-sm">
+            <button
+              onClick={logout}
+              className="w-full bg-white border border-gray-200 text-gray-700 py-3.5 rounded-2xl font-medium hover:bg-gray-50 transition-colors shadow-sm"
+            >
               로그아웃
             </button>
           </div>
@@ -185,6 +191,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </PageWrapper>
-    </>
+    </ProtectedRoute>
   );
 }

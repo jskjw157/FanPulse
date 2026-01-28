@@ -14,10 +14,9 @@ describe('LivePage', () => {
     expect(screen.getByText('Live Now')).toBeInTheDocument()
   })
 
-  it('renders live stream skeleton cards', () => {
+  it('renders live stream cards', () => {
     render(<LivePage />)
-    // 최소 2개 이상의 스켈레톤 카드가 렌더링되는지 확인 (더미 데이터 기준)
-    const cards = screen.getAllByTestId('skeleton-card')
-    expect(cards.length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByText('NewJeans 컴백 쇼케이스')).toBeInTheDocument()
+    expect(screen.getByText('BTS Fan Meeting Special')).toBeInTheDocument()
   })
 })
