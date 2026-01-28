@@ -36,7 +36,7 @@ load_dotenv(BASE_DIR / '.env')
 #######################
 # SECRET_KEY: Django에서 암호화에 사용하는 키
 # 주의: 프로덕션에서는 환경변수로 관리해야 함!
-SECRET_KEY = 'django-insecure-local-dev-key-change-in-production'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-local-dev-key-change-in-production')
 
 # DEBUG: 개발 모드 여부
 # True: 상세한 에러 페이지 표시 (개발용)
@@ -72,7 +72,11 @@ INSTALLED_APPS = [
     #######################
     # 로컬 앱 (직접 개발한 앱)
     #######################
-    'api',  # 요약 API 앱
+    'api',      # 기존 앱 (라우터 역할)
+    'common',   # 공통 인프라
+    'news',     # 뉴스 도메인
+    'summary',  # 요약 도메인
+    'legacy',   # 미사용 모델 보관
 ]
 
 
@@ -215,6 +219,13 @@ REST_FRAMEWORK = {
     ],
     # 예외 처리기
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    # Rate Limiting
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '60/min',
+    },
 }
 
 
@@ -276,8 +287,23 @@ LOGGING = {
     'loggers': {
         'api': {
             'handlers': ['console'],
-            'level': 'DEBUG',      # api 앱은 DEBUG 레벨까지 출력
-            'propagate': False,    # 루트 로거로 전파하지 않음
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'news': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'summary': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'common': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
         },
     },
 }
