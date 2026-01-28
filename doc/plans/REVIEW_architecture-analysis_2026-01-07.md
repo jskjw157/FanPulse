@@ -152,8 +152,8 @@ Search         |      |     |     |
 |-----------|--------|------|---------|
 | `/auth/google` | POST | Google OAuth 로그인 | High |
 | `/auth/logout` | POST | 로그아웃 | High |
-| `/live` | GET | 라이브 목록 조회 | High |
-| `/live/{id}` | GET | 라이브 상세 조회 | High |
+| `/api/v1/streaming-events` | GET | 라이브 목록 조회 | High |
+| `/api/v1/streaming-events/{id}` | GET | 라이브 상세 조회 | High |
 | `/news` | GET | 뉴스 목록 조회 | High |
 | `/news/{id}` | GET | 뉴스 상세 조회 | High |
 | `/search` | GET | 통합 검색 | High |
@@ -228,9 +228,9 @@ Search         |      |     |     |
 - [ ] MVP API 명세서 - 7개 엔드포인트 추가
   - `POST /auth/google`
   - `POST /auth/logout`
-  - `GET /live`, `GET /live/{id}`
-  - `GET /news`, `GET /news/{id}`
-  - `GET /search`
+  - `GET /api/v1/streaming-events`, `GET /api/v1/streaming-events/{id}`
+  - `GET /api/v1/news`, `GET /api/v1/news/{id}`
+  - `GET /api/v1/search`
 
 **GitHub 설정**:
 - [ ] `gh auth login` 실행

@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export default function NewsDetailPage() {
+function NewsDetailContent() {
   const searchParams = useSearchParams();
   const newsId = searchParams.get('id') || '1';
 
@@ -161,5 +162,13 @@ YG엔터테인먼트는 "팬들의 뜨거운 성원에 힘입어 아시아 및 �
         </div>
       </PageWrapper>
     </>
+  );
+}
+
+export default function NewsDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewsDetailContent />
+    </Suspense>
   );
 }

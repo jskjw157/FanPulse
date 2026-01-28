@@ -1,0 +1,11 @@
+# Development profile settings
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+logging:
+  level:
+    com.fanpulse: DEBUG
+    org.hibernate.SQL: DEBUG

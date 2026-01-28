@@ -31,7 +31,7 @@ YouTube 채널에서 yt-dlp로 라이브/과거 스트리밍 영상을 주기적
 - [ ] `streaming_events`에 `platform`, `external_id`, `source_url` 컬럼과
       `(platform, external_id)` 유니크 인덱스를 추가한다.
 - [ ] 1시간 주기로 발견 작업이 실행되고 중복 없이 upsert된다.
-- [ ] `GET /live` 응답에서 신규 이벤트가 조회된다.
+- [ ] `GET /api/v1/streaming-events` 응답에서 신규 이벤트가 조회된다.
 
 ### User Impact
 팬들이 라이브/과거 스트리밍 정보를 안정적으로 확인할 수 있으며,
@@ -72,7 +72,7 @@ YouTube 채널에서 yt-dlp로 라이브/과거 스트리밍 영상을 주기적
 |-----------|-----------------|---------|
 | **Unit Tests** | ≥80% | 매핑/파싱/URL 생성 |
 | **Integration Tests** | Critical paths | DB upsert, 스케줄러 실행 |
-| **E2E Tests** | 1 critical flow | `GET /live` 조회 흐름 |
+| **E2E Tests** | 1 critical flow | `GET /api/v1/streaming-events` 조회 흐름 |
 
 ### Test File Organization
 ```
@@ -162,7 +162,7 @@ backend/src/test/kotlin/
 
 #### Quality Gate ✋
 - [ ] 통합 테스트 통과
-- [ ] 기존 `GET /live` 응답 스키마 유지 확인
+- [ ] 기존 `GET /api/v1/streaming-events` 응답 스키마 유지 확인
 
 ---
 

@@ -1,0 +1,10 @@
+[
+  {
+    "name": "BTS",
+    "englishName": "Bangtan Sonyeondan",
+    "agency": "HYBE",
+    "isGroup": true,
+    "active": true,
+    "members": ["RM", "Jin", "Suga", "J-Hope", "Jimin", "V", "Jungkook"]
+  }
+]

@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export default function NoticeDetailPage() {
+function NoticeDetailContent() {
   const searchParams = useSearchParams();
   const noticeId = searchParams.get('id') || '1';
 
@@ -179,5 +180,13 @@ export default function NoticeDetailPage() {
         </div>
       </PageWrapper>
     </>
+  );
+}
+
+export default function NoticeDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <NoticeDetailContent />
+    </Suspense>
   );
 }
