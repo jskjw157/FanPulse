@@ -3,6 +3,8 @@ AI 기반 요약 서비스
 
 HuggingFace Transformers를 사용한 생성형 요약
 - 한국어: Mistral-7B-Instruct-v0.3
+         Qwen2.5-3B-Instruct
+         => GPU 성능에 따라 사용 모델 분류
 - 영어: facebook/bart-large-cnn
 """
 import torch
@@ -14,6 +16,12 @@ logger = logging.getLogger(__name__)
 _pipeline = None
 _models = {}
 
+# GPU vram 확인
+def get_gpu_vram_gb():
+    if not torch.cuda.is_available():
+        return 0
+    props = torch.cuda.get_device_properties(0)
+    return round(props.total_memory / (1024 ** 3), 2)
 
 def _get_pipeline():
     """transformers pipeline 지연 로딩"""
@@ -62,7 +70,12 @@ def _get_llm_model(model_name):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     # max_memory 설정으로 OOM 방지
-    max_memory = {0: "8GB", "cpu": "16GB"} if torch.cuda.is_available() else {"cpu": "16GB"}
+    vram_gb = get_gpu_vram_gb()
+
+    if vram_gb >= 8:
+        max_memory = {0: "7GB", "cpu": "10GB"}
+    else:
+        max_memory = {0: "4GB", "cpu": "10GB"}
 
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
@@ -83,8 +96,23 @@ def _get_model(language='ko'):
         return _models[language]
 
     if language == 'ko':
-        model_name = "mistralai/Mistral-7B-Instruct-v0.3"
-        tokenizer, model = _get_llm_model(model_name)
+        vram_gb = get_gpu_vram_gb()
+        logger.info(f"Detected GPU VRAM: {vram_gb} GB")
+
+        try:
+            if vram_gb >= 8:
+                model_name = "mistralai/Mistral-7B-Instruct-v0.3"
+                logger.info("Trying Mistral-7B")
+            else:
+                raise RuntimeError("Insufficient VRAM for Mistral")
+
+            tokenizer, model = _get_llm_model(model_name)
+
+        except Exception as e:
+            logger.warning(f"Mistral load failed, fallback to Qwen: {e}")
+            model_name = "Qwen/Qwen2.5-3B-Instruct"
+            tokenizer, model = _get_llm_model(model_name)
+
         _models[language] = {
             "type": "llm",
             "tokenizer": tokenizer,
@@ -116,7 +144,8 @@ def build_news_prompt(text: str) -> str:
 - 인물, 날짜, 수치는 원문 그대로
 - 최대 1문장
 - 불필요한 형용사 및 기호 제거
-- 결과물 첫단어는 무조건 "[요약]"로 시작
+- 결과물 첫단어는 무조건 "[[요약]]"로 시작
+- 요약은 반드시 한 문장만 출력하고, 추가 설명을 하지 마라.
 
 기사:
 \"\"\"
@@ -150,11 +179,21 @@ class AISummarizer:
 
                 inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
+                # with torch.no_grad():
+                #     outputs = model.generate(
+                #         **inputs,
+                #         max_new_tokens=max_length,
+                #         do_sample=False,
+                #         repetition_penalty=1.1,
+                #         pad_token_id=tokenizer.eos_token_id
+                #     )
                 with torch.no_grad():
                     outputs = model.generate(
                         **inputs,
                         max_new_tokens=max_length,
                         do_sample=False,
+                        temperature=0.0,
+                        top_p=1.0,
                         repetition_penalty=1.1,
                         pad_token_id=tokenizer.eos_token_id
                     )
