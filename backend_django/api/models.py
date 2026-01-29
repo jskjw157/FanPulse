@@ -441,3 +441,86 @@ class Notice(BaseModel):
 
     class Meta:
         db_table = 'notices'
+
+
+# =============================================
+# 게시글/댓글 모델
+# =============================================
+
+class Post(BaseModel):
+    """게시글 테이블"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
+    artist = models.ForeignKey(Artist, on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    post_type = models.CharField(max_length=20, default='general')  # general, fan_art, review, etc.
+    view_count = models.IntegerField(default=0)
+    like_count = models.IntegerField(default=0)
+    comment_count = models.IntegerField(default=0)
+    is_deleted = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'posts'
+
+
+class Comment(BaseModel):
+    """댓글 테이블"""
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
+    content = models.TextField()
+    like_count = models.IntegerField(default=0)
+    is_deleted = models.BooleanField(default=False)
+    is_filtered = models.BooleanField(default=False)  # 자동 필터링 여부
+    filter_reason = models.CharField(max_length=100, null=True, blank=True)  # 필터링 사유
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'comments'
+
+
+# =============================================
+# 댓글 필터링 모델
+# =============================================
+
+class CommentFilterRule(BaseModel):
+    """댓글 필터링 규칙 테이블"""
+    FILTER_TYPE_CHOICES = [
+        ('keyword', '금칙어'),
+        ('regex', '정규식'),
+        ('spam', '스팸 패턴'),
+        ('url', 'URL 차단'),
+        ('repeat', '반복 문자'),
+    ]
+
+    ACTION_CHOICES = [
+        ('block', '차단'),
+        ('hide', '숨김'),
+        ('review', '검토 대기'),
+    ]
+
+    name = models.CharField(max_length=100)  # 규칙 이름
+    filter_type = models.CharField(max_length=20, choices=FILTER_TYPE_CHOICES)
+    pattern = models.TextField()  # 필터링 패턴 (키워드 또는 정규식)
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES, default='block')
+    is_active = models.BooleanField(default=True)
+    priority = models.IntegerField(default=0)  # 우선순위 (높을수록 먼저 적용)
+    description = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'comment_filter_rules'
+        ordering = ['-priority', 'created_at']
+
+
+class FilteredCommentLog(BaseModel):
+    """필터링된 댓글 로그 테이블"""
+    comment = models.ForeignKey(Comment, on_delete=models.SET_NULL, null=True, blank=True, related_name='filter_logs')
+    filter_rule = models.ForeignKey(CommentFilterRule, on_delete=models.SET_NULL, null=True, blank=True, related_name='filter_logs')
+    original_content = models.TextField()  # 원본 내용
+    matched_pattern = models.CharField(max_length=255)  # 매칭된 패턴
+    action_taken = models.CharField(max_length=20)  # 취해진 조치
+
+    class Meta:
+        db_table = 'filtered_comment_logs'
