@@ -276,3 +276,333 @@ class SummarizeResponseSerializer(serializers.Serializer):
                 "elapsed_ms": 125
             }
         }
+
+
+#######################
+# 댓글 필터링 Serializers
+#######################
+
+class CommentFilterRuleSerializer(serializers.Serializer):
+    """
+    댓글 필터링 규칙 Serializer
+    """
+    id = serializers.UUIDField(read_only=True)
+    name = serializers.CharField(max_length=100, help_text="규칙 이름")
+    filter_type = serializers.ChoiceField(
+        choices=['keyword', 'regex', 'spam', 'url', 'repeat'],
+        help_text="필터 타입: keyword(금칙어), regex(정규식), spam(스팸), url(URL차단), repeat(반복문자)"
+    )
+    pattern = serializers.CharField(help_text="필터링 패턴 (키워드는 쉼표 구분)")
+    action = serializers.ChoiceField(
+        choices=['block', 'hide', 'review'],
+        default='block',
+        help_text="조치: block(차단), hide(숨김), review(검토대기)"
+    )
+    is_active = serializers.BooleanField(default=True, help_text="활성화 여부")
+    priority = serializers.IntegerField(default=0, help_text="우선순위 (높을수록 먼저 적용)")
+    description = serializers.CharField(required=False, allow_blank=True, help_text="규칙 설명")
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "name": "욕설 필터",
+                "filter_type": "keyword",
+                "pattern": "욕설1,욕설2,비속어",
+                "action": "block",
+                "is_active": True,
+                "priority": 10,
+                "description": "일반적인 욕설 및 비속어 차단"
+            }
+        }
+
+
+class CommentFilterTestRequestSerializer(serializers.Serializer):
+    """
+    댓글 필터링 테스트 요청 Serializer
+    """
+    content = serializers.CharField(
+        min_length=1,
+        max_length=2000,
+        help_text="필터링 테스트할 댓글 내용"
+    )
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "content": "이것은 테스트 댓글입니다."
+            }
+        }
+
+
+class CommentFilterTestResponseSerializer(serializers.Serializer):
+    """
+    댓글 필터링 테스트 응답 Serializer
+    """
+    is_filtered = serializers.BooleanField(help_text="필터링 여부")
+    action = serializers.CharField(allow_null=True, help_text="적용된 조치")
+    rule_id = serializers.UUIDField(allow_null=True, help_text="매칭된 규칙 ID")
+    rule_name = serializers.CharField(allow_null=True, help_text="매칭된 규칙 이름")
+    filter_type = serializers.CharField(allow_null=True, help_text="필터 타입")
+    matched_pattern = serializers.CharField(allow_null=True, help_text="매칭된 패턴")
+    reason = serializers.CharField(allow_null=True, help_text="필터링 사유")
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "is_filtered": True,
+                "action": "block",
+                "rule_id": "550e8400-e29b-41d4-a716-446655440000",
+                "rule_name": "욕설 필터",
+                "filter_type": "keyword",
+                "matched_pattern": "욕설1",
+                "reason": "[욕설 필터] keyword 규칙에 의해 필터링됨"
+            }
+        }
+
+
+class CommentFilterBatchRequestSerializer(serializers.Serializer):
+    """
+    댓글 일괄 필터링 요청 Serializer
+    """
+    comments = serializers.ListField(
+        child=serializers.CharField(max_length=2000),
+        min_length=1,
+        max_length=100,
+        help_text="필터링할 댓글 목록 (최대 100개)"
+    )
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "comments": [
+                    "첫 번째 댓글입니다.",
+                    "두 번째 댓글입니다.",
+                    "세 번째 댓글입니다."
+                ]
+            }
+        }
+
+
+class CommentSerializer(serializers.Serializer):
+    """
+    댓글 Serializer
+    """
+    id = serializers.UUIDField(read_only=True)
+    post_id = serializers.UUIDField(help_text="게시글 ID")
+    user_id = serializers.UUIDField(read_only=True)
+    parent_id = serializers.UUIDField(allow_null=True, required=False, help_text="부모 댓글 ID (대댓글인 경우)")
+    content = serializers.CharField(max_length=2000, help_text="댓글 내용")
+    like_count = serializers.IntegerField(read_only=True)
+    is_deleted = serializers.BooleanField(read_only=True)
+    is_filtered = serializers.BooleanField(read_only=True)
+    filter_reason = serializers.CharField(read_only=True, allow_null=True)
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "post_id": "550e8400-e29b-41d4-a716-446655440000",
+                "parent_id": None,
+                "content": "좋은 게시글이네요!"
+            }
+        }
+
+
+class CommentCreateRequestSerializer(serializers.Serializer):
+    """
+    댓글 작성 요청 Serializer
+    """
+    post_id = serializers.UUIDField(help_text="게시글 ID")
+    parent_id = serializers.UUIDField(allow_null=True, required=False, help_text="부모 댓글 ID (대댓글인 경우)")
+    content = serializers.CharField(min_length=1, max_length=2000, help_text="댓글 내용")
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "post_id": "550e8400-e29b-41d4-a716-446655440000",
+                "content": "좋은 게시글이네요!"
+            }
+        }
+
+
+class FilteredCommentLogSerializer(serializers.Serializer):
+    """
+    필터링된 댓글 로그 Serializer
+    """
+    id = serializers.UUIDField(read_only=True)
+    comment_id = serializers.UUIDField(allow_null=True)
+    filter_rule_id = serializers.UUIDField(allow_null=True)
+    original_content = serializers.CharField()
+    matched_pattern = serializers.CharField()
+    action_taken = serializers.CharField()
+    created_at = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "comment_id": "660e8400-e29b-41d4-a716-446655440001",
+                "filter_rule_id": "770e8400-e29b-41d4-a716-446655440002",
+                "original_content": "필터링된 댓글 내용",
+                "matched_pattern": "금칙어",
+                "action_taken": "block"
+            }
+        }
+
+
+#######################
+# AI 모더레이션 Serializers
+#######################
+
+class AIModerationCheckRequestSerializer(serializers.Serializer):
+    """
+    AI 모더레이션 검사 요청 Serializer
+    """
+    text = serializers.CharField(
+        min_length=1,
+        max_length=5000,
+        help_text="검사할 텍스트 내용"
+    )
+    use_cache = serializers.BooleanField(
+        default=True,
+        required=False,
+        help_text="캐시 사용 여부 (기본값: true)"
+    )
+    thresholds = serializers.DictField(
+        child=serializers.FloatField(min_value=0.0, max_value=1.0),
+        required=False,
+        help_text="카테고리별 커스텀 임계값 (0.0 ~ 1.0)"
+    )
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "text": "검사할 댓글 또는 게시글 내용입니다.",
+                "use_cache": True,
+                "thresholds": {
+                    "profanity": 0.7,
+                    "spam": 0.8,
+                    "hate": 0.7
+                }
+            }
+        }
+
+
+class AIModerationCategorySerializer(serializers.Serializer):
+    """
+    AI 모더레이션 카테고리 결과 Serializer
+    """
+    category = serializers.CharField(help_text="카테고리 이름")
+    score = serializers.FloatField(help_text="위험 점수 (0.0 ~ 1.0)")
+    is_flagged = serializers.BooleanField(help_text="플래그 여부")
+    threshold = serializers.FloatField(help_text="적용된 임계값")
+
+
+class AIModerationCheckResponseSerializer(serializers.Serializer):
+    """
+    AI 모더레이션 검사 응답 Serializer
+    """
+    is_flagged = serializers.BooleanField(help_text="부적절한 콘텐츠 감지 여부")
+    action = serializers.ChoiceField(
+        choices=['allow', 'warning', 'review', 'block'],
+        help_text="권장 조치: allow(허용), warning(경고), review(검토), block(차단)"
+    )
+    categories = AIModerationCategorySerializer(many=True, help_text="카테고리별 분석 결과")
+    highest_category = serializers.CharField(
+        allow_null=True,
+        help_text="가장 높은 점수의 카테고리"
+    )
+    highest_score = serializers.FloatField(help_text="가장 높은 위험 점수")
+    confidence = serializers.FloatField(help_text="분석 신뢰도")
+    model_used = serializers.CharField(help_text="사용된 모델")
+    processing_time_ms = serializers.IntegerField(help_text="처리 시간 (밀리초)")
+    cached = serializers.BooleanField(help_text="캐시된 결과 여부")
+    error = serializers.CharField(allow_null=True, help_text="오류 메시지")
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "is_flagged": True,
+                "action": "block",
+                "categories": [
+                    {
+                        "category": "profanity",
+                        "score": 0.95,
+                        "is_flagged": True,
+                        "threshold": 0.7
+                    },
+                    {
+                        "category": "spam",
+                        "score": 0.2,
+                        "is_flagged": False,
+                        "threshold": 0.8
+                    }
+                ],
+                "highest_category": "profanity",
+                "highest_score": 0.95,
+                "confidence": 0.95,
+                "model_used": "ko",
+                "processing_time_ms": 45,
+                "cached": False,
+                "error": None
+            }
+        }
+
+
+class AIModerationBatchRequestSerializer(serializers.Serializer):
+    """
+    AI 모더레이션 일괄 검사 요청 Serializer
+    """
+    texts = serializers.ListField(
+        child=serializers.CharField(max_length=5000),
+        min_length=1,
+        max_length=50,
+        help_text="검사할 텍스트 목록 (최대 50개)"
+    )
+    use_cache = serializers.BooleanField(
+        default=True,
+        required=False,
+        help_text="캐시 사용 여부"
+    )
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "texts": [
+                    "첫 번째 검사 텍스트",
+                    "두 번째 검사 텍스트",
+                    "세 번째 검사 텍스트"
+                ],
+                "use_cache": True
+            }
+        }
+
+
+class AIModerationStatusSerializer(serializers.Serializer):
+    """
+    AI 모더레이션 상태 확인 응답 Serializer
+    """
+    available = serializers.BooleanField(help_text="AI 모더레이션 사용 가능 여부")
+    transformers_installed = serializers.BooleanField(help_text="transformers 설치 여부")
+    torch_installed = serializers.BooleanField(help_text="torch 설치 여부")
+    gpu_available = serializers.BooleanField(help_text="GPU 사용 가능 여부")
+    models_loaded = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="로드된 모델 목록"
+    )
+    error = serializers.CharField(allow_null=True, help_text="오류 메시지")
+
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "available": True,
+                "transformers_installed": True,
+                "torch_installed": True,
+                "gpu_available": True,
+                "models_loaded": ["korean", "multilingual"],
+                "error": None
+            }
+        }

@@ -26,6 +26,10 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ArticleIcon from '@mui/icons-material/Article';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import RuleIcon from '@mui/icons-material/Rule';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import PsychologyIcon from '@mui/icons-material/Psychology';
 
 const DRAWER_WIDTH = 240;
 
@@ -37,6 +41,18 @@ const menuItems = [
   { text: '추론된 뉴스', icon: <AutoAwesomeIcon />, path: '/summarized-news' },
   { text: '히스토리', icon: <HistoryIcon />, path: '/history' },
   { text: '설정', icon: <SettingsIcon />, path: '/settings' },
+];
+
+// 댓글 필터링 메뉴
+const filterMenuItems = [
+  { text: '필터링 테스트', icon: <FilterAltIcon />, path: '/comment-filter-test' },
+  { text: '규칙 관리', icon: <RuleIcon />, path: '/filter-rules' },
+  { text: '필터링 로그', icon: <ListAltIcon />, path: '/filter-logs' },
+];
+
+// AI 모더레이션 메뉴
+const aiModerationMenuItems = [
+  { text: 'AI 모더레이션', icon: <PsychologyIcon />, path: '/ai-moderation' },
 ];
 
 function Layout({ children }) {
@@ -68,6 +84,66 @@ function Layout({ children }) {
       <Divider />
       <List>
         {menuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              selected={location.pathname === item.path}
+              onClick={() => handleNavigation(item.path)}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.2)',
+                },
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: 'inherit' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
+      <Typography
+        variant="caption"
+        sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary' }}
+      >
+        댓글 필터링
+      </Typography>
+      <List>
+        {filterMenuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              selected={location.pathname === item.path}
+              onClick={() => handleNavigation(item.path)}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.2)',
+                },
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: 'inherit' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
+      <Typography
+        variant="caption"
+        sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary' }}
+      >
+        AI 모더레이션
+      </Typography>
+      <List>
+        {aiModerationMenuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
               selected={location.pathname === item.path}

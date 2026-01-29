@@ -130,4 +130,100 @@ export const deleteSummarizedNews = async (filename) => {
 // };
 //######################
 
+//######################
+// 댓글 필터링 API
+//######################
+
+// 단일 댓글 필터링 테스트
+export const testCommentFilter = async (content) => {
+  const response = await apiClient.post('/comments/filter/test', { content });
+  return response.data;
+};
+
+// 일괄 댓글 필터링 테스트
+export const batchTestCommentFilter = async (comments) => {
+  const response = await apiClient.post('/comments/filter/batch', { comments });
+  return response.data;
+};
+
+// 필터링 규칙 목록 조회
+export const getFilterRules = async (options = {}) => {
+  const params = new URLSearchParams();
+  if (options.isActive !== undefined) {
+    params.append('is_active', options.isActive);
+  }
+  if (options.filterType) {
+    params.append('filter_type', options.filterType);
+  }
+  const query = params.toString() ? `?${params}` : '';
+  const response = await apiClient.get(`/comments/filter/rules${query}`);
+  return response.data;
+};
+
+// 필터링 규칙 생성
+export const createFilterRule = async (data) => {
+  const response = await apiClient.post('/comments/filter/rules', data);
+  return response.data;
+};
+
+// 필터링 규칙 상세 조회
+export const getFilterRuleDetail = async (ruleId) => {
+  const response = await apiClient.get(`/comments/filter/rules/${ruleId}`);
+  return response.data;
+};
+
+// 필터링 규칙 수정
+export const updateFilterRule = async (ruleId, data) => {
+  const response = await apiClient.put(`/comments/filter/rules/${ruleId}`, data);
+  return response.data;
+};
+
+// 필터링 규칙 삭제
+export const deleteFilterRule = async (ruleId) => {
+  const response = await apiClient.delete(`/comments/filter/rules/${ruleId}`);
+  return response.data;
+};
+
+// 필터링 로그 조회
+export const getFilteredLogs = async (options = {}) => {
+  const params = new URLSearchParams({
+    limit: options.limit || 50,
+    offset: options.offset || 0,
+  });
+  if (options.action) {
+    params.append('action', options.action);
+  }
+  const response = await apiClient.get(`/comments/filter/logs?${params}`);
+  return response.data;
+};
+
+//######################
+// AI 모더레이션 API
+//######################
+
+// AI 콘텐츠 모더레이션 단일 검사
+export const checkContentModeration = async (text, options = {}) => {
+  const response = await apiClient.post('/moderation/check', {
+    text,
+    use_cache: options.useCache !== false,
+    thresholds: options.thresholds,
+  });
+  return response.data;
+};
+
+// AI 콘텐츠 모더레이션 일괄 검사
+export const batchCheckContentModeration = async (texts, options = {}) => {
+  const response = await apiClient.post('/moderation/batch', {
+    texts,
+    use_cache: options.useCache !== false,
+  });
+  return response.data;
+};
+
+// AI 모더레이션 상태 확인
+export const getModerationStatus = async () => {
+  const response = await apiClient.get('/moderation/status');
+  return response.data;
+};
+
 export default apiClient;
