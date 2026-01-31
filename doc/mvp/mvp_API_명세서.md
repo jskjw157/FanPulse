@@ -9,7 +9,7 @@
 
 ### 1.1 Base URL
 ```
-https://api.fanpulse.app/api/v1
+https://api.fanpulse.app
 ```
 
 ### 1.2 인증
@@ -91,7 +91,7 @@ Cursor 기반 페이지네이션 사용 (무한 스크롤 대응)
 
 ## 2. Identity Context (인증/사용자)
 
-### 2.1 POST `/auth/signup` - 회원가입
+### 2.1 POST `/api/v1/auth/signup` - 회원가입
 
 이메일/비밀번호로 회원가입
 
@@ -133,7 +133,7 @@ Cursor 기반 페이지네이션 사용 (무한 스크롤 대응)
 
 ---
 
-### 2.2 POST `/auth/login` - 로그인
+### 2.2 POST `/api/v1/auth/login` - 로그인
 
 이메일/비밀번호로 로그인
 
@@ -179,7 +179,7 @@ Cursor 기반 페이지네이션 사용 (무한 스크롤 대응)
 
 ---
 
-### 2.3 POST `/auth/google` - Google 로그인
+### 2.3 POST `/api/v1/auth/google` - Google 로그인
 
 Google ID Token으로 로그인/회원가입
 
@@ -221,7 +221,7 @@ Google ID Token으로 로그인/회원가입
 
 ---
 
-### 2.4 POST `/auth/logout` 🔒 - 로그아웃
+### 2.4 POST `/api/v1/auth/logout` 🔒 - 로그아웃
 
 현재 세션 로그아웃 (서버에서 토큰 무효화)
 
@@ -242,7 +242,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 2.5 GET `/me` 🔒 - 내 정보 조회
+### 2.5 GET `/api/v1/me` 🔒 - 내 정보 조회
 
 현재 로그인한 사용자 정보 조회
 
@@ -272,13 +272,12 @@ Authorization: Bearer <access_token>
 
 ## 3. Live Context (라이브 스트리밍)
 
-### 3.1 GET `/live` - 라이브 목록
+### 3.1 GET `/api/v1/streaming-events` - 라이브 목록
 
-라이브 스트리밍 목록 조회
-
-**Request Query**
 ```
-GET /live?status=LIVE&limit=20&cursor=xxx
+GET /api/v1/streaming-events?status=LIVE&limit=20&cursor=xxx
+```
+
 ```
 
 | 파라미터 | 타입 | 필수 | 설명 |
@@ -325,7 +324,7 @@ GET /live?status=LIVE&limit=20&cursor=xxx
 
 ---
 
-### 3.2 GET `/live/{id}` - 라이브 상세
+### 3.2 GET `/api/v1/streaming-events/{id}` - 라이브 상세
 
 라이브 상세 정보 조회 (임베드 URL 포함)
 
@@ -385,13 +384,13 @@ YouTube 임베드용 URL을 반환합니다. 클라이언트는 이 URL을 그�
 
 ## 4. Content Context (뉴스)
 
-### 4.1 GET `/news` - 뉴스 목록
+### 4.1 GET `/api/v1/news` - 뉴스 목록
 
 뉴스 목록 조회
 
 **Request Query**
 ```
-GET /news?limit=20&cursor=xxx
+GET /api/v1/news?limit=20&cursor=xxx
 ```
 
 | 파라미터 | 타입 | 필수 | 설명 |
@@ -431,7 +430,7 @@ GET /news?limit=20&cursor=xxx
 
 ---
 
-### 4.2 GET `/news/{id}` - 뉴스 상세
+### 4.2 GET `/api/v1/news/{id}` - 뉴스 상세
 
 뉴스 상세 조회
 
@@ -466,13 +465,13 @@ GET /news?limit=20&cursor=xxx
 
 ## 5. Search Context (검색)
 
-### 5.1 GET `/search` - 통합 검색
+### 5.1 GET `/api/v1/search` - 통합 검색
 
 라이브/뉴스 통합 검색
 
 **Request Query**
 ```
-GET /search?q=아티스트&limit=10
+GET /api/v1/search?q=아티스트&limit=10
 ```
 
 | 파라미터 | 타입 | 필수 | 설명 |
@@ -532,13 +531,13 @@ GET /search?q=아티스트&limit=10
 
 다음 API는 MVP 이후 구현 예정:
 
-- `POST /auth/apple` - Apple 로그인
-- `POST /auth/kakao` - Kakao 로그인
-- `POST /auth/refresh` - 토큰 갱신
-- `PATCH /me` - 프로필 수정
-- `GET /community/*` - 커뮤니티 API
-- `GET /rewards/*` - 리워드/포인트 API
-- `WS /live/{id}/chat` - 실시간 채팅
+- `POST /api/v1/auth/apple` - Apple 로그인
+- `POST /api/v1/auth/kakao` - Kakao 로그인
+- `POST /api/v1/auth/refresh` - 토큰 갱신
+- `PATCH /api/v1/me` - 프로필 수정
+- `GET /api/v1/community/*` - 커뮤니티 API
+- `GET /api/v1/rewards/*` - 리워드/포인트 API
+- `WS /api/v1/streaming-events/{id}/chat` - 실시간 채팅
 
 ---
 

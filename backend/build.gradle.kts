@@ -56,8 +56,26 @@ dependencies {
     // Logging
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
 
+    // Dotenv (.env 파일 자동 로드)
+    implementation("me.paulschwarz:spring-dotenv:4.0.0")
+
     // SpringDoc OpenAPI (Swagger)
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+
+    // Spring Security
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    testImplementation("org.springframework.security:spring-security-test")
+
+    // JWT (jjwt)
+    implementation("io.jsonwebtoken:jjwt-api:0.12.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.5")
+
+    // Google ID Token Verification
+    implementation("com.google.api-client:google-api-client:2.2.0")
+
+    // Rate Limiting (Bucket4j)
+    implementation("com.bucket4j:bucket4j-core:8.7.0")
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")

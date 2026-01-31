@@ -2,7 +2,7 @@ package com.fanpulse.integration
 
 import com.fanpulse.application.service.MetadataRefreshService
 import com.fanpulse.domain.streaming.StreamingEvent
-import com.fanpulse.domain.streaming.StreamingEventRepository
+import com.fanpulse.infrastructure.persistence.streaming.StreamingEventJpaRepository as StreamingEventRepository
 import com.fanpulse.domain.streaming.StreamingStatus
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*

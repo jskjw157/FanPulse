@@ -2,6 +2,7 @@
 
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -97,8 +98,8 @@ export default function SavedPage() {
   });
 
   return (
-    <>
-      <PageHeader 
+    <ProtectedRoute>
+      <PageHeader
         title="저장한 게시물"
         rightAction={
           <Link href="/search" className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100">
@@ -244,6 +245,6 @@ export default function SavedPage() {
           </div>
         )}
       </PageWrapper>
-    </>
+    </ProtectedRoute>
   );
 }
