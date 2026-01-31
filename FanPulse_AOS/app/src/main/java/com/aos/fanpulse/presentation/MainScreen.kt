@@ -30,8 +30,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.aos.fanpulse.R
-import com.aos.fanpulse.presentation.navigation.MainTabScreen
-import com.aos.fanpulse.presentation.navigation.NavGraph
+import com.aos.fanpulse.navigation.MainTabScreen
+import com.aos.fanpulse.navigation.NavGraph
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

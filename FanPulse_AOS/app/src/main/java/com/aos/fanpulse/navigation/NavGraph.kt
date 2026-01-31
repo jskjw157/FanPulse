@@ -1,6 +1,5 @@
-package com.aos.fanpulse.presentation.navigation
+package com.aos.fanpulse.navigation
 
-import android.content.Context
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -10,16 +9,27 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import com.aos.fanpulse.presentation.ads.AdsScreen
+import com.aos.fanpulse.presentation.artist.ArtistDetailScreen
+import com.aos.fanpulse.presentation.artist.ArtistScreen
+import com.aos.fanpulse.presentation.chart.ChartScreen
 import com.aos.fanpulse.presentation.community.CommunityPostDetailScreen
 import com.aos.fanpulse.presentation.community.CommunityPostScreen
 import com.aos.fanpulse.presentation.community.CommunityScreen
+import com.aos.fanpulse.presentation.concert.ConcertDetailScreen
+import com.aos.fanpulse.presentation.concert.ConcertScreen
 import com.aos.fanpulse.presentation.error.ErrorScreen
+import com.aos.fanpulse.presentation.favorites.FavoritesScreen
 import com.aos.fanpulse.presentation.home.HomeScreen
 import com.aos.fanpulse.presentation.login.LoginScreen
 import com.aos.fanpulse.presentation.my.MyScreen
 import com.aos.fanpulse.presentation.news.NewsDetailScreen
+import com.aos.fanpulse.presentation.notifications.NotificationsScreen
+import com.aos.fanpulse.presentation.saved.SavedScreen
 import com.aos.fanpulse.presentation.search.SearchScreen
 import com.aos.fanpulse.presentation.settings.SettingsScreen
+import com.aos.fanpulse.presentation.support.SupportScreen
+import com.aos.fanpulse.presentation.tickets.TicketsScreen
 import com.aos.fanpulse.presentation.voting.VotingScreen
 
 @Composable
@@ -83,6 +93,57 @@ fun NavGraph(
 
         composable (SubScreen.NewsDetail.route){
             NewsDetailScreen()
+        }
+        composable(SubScreen.Voting.route) {
+            VotingScreen()
+        }
+
+        composable(SubScreen.Tickets.route) {
+            TicketsScreen()
+        }
+
+//        composable(SubScreen.TicketsDetail.route) {
+//            TicketsDetailScreen()
+//        }
+
+        composable(SubScreen.Support.route) {
+            SupportScreen()
+        }
+
+        composable(SubScreen.Saved.route) {
+            SavedScreen()
+        }
+
+        composable(SubScreen.Notifications.route) {
+            NotificationsScreen()
+        }
+
+        composable(SubScreen.Favorites.route) {
+            FavoritesScreen()
+        }
+
+        composable(SubScreen.Concert.route) {
+            ConcertScreen()
+        }
+
+        composable(SubScreen.ConcertDetail.route) {
+            ConcertDetailScreen()
+        }
+
+        composable(SubScreen.Chart.route) {
+            ChartScreen()
+        }
+
+        composable(SubScreen.Ads.route) {
+            AdsScreen()
+        }
+
+        composable(SubScreen.Artist.route) {
+            ArtistScreen()
+        }
+
+        composable(SubScreen.ArtistDetail.route) {
+            ArtistDetailScreen()
         }
     }
 }
