@@ -1,6 +1,7 @@
 "use client";
 
 import PageWrapper from "@/components/layout/PageWrapper";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -33,7 +34,7 @@ export default function PostCreatePage() {
   };
 
   return (
-    <>
+    <ProtectedRoute>
       {/* Custom Header */}
       <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pt-8 lg:pb-4">
         <div className="px-4 py-3 flex items-center justify-between h-16 lg:h-auto lg:px-0 lg:max-w-4xl lg:mx-auto">
@@ -163,6 +164,6 @@ export default function PostCreatePage() {
           </div>
         </div>
       </PageWrapper>
-    </>
+    </ProtectedRoute>
   );
 }

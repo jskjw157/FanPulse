@@ -11,11 +11,12 @@ vi.mock('next/navigation', () => ({
 describe('LiveDetailPage', () => {
   it('renders page header', () => {
     render(<LiveDetailPage />)
-    expect(screen.getByText('Live Stream')).toBeInTheDocument()
+    expect(screen.getByText('NewJeans 컴백 쇼케이스')).toBeInTheDocument()
+    expect(screen.getByText('실시간 채팅')).toBeInTheDocument()
   })
 
-  it('renders video player skeleton', () => {
+  it('renders video thumbnail', () => {
     render(<LiveDetailPage />)
-    expect(screen.getByTestId('video-player-skeleton')).toBeInTheDocument()
+    expect(screen.getByAltText('Live Stream')).toBeInTheDocument()
   })
 })

@@ -187,7 +187,7 @@
 		341558562F00F85300BB0752 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = 341558432F00F85100BB0752 /* FanPulse */;
-			baseConfigurationReferenceRelativePath = API/Secrets.xcconfig;
+			baseConfigurationReferenceRelativePath = Secrets.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -286,7 +286,7 @@
 		341558582F00F85300BB0752 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = 341558432F00F85100BB0752 /* FanPulse */;
-			baseConfigurationReferenceRelativePath = API/Secrets.xcconfig;
+			baseConfigurationReferenceRelativePath = Secrets.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;

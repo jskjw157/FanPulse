@@ -63,7 +63,7 @@ class LoginViewController: UIViewController {
         }
         
         let imageView = UIImageView()
-        imageView.image = UIImage(named: "googleIcon")
+        imageView.image = UIImage(named: "logo_google")
         imageView.contentMode = .scaleAspectFit
         button.addSubview(imageView)
         imageView.snp.makeConstraints { make in

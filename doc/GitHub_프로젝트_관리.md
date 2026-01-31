@@ -125,7 +125,7 @@
 | 뉴스 데이터  | 최신 K-POP 뉴스 크롤링            | Naver, Google News, Reddit     | H001 (메인 화면), H011 (뉴스 상세)       |
 | 차트 순위    | K-POP 실시간 음악 차트            | Melon, Bugs, Billboard         | H001 (메인 화면), H005 (차트 순위)       |
 | 콘서트 일정  | K-POP 공연 일정 및 티켓 정보      | Ticketmaster, Interpark, Yes24 | **H007 (콘서트 일정)**, H015 (상세 공연정보) |
-| 라이브 메타  | YouTube/Weverse Live 스트림 정보  | YouTube API, Weverse Live(임베드) | H006 (라이브 & 이벤트), H019 (라이브 상세) |
+| 라이브 메타  | YouTube Live (MVP), Weverse Live (Next) 스트림 정보  | YouTube API, Weverse Live(임베드, Next) | H006 (라이브 & 이벤트), H019 (라이브 상세) |
 | 광고 데이터  | 광고 시청을 통한 포인트 적립      | Ktown4u, Weverse Shop          | H008 (광고 & 리워드), H016 (마이페이지)  |
 
 ---

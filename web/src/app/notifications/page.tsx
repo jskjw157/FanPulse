@@ -2,6 +2,7 @@
 
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -99,8 +100,8 @@ export default function NotificationsPage() {
     : notifications.filter(n => !n.isRead);
 
   return (
-    <>
-      <PageHeader 
+    <ProtectedRoute>
+      <PageHeader
         title="알림"
         rightAction={
           <Link href="/settings" className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100">
@@ -189,6 +190,6 @@ export default function NotificationsPage() {
           </div>
         )}
       </PageWrapper>
-    </>
+    </ProtectedRoute>
   );
 }

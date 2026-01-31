@@ -7,7 +7,8 @@
 
 ## 1. MVP 원칙
 - 4주 MVP에서 가장 큰 리스크는 “외부 API/크롤링 불안정”이므로,
-  - **1차(MVP)**: seed(큐레이션) 기반으로 `streaming_events`, `crawled_news`를 채움
+  - **1차(MVP)**: seed(큐레이션) 기반으로 `streaming_events`, `crawled_news`만 채움
+  - **MVP 제외(Next)**: 차트/콘서트/광고 크롤링은 다음 릴리즈에서 진행
   - **2차(다음 릴리즈)**: YouTube/News API 등으로 자동 갱신 확장
 
 ---
@@ -15,9 +16,9 @@
 ## 1.1 용어 정리: `streaming_events`가 뭐야?
 
 - `streaming_events`는 MVP에서 **라이브 화면(H006/H019)** 에서 보여줄 “라이브 방송(예정/진행/종료)”의 **메타데이터**를 담는 테이블입니다.
-- 핵심은 **임베드 재생 가능한 URL(`stream_url`)** 을 저장해두고, 앱은 `GET /live`, `GET /live/{id}`로 이를 받아서 화면을 구성합니다.
+- 핵심은 **임베드 재생 가능한 URL(`stream_url`)** 을 저장해두고, 앱은 `GET /api/v1/streaming-events`, `GET /api/v1/streaming-events/{id}`로 이를 받아서 화면을 구성합니다.
 
-> 참고: `doc/mvp/mvp_데이터베이스_정의서.md`의 `streaming_events`, `doc/mvp/mvp_API_명세서.md`의 `GET /live/{id}` 응답 필드(`streamUrl`)
+> 참고: `doc/mvp/mvp_데이터베이스_정의서.md`의 `streaming_events`, `doc/mvp/mvp_API_명세서.md`의 `GET /api/v1/streaming-events/{id}` 응답 필드(`streamUrl`)
 
 ---
 
@@ -161,13 +162,13 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
 ---
 
 ## 3. API 요구사항(요약)
-- 클라이언트는 `GET /live`, `GET /live/{id}`, `GET /news`, `GET /news/{id}`로 화면 구현 가능해야 함
+- 클라이언트는 `GET /api/v1/streaming-events`, `GET /api/v1/streaming-events/{id}`, `GET /api/v1/news`, `GET /api/v1/news/{id}`로 화면 구현 가능해야 함
 - 라이브 상세는 `stream_url`만으로 임베드 재생 가능해야 함(= MVP에서는 YouTube embed URL 권장)
 
 ---
 
 ## 4. MVP 완료 기준(적재 관점)
-- seed로 `streaming_events` / `crawled_news`가 채워지고, `GET /live`, `GET /news`에 **항상 0개 이상** 내려올 수 있다
+- seed로 `streaming_events` / `crawled_news`가 채워지고, `GET /api/v1/streaming-events`, `GET /api/v1/news`에 **항상 0개 이상** 내려올 수 있다
 - 운영 플로우(누가/어디서/어떤 포맷으로/얼마나 자주 업데이트하는지)가 문서화되어 있다
 
 ---

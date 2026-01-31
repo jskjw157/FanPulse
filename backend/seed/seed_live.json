@@ -1,0 +1,31 @@
+[
+  {
+    "title": "BTS Live Now",
+    "description": "Seeded LIVE event for search verification",
+    "artistName": "BTS",
+    "streamUrl": "https://www.youtube.com/embed/abcdEFG1234",
+    "status": "LIVE",
+    "scheduledAt": "2026-01-25T08:00:00Z",
+    "startedAt": "2026-01-25T08:05:00Z",
+    "viewerCount": 12345
+  },
+  {
+    "title": "BTS Upcoming Fanmeeting",
+    "description": "Seeded SCHEDULED event for search verification",
+    "artistName": "BTS",
+    "streamUrl": "https://www.youtube.com/embed/hijkLMN5678",
+    "status": "SCHEDULED",
+    "scheduledAt": "2026-01-26T10:00:00Z"
+  },
+  {
+    "title": "BTS Encore (Replay)",
+    "description": "Seeded ENDED event for search verification",
+    "artistName": "BTS",
+    "streamUrl": "https://www.youtube.com/embed/opqrSTU9012",
+    "status": "ENDED",
+    "scheduledAt": "2026-01-20T10:00:00Z",
+    "startedAt": "2026-01-20T10:05:00Z",
+    "endedAt": "2026-01-20T12:00:00Z",
+    "viewerCount": 0
+  }
+]

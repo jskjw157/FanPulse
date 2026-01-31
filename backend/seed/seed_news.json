@@ -1,0 +1,22 @@
+[
+  {
+    "title": "BTS announces a new album",
+    "content": "BTS is preparing a new album. This article is seeded for integrated search verification.",
+    "artistName": "BTS",
+    "thumbnailUrl": "https://example.com/thumbs/bts-album.jpg",
+    "url": "https://example.com/news/bts-album-1",
+    "sourceName": "Google News",
+    "category": "RELEASE",
+    "publishedAt": "2026-01-24T09:00:00Z"
+  },
+  {
+    "title": "HYBE shares BTS tour plans",
+    "content": "HYBE shared upcoming BTS tour plans. Seeded for search endpoint verification.",
+    "artistName": "BTS",
+    "thumbnailUrl": "https://example.com/thumbs/bts-tour.jpg",
+    "url": "https://example.com/news/bts-tour-2",
+    "sourceName": "Naver",
+    "category": "TOUR",
+    "publishedAt": "2026-01-23T12:00:00Z"
+  }
+]
