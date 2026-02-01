@@ -46,7 +46,17 @@ final class MainTabBarController: UITabBarController {
                 title: "Voting",
                 systemImage: "vote",
                 selectedSystemImage: "vote_sel",
-                rootViewController: VotingViewController()
+                rootViewController:
+                    ErrorViewController(
+                        message: "Something went wrong",
+                        description: "We're sorry for the inconvenience. The page you're looking for might have been removed or is temporarily unavailable.",
+                        secondaryAction: {
+                            // Go Back 동작 (옵션)
+                        },
+                        supportAction: {
+                            // 고객 지원 페이지로 이동
+                        }
+                    )
             ),
             makeTab(
                 title: "My",
