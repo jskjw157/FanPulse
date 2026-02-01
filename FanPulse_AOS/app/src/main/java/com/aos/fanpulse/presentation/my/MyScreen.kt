@@ -21,10 +21,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.aos.fanpulse.R
 import com.aos.fanpulse.presentation.membership.RecentActivityItem
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyScreen (
     goSettingScreen: () -> Unit
@@ -58,6 +63,19 @@ fun MyScreen (
                 contentScale = ContentScale.Crop
             )
     ) {
+        TopAppBar(
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent
+            ),
+            title = {
+                Text(text = "My Profile")
+            },
+            actions = {
+                IconButton(onClick = { goSettingScreen }) {
+                    Icon(painter = painterResource(id = R.drawable.icon_settings), contentDescription = null, tint = Color.Black)
+                }
+            }
+        )
         Row(
             modifier = Modifier
                 .padding(top = 24.dp, start = 16.dp, end = 16.dp)

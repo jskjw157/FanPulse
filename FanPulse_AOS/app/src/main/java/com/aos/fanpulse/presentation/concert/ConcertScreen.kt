@@ -20,19 +20,26 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aos.fanpulse.R
 
 data class Concert(
     val title: String,
@@ -42,9 +49,11 @@ data class Concert(
     val priceRange: String,
     val imageRes: Int
 )
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ConcertScreen() {
+fun ConcertScreen(
+    goNotificationScreen: () -> Unit
+) {
     val concerts = listOf(
         Concert(
             title = "BTS World Tour Seoul",
@@ -88,15 +97,67 @@ fun ConcertScreen() {
         )
     )
 
-    LazyColumn(
+    Column (
         modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F5F5)),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .fillMaxWidth()
+            .paint(
+                painter = painterResource(id = R.drawable.loginscreen_bg),
+                contentScale = ContentScale.Crop
+            )
     ) {
-        items(concerts) { concert ->
-            ConcertCard(concert)
+        TopAppBar(
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent
+            ),
+            title = {
+                IconButton(
+                    onClick = { /* 검색 클릭 이벤트 */ },
+                    modifier = Modifier
+                        .height(28.dp)
+                        .width(81.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.home_title),
+                        contentDescription = null,
+                        tint = Color.Unspecified
+                    )
+                }
+            },
+            actions = {
+                // 오른쪽 아이콘들 (순서대로 배치됨)
+                IconButton(onClick = { /* 검색 클릭 이벤트 */ }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.icon_search),
+                        contentDescription = null,
+                        tint = Color.Unspecified
+                    )
+                }
+                IconButton(onClick = { goNotificationScreen() }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.icon_alarm_inactive),
+                        contentDescription = null,
+                        tint = Color.Unspecified
+                    )
+                }
+                IconButton(onClick = { /* 설정 클릭 이벤트 */ }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.icon_inventory),
+                        contentDescription = null,
+                        tint = Color.Unspecified
+                    )
+                }
+            }
+        )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF5F5F5)),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(concerts) { concert ->
+                ConcertCard(concert)
+            }
         }
     }
 }
@@ -247,5 +308,5 @@ fun ConcertCard(concert: Concert) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    ConcertScreen()
+    ConcertScreen({})
 }

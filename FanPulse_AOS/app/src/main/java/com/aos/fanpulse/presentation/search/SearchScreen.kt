@@ -10,19 +10,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,8 +56,11 @@ data class PopularSearch(
     val text: String
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen() {
+fun SearchScreen(
+    onBackClick: () -> Unit
+) {
     var searchText by remember { mutableStateOf("") }
     var recentSearches by remember {
         mutableStateOf(
@@ -71,81 +81,69 @@ fun SearchScreen() {
             PopularSearch(4, "NewJeans 뮤비")
         )
     }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = Color.White,
-            shadowElevation = 2.dp
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_left_arrow),
-                    contentDescription = "뒤로가기",
-                    tint = Color(0xFF333333),
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable { /* 뒤로가기 처리 */ }
-                )
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                TextField(
-                    value = searchText,
-                    onValueChange = { searchText = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = {
-                        Text(
-                            text = "검색어를 입력하세요",
-                            color = Color(0xFF999999),
-                            fontSize = 16.sp
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.icon_search),
-                            contentDescription = "검색",
-                            tint = Color(0xFF999999),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    trailingIcon = {
-                        if (searchText.isNotEmpty()) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    TextField(
+                        value = searchText,
+                        onValueChange = { searchText = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 40.dp),
+                        placeholder = {
+                            Text(text = "검색어를 입력하세요", color = Color(0xFF999999), fontSize = 15.sp)
+                        },
+                        leadingIcon = {
                             Icon(
-                                painter = painterResource(id = R.drawable.icon_close),
-                                contentDescription = "지우기",
-                                tint = Color(0xFF999999),
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .clickable { searchText = "" }
+                                painter = painterResource(id = R.drawable.icon_search),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
                             )
-                        }
-                    },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFFF5F5F5),
-                        unfocusedContainerColor = Color(0xFFF5F5F5),
-                        disabledContainerColor = Color(0xFFF5F5F5),
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        cursorColor = Color.Black
-                    ),
-                    shape = RoundedCornerShape(24.dp),
-                    singleLine = true
+                        },
+                        trailingIcon = {
+                            if (searchText.isNotEmpty()) {
+                                IconButton(onClick = { searchText = "" }) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.icon_close),
+                                        contentDescription = "지우기",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFF5F5F5),
+                            unfocusedContainerColor = Color(0xFFF5F5F5),
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        shape = RoundedCornerShape(24.dp),
+                        singleLine = true
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { onBackClick() }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.icon_left_arrow),
+                            contentDescription = "뒤로가기",
+                            tint = Color(0xFF333333),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White
                 )
-            }
+            )
         }
+    ) { innerPadding ->
+        // innerPadding이 상단바 여백을 자동으로 잡아줍니다.
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(innerPadding)
                 .background(Color.White)
                 .padding(16.dp)
         ) {
@@ -172,6 +170,7 @@ fun SearchScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // FlowRow를 사용하여 검색 태그들이 넘치면 자동으로 다음 줄로 넘어가게 함
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -205,9 +204,9 @@ fun SearchScreen() {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    popularSearches.forEach { search ->
+                    popularSearches.forEachIndexed { index, search ->
                         PopularSearchItem(search = search)
-                        if (search.rank != popularSearches.last().rank) {
+                        if (index != popularSearches.lastIndex) {
                             Spacer(modifier = Modifier.height(12.dp))
                         }
                     }
@@ -216,7 +215,6 @@ fun SearchScreen() {
         }
     }
 }
-
 @Composable
 fun SearchTagChip(
     tag: SearchTag,
@@ -300,5 +298,5 @@ fun PopularSearchItem(search: PopularSearch) {
 @Preview(showBackground = true)
 @Composable
 fun SearchScreenPreview() {
-    SearchScreen()
+    SearchScreen({})
 }

@@ -50,7 +50,8 @@ enum class TicketsFilterTab {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketsScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    goSearchScreen: () -> Unit = {},
 ) {
     var selectedFilter by remember { mutableStateOf(TicketsFilterTab.ALL) }
 
@@ -132,7 +133,9 @@ fun TicketsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = {
+                        goSearchScreen()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search"

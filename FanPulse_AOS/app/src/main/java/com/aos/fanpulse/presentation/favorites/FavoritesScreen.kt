@@ -45,7 +45,8 @@ enum class ArtistFilterTab {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit ,
+    goSearchScreen: () -> Unit,
 ) {
     var selectedFilter by remember { mutableStateOf(ArtistFilterTab.ALL) }
 
@@ -133,7 +134,9 @@ fun FavoritesScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = {
+                        goSearchScreen()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search"
@@ -497,5 +500,5 @@ fun ArtistItem(artist: FavoriteArtist) {
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun FavoriteArtistsScreenPreview() {
-    FavoritesScreen()
+    FavoritesScreen({},{})
 }

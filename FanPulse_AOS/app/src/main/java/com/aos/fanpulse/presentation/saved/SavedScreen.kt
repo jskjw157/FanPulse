@@ -42,7 +42,8 @@ enum class SavedPostTab {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SavedScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit,
+    goSearchScreen: () -> Unit,
 ) {
     var selectedTab by remember { mutableStateOf(SavedPostTab.POST) }
 
@@ -129,7 +130,7 @@ fun SavedScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = { goSearchScreen() }) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search"
@@ -493,5 +494,5 @@ fun SavedPostItem(post: SavedPost) {
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun SavedPostsScreenPreview() {
-    SavedScreen()
+    SavedScreen({},{})
 }
