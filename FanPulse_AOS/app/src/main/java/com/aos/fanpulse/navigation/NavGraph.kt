@@ -22,8 +22,10 @@ import com.aos.fanpulse.presentation.error.ErrorScreen
 import com.aos.fanpulse.presentation.favorites.FavoritesScreen
 import com.aos.fanpulse.presentation.home.HomeScreen
 import com.aos.fanpulse.presentation.login.LoginScreen
+import com.aos.fanpulse.presentation.membership.MembershipScreen
 import com.aos.fanpulse.presentation.my.MyScreen
 import com.aos.fanpulse.presentation.news.NewsDetailScreen
+import com.aos.fanpulse.presentation.news.NewsScreen
 import com.aos.fanpulse.presentation.notifications.NotificationsScreen
 import com.aos.fanpulse.presentation.saved.SavedScreen
 import com.aos.fanpulse.presentation.search.SearchScreen
@@ -50,11 +52,26 @@ fun NavGraph(
             }
         }
         navigation(startDestination = MainTabScreen.Home.route, route = "main_tab") {
-            composable(MainTabScreen.Home.route) { HomeScreen() }
+            composable(MainTabScreen.Home.route) { HomeScreen(
+                { NavigationActions(navController).navigateSearch() },
+                { NavigationActions(navController).navigateNotifications() },
+                { NavigationActions(navController).navigateChart() },
+                { NavigationActions(navController).navigateNews() },
+                { NavigationActions(navController).navigateConcert() },
+                { NavigationActions(navController).navigateTickets()},
+                {NavigationActions(navController).navigateMembership()},
+                {NavigationActions(navController).navigateAds()},
+                {NavigationActions(navController).navigateFavorites()},
+                {NavigationActions(navController).navigateSaved()},
+                {NavigationActions(navController).navigateSettings()},
+                {NavigationActions(navController).navigateSupport()},
+                )}
             composable(MainTabScreen.Community.route) {
                 CommunityScreen(
                     { NavigationActions(navController).navigateCommunityPost() },
-                    { NavigationActions(navController).navigateCommunityPostDetail() }
+                    { NavigationActions(navController).navigateSearch()},
+                    { NavigationActions(navController).navigateCommunityPostDetail() },
+                    { NavigationActions(navController).navigateNotifications()}
                 )
             }
             composable(MainTabScreen.Voting.route) { VotingScreen() }
@@ -88,9 +105,19 @@ fun NavGraph(
         }
 
         composable (SubScreen.Search.route){
-            SearchScreen()
+            SearchScreen({
+                navController.popBackStack()
+            })
         }
-
+        composable (SubScreen.Membership.route){
+            MembershipScreen()
+        }
+        composable (SubScreen.News.route){
+            NewsScreen(
+                {NavigationActions(navController).navigateSearch()},
+                { navController.popBackStack() }
+            )
+        }
         composable (SubScreen.NewsDetail.route){
             NewsDetailScreen()
         }
@@ -99,7 +126,9 @@ fun NavGraph(
         }
 
         composable(SubScreen.Tickets.route) {
-            TicketsScreen()
+            TicketsScreen(
+                {navController.popBackStack()},
+                {NavigationActions(navController).navigateSearch()})
         }
 
 //        composable(SubScreen.TicketsDetail.route) {
@@ -107,23 +136,34 @@ fun NavGraph(
 //        }
 
         composable(SubScreen.Support.route) {
-            SupportScreen()
+            SupportScreen(
+                { navController.popBackStack() }
+            )
         }
 
         composable(SubScreen.Saved.route) {
-            SavedScreen()
+            SavedScreen(
+                { navController.popBackStack() },
+                { NavigationActions(navController).navigateSearch()},
+                )
         }
 
         composable(SubScreen.Notifications.route) {
-            NotificationsScreen()
+            NotificationsScreen({
+                navController.popBackStack()
+            })
         }
 
         composable(SubScreen.Favorites.route) {
-            FavoritesScreen()
+            FavoritesScreen({ navController.popBackStack() },
+                { NavigationActions(navController).navigateSearch()},
+                )
         }
 
         composable(SubScreen.Concert.route) {
-            ConcertScreen()
+            ConcertScreen({
+                NavigationActions(navController).navigateNotifications()
+            })
         }
 
         composable(SubScreen.ConcertDetail.route) {

@@ -1,6 +1,7 @@
 package com.aos.fanpulse.presentation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -41,116 +42,16 @@ fun MainScreen() {
     val currentRoute = navBackStackEntry?.destination?.route
 
     // 배경 이미지를 전체에 깔아줍니다.
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .paint(
-                painter = painterResource(id = R.drawable.loginscreen_bg),
-                contentScale = ContentScale.Crop
-            )
-    ) {
+    Box {
         Scaffold(
-            containerColor = when (currentRoute) {
-                MainTabScreen.Home.route -> Color.Transparent
-                MainTabScreen.Community.route -> Color.White
-                MainTabScreen.My.route -> Color.White
-                else -> Color.Transparent
-            },
-            topBar = {
-                when(currentRoute){
-                    MainTabScreen.Home.route -> {
-                        TopAppBar(
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color.Transparent
-                            ),
-                            title = {
-                                IconButton(
-                                    onClick = { /* 검색 클릭 이벤트 */ },
-                                    modifier = Modifier
-                                        .height(28.dp)
-                                        .width(81.dp)
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.home_title),
-                                        contentDescription = null,
-                                        tint = Color.Unspecified
-                                    )
-                                }
-                            },
-                            actions = {
-                                // 오른쪽 아이콘들 (순서대로 배치됨)
-                                IconButton(onClick = { /* 검색 클릭 이벤트 */ }) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_search),
-                                        contentDescription = null,
-                                        tint = Color.Unspecified
-                                    )
-                                }
-                                IconButton(onClick = { /* 알림 클릭 이벤트 */ }) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_alarm_inactive),
-                                        contentDescription = null,
-                                        tint = Color.Unspecified
-                                    )
-                                }
-                                IconButton(onClick = { /* 설정 클릭 이벤트 */ }) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.icon_inventory),
-                                        contentDescription = null,
-                                        tint = Color.Unspecified
-                                    )
-                                }
-                            }
-                        )
-                    }
-                    MainTabScreen.Community.route -> {
-                        TopAppBar(
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color.Transparent
-                            ),
-                            title = {
-                                Text(text = "Community")
-                            },
-                            actions = {
-                                // 오른쪽 아이콘들 (순서대로 배치됨)
-                                IconButton(onClick = { /* 검색 클릭 이벤트 */ }) {
-                                    Icon(painter = painterResource(id = R.drawable.icon_search), contentDescription = null, tint = Color.Black)
-                                }
-                                IconButton(onClick = { /* 알림 클릭 이벤트 */ }) {
-                                    Icon(painter = painterResource(id = R.drawable.icon_alarm_inactive), contentDescription = null, tint = Color.Black)
-                                }
-                            }
-                        )
-                    }
-                    MainTabScreen.Voting.route -> {
-
-                    }
-                    MainTabScreen.My.route -> {
-                        TopAppBar(
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color.Transparent
-                            ),
-                            title = {
-                                Text(text = "My Profile")
-                            },
-                            actions = {
-                                IconButton(onClick = { /* 알림 클릭 이벤트 */ }) {
-                                    Icon(painter = painterResource(id = R.drawable.icon_settings), contentDescription = null, tint = Color.Black)
-                                }
-                            }
-                        )
-                    }
-                }
-            },
+            contentWindowInsets = WindowInsets(0, 0, 0, 0), //  edge to edge
             bottomBar = {
                 val isMainTab = MainTabScreen.tabItems.any { it.route == currentRoute }
-
                 if (isMainTab) {
                     MyBottomNavigation(navController = navController)
                 }
             }
         ) { innerPadding ->
-            // 화면 이동 관리
             NavGraph(
                 innerPadding = innerPadding,
                 navController = navController

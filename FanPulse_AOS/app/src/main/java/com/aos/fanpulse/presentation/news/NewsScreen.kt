@@ -35,8 +35,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -57,51 +59,54 @@ data class NewsItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewsScreen() {
+fun NewsScreen(
+    goSearchScreen: () -> Unit,
+    onBackClick: () -> Unit,
+) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("전체", "뉴스", "공연", "기사", "영상")
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "뉴스",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            painter = painterResource(R.drawable.icon_left_arrow),
-                            contentDescription = "뒤로가기"
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            painter = painterResource(R.drawable.icon_search),
-                            contentDescription = "검색"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF9C27B0),
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
+    Column (
+        modifier = Modifier
+            .fillMaxWidth()
+            .paint(
+                painter = painterResource(id = R.drawable.loginscreen_bg),
+                contentScale = ContentScale.Crop
             )
-        },
-        bottomBar = {
-        }
-    ) { paddingValues ->
+    ) {
+        TopAppBar(
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent
+            ),
+            title = {
+                Text(
+                    "뉴스",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = Color.White
+                )
+            },
+            navigationIcon = {
+                IconButton(onClick = { onBackClick()}) {
+                    Icon(
+                        painter = painterResource(R.drawable.icon_left_arrow),
+                        contentDescription = "뒤로가기",
+                        tint = Color.White
+                    )
+                }
+            },
+            actions = {
+                IconButton(onClick = { goSearchScreen() }) {
+                    Icon(
+                        painter = painterResource(R.drawable.icon_search),
+                        contentDescription = "검색",
+                        tint = Color.Unspecified
+                    )
+                }
+            },
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .background(Color(0xFF121212))
         ) {
             // Tab Row
@@ -346,5 +351,5 @@ fun getNewsItems(): List<NewsItem> {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    NewsScreen()
+    NewsScreen({},{})
 }

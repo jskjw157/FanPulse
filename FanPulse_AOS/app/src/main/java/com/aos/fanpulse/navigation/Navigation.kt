@@ -30,6 +30,8 @@ sealed class SubScreen(route: String) : Screen(route) {
     object NewsDetail : SubScreen("news_detail")
     object Voting : SubScreen("voting")
     object Tickets : SubScreen("tickets")
+    object News : SubScreen("news")
+    object Membership : SubScreen("membership")
     object TicketsDetail : SubScreen("tickets_detail")
     object Support : SubScreen("support")
     object Saved : SubScreen("saved")
@@ -100,6 +102,11 @@ class NavigationActions(private val navController: NavHostController){
             launchSingleTop = true
         }
     }
+    fun navigateMembership(){
+        navController.navigate(SubScreen.Membership.route) {
+            launchSingleTop = true
+        }
+    }
 
     fun navigateTicketsDetail() {
         navController.navigate(SubScreen.TicketsDetail.route) {
@@ -148,6 +155,12 @@ class NavigationActions(private val navController: NavHostController){
             launchSingleTop = true
         }
     }
+    fun navigateNews() {
+        navController.navigate(SubScreen.News.route) {
+            launchSingleTop = true
+        }
+    }
+
 
     fun navigateAds() {
         navController.navigate(SubScreen.Ads.route) {

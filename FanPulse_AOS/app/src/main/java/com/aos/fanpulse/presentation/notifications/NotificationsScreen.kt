@@ -41,7 +41,7 @@ enum class NotificationTab {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(NotificationTab.ALL) }
 
@@ -472,5 +472,5 @@ fun NotificationItemStyled(notification: Notification) {
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun NotificationsScreenPreview() {
-    NotificationsScreen()
+    NotificationsScreen({})
 }

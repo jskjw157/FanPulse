@@ -41,6 +41,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -61,100 +63,121 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aos.fanpulse.R
+import com.aos.fanpulse.presentation.notifications.Notification
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommunityScreen(
     goPostScreen: () -> Unit,
-    goPostDetailScreen: () -> Unit
+    goSearchScreen: () -> Unit,
+    goPostDetailScreen: () -> Unit,
+    goNotificationScreen: () -> Unit,
 ){
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
 
-    Box (modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .background(colorResource(id = R.color.white))
-                .fillMaxHeight()
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        bottom = 12.dp
-                    )
-                    .height(40.dp)
-                    .background(
-                        color = colorResource(R.color.color_2),
-                        shape = RoundedCornerShape(20.dp),
-                    )
-            ) {
-                Spacer((Modifier.width(16.dp)))
-                Image(
-                    painter = painterResource(id = R.drawable.community_ex1),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop
-                )
-                Spacer((Modifier.width(8.dp)))
-                Text("ALL")
-                Spacer((Modifier.width(8.dp)))
-                Text("(1234 posts)")
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(
-                    modifier = Modifier.clickable{
-                        showBottomSheet = true
-                    },
-                    painter = painterResource(id = R.drawable.icon_under_arrow),
-                    contentDescription = null,
-                    tint = Color.Unspecified
-                )
-                Spacer((Modifier.width(16.dp)))
-            }
-            //      setButton
-            LazyRow(
-                modifier = Modifier
-                    .padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        bottom = 8.dp
-                    ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(3) { index ->
-                    CommunityRadioButtonItem()
-                }
-            }
-            LazyColumn(
-                modifier = Modifier.padding(top = 6.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(5) { index ->
-                    CommunityItem(
-                        goPostDetailScreen = {
-                            //  게시물에 대한 정보가 필요
-                            goPostDetailScreen()
-                        }
-                    )
-                }
-            }
-        }
-        FloatingActionButton(
-            onClick = {
-                goPostScreen()
+    Column {
+        TopAppBar(
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.White
+            ),
+            title = {
+                Text(text = "Community")
             },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            shape = CircleShape,
-            containerColor = colorResource(R.color.color_1),
-            contentColor = Color.White
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-        }
+            actions = {
+                // 오른쪽 아이콘들 (순서대로 배치됨)
+                IconButton(onClick = { goSearchScreen() }) {
+                    Icon(painter = painterResource(id = R.drawable.icon_search), contentDescription = null, tint = Color.Black)
+                }
+                IconButton(onClick = { goNotificationScreen()}) {
+                    Icon(painter = painterResource(id = R.drawable.icon_alarm_inactive), contentDescription = null, tint = Color.Black)
+                }
+            }
+        )
+        Box (modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .background(colorResource(id = R.color.white))
+                    .fillMaxHeight()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            bottom = 12.dp
+                        )
+                        .height(40.dp)
+                        .background(
+                            color = colorResource(R.color.color_2),
+                            shape = RoundedCornerShape(20.dp),
+                        )
+                ) {
+                    Spacer((Modifier.width(16.dp)))
+                    Image(
+                        painter = painterResource(id = R.drawable.community_ex1),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer((Modifier.width(8.dp)))
+                    Text("ALL")
+                    Spacer((Modifier.width(8.dp)))
+                    Text("(1234 posts)")
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(
+                        modifier = Modifier.clickable{
+                            showBottomSheet = true
+                        },
+                        painter = painterResource(id = R.drawable.icon_under_arrow),
+                        contentDescription = null,
+                        tint = Color.Unspecified
+                    )
+                    Spacer((Modifier.width(16.dp)))
+                }
+                //      setButton
+                LazyRow(
+                    modifier = Modifier
+                        .padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            bottom = 8.dp
+                        ),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(3) { index ->
+                        CommunityRadioButtonItem()
+                    }
+                }
+                LazyColumn(
+                    modifier = Modifier.padding(top = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(5) { index ->
+                        CommunityItem(
+                            goPostDetailScreen = {
+                                //  게시물에 대한 정보가 필요
+                                goPostDetailScreen()
+                            }
+                        )
+                    }
+                }
+            }
+            FloatingActionButton(
+                onClick = {
+                    goPostScreen()
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                shape = CircleShape,
+                containerColor = colorResource(R.color.color_1),
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+            }
 
-        if (showBottomSheet) {
+            if (showBottomSheet) {
 //            ModalBottomSheet(
 //                onDismissRequest = { showBottomSheet = false },
 //                sheetState = sheetState,
@@ -165,6 +188,7 @@ fun CommunityScreen(
                     showBottomSheet = it
                 }
 //            }
+            }
         }
     }
 }
@@ -546,5 +570,5 @@ fun CommunityItem(
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    CommunityScreen({},{})
+    CommunityScreen({},{},{}, {})
 }

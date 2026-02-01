@@ -76,7 +76,7 @@ enum class SupportTab {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SupportScreen(
-    onDismiss: () -> Unit = {}
+    onBackClick: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(SupportTab.FAQ) }
     var showInquiryForm by remember { mutableStateOf(false) }
@@ -87,7 +87,7 @@ fun SupportScreen(
     )
 
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = onBackClick,
         properties = DialogProperties(
             usePlatformDefaultWidth = false
         )
@@ -119,7 +119,7 @@ fun SupportScreen(
                             color = Color.Black
                         )
 
-                        IconButton(onClick = onDismiss) {
+                        IconButton(onClick = onBackClick) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Close"
