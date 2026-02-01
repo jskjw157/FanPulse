@@ -14,9 +14,9 @@ describe('ConcertPage', () => {
     expect(screen.getByText('Upcoming Concerts')).toBeInTheDocument()
   })
 
-  it('renders event list (skeleton cards)', () => {
+  it('renders event list', () => {
     render(<ConcertPage />)
-    const cards = screen.getAllByTestId('skeleton-card')
-    expect(cards.length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByText('BTS World Tour Seoul')).toBeInTheDocument()
+    expect(screen.getByText('BLACKPINK World Tour')).toBeInTheDocument()
   })
 })

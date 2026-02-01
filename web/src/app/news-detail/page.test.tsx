@@ -17,8 +17,9 @@ describe('NewsDetailPage', () => {
     expect(screen.getByText('News Detail')).toBeInTheDocument()
   })
 
-  it('renders content skeleton', () => {
+  it('renders news content', () => {
     render(<NewsDetailPage />)
-    expect(screen.getByTestId('news-content-skeleton')).toBeInTheDocument()
+    expect(screen.getByText('BTS 새 앨범 발매 예정')).toBeInTheDocument()
+    expect(screen.getByText('관련 뉴스')).toBeInTheDocument()
   })
 })

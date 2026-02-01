@@ -12,7 +12,7 @@
 
 ## 개요
 
-Streaming Context는 FanPulse의 핵심 기능인 K-pop 아티스트 라이브 스트리밍 시청 경험을 담당합니다. YouTube, Weverse Live 등 외부 플랫폼의 라이브 방송을 임베드하여 팬들에게 제공하고, 메타데이터(제목, 썸네일, 상태)를 자동으로 갱신하여 최신 정보를 유지합니다.
+Streaming Context는 FanPulse의 핵심 기능인 K-pop 아티스트 라이브 스트리밍 시청 경험을 담당합니다. YouTube Live 임베드를 기본으로 하며 Weverse Live는 Next 단계에서 검토합니다. 메타데이터(제목, 썸네일, 상태)를 자동으로 갱신하여 최신 정보를 유지합니다.
 
 ## 핵심 책임
 

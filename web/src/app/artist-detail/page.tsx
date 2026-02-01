@@ -2,11 +2,11 @@
 
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export default function ArtistDetailPage() {
+function ArtistDetailContent() {
   const searchParams = useSearchParams();
   const artistName = searchParams.get('artist') || 'BTS';
   const [isFollowing, setIsFollowing] = useState(false);
@@ -259,5 +259,13 @@ export default function ArtistDetailPage() {
         </div>
       </PageWrapper>
     </>
+  );
+}
+
+export default function ArtistDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <ArtistDetailContent />
+    </Suspense>
   );
 }
