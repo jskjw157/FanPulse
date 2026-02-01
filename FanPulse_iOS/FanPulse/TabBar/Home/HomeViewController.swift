@@ -13,7 +13,7 @@ class HomeViewController: BaseViewController {
         super.viewDidLoad()
         view.backgroundColor = .white
         
-        configureNavigationBar(type: .home, setBgImage: true)
+        configureNavigationBar(type: .home, true)
         setNavigationTitle()
         
         setupUI()
