@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import Badge from '@/components/ui/Badge';
 import { formatViewerCount, formatScheduledDate } from '@/lib/utils/format';
 import type { Live } from '@/types/live';
@@ -15,10 +16,11 @@ export default function LiveCard({ live }: LiveCardProps) {
   return (
     <Link href={`/live/${id}`} className="block flex-shrink-0 w-[280px] group">
       <div className="relative rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={thumbnailUrl}
           alt={title}
+          width={280}
+          height={160}
           className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
         />
 
