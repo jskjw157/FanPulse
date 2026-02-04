@@ -21,7 +21,7 @@ describe('HomePage', () => {
     vi.clearAllMocks();
     mockedFetchLiveNow.mockResolvedValue({ items: mockLiveNow, hasMore: false });
     mockedFetchUpcoming.mockResolvedValue({ items: mockUpcoming, hasMore: false });
-    mockedFetchLatestNews.mockResolvedValue({ items: mockLatestNews, hasMore: true });
+    mockedFetchLatestNews.mockResolvedValue(mockLatestNews);
   });
 
   it('renders all three sections', async () => {

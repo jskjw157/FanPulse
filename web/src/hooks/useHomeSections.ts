@@ -47,7 +47,7 @@ export function useHomeSections(): UseHomeSectionsReturn {
 
       setLiveNow(liveRes.items);
       setUpcoming(upcomingRes.items);
-      setLatestNews(newsRes.items);
+      setLatestNews(newsRes);
       setState('success');
     } catch (err) {
       if (signal?.aborted) return;
