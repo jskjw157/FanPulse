@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { formatRelativeTime } from '@/lib/utils/format';
 import type { News } from '@/types/news';
 
@@ -16,10 +17,11 @@ export default function NewsCard({ news }: NewsCardProps) {
       href={`/news/${id}`}
       className="flex gap-3 hover:bg-gray-50 p-2 rounded-xl transition-colors"
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src={thumbnailUrl}
         alt={title}
+        width={96}
+        height={80}
         className="w-24 h-20 rounded-lg object-cover object-top flex-shrink-0"
       />
       <div className="flex-1 min-w-0">

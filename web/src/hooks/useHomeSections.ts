@@ -38,9 +38,9 @@ export function useHomeSections(): UseHomeSectionsReturn {
 
     try {
       const [liveRes, upcomingRes, newsRes] = await Promise.all([
-        fetchLiveNow(),
-        fetchUpcoming(),
-        fetchLatestNews(),
+        fetchLiveNow(5, signal),
+        fetchUpcoming(5, signal),
+        fetchLatestNews(10, signal),
       ]);
 
       if (signal?.aborted) return;
