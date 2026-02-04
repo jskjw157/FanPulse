@@ -33,7 +33,7 @@ describe('useHomeSections', () => {
   it('fetches all data in parallel and returns success state', async () => {
     mockedFetchLiveNow.mockResolvedValue({ items: mockLiveNow, hasMore: false });
     mockedFetchUpcoming.mockResolvedValue({ items: mockUpcoming, hasMore: false });
-    mockedFetchLatestNews.mockResolvedValue({ items: mockLatestNews, hasMore: true });
+    mockedFetchLatestNews.mockResolvedValue(mockLatestNews);
 
     const { result } = renderHook(() => useHomeSections());
 
@@ -50,7 +50,7 @@ describe('useHomeSections', () => {
   it('sets error state when any API fails', async () => {
     mockedFetchLiveNow.mockRejectedValue(new Error('네트워크 오류'));
     mockedFetchUpcoming.mockResolvedValue({ items: mockUpcoming, hasMore: false });
-    mockedFetchLatestNews.mockResolvedValue({ items: mockLatestNews, hasMore: true });
+    mockedFetchLatestNews.mockResolvedValue(mockLatestNews);
 
     const { result } = renderHook(() => useHomeSections());
 
@@ -64,7 +64,7 @@ describe('useHomeSections', () => {
   it('calls all three APIs', async () => {
     mockedFetchLiveNow.mockResolvedValue({ items: [], hasMore: false });
     mockedFetchUpcoming.mockResolvedValue({ items: [], hasMore: false });
-    mockedFetchLatestNews.mockResolvedValue({ items: [], hasMore: false });
+    mockedFetchLatestNews.mockResolvedValue([]);
 
     renderHook(() => useHomeSections());
 
@@ -78,7 +78,7 @@ describe('useHomeSections', () => {
   it('refresh re-fetches all data', async () => {
     mockedFetchLiveNow.mockResolvedValue({ items: mockLiveNow, hasMore: false });
     mockedFetchUpcoming.mockResolvedValue({ items: mockUpcoming, hasMore: false });
-    mockedFetchLatestNews.mockResolvedValue({ items: mockLatestNews, hasMore: true });
+    mockedFetchLatestNews.mockResolvedValue(mockLatestNews);
 
     const { result } = renderHook(() => useHomeSections());
 
@@ -89,7 +89,7 @@ describe('useHomeSections', () => {
     vi.clearAllMocks();
     mockedFetchLiveNow.mockResolvedValue({ items: [], hasMore: false });
     mockedFetchUpcoming.mockResolvedValue({ items: [], hasMore: false });
-    mockedFetchLatestNews.mockResolvedValue({ items: [], hasMore: false });
+    mockedFetchLatestNews.mockResolvedValue([]);
 
     await result.current.refresh();
 

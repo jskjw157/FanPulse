@@ -3,9 +3,41 @@
 import { useHomeSections } from '@/hooks/useHomeSections';
 import LiveSection from './components/home/LiveSection';
 import LatestNewsSection from './components/home/LatestNewsSection';
+import SkeletonCard from '@/components/ui/SkeletonCard';
 
 export default function Home() {
   const { liveNow, upcoming, latestNews, state, error, refresh } = useHomeSections();
+
+  if (state === 'loading') {
+    return (
+      <main className="max-w-7xl mx-auto pb-20">
+        <section className="px-4 py-3">
+          <div className="h-6 w-24 bg-gray-200 rounded mb-3" />
+          <div className="flex gap-4 overflow-hidden">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        </section>
+        <section className="px-4 py-3">
+          <div className="h-6 w-24 bg-gray-200 rounded mb-3" />
+          <div className="flex gap-4 overflow-hidden">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        </section>
+        <section className="px-4 py-3">
+          <div className="h-6 w-24 bg-gray-200 rounded mb-3" />
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonCard key={i} layout="horizontal" />
+            ))}
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   if (state === 'error') {
     return (

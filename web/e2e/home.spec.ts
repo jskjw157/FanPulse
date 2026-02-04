@@ -59,8 +59,8 @@ async function mockHomeApis(
 ) {
   const { failLive, failNews, emptyLive } = opts ?? {}
 
-  // GET /api/v1/live (Live Now & Upcoming)
-  await page.route('**/api/v1/live*', async (route) => {
+  // GET /streaming-events (Live Now & Upcoming)
+  await page.route('**/streaming-events*', async (route) => {
     if (route.request().method() !== 'GET') return route.fallback()
 
     if (failLive) {
@@ -92,8 +92,8 @@ async function mockHomeApis(
     }
   })
 
-  // GET /api/v1/news
-  await page.route('**/api/v1/news*', async (route) => {
+  // GET /news/latest
+  await page.route('**/news/latest*', async (route) => {
     if (route.request().method() !== 'GET') return route.fallback()
 
     if (failNews) {
@@ -105,7 +105,7 @@ async function mockHomeApis(
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        data: { items: mockLatestNews, hasMore: true },
+        data: mockLatestNews,
       }),
     })
   })
@@ -208,7 +208,7 @@ test.describe('Home - 홈 화면', () => {
   test('에러 상태에서 다시 시도 클릭 시 데이터가 정상 로드된다', async ({ page }) => {
     // 첫 요청은 실패
     let shouldFail = true
-    await page.route('**/api/v1/live*', async (route) => {
+    await page.route('**/streaming-events*', async (route) => {
       if (route.request().method() !== 'GET') return route.fallback()
 
       if (shouldFail) {
@@ -225,7 +225,7 @@ test.describe('Home - 홈 화면', () => {
         body: JSON.stringify({ data: { items, hasMore: false } }),
       })
     })
-    await page.route('**/api/v1/news*', async (route) => {
+    await page.route('**/news/latest*', async (route) => {
       if (route.request().method() !== 'GET') return route.fallback()
 
       if (shouldFail) {
@@ -236,7 +236,7 @@ test.describe('Home - 홈 화면', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: { items: mockLatestNews, hasMore: true } }),
+        body: JSON.stringify({ data: mockLatestNews }),
       })
     })
 
