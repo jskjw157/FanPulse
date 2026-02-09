@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3415585C2F00F9E300BB0752 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3415585B2F00F9E300BB0752 /* SnapKit */; };
+		34B23C222F3A0CE4009F0D86 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 34B23C212F3A0CE4009F0D86 /* Kingfisher */; };
 		490F2FD22F075FD9007C4E8F /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 490F2FD12F075FD9007C4E8F /* GoogleSignIn */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				34B23C222F3A0CE4009F0D86 /* Kingfisher in Frameworks */,
 				3415585C2F00F9E300BB0752 /* SnapKit in Frameworks */,
 				490F2FD22F075FD9007C4E8F /* GoogleSignIn in Frameworks */,
 			);
@@ -87,6 +89,7 @@
 			packageProductDependencies = (
 				3415585B2F00F9E300BB0752 /* SnapKit */,
 				490F2FD12F075FD9007C4E8F /* GoogleSignIn */,
+				34B23C212F3A0CE4009F0D86 /* Kingfisher */,
 			);
 			productName = FanPulse;
 			productReference = 341558412F00F85100BB0752 /* FanPulse.app */;
@@ -119,6 +122,7 @@
 			packageReferences = (
 				3415585A2F00F9E300BB0752 /* XCRemoteSwiftPackageReference "SnapKit" */,
 				490F2FD02F075FD9007C4E8F /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				34B23C202F3A0CE4009F0D86 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 341558422F00F85100BB0752 /* Products */;
@@ -374,6 +378,14 @@
 				minimumVersion = 5.7.1;
 			};
 		};
+		34B23C202F3A0CE4009F0D86 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.6.2;
+			};
+		};
 		490F2FD02F075FD9007C4E8F /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
@@ -389,6 +401,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3415585A2F00F9E300BB0752 /* XCRemoteSwiftPackageReference "SnapKit" */;
 			productName = SnapKit;
+		};
+		34B23C212F3A0CE4009F0D86 /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 34B23C202F3A0CE4009F0D86 /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
 		};
 		490F2FD12F075FD9007C4E8F /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
