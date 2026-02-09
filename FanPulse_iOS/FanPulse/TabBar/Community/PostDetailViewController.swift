@@ -9,6 +9,7 @@ import UIKit
 import SnapKit
 import Kingfisher
 
+
 // MARK: - PostDetailViewController
 
 final class PostDetailViewController: UIViewController {
@@ -373,8 +374,10 @@ final class PostDetailViewController: UIViewController {
         contentLabel.text = post.content
         hashtagLabel.text = post.hashtags.joined(separator: " ")
         
-        if let url = URL(string: imageURL) {
-            postImageView.kf.setImage(with: url)
+        if let imageURL = post.imageURL {
+            if let url = URL(string: imageURL) {
+                postImageView.kf.setImage(with: url)
+            }
         }
         
         updateButton(likeButton, count: post.likes)
