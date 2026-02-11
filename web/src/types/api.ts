@@ -8,3 +8,5 @@ export interface PaginatedResponse<T> {
   nextCursor?: string;
   hasMore: boolean;
 }
+
+export type CursorPaginatedResponse<T> = PaginatedResponse<T>;
