@@ -10,9 +10,12 @@ import SkeletonCard from '@/components/ui/SkeletonCard';
 export default function LiveDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
 
-  const { live, state, error } = useLiveDetail(id);
+  // params.id는 string | string[] | undefined일 수 있음
+  const rawId = params.id;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
+
+  const { live, state, error } = useLiveDetail(id ?? '');
 
   if (state === 'loading') {
     return (
