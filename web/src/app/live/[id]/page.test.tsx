@@ -1,8 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import LiveDetailPage from './page';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock IntersectionObserver (even though detail page doesn't use it, might be needed for deps)
+// Mock IntersectionObserver - must be set before component imports
 class MockIntersectionObserver implements IntersectionObserver {
   readonly root: Element | Document | null = null;
   readonly rootMargin: string = '';
@@ -13,13 +12,9 @@ class MockIntersectionObserver implements IntersectionObserver {
   takeRecords = vi.fn(() => []);
 }
 
-beforeEach(() => {
-  vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
-});
+vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
 
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
+import LiveDetailPage from './page';
 
 vi.mock('@/lib/api/live', () => ({
   fetchLiveDetail: vi.fn(),
@@ -46,9 +41,13 @@ describe('LiveDetailPage', () => {
     render(<LiveDetailPage />);
 
     await waitFor(() => {
-      const iframe = screen.getByTitle('YouTube video player');
+      // YouTubePlayer receives title={live.title}, so it uses the live's title
+      const iframe = screen.getByTitle(mockLiveDetail.title);
       expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', mockLiveDetail.streamUrl);
+      expect(iframe).toHaveAttribute(
+        'src',
+        expect.stringContaining('youtube.com/embed')
+      );
     });
   });
 

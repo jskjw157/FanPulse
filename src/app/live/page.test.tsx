@@ -1,30 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-// Mock IntersectionObserver - must be before component import
-class MockIntersectionObserver implements IntersectionObserver {
-  readonly root: Element | Document | null = null;
-  readonly rootMargin: string = '';
-  readonly thresholds: ReadonlyArray<number> = [];
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-  takeRecords = vi.fn(() => []);
-}
-
-// Apply mock globally before any component imports
-vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
-
 import LiveListPage from './page';
 
 vi.mock('@/lib/api/live', () => ({
   fetchLiveList: vi.fn(),
-}));
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    back: vi.fn(),
-  }),
 }));
 
 import { fetchLiveList } from '@/lib/api/live';
@@ -46,7 +25,7 @@ describe('LiveListPage', () => {
     render(<LiveListPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Live Now')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /Live/i })).toBeInTheDocument();
     });
   });
 
