@@ -9,3 +9,11 @@ export interface Live {
   scheduledAt?: string;
   viewerCount?: number;
 }
+
+export interface LiveDetail extends Live {
+  description: string;
+  streamUrl: string;
+  startedAt?: string;
+  endedAt?: string;
+  createdAt?: string;
+}
