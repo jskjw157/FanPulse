@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-02-11T14:50:52.544Z",
+  "reason": "compaction",
+  "status": {
+    "version": "2.0",
+    "lastUpdated": "2026-02-01T12:00:00.000Z",
+    "activeFeatures": [],
+    "primaryFeature": null,
+    "features": {
+      "issue-137-home-screen": {
+        "phase": "completed",
+        "matchRate": 92,
+        "completedAt": "2026-02-01T12:00:00.000Z",
+        "documents": {
+          "plan": "docs/01-plan/features/issue-137-home-screen.plan.md",
+          "design": "docs/02-design/features/issue-137-home-screen.design.md",
+          "analysis": "docs/03-analysis/issue-137-home-screen.analysis.md",
+          "report": "docs/04-report/features/issue-137-home-screen.report.md"
+        },
+        "testResults": {
+          "unit": 33,
+          "integration": 6,
+          "e2e": 9,
+          "total": 42,
+          "passRate": "100%"
+        }
+      }
+    },
+    "pipeline": {
+      "currentPhase": 1,
+      "level": "Dynamic",
+      "phaseHistory": []
+    },
+    "session": {
+      "startedAt": "2026-01-31T18:54:41.901Z",
+      "onboardingCompleted": false,
+      "lastActivity": "2026-02-01T12:00:00.000Z"
+    },
+    "history": [
+      {
+        "feature": "issue-137-home-screen",
+        "action": "report",
+        "timestamp": "2026-02-01T12:00:00.000Z",
+        "result": "completed",
+        "matchRate": 92
+      }
+    ]
+  }
+}
