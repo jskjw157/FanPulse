@@ -1,4 +1,20 @@
-import type { News } from '@/types/news';
+import type { News, NewsDetail } from '@/types/news';
+
+export const mockNewsDetail: NewsDetail = {
+  id: 1,
+  title: 'BTS 새 앨범 발매 예정',
+  summary: 'BTS가 2026년 3월 새 앨범 발매를 예고했다. 멤버들의 솔로 활동 이후 첫 완전체 앨범으로 팬들의 기대를 모으고 있다.',
+  thumbnailUrl: '/images/mock/news-1.jpg',
+  source: '스포츠조선',
+  publishedAt: '2026-02-01T09:00:00Z',
+  content: `
+    <p>BTS가 2026년 3월 새 앨범 발매를 예고했다.</p>
+    <p>멤버들의 솔로 활동 이후 첫 완전체 앨범으로 팬들의 기대를 모으고 있다.</p>
+    <img src="/images/mock/bts-album.jpg" alt="BTS 앨범 커버" />
+  `,
+  sourceUrl: 'https://sports.chosun.com/article/bts-2026',
+  author: '김기자',
+};
 
 export const mockLatestNews: News[] = [
   {
