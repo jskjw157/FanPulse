@@ -26,13 +26,8 @@ class LoginViewModel @Inject constructor(
             )
         }
 
-        // Google 로그인 유스케이스 호출
         googleLoginUseCase(context)
             .onSuccess { credential ->
-                for (key in credential.data.keySet()) {
-                    val value = credential.data.getString(key)
-                }
-
                 reduce {
                     state.copy(
                         loginStatus = LoginState.Success
@@ -40,33 +35,17 @@ class LoginViewModel @Inject constructor(
                 }
                 // 성공 시 부수 효과로 토스트 메시지 표시
                 postSideEffect(LoginContract.SideEffect.ShowToast("Login successful: $credential"))
+                //  성공시 mainScreen으로 가기
+                //  postSideEffect(LoginContract.SideEffect.NavigateToMain)
             }
             .onFailure { exception ->
                 reduce {
                     state.copy(
-                        loginStatus = LoginState.Error("Login failed")
+                        loginStatus = LoginState.Error(exception.message ?: "알 수 없는 오류")
                     )
                 }
                 // 실패 시 부수 효과로 에러 메시지 표시
-                postSideEffect(LoginContract.SideEffect.ShowToast("Login failed: ${exception.message}"))
+                postSideEffect(LoginContract.SideEffect.ShowToast("로그인 실패: ${exception.message}"))
             }
-    }
-
-    fun onUsernameChanged(username: String) = intent {
-        reduce {
-            state.copy(username = username)
-        }
-    }
-
-    fun onPasswordChanged(password: String) = intent {
-        reduce {
-            state.copy(password = password)
-        }
-    }
-
-    fun onPasswordVisibilityToggle() = intent {
-        reduce {
-            state.copy(isPassWordVisibility = !state.isPassWordVisibility)
-        }
     }
 }
