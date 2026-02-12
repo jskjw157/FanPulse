@@ -96,6 +96,11 @@ dependencies {
     implementation(libs.androidx.datastore.core)
     implementation(libs.protobuf.kotlin.lite)
     implementation(libs.protobuf.javalite)
+
+    //  okhttp3, retrofit
+    implementation(libs.okhttp)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
 }
 protobuf {
     protoc {
@@ -107,7 +112,9 @@ protobuf {
                 create("java") {
                     option("lite")
                 }
-                create("kotlin")
+//                create("kotlin"){
+//                    option("lite")
+//                }
             }
         }
     }
