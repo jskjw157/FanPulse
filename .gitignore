@@ -44,6 +44,9 @@ __pycache__/
 .claude_agent_farm_backups/
 agent_farm_report_*.html
 
+#data 
+backend_django/news_data/
+backend_django/summarized_data/
 # OpenCode / Sisyphus working files
 .sisyphus/
 
