@@ -1,7 +1,7 @@
 package com.aos.fanpulse.di
 
 import com.aos.fanpulse.domain.repository.GoogleSignInRepository
-import com.aos.fanpulse.domain.repository.UserDataRepository
+import com.aos.fanpulse.domain.repository.AuthRepository
 import com.aos.fanpulse.domain.usecase.GoogleLoginUseCase
 import dagger.Module
 import dagger.Provides
@@ -17,6 +17,6 @@ object UseCaseModule {
     @Singleton
     fun provideGoogleLoginUseCase(
         googleSignInRepository: GoogleSignInRepository,
-        userDataRepository: UserDataRepository,
-    ): GoogleLoginUseCase = GoogleLoginUseCase(googleSignInRepository, userDataRepository)
+        authRepository: AuthRepository,
+    ): GoogleLoginUseCase = GoogleLoginUseCase(googleSignInRepository, authRepository)
 }
