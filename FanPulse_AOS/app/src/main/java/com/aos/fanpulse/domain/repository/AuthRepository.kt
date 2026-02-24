@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 interface AuthRepository {
     val accessToken: Flow<String?>
     val refreshToken: Flow<String?>
-    suspend fun updateAccessToken(accessToken: String)
-    suspend fun updateRefreshToken(refreshToken: String)
+    suspend fun updateTokens(access: String, refresh: String)
     suspend fun clearAll()
 }

@@ -1,4 +1,4 @@
-package com.aos.fanpulse.data.datasource
+package com.aos.fanpulse.data.local
 
 import android.content.Context
 import androidx.credentials.Credential

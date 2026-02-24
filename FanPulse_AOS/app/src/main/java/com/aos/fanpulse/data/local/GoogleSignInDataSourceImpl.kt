@@ -1,4 +1,4 @@
-package com.aos.fanpulse.data.datasource
+package com.aos.fanpulse.data.local
 
 import android.content.Context
 import androidx.credentials.Credential
@@ -6,7 +6,6 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 //  Credential Manager / Google 로그인 SDK 사용

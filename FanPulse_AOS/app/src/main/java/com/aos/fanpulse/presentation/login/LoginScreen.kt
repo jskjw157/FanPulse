@@ -56,7 +56,7 @@ enum class LoginState {
 
 @Composable
 fun LoginScreen (
-//    viewModel: LoginViewModel = hiltViewModel()
+    viewModel: LoginViewModel = hiltViewModel(),
     onGoHome: () -> Unit
 ) {
 
@@ -105,7 +105,10 @@ fun LoginScreen (
             )
 
             OutlinedButton(
-                onClick = { onGoHome() },
+                onClick = {
+//                    viewModel.googleLogin(context)
+                    onGoHome()
+                          },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(100.dp),
                 border = BorderStroke(1.dp, Color.Gray),

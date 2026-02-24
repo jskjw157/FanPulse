@@ -21,7 +21,7 @@ class AuthInterceptor @Inject constructor(
         val requestBuilder = originalRequest.newBuilder()
 
         if (!token.isNullOrEmpty()) {
-            requestBuilder.addHeader("Authorization", "Bearer $token")
+            requestBuilder.addHeader("Cookie", "fanpulse_access_token=$token")
         }
 
         return chain.proceed(requestBuilder.build())

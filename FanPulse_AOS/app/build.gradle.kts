@@ -99,6 +99,7 @@ dependencies {
 
     //  okhttp3, retrofit
     implementation(libs.okhttp)
+    implementation(libs.okhttp.urlconnection)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
 }

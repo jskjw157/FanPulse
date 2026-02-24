@@ -27,19 +27,26 @@ class TokenAuthenticator @Inject constructor(
 
             if (!refreshToken.isNullOrEmpty()) {
                 // 3. 서버에 새 토큰 요청 (동기적 실행)
-                val refreshResponse = authServiceProvider.get().refreshTokens("Bearer $refreshToken").execute()
+                // 서버가 쿠키 기반이므로 요청 시 Cookie 헤더에 리프레시 토큰을 실어 보냅니다.
+                val refreshResponse = authServiceProvider.get()
+                    .refreshTokens("fanpulse_refresh_token=$refreshToken")
+                    .execute()
 
-                if (refreshResponse.isSuccessful && refreshResponse.body() != null) {
-                    val newTokens = refreshResponse.body()!!
+                if (refreshResponse.isSuccessful) {
+                    // 4. 응답 헤더의 Set-Cookie에서 새 토큰들 추출
+                    val cookies = refreshResponse.headers().values("Set-Cookie")
+                    val newAccess = extractToken(cookies, "fanpulse_access_token")
+                    val newRefresh = extractToken(cookies, "fanpulse_refresh_token")
 
-                    // 4. 새 토큰 저장
-                    authRepository.updateAccessToken(newTokens.accessToken)
-                    authRepository.updateRefreshToken(newTokens.refreshToken)
+                    if (newAccess != null && newRefresh != null) {
+                        // 5. DataStore 업데이트
+                        authRepository.updateTokens(newAccess, newRefresh)
 
-                    // 5. 실패했던 원래 요청에 새 토큰을 입혀서 다시 보냄
-                    return@runBlocking response.request.newBuilder()
-                        .header("Authorization", "Bearer ${newTokens.accessToken}")
-                        .build()
+                        // 6. 실패했던 원래 요청에 새 액세스 토큰 쿠키를 입혀서 다시 보냄
+                        return@runBlocking response.request.newBuilder()
+                            .header("Cookie", "fanpulse_access_token=$newAccess")
+                            .build()
+                    }
                 }
             }
 
@@ -58,5 +65,12 @@ class TokenAuthenticator @Inject constructor(
             lastResponse = lastResponse.priorResponse
         }
         return result
+    }
+
+    private fun extractToken(cookies: List<String>, key: String): String? {
+        return cookies.find { it.contains(key) }
+            ?.substringAfter("$key=")
+            ?.substringBefore(";")
+            ?.trim()
     }
 }

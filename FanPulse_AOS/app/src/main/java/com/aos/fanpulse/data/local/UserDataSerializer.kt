@@ -1,4 +1,4 @@
-package com.aos.fanpulse.data.datasource
+package com.aos.fanpulse.data.local
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
