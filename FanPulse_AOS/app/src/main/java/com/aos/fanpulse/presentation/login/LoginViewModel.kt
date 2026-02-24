@@ -19,7 +19,7 @@ class LoginViewModel @Inject constructor(
         container(initialState = LoginContract.SignInState())
 
     fun googleLogin(context: Context) = intent {
-        // 상태를 IDLE로 초기화
+        // 로딩 상태(Loading)로 변경하여 UI에 스피너를 띄움 (O)
         reduce {
             state.copy(
                 loginStatus = LoginState.Loading

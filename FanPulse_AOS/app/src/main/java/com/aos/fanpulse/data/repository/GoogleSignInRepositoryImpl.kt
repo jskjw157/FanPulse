@@ -2,7 +2,7 @@ package com.aos.fanpulse.data.repository
 
 import android.content.Context
 import androidx.credentials.Credential
-import com.aos.fanpulse.data.datasource.GoogleSignInDataSource
+import com.aos.fanpulse.data.local.GoogleSignInDataSource
 import com.aos.fanpulse.domain.repository.GoogleSignInRepository
 import javax.inject.Inject
 

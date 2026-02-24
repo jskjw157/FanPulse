@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
-import com.aos.fanpulse.data.datasource.UserDataSerializer
+import com.aos.fanpulse.data.local.UserDataSerializer
 import com.aos.fanpulse.datastore.UserData
 import dagger.Module
 import dagger.Provides
