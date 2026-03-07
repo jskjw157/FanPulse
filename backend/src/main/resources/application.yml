@@ -33,6 +33,17 @@ jwt:
   refresh-expiration: 604800000  # 7일 (밀리초)
 
 fanpulse:
+  ai-service:
+    # Feature Flag: set to false to disable AI service integration and use NoOp adapters (Fail-Open).
+    # true  → AiModerationAdapter / AiCommentFilterAdapter / AiNewsSummarizerAdapter (real HTTP calls)
+    # false → NoOpContentModerationAdapter / NoOpCommentFilterAdapter / NoOpNewsSummarizerAdapter (permissive no-op)
+    enabled: true
+    base-url: ${AI_SERVICE_URL:http://localhost:8001}
+    timeout:
+      connect: 3s
+      read: 5s
+      summarize-read: 30s
+
   seed:
     enabled: ${FANPULSE_SEED_ENABLED:false}
     dir: ${FANPULSE_SEED_DIR:seed}
@@ -72,6 +83,54 @@ fanpulse:
 resilience4j:
   circuitbreaker:
     instances:
+      # AI Content Moderation (moderation check + batch)
+      aiModeration:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 60
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - com.fanpulse.infrastructure.external.ai.AiServiceException
+
+      # AI Comment Filter (separate circuit breaker for comment filtering)
+      aiCommentFilter:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 60
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - com.fanpulse.infrastructure.external.ai.AiServiceException
+
+      # AI Summarizer (separate circuit breaker, longer wait for AI inference)
+      aiSummarizer:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 60
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - com.fanpulse.infrastructure.external.ai.AiServiceException
+
       youtubeOEmbed:
         registerHealthIndicator: true
         slidingWindowType: COUNT_BASED
@@ -107,9 +166,20 @@ resilience4j:
           - java.io.IOException
           - java.util.concurrent.TimeoutException
 
-  # P0-2: Retry 설정
+  # Retry 설정
   retry:
     instances:
+      # AI Service: shared retry for moderation, filter, summarizer
+      aiService:
+        maxAttempts: 2
+        waitDuration: 500ms
+        retryExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException$InternalServerError
+          - org.springframework.web.reactive.function.client.WebClientResponseException$ServiceUnavailable
+          - com.fanpulse.infrastructure.external.ai.AiServiceException
+
       ytdlp:
         maxAttempts: 3
         waitDuration: 2s
@@ -118,6 +188,16 @@ resilience4j:
         retryExceptions:
           - java.lang.IllegalStateException
           - java.io.IOException
+
+  # TimeLimiter 설정 (reactive WebClient에서는 .timeout() operator로 처리)
+  timelimiter:
+    instances:
+      aiModeration:
+        timeoutDuration: 5s
+      aiCommentFilter:
+        timeoutDuration: 5s
+      aiSummarizer:
+        timeoutDuration: 30s
 
 management:
   endpoints:
