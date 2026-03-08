@@ -10,7 +10,6 @@ import com.fanpulse.infrastructure.security.SecurityConfig
 import com.fanpulse.interfaces.rest.GlobalExceptionHandler
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
-import io.mockk.verify
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -52,8 +51,8 @@ class CommentControllerTest {
 
         @Test
         @WithMockUser
-        @DisplayName("유효한 요청이면 201과 댓글 응답을 반환해야 한다")
-        fun `should return 201 with comment response`() {
+        @DisplayName("APPROVED 댓글이면 201 Created를 반환해야 한다")
+        fun `should return 201 with APPROVED comment`() {
             val response = CommentResponse(
                 id = commentId,
                 postId = postId,
@@ -63,14 +62,14 @@ class CommentControllerTest {
                 parentCommentId = null,
                 createdAt = Instant.now()
             )
-            every { commandService.createComment(postId, any(), "좋은 글이네요!", null) } returns response
+            every { commandService.createComment(postId, userId, "좋은 글이네요!", null) } returns response
 
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
+                requestAttr("userId", userId)
                 content = """
                     {
                         "postId": "$postId",
-                        "userId": "$userId",
                         "content": "좋은 글이네요!"
                     }
                 """.trimIndent()
@@ -84,6 +83,36 @@ class CommentControllerTest {
 
         @Test
         @WithMockUser
+        @DisplayName("PENDING 댓글이면 202 Accepted를 반환해야 한다 (Fail-Pending)")
+        fun `should return 202 with PENDING comment`() {
+            val response = CommentResponse(
+                id = commentId,
+                postId = postId,
+                userId = userId,
+                content = "AI 장애 중 댓글",
+                status = CommentStatus.PENDING,
+                parentCommentId = null,
+                createdAt = Instant.now()
+            )
+            every { commandService.createComment(postId, userId, "AI 장애 중 댓글", null) } returns response
+
+            mockMvc.post("/api/v1/comments") {
+                contentType = MediaType.APPLICATION_JSON
+                requestAttr("userId", userId)
+                content = """
+                    {
+                        "postId": "$postId",
+                        "content": "AI 장애 중 댓글"
+                    }
+                """.trimIndent()
+            }.andExpect {
+                status { isAccepted() }
+                jsonPath("$.status") { value("PENDING") }
+            }
+        }
+
+        @Test
+        @WithMockUser
         @DisplayName("빈 내용이면 400을 반환해야 한다")
         fun `should return 400 when content is blank`() {
             every { commandService.createComment(any(), any(), any(), any()) } throws
@@ -91,10 +120,10 @@ class CommentControllerTest {
 
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
+                requestAttr("userId", userId)
                 content = """
                     {
                         "postId": "$postId",
-                        "userId": "$userId",
                         "content": "   "
                     }
                 """.trimIndent()
@@ -112,7 +141,6 @@ class CommentControllerTest {
                 content = """
                     {
                         "postId": "$postId",
-                        "userId": "$userId",
                         "content": "테스트"
                     }
                 """.trimIndent()
@@ -135,14 +163,14 @@ class CommentControllerTest {
                 parentCommentId = parentId,
                 createdAt = Instant.now()
             )
-            every { commandService.createComment(postId, any(), "대댓글입니다", parentId) } returns response
+            every { commandService.createComment(postId, userId, "대댓글입니다", parentId) } returns response
 
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
+                requestAttr("userId", userId)
                 content = """
                     {
                         "postId": "$postId",
-                        "userId": "$userId",
                         "content": "대댓글입니다",
                         "parentCommentId": "$parentId"
                     }
@@ -194,8 +222,6 @@ class CommentControllerTest {
         @Test
         @DisplayName("postId가 없으면 에러를 반환해야 한다")
         fun `should return error when postId is missing`() {
-            // MissingServletRequestParameterException → GlobalExceptionHandler catch-all (500)
-            // TODO: GlobalExceptionHandler에 MissingServletRequestParameterException 핸들러 추가하면 400으로 변경
             mockMvc.get("/api/v1/comments")
                 .andExpect {
                     status { isInternalServerError() }
