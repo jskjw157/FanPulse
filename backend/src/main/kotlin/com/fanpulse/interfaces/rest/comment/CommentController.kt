@@ -5,6 +5,7 @@ import com.fanpulse.application.dto.comment.CommentResponse
 import com.fanpulse.application.dto.comment.CreateCommentRequest
 import com.fanpulse.application.service.comment.CommentCommandService
 import com.fanpulse.application.service.comment.CommentQueryService
+import com.fanpulse.domain.comment.CommentStatus
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
@@ -37,23 +39,30 @@ class CommentController(
     @ApiResponses(
         ApiResponse(
             responseCode = "201",
-            description = "댓글 생성 성공",
+            description = "댓글 생성 성공 (APPROVED/BLOCKED)",
+            content = [Content(schema = Schema(implementation = CommentResponse::class))]
+        ),
+        ApiResponse(
+            responseCode = "202",
+            description = "댓글 접수 (PENDING — AI 장애 시 보류)",
             content = [Content(schema = Schema(implementation = CommentResponse::class))]
         ),
         ApiResponse(responseCode = "400", description = "잘못된 요청 (빈 내용 등)"),
         ApiResponse(responseCode = "401", description = "인증 필요")
     )
     fun createComment(
+        @RequestAttribute("userId") userId: UUID,
         @RequestBody request: CreateCommentRequest
     ): ResponseEntity<CommentResponse> {
-        logger.debug { "POST /api/v1/comments for post=${request.postId}" }
+        logger.debug { "POST /api/v1/comments for post=${request.postId}, user=$userId" }
         val response = commandService.createComment(
             postId = request.postId,
-            userId = request.userId,
+            userId = userId,
             content = request.content,
             parentCommentId = request.parentCommentId
         )
-        return ResponseEntity.status(HttpStatus.CREATED).body(response)
+        val status = if (response.status == CommentStatus.PENDING) HttpStatus.ACCEPTED else HttpStatus.CREATED
+        return ResponseEntity.status(status).body(response)
     }
 
     @GetMapping

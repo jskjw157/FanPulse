@@ -16,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
@@ -80,10 +81,10 @@ class CommentAiFilterIntegrationTest {
 
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
+                requestAttr("userId", userId)
                 content = """
                     {
                         "postId": "$postId",
-                        "userId": "$userId",
                         "content": "좋은 글이네요!"
                     }
                 """.trimIndent()
@@ -103,9 +104,8 @@ class CommentAiFilterIntegrationTest {
             assertEquals("llm", logs[0].filterType)
             assertFalse(logs[0].isFiltered)
 
-            // 메트릭 검증
-            val counter = meterRegistry.find("comment.created")
-                .tag("status", "APPROVED")
+            // 메트릭 검증 (상태별 개별 카운터)
+            val counter = meterRegistry.find("comment.filter.approved")
                 .tag("filter_type", "llm")
                 .counter()
             assertNotNull(counter)
@@ -124,10 +124,10 @@ class CommentAiFilterIntegrationTest {
 
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
+                requestAttr("userId", userId)
                 content = """
                     {
                         "postId": "$postId",
-                        "userId": "$userId",
                         "content": "부적절한 댓글"
                     }
                 """.trimIndent()
@@ -146,8 +146,7 @@ class CommentAiFilterIntegrationTest {
             assertTrue(logs[0].isFiltered)
             assertEquals("욕설 포함", logs[0].reason)
 
-            val counter = meterRegistry.find("comment.created")
-                .tag("status", "BLOCKED")
+            val counter = meterRegistry.find("comment.filter.blocked")
                 .tag("filter_type", "llm")
                 .counter()
             assertNotNull(counter)
@@ -156,7 +155,7 @@ class CommentAiFilterIntegrationTest {
 
         @Test
         @WithMockUser
-        @DisplayName("AI 장애(fallback) → PENDING 상태 유지 (Fail-Pending)")
+        @DisplayName("AI 장애(fallback) → PENDING 상태 유지, 202 Accepted (Fail-Pending)")
         fun `should keep PENDING when AI fails with fallback`() {
             every { commentFilterPort.filterComment(any()) } returns FilterResult(
                 isFiltered = false,
@@ -166,15 +165,15 @@ class CommentAiFilterIntegrationTest {
 
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
+                requestAttr("userId", userId)
                 content = """
                     {
                         "postId": "$postId",
-                        "userId": "$userId",
                         "content": "AI 장애 중 작성된 댓글"
                     }
                 """.trimIndent()
             }.andExpect {
-                status { isCreated() }
+                status { isAccepted() }  // 202 Accepted (Fail-Pending)
                 jsonPath("$.status") { value("PENDING") }
             }
 
@@ -182,8 +181,7 @@ class CommentAiFilterIntegrationTest {
             assertEquals(1, comments.size)
             assertEquals(CommentStatus.PENDING, comments[0].status)
 
-            val counter = meterRegistry.find("comment.created")
-                .tag("status", "PENDING")
+            val counter = meterRegistry.find("comment.filter.pending")
                 .tag("filter_type", "fallback")
                 .counter()
             assertNotNull(counter)
@@ -210,18 +208,18 @@ class CommentAiFilterIntegrationTest {
                 every { commentFilterPort.filterComment(contents[index]) } returns result
             }
 
-            // 인증된 사용자로 3개 댓글 생성
+            // 인증된 사용자로 3개 댓글 생성 (requestAttr로 userId 설정)
             contents.forEach { commentText ->
                 mockMvc.post("/api/v1/comments") {
                     contentType = MediaType.APPLICATION_JSON
+                    requestAttr("userId", userId)
                     content = """
                         {
                             "postId": "$postId",
-                            "userId": "$userId",
                             "content": "$commentText"
                         }
                     """.trimIndent()
-                    with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("testuser"))
+                    with(SecurityMockMvcRequestPostProcessors.user("testuser"))
                 }
             }
 

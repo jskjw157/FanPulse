@@ -11,9 +11,6 @@ data class CreateCommentRequest(
     @Schema(description = "게시글 ID (MongoDB ObjectId)")
     val postId: String,
 
-    @Schema(description = "작성자 ID")
-    val userId: UUID,
-
     @Schema(description = "댓글 내용")
     val content: String,
 

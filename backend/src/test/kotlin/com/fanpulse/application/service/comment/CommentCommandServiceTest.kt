@@ -5,8 +5,8 @@ import com.fanpulse.domain.ai.port.CommentFilterPort
 import com.fanpulse.domain.comment.Comment
 import com.fanpulse.domain.comment.CommentStatus
 import com.fanpulse.domain.comment.port.CommentPort
+import com.fanpulse.application.port.out.CommentFilterLogPort
 import com.fanpulse.infrastructure.persistence.comment.CommentFilterLog
-import com.fanpulse.infrastructure.persistence.comment.CommentFilterLogAdapter
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -27,7 +27,7 @@ class CommentCommandServiceTest {
     private lateinit var commentPort: CommentPort
 
     @MockK
-    private lateinit var filterLogAdapter: CommentFilterLogAdapter
+    private lateinit var filterLogPort: CommentFilterLogPort
 
     private val meterRegistry = SimpleMeterRegistry()
 
@@ -41,7 +41,7 @@ class CommentCommandServiceTest {
         service = CommentCommandServiceImpl(
             commentFilterPort = commentFilterPort,
             commentPort = commentPort,
-            filterLogAdapter = filterLogAdapter,
+            filterLogPort = filterLogPort,
             meterRegistry = meterRegistry
         )
     }
@@ -57,7 +57,7 @@ class CommentCommandServiceTest {
             val filterResult = FilterResult(isFiltered = false, filterType = "LLM")
             every { commentFilterPort.filterComment(any()) } returns filterResult
             every { commentPort.save(any()) } answers { firstArg() }
-            every { filterLogAdapter.save(any()) } answers { firstArg() }
+            every { filterLogPort.save(any()) } answers { firstArg() }
 
             // when
             val response = service.createComment(postId, userId, "좋은 글이네요!")
@@ -79,7 +79,7 @@ class CommentCommandServiceTest {
             )
             every { commentFilterPort.filterComment(any()) } returns filterResult
             every { commentPort.save(any()) } answers { firstArg() }
-            every { filterLogAdapter.save(any()) } answers { firstArg() }
+            every { filterLogPort.save(any()) } answers { firstArg() }
 
             // when
             val response = service.createComment(postId, userId, "나쁜 댓글")
@@ -100,7 +100,7 @@ class CommentCommandServiceTest {
             )
             every { commentFilterPort.filterComment(any()) } returns filterResult
             every { commentPort.save(any()) } answers { firstArg() }
-            every { filterLogAdapter.save(any()) } answers { firstArg() }
+            every { filterLogPort.save(any()) } answers { firstArg() }
 
             // when
             val response = service.createComment(postId, userId, "악의적 댓글")
@@ -116,7 +116,7 @@ class CommentCommandServiceTest {
             val filterResult = FilterResult(isFiltered = false, filterType = "fallback")
             every { commentFilterPort.filterComment(any()) } returns filterResult
             every { commentPort.save(any()) } answers { firstArg() }
-            every { filterLogAdapter.save(any()) } answers { firstArg() }
+            every { filterLogPort.save(any()) } answers { firstArg() }
 
             // when
             val response = service.createComment(postId, userId, "일반 댓글")
@@ -133,7 +133,7 @@ class CommentCommandServiceTest {
             val filterResult = FilterResult(isFiltered = false, filterType = "noop")
             every { commentFilterPort.filterComment(any()) } returns filterResult
             every { commentPort.save(any()) } answers { firstArg() }
-            every { filterLogAdapter.save(any()) } answers { firstArg() }
+            every { filterLogPort.save(any()) } answers { firstArg() }
 
             // when
             val response = service.createComment(postId, userId, "noop 댓글")
@@ -154,14 +154,14 @@ class CommentCommandServiceTest {
             val filterResult = FilterResult(isFiltered = false, filterType = "LLM")
             every { commentFilterPort.filterComment(any()) } returns filterResult
             every { commentPort.save(any()) } answers { firstArg() }
-            every { filterLogAdapter.save(any()) } answers { firstArg() }
+            every { filterLogPort.save(any()) } answers { firstArg() }
 
             // when
             service.createComment(postId, userId, "댓글 내용")
 
             // then
             verify(exactly = 1) {
-                filterLogAdapter.save(match { log ->
+                filterLogPort.save(match { log ->
                     log.isFiltered == false && log.filterType == "LLM"
                 })
             }
@@ -174,7 +174,7 @@ class CommentCommandServiceTest {
             val filterResult = FilterResult(isFiltered = false, filterType = "LLM")
             every { commentFilterPort.filterComment(any()) } returns filterResult
             every { commentPort.save(any()) } answers { firstArg() }
-            every { filterLogAdapter.save(any()) } throws RuntimeException("DB 장애")
+            every { filterLogPort.save(any()) } throws RuntimeException("DB 장애")
 
             // when
             val response = service.createComment(postId, userId, "댓글 내용")
@@ -197,13 +197,13 @@ class CommentCommandServiceTest {
             val filterResult = FilterResult(isFiltered = false, filterType = "LLM")
             every { commentFilterPort.filterComment(any()) } returns filterResult
             every { commentPort.save(any()) } answers { firstArg() }
-            every { filterLogAdapter.save(any()) } answers { firstArg() }
+            every { filterLogPort.save(any()) } answers { firstArg() }
 
             // when
             service.createComment(postId, userId, "메트릭 테스트")
 
             // then
-            val counter = meterRegistry.find("comment.created").tag("filter_type", "LLM").counter()
+            val counter = meterRegistry.find("comment.filter.approved").tag("filter_type", "LLM").counter()
             assertNotNull(counter)
             assertEquals(1.0, counter!!.count())
         }
@@ -215,14 +215,13 @@ class CommentCommandServiceTest {
             val filterResult = FilterResult(isFiltered = true, filterType = "rule", reason = "차단")
             every { commentFilterPort.filterComment(any()) } returns filterResult
             every { commentPort.save(any()) } answers { firstArg() }
-            every { filterLogAdapter.save(any()) } answers { firstArg() }
+            every { filterLogPort.save(any()) } answers { firstArg() }
 
             // when
             service.createComment(postId, userId, "차단 댓글")
 
             // then
-            val counter = meterRegistry.find("comment.created")
-                .tag("status", "BLOCKED")
+            val counter = meterRegistry.find("comment.filter.blocked")
                 .tag("filter_type", "rule")
                 .counter()
             assertNotNull(counter)
