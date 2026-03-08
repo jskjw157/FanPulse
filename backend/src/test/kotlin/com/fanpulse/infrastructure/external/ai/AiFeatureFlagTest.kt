@@ -61,6 +61,9 @@ class AiFeatureFlagTest {
         val env = MockEnvironment().apply {
             setProperty("fanpulse.ai-service.enabled", aiServiceEnabled.toString())
             setProperty("fanpulse.ai-service.base-url", "http://localhost:8001")
+            if (aiServiceEnabled) {
+                setProperty("fanpulse.ai-service.api-key", "test-key-for-feature-flag")
+            }
             setProperty("fanpulse.ai-service.timeout.connect", "3s")
             setProperty("fanpulse.ai-service.timeout.read", "5s")
             setProperty("fanpulse.ai-service.timeout.summarize-read", "30s")
@@ -317,6 +320,7 @@ class AiFeatureFlagTest {
             // given: context with no explicit ai-service.enabled property
             val env = MockEnvironment().apply {
                 setProperty("fanpulse.ai-service.base-url", "http://localhost:8001")
+                setProperty("fanpulse.ai-service.api-key", "test-key-for-default-behavior")
                 setProperty("fanpulse.ai-service.timeout.connect", "3s")
                 setProperty("fanpulse.ai-service.timeout.read", "5s")
                 setProperty("fanpulse.ai-service.timeout.summarize-read", "30s")

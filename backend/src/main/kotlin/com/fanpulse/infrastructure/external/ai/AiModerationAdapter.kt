@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientResponseException
 
 private val logger = KotlinLogging.logger {}
 
@@ -24,8 +25,8 @@ private val logger = KotlinLogging.logger {}
  * - Fail-Open fallback: all fallback methods return permissive results via [AiServiceFallback]
  *
  * Django API endpoints:
- * - Single check: POST /api/moderation/check
- * - Batch check:  POST /api/moderation/batch
+ * - Single check: POST /api/ai/moderate
+ * - Batch check:  POST /api/ai/moderate/batch
  *
  * JSON is deserialized using snake_case -> camelCase mapping via the shared
  * `aiServiceObjectMapper` configured in [AiServiceConfig].
@@ -39,8 +40,8 @@ class AiModerationAdapter(
 ) : ContentModerationPort {
 
     companion object {
-        private const val MODERATION_CHECK_PATH = "/api/moderation/check"
-        private const val MODERATION_BATCH_PATH = "/api/moderation/batch"
+        private const val MODERATE_PATH = "/api/ai/moderate"
+        private const val MODERATE_BATCH_PATH = "/api/ai/moderate/batch"
     }
 
     /**
@@ -64,7 +65,7 @@ class AiModerationAdapter(
         val request = ModerationCheckRequest(text = text)
 
         val response = webClient.post()
-            .uri(MODERATION_CHECK_PATH)
+            .uri(MODERATE_PATH)
             .bodyValue(request)
             .retrieve()
             .bodyToMono(ModerationCheckResponse::class.java)
@@ -105,7 +106,7 @@ class AiModerationAdapter(
         val request = ModerationBatchRequest(texts = texts)
 
         val responses = webClient.post()
-            .uri(MODERATION_BATCH_PATH)
+            .uri(MODERATE_BATCH_PATH)
             .bodyValue(request)
             .retrieve()
             .bodyToFlux(ModerationCheckResponse::class.java)
@@ -129,10 +130,14 @@ class AiModerationAdapter(
      * Fallback for [checkContent] when circuit is open or all retries are exhausted.
      * Returns a Fail-Open [ModerationResult] via [AiServiceFallback.moderationFallback].
      *
+     * 401 Unauthorized is re-thrown (Fail-Closed): auth failures are not transient
+     * and must propagate so callers can detect misconfiguration immediately.
+     *
      * Method signature must match [checkContent] with an additional [Exception] parameter.
      */
     @Suppress("unused")
     private fun checkContentFallback(text: String, e: Exception): ModerationResult {
+        rethrowIfUnauthorized(e)
         logger.warn { "checkContent fallback triggered for text (length=${text.length}): ${e.javaClass.simpleName}" }
         return aiServiceFallback.moderationFallback(text, e)
     }
@@ -141,12 +146,27 @@ class AiModerationAdapter(
      * Fallback for [batchCheck] when circuit is open or all retries are exhausted.
      * Returns a Fail-Open list of [ModerationResult] via [AiServiceFallback.batchModerationFallback].
      *
+     * 401 Unauthorized is re-thrown (Fail-Closed): auth failures are not transient
+     * and must propagate so callers can detect misconfiguration immediately.
+     *
      * Method signature must match [batchCheck] with an additional [Exception] parameter.
      */
     @Suppress("unused")
     private fun batchCheckFallback(texts: List<String>, e: Exception): List<ModerationResult> {
+        rethrowIfUnauthorized(e)
         logger.warn { "batchCheck fallback triggered for ${texts.size} texts: ${e.javaClass.simpleName}" }
         return aiServiceFallback.batchModerationFallback(texts, e)
+    }
+
+    /**
+     * Re-throws the exception if it is a 401 Unauthorized response.
+     *
+     * Auth failures are not transient errors — they indicate a misconfigured API key.
+     * Bypassing Fail-Open ensures the caller is immediately notified instead of
+     * silently allowing content through.
+     */
+    private fun rethrowIfUnauthorized(e: Exception) {
+        if (e is WebClientResponseException.Unauthorized) throw e
     }
 }
 
@@ -155,7 +175,7 @@ class AiModerationAdapter(
 // =============================================================================
 
 /**
- * Request body for POST /api/moderation/check.
+ * Request body for POST /api/ai/moderate.
  * Serialized as snake_case JSON by aiServiceObjectMapper.
  */
 data class ModerationCheckRequest(
@@ -164,7 +184,7 @@ data class ModerationCheckRequest(
 )
 
 /**
- * Request body for POST /api/moderation/batch.
+ * Request body for POST /api/ai/moderate/batch.
  * Serialized as snake_case JSON by aiServiceObjectMapper.
  */
 data class ModerationBatchRequest(

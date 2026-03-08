@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientResponseException
 
 private val logger = KotlinLogging.logger {}
 
@@ -23,7 +24,7 @@ private val logger = KotlinLogging.logger {}
  * - @Retry(name = "aiService"): up to 2 attempts with 500ms wait on failure
  * - Fail-Open fallback: [filterCommentFallback] returns permissive result via [AiServiceFallback]
  *
- * Django API endpoint: POST /api/comments/filter/test
+ * Django API endpoint: POST /api/ai/filter
  *
  * JSON is deserialized using snake_case -> camelCase mapping via the shared
  * `aiServiceObjectMapper` configured in [AiServiceConfig].
@@ -37,7 +38,7 @@ class AiCommentFilterAdapter(
 ) : CommentFilterPort {
 
     companion object {
-        private const val COMMENT_FILTER_PATH = "/api/comments/filter/test"
+        private const val FILTER_PATH = "/api/ai/filter"
     }
 
     /**
@@ -61,7 +62,7 @@ class AiCommentFilterAdapter(
         val request = CommentFilterRequest(content = content)
 
         val response = webClient.post()
-            .uri(COMMENT_FILTER_PATH)
+            .uri(FILTER_PATH)
             .bodyValue(request)
             .retrieve()
             .bodyToMono(CommentFilterResponse::class.java)
@@ -84,12 +85,27 @@ class AiCommentFilterAdapter(
      * Fallback for [filterComment] when circuit is open or all retries are exhausted.
      * Returns a Fail-Open [FilterResult] via [AiServiceFallback.filterFallback].
      *
+     * 401 Unauthorized is re-thrown (Fail-Closed): auth failures are not transient
+     * and must propagate so callers can detect misconfiguration immediately.
+     *
      * Method signature must match [filterComment] with an additional [Exception] parameter.
      */
     @Suppress("unused")
     private fun filterCommentFallback(content: String, e: Exception): FilterResult {
+        rethrowIfUnauthorized(e)
         logger.warn { "filterComment fallback triggered for content (length=${content.length}): ${e.javaClass.simpleName}" }
         return aiServiceFallback.filterFallback(content, e)
+    }
+
+    /**
+     * Re-throws the exception if it is a 401 Unauthorized response.
+     *
+     * Auth failures are not transient errors — they indicate a misconfigured API key.
+     * Bypassing Fail-Open ensures the caller is immediately notified instead of
+     * silently allowing content through.
+     */
+    private fun rethrowIfUnauthorized(e: Exception) {
+        if (e is WebClientResponseException.Unauthorized) throw e
     }
 }
 
@@ -98,7 +114,7 @@ class AiCommentFilterAdapter(
 // =============================================================================
 
 /**
- * Request body for POST /api/comments/filter/test.
+ * Request body for POST /api/ai/filter.
  * Serialized as snake_case JSON by aiServiceObjectMapper.
  */
 data class CommentFilterRequest(

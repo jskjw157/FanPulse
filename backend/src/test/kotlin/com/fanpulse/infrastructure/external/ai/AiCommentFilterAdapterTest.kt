@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Assertions.*
  * WireMock-based integration tests for AiCommentFilterAdapter.
  *
  * Tests verify:
- * - POST /api/comments/filter/test returns FilterResult
+ * - POST /api/ai/filter returns FilterResult
  * - snake_case (Django) -> camelCase (Kotlin) JSON mapping
  * - Fail-Open behavior on error
  */
@@ -44,7 +44,7 @@ class AiCommentFilterAdapterTest : AbstractAiServiceWireMockTest() {
             """.trimIndent()
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/comments/filter/test"))
+                post(urlEqualTo("/api/ai/filter"))
                     .withHeader("Content-Type", containing("application/json"))
                     .willReturn(
                         aResponse()
@@ -82,7 +82,7 @@ class AiCommentFilterAdapterTest : AbstractAiServiceWireMockTest() {
             """.trimIndent()
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/comments/filter/test"))
+                post(urlEqualTo("/api/ai/filter"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -118,7 +118,7 @@ class AiCommentFilterAdapterTest : AbstractAiServiceWireMockTest() {
             """.trimIndent()
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/comments/filter/test"))
+                post(urlEqualTo("/api/ai/filter"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -144,7 +144,7 @@ class AiCommentFilterAdapterTest : AbstractAiServiceWireMockTest() {
             val content = "테스트 댓글 내용"
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/comments/filter/test"))
+                post(urlEqualTo("/api/ai/filter"))
                     .withHeader("Content-Type", containing("application/json"))
                     .withRequestBody(containing("content"))
                     .willReturn(
@@ -160,7 +160,7 @@ class AiCommentFilterAdapterTest : AbstractAiServiceWireMockTest() {
 
             // then - verify correct endpoint was called
             wireMockServer.verify(
-                postRequestedFor(urlEqualTo("/api/comments/filter/test"))
+                postRequestedFor(urlEqualTo("/api/ai/filter"))
                     .withHeader("Content-Type", containing("application/json"))
             )
         }
@@ -170,7 +170,7 @@ class AiCommentFilterAdapterTest : AbstractAiServiceWireMockTest() {
         fun shouldThrowExceptionOnServerError() {
             // given
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/comments/filter/test"))
+                post(urlEqualTo("/api/ai/filter"))
                     .willReturn(
                         aResponse()
                             .withStatus(500)

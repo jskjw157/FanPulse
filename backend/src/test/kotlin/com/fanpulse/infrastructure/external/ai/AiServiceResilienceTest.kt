@@ -96,7 +96,7 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
         fun shouldCallFallbackOnTimeout() {
             // given: WireMock responds after 3 seconds
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/check"))
+                post(urlEqualTo("/api/ai/moderate"))
                     .willReturn(
                         aResponse()
                             .withFixedDelay(3000) // 3-second delay
@@ -129,7 +129,7 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
                 // Simulate what @TimeLimiter + @CircuitBreaker would do:
                 // Call with a short timeout -> exception -> fallback
                 timedWebClient.post()
-                    .uri("/api/moderation/check")
+                    .uri("/api/ai/moderate")
                     .bodyValue(mapOf("text" to "test", "use_cache" to true))
                     .retrieve()
                     .bodyToMono(ModerationCheckResponse::class.java)
@@ -163,7 +163,7 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
         fun shouldSucceedAfterRetry() {
             // given: first call returns 500, second call returns 200
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/check"))
+                post(urlEqualTo("/api/ai/moderate"))
                     .inScenario("retry-scenario")
                     .whenScenarioStateIs("Started")
                     .willReturn(
@@ -175,7 +175,7 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
             )
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/check"))
+                post(urlEqualTo("/api/ai/moderate"))
                     .inScenario("retry-scenario")
                     .whenScenarioStateIs("first-failure")
                     .willReturn(
@@ -221,7 +221,7 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
             assertEquals("ko", result.modelUsed, "Retry success: should use real model 'ko', not fallback")
 
             // verify WireMock received 2 requests
-            wireMockServer.verify(2, postRequestedFor(urlEqualTo("/api/moderation/check")))
+            wireMockServer.verify(2, postRequestedFor(urlEqualTo("/api/ai/moderate")))
         }
 
         @Test
@@ -229,7 +229,7 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
         fun shouldCallFallbackWhenAllRetriesFail() {
             // given: all calls return 500
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/check"))
+                post(urlEqualTo("/api/ai/moderate"))
                     .willReturn(
                         aResponse()
                             .withStatus(500)
@@ -274,7 +274,7 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
         fun shouldOpenCircuitAfterConsecutiveFailures() {
             // given: all calls return 500
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/check"))
+                post(urlEqualTo("/api/ai/moderate"))
                     .willReturn(
                         aResponse()
                             .withStatus(500)
@@ -349,7 +349,7 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
         fun shouldReturnFallbackForFilterCommentWhenCircuitOpen() {
             // given: all filter calls return 500
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/comments/filter/test"))
+                post(urlEqualTo("/api/ai/filter"))
                     .willReturn(
                         aResponse()
                             .withStatus(500)
@@ -405,7 +405,7 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
         fun shouldReturnFallbackForSummarizeWhenCircuitOpen() {
             // given: all summarize calls return 500
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/summarize"))
+                post(urlEqualTo("/api/ai/summarize"))
                     .willReturn(
                         aResponse()
                             .withStatus(500)
@@ -457,7 +457,114 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
     }
 
     // =========================================================================
-    // Scenario 4: Normal operation (verify baseline before resilience tests)
+    // Scenario 4: 401 Unauthorized Fail-Closed Scenario
+    // =========================================================================
+
+    @Nested
+    @DisplayName("401 Unauthorized Fail-Closed Scenario")
+    inner class UnauthorizedFailClosedScenario {
+
+        @Test
+        @DisplayName("should propagate 401 exception without calling fallback")
+        fun shouldPropagate401WithoutFallback() {
+            // given: Django returns 401
+            wireMockServer.stubFor(
+                post(urlEqualTo("/api/ai/moderate"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(401)
+                            .withHeader("Content-Type", "application/problem+json")
+                            .withBody("""{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Valid API key required."}""")
+                    )
+            )
+
+            // when/then: 401 should propagate as exception, NOT return fallback
+            assertThrows<WebClientResponseException.Unauthorized> {
+                adapter.checkContent("test content")
+            }
+        }
+
+        @Test
+        @DisplayName("should propagate 401 for comment filter without calling fallback")
+        fun shouldPropagate401ForCommentFilter() {
+            wireMockServer.stubFor(
+                post(urlEqualTo("/api/ai/filter"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(401)
+                            .withHeader("Content-Type", "application/problem+json")
+                            .withBody("""{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Valid API key required."}""")
+                    )
+            )
+
+            assertThrows<WebClientResponseException.Unauthorized> {
+                filterAdapter.filterComment("test comment")
+            }
+        }
+
+        @Test
+        @DisplayName("should propagate 401 for summarize without calling fallback")
+        fun shouldPropagate401ForSummarize() {
+            wireMockServer.stubFor(
+                post(urlEqualTo("/api/ai/summarize"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(401)
+                            .withHeader("Content-Type", "application/problem+json")
+                            .withBody("""{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Valid API key required."}""")
+                    )
+            )
+
+            assertThrows<WebClientResponseException.Unauthorized> {
+                summaryAdapter.summarize("some text", "ai")
+            }
+        }
+
+        @Test
+        @DisplayName("401 should NOT count as circuit breaker failure")
+        fun shouldNotCount401AsCircuitBreakerFailure() {
+            wireMockServer.stubFor(
+                post(urlEqualTo("/api/ai/moderate"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(401)
+                            .withHeader("Content-Type", "application/problem+json")
+                            .withBody("""{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Valid API key required."}""")
+                    )
+            )
+
+            // Build CB that ignores Unauthorized
+            val config = CircuitBreakerConfig.custom()
+                .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
+                .slidingWindowSize(4)
+                .minimumNumberOfCalls(4)
+                .failureRateThreshold(50.0f)
+                .ignoreExceptions(WebClientResponseException.Unauthorized::class.java)
+                .build()
+            val cb = CircuitBreakerRegistry.of(config).circuitBreaker("401-ignore-test")
+
+            // when: 4 consecutive 401s
+            repeat(4) {
+                try {
+                    CircuitBreaker.decorateCheckedSupplier(cb) {
+                        adapter.checkContent("test")
+                    }.get()
+                } catch (_: WebClientResponseException.Unauthorized) {
+                    // expected - 401 should be ignored by CB
+                } catch (e: Exception) {
+                    // re-throw unexpected exceptions
+                    throw e
+                }
+            }
+
+            // then: circuit should remain CLOSED (401 is ignored)
+            assertEquals(CircuitBreaker.State.CLOSED, cb.state,
+                "CB should remain CLOSED because 401 is in ignoreExceptions")
+        }
+    }
+
+    // =========================================================================
+    // Scenario 5: Normal operation (verify baseline before resilience tests)
     // =========================================================================
 
     @Nested
@@ -469,7 +576,7 @@ class AiServiceResilienceTest : AbstractAiServiceWireMockTest() {
         fun shouldReturnNormalResultOnSuccess() {
             // given: AI service responds normally
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/check"))
+                post(urlEqualTo("/api/ai/moderate"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)

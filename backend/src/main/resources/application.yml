@@ -39,6 +39,8 @@ fanpulse:
     # false → NoOpContentModerationAdapter / NoOpCommentFilterAdapter / NoOpNewsSummarizerAdapter (permissive no-op)
     enabled: true
     base-url: ${AI_SERVICE_URL:http://localhost:8001}
+    # API Key for Django AI Sidecar authentication (X-Api-Key header)
+    api-key: ${AI_SERVICE_API_KEY:}
     timeout:
       connect: 3s
       read: 5s
@@ -98,6 +100,9 @@ resilience4j:
           - java.util.concurrent.TimeoutException
           - org.springframework.web.reactive.function.client.WebClientResponseException
           - com.fanpulse.infrastructure.external.ai.AiServiceException
+        ignoreExceptions:
+          # 401 is Fail-Closed: auth failures are not transient and must propagate
+          - org.springframework.web.reactive.function.client.WebClientResponseException$Unauthorized
 
       # AI Comment Filter (separate circuit breaker for comment filtering)
       aiCommentFilter:
@@ -114,6 +119,9 @@ resilience4j:
           - java.util.concurrent.TimeoutException
           - org.springframework.web.reactive.function.client.WebClientResponseException
           - com.fanpulse.infrastructure.external.ai.AiServiceException
+        ignoreExceptions:
+          # 401 is Fail-Closed: auth failures are not transient and must propagate
+          - org.springframework.web.reactive.function.client.WebClientResponseException$Unauthorized
 
       # AI Summarizer (separate circuit breaker, longer wait for AI inference)
       aiSummarizer:
@@ -130,6 +138,9 @@ resilience4j:
           - java.util.concurrent.TimeoutException
           - org.springframework.web.reactive.function.client.WebClientResponseException
           - com.fanpulse.infrastructure.external.ai.AiServiceException
+        ignoreExceptions:
+          # 401 is Fail-Closed: auth failures are not transient and must propagate
+          - org.springframework.web.reactive.function.client.WebClientResponseException$Unauthorized
 
       youtubeOEmbed:
         registerHealthIndicator: true

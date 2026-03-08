@@ -31,6 +31,7 @@ private val logger = KotlinLogging.logger {}
 data class AiServiceProperties(
     val enabled: Boolean = true,
     val baseUrl: String = "http://localhost:8001",
+    val apiKey: String = "",
     val timeout: AiServiceTimeout = AiServiceTimeout()
 )
 
@@ -58,6 +59,11 @@ data class AiServiceTimeout(
 class AiServiceConfig(
     private val aiServiceProperties: AiServiceProperties
 ) {
+    init {
+        require(aiServiceProperties.apiKey.isNotBlank() || !aiServiceProperties.enabled) {
+            "fanpulse.ai-service.api-key (AI_SERVICE_API_KEY) must be set when ai-service is enabled"
+        }
+    }
 
     /**
      * Shared ObjectMapper configured for Django API snake_case JSON convention.
@@ -104,6 +110,7 @@ class AiServiceConfig(
 
         return WebClient.builder()
             .baseUrl(aiServiceProperties.baseUrl)
+            .defaultHeader("X-Api-Key", aiServiceProperties.apiKey)
             .clientConnector(ReactorClientHttpConnector(httpClient))
             .exchangeStrategies(strategies)
             .build()
