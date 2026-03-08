@@ -36,16 +36,19 @@ load_dotenv(BASE_DIR / '.env')
 #######################
 # SECRET_KEY: Django에서 암호화에 사용하는 키
 # 주의: 프로덕션에서는 환경변수로 관리해야 함!
-SECRET_KEY = 'django-insecure-local-dev-key-change-in-production'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-local-dev-key-change-in-production')
 
 # DEBUG: 개발 모드 여부
 # True: 상세한 에러 페이지 표시 (개발용)
 # False: 보안 에러 페이지 표시 (프로덕션용)
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() == 'true'
 
 # ALLOWED_HOSTS: 이 서버에 접근 가능한 호스트 목록
 # 프로덕션에서는 실제 도메인 추가 필요
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+# AI 서비스 간 인증 키 (쉼표 구분, 듀얼 키 로테이션 지원)
+AI_SERVICE_ACCEPTED_KEYS = os.getenv('AI_SERVICE_ACCEPTED_KEYS', '')
 
 
 #######################
@@ -83,6 +86,7 @@ INSTALLED_APPS = [
 # 순서가 중요함! (위에서 아래로 요청 처리, 아래에서 위로 응답 처리)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',      # 보안 헤더 추가
+    'api.exception_handlers.RFC7807ContentTypeMiddleware',  # RFC7807 Content-Type 보정
     'corsheaders.middleware.CorsMiddleware',              # CORS 처리 (CommonMiddleware 앞에 위치해야 함!)
     'django.contrib.sessions.middleware.SessionMiddleware',  # 세션 처리
     'django.middleware.common.CommonMiddleware',          # 공통 처리 (URL 정규화 등)
@@ -213,8 +217,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
     ],
+    # 인증: API Key 전용 (Session/Basic 불필요)
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
     # 예외 처리기
-    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    'EXCEPTION_HANDLER': 'api.exception_handlers.rfc7807_exception_handler',
 }
 
 
