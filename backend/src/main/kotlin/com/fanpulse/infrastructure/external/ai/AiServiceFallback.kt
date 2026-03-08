@@ -5,8 +5,20 @@ import com.fanpulse.domain.ai.ModerationResult
 import com.fanpulse.domain.ai.SummaryResult
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
+import org.springframework.web.reactive.function.client.WebClientResponseException
 
 private val logger = KotlinLogging.logger {}
+
+/**
+ * Re-throws 401 Unauthorized exceptions (Fail-Closed).
+ *
+ * Auth failures are not transient — they indicate a misconfigured API key.
+ * Must be called at the top of every adapter fallback method to prevent
+ * Fail-Open from silently swallowing authentication errors.
+ */
+internal fun rethrowIfUnauthorized(e: Exception) {
+    if (e is WebClientResponseException.Unauthorized) throw e
+}
 
 /**
  * Fail-Open fallback implementation for the Django AI Sidecar service.

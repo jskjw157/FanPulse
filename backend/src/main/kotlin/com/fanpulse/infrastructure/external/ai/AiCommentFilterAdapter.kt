@@ -97,16 +97,6 @@ class AiCommentFilterAdapter(
         return aiServiceFallback.filterFallback(content, e)
     }
 
-    /**
-     * Re-throws the exception if it is a 401 Unauthorized response.
-     *
-     * Auth failures are not transient errors — they indicate a misconfigured API key.
-     * Bypassing Fail-Open ensures the caller is immediately notified instead of
-     * silently allowing content through.
-     */
-    private fun rethrowIfUnauthorized(e: Exception) {
-        if (e is WebClientResponseException.Unauthorized) throw e
-    }
 }
 
 // =============================================================================
