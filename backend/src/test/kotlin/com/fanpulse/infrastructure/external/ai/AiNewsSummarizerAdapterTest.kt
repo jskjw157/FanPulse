@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Assertions.*
  * WireMock-based integration tests for AiNewsSummarizerAdapter.
  *
  * Tests verify:
- * - POST /api/summarize returns SummaryResult
+ * - POST /api/ai/summarize returns SummaryResult
  * - snake_case (Django) -> camelCase (Kotlin) JSON mapping
  * - Various summarize methods (ai, extractive)
  * - Error handling
@@ -43,7 +43,7 @@ class AiNewsSummarizerAdapterTest : AbstractAiServiceWireMockTest() {
             """.trimIndent()
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/summarize"))
+                post(urlEqualTo("/api/ai/summarize"))
                     .withHeader("Content-Type", containing("application/json"))
                     .willReturn(
                         aResponse()
@@ -80,7 +80,7 @@ class AiNewsSummarizerAdapterTest : AbstractAiServiceWireMockTest() {
             """.trimIndent()
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/summarize"))
+                post(urlEqualTo("/api/ai/summarize"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -106,7 +106,7 @@ class AiNewsSummarizerAdapterTest : AbstractAiServiceWireMockTest() {
             val newsText = "뉴스 본문 텍스트"
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/summarize"))
+                post(urlEqualTo("/api/ai/summarize"))
                     .withHeader("Content-Type", containing("application/json"))
                     .withRequestBody(containing("ai"))
                     .withRequestBody(containing("text"))
@@ -123,7 +123,7 @@ class AiNewsSummarizerAdapterTest : AbstractAiServiceWireMockTest() {
 
             // then - verify request was made to summarize endpoint
             wireMockServer.verify(
-                postRequestedFor(urlEqualTo("/api/summarize"))
+                postRequestedFor(urlEqualTo("/api/ai/summarize"))
                     .withHeader("Content-Type", containing("application/json"))
             )
         }
@@ -133,7 +133,7 @@ class AiNewsSummarizerAdapterTest : AbstractAiServiceWireMockTest() {
         fun shouldSendCorrectRequestBodyForExtractiveMethod() {
             // given
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/summarize"))
+                post(urlEqualTo("/api/ai/summarize"))
                     .withHeader("Content-Type", containing("application/json"))
                     .withRequestBody(containing("extractive"))
                     .willReturn(
@@ -166,7 +166,7 @@ class AiNewsSummarizerAdapterTest : AbstractAiServiceWireMockTest() {
             """.trimIndent()
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/summarize"))
+                post(urlEqualTo("/api/ai/summarize"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -189,7 +189,7 @@ class AiNewsSummarizerAdapterTest : AbstractAiServiceWireMockTest() {
         fun shouldThrowExceptionOnServerError() {
             // given
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/summarize"))
+                post(urlEqualTo("/api/ai/summarize"))
                     .willReturn(
                         aResponse()
                             .withStatus(500)
@@ -208,7 +208,7 @@ class AiNewsSummarizerAdapterTest : AbstractAiServiceWireMockTest() {
         fun shouldThrowExceptionOnServiceUnavailable() {
             // given
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/summarize"))
+                post(urlEqualTo("/api/ai/summarize"))
                     .willReturn(
                         aResponse()
                             .withStatus(503)

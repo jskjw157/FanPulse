@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientResponseException
 
 private val logger = KotlinLogging.logger {}
 
@@ -23,7 +24,7 @@ private val logger = KotlinLogging.logger {}
  * - @Retry(name = "aiService"): up to 2 attempts with 500ms wait on failure
  * - Fail-Open fallback: [summarizeFallback] returns empty summary via [AiServiceFallback]
  *
- * Django API endpoint: POST /api/summarize
+ * Django API endpoint: POST /api/ai/summarize
  *
  * Note: Summarization is slower than moderation (AI model inference).
  * A longer timeout is configured for the aiSummarizer circuit breaker instance.
@@ -41,7 +42,7 @@ class AiNewsSummarizerAdapter(
 ) : NewsSummarizerPort {
 
     companion object {
-        private const val SUMMARIZE_PATH = "/api/summarize"
+        private const val SUMMARIZE_PATH = "/api/ai/summarize"
         private const val DEFAULT_LANGUAGE = "ko"
         private const val DEFAULT_MAX_LENGTH = 200
         private const val DEFAULT_MIN_LENGTH = 50
@@ -104,12 +105,27 @@ class AiNewsSummarizerAdapter(
      * Fallback for [summarize] when circuit is open or all retries are exhausted.
      * Returns a Fail-Open [SummaryResult] with empty summary via [AiServiceFallback.summaryFallback].
      *
+     * 401 Unauthorized is re-thrown (Fail-Closed): auth failures are not transient
+     * and must propagate so callers can detect misconfiguration immediately.
+     *
      * Method signature must match [summarize] with an additional [Exception] parameter.
      */
     @Suppress("unused")
     private fun summarizeFallback(text: String, method: String, e: Exception): SummaryResult {
+        rethrowIfUnauthorized(e)
         logger.warn { "summarize fallback triggered for text (length=${text.length}, method=$method): ${e.javaClass.simpleName}" }
         return aiServiceFallback.summaryFallback(text, method, e)
+    }
+
+    /**
+     * Re-throws the exception if it is a 401 Unauthorized response.
+     *
+     * Auth failures are not transient errors — they indicate a misconfigured API key.
+     * Bypassing Fail-Open ensures the caller is immediately notified instead of
+     * silently allowing content through.
+     */
+    private fun rethrowIfUnauthorized(e: Exception) {
+        if (e is WebClientResponseException.Unauthorized) throw e
     }
 }
 
@@ -118,7 +134,7 @@ class AiNewsSummarizerAdapter(
 // =============================================================================
 
 /**
- * Request body for POST /api/summarize.
+ * Request body for POST /api/ai/summarize.
  * Serialized as snake_case JSON by aiServiceObjectMapper:
  * ```json
  * {"input_type": "text", "summarize_method": "ai", "text": "...",

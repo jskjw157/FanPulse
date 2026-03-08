@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Assertions.*
  * WireMock-based integration tests for AiModerationAdapter.
  *
  * Tests verify:
- * - POST /api/moderation/check returns ModerationResult
- * - POST /api/moderation/batch returns List<ModerationResult>
+ * - POST /api/ai/moderate returns ModerationResult
+ * - POST /api/ai/moderate/batch returns List<ModerationResult>
  * - snake_case (Django) -> camelCase (Kotlin) JSON mapping
  */
 @DisplayName("AiModerationAdapter")
@@ -46,7 +46,7 @@ class AiModerationAdapterTest : AbstractAiServiceWireMockTest() {
             """.trimIndent()
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/check"))
+                post(urlEqualTo("/api/ai/moderate"))
                     .withHeader("Content-Type", containing("application/json"))
                     .willReturn(
                         aResponse()
@@ -87,7 +87,7 @@ class AiModerationAdapterTest : AbstractAiServiceWireMockTest() {
             """.trimIndent()
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/check"))
+                post(urlEqualTo("/api/ai/moderate"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -126,7 +126,7 @@ class AiModerationAdapterTest : AbstractAiServiceWireMockTest() {
             """.trimIndent()
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/check"))
+                post(urlEqualTo("/api/ai/moderate"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -151,7 +151,7 @@ class AiModerationAdapterTest : AbstractAiServiceWireMockTest() {
         fun shouldThrowExceptionOnServerError() {
             // given
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/check"))
+                post(urlEqualTo("/api/ai/moderate"))
                     .willReturn(
                         aResponse()
                             .withStatus(500)
@@ -214,7 +214,7 @@ class AiModerationAdapterTest : AbstractAiServiceWireMockTest() {
             """.trimIndent()
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/batch"))
+                post(urlEqualTo("/api/ai/moderate/batch"))
                     .withHeader("Content-Type", containing("application/json"))
                     .willReturn(
                         aResponse()
@@ -257,7 +257,7 @@ class AiModerationAdapterTest : AbstractAiServiceWireMockTest() {
             val texts = listOf("텍스트 하나", "텍스트 둘")
 
             wireMockServer.stubFor(
-                post(urlEqualTo("/api/moderation/batch"))
+                post(urlEqualTo("/api/ai/moderate/batch"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -271,7 +271,7 @@ class AiModerationAdapterTest : AbstractAiServiceWireMockTest() {
 
             // then - verify request was made to batch endpoint
             wireMockServer.verify(
-                postRequestedFor(urlEqualTo("/api/moderation/batch"))
+                postRequestedFor(urlEqualTo("/api/ai/moderate/batch"))
                     .withHeader("Content-Type", containing("application/json"))
             )
         }
