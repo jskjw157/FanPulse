@@ -31,6 +31,7 @@ from .serializers import SummarizeRequestSerializer, SummarizeResponseSerializer
 from .services.extractor import ArticleExtractor      # URL에서 기사 추출
 from .services.summarizer import ArticleSummarizer    # 규칙 기반 요약
 from .services.ai_summarizer import AISummarizer, check_ai_available  # AI 기반 요약
+from .permissions import ApiKeyPermission
 
 #######################
 # 로거 설정
@@ -49,6 +50,7 @@ class HealthCheckView(APIView):
     경로: GET /api/health
     응답: {"status": "ok"}
     """
+    permission_classes = []  # Health check requires no auth
 
     @swagger_auto_schema(
         operation_id='health_check',
@@ -86,6 +88,7 @@ class SummarizeView(APIView):
     - rule: 단어 빈도 기반 추출형 요약 (빠름, 기본값)
     - ai: HuggingFace 모델 기반 생성형 요약 (자연스러움)
     """
+    permission_classes = [ApiKeyPermission]
 
     #######################
     # Swagger 문서 설정
@@ -372,6 +375,7 @@ class NewsSearchView(APIView):
     - start: 시작 위치 (기본 1)
     - sort: 정렬 방식 (date/sim, 기본 date)
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='news_search',
@@ -466,6 +470,7 @@ class SavedNewsListView(APIView):
 
     경로: GET /api/news/saved
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='saved_news_list',
@@ -517,6 +522,7 @@ class SavedNewsDetailView(APIView):
 
     경로: GET /api/news/saved/<filename>
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='saved_news_detail',
@@ -582,6 +588,7 @@ class BatchSummarizeView(APIView):
 
     경로: POST /api/news/batch-summarize
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='batch_summarize',
@@ -728,6 +735,7 @@ class SummarizedNewsListView(APIView):
 
     경로: GET /api/news/summarized
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='summarized_news_list',
@@ -770,6 +778,7 @@ class SummarizedNewsDetailView(APIView):
 
     경로: GET /api/news/summarized/<filename>
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='summarized_news_detail',
@@ -821,6 +830,7 @@ class DBNewsListView(APIView):
 
     경로: GET /api/news/db
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='db_news_list',
@@ -880,6 +890,7 @@ class DBNewsDetailView(APIView):
 
     경로: GET /api/news/db/<news_id>
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='db_news_detail',
@@ -931,6 +942,7 @@ class CommentFilterTestView(APIView):
 
     경로: POST /api/comments/filter/test
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='comment_filter_test',
@@ -1053,6 +1065,7 @@ class CommentFilterBatchView(APIView):
 
     경로: POST /api/comments/filter/batch
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='comment_filter_batch',
@@ -1178,6 +1191,7 @@ class CommentFilterRuleListView(APIView):
 
     경로: GET, POST /api/comments/filter/rules
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='filter_rule_list',
@@ -1470,6 +1484,7 @@ class CommentFilterRuleDetailView(APIView):
 
     경로: GET, PUT, DELETE /api/comments/filter/rules/<rule_id>
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='filter_rule_detail',
@@ -1715,6 +1730,7 @@ class FilteredCommentLogListView(APIView):
 
     경로: GET /api/comments/filter/logs
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='filtered_comment_logs',
@@ -1844,6 +1860,7 @@ class AIModerationCheckView(APIView):
 
     경로: POST /api/moderation/check
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='ai_moderation_check',
@@ -2002,6 +2019,7 @@ class AIModerationBatchView(APIView):
 
     경로: POST /api/moderation/batch
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='ai_moderation_batch',
@@ -2144,6 +2162,7 @@ class AIModerationStatusView(APIView):
 
     경로: GET /api/moderation/status
     """
+    permission_classes = [ApiKeyPermission]
 
     @swagger_auto_schema(
         operation_id='ai_moderation_status',

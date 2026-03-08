@@ -27,7 +27,7 @@ from .views import (
 
 urlpatterns = [
     path('health', HealthCheckView.as_view(), name='health'),
-    path('summarize', SummarizeView.as_view(), name='summarize'),
+    path('ai/summarize', SummarizeView.as_view(), name='summarize'),
     path('news/search', NewsSearchView.as_view(), name='news-search'),
     path('news/saved', SavedNewsListView.as_view(), name='saved-news-list'),
     path('news/saved/<str:filename>', SavedNewsDetailView.as_view(), name='saved-news-detail'),
@@ -40,14 +40,14 @@ urlpatterns = [
     path('news/db/<str:news_id>', DBNewsDetailView.as_view(), name='db-news-detail'),
 
     # 댓글 자동 필터링 API
-    path('comments/filter/test', CommentFilterTestView.as_view(), name='comment-filter-test'),
-    path('comments/filter/batch', CommentFilterBatchView.as_view(), name='comment-filter-batch'),
-    path('comments/filter/rules', CommentFilterRuleListView.as_view(), name='comment-filter-rules'),
-    path('comments/filter/rules/<str:rule_id>', CommentFilterRuleDetailView.as_view(), name='comment-filter-rule-detail'),
-    path('comments/filter/logs', FilteredCommentLogListView.as_view(), name='filtered-comment-logs'),
+    path('ai/filter', CommentFilterTestView.as_view(), name='comment-filter-test'),
+    path('ai/filter/batch', CommentFilterBatchView.as_view(), name='comment-filter-batch'),
+    path('ai/filter/rules', CommentFilterRuleListView.as_view(), name='comment-filter-rules'),
+    path('ai/filter/rules/<str:rule_id>', CommentFilterRuleDetailView.as_view(), name='comment-filter-rule-detail'),
+    path('ai/filter/logs', FilteredCommentLogListView.as_view(), name='filtered-comment-logs'),
 
     # AI 모더레이션 API
-    path('moderation/check', AIModerationCheckView.as_view(), name='ai-moderation-check'),
-    path('moderation/batch', AIModerationBatchView.as_view(), name='ai-moderation-batch'),
-    path('moderation/status', AIModerationStatusView.as_view(), name='ai-moderation-status'),
+    path('ai/moderate', AIModerationCheckView.as_view(), name='ai-moderation-check'),
+    path('ai/moderate/batch', AIModerationBatchView.as_view(), name='ai-moderation-batch'),
+    path('ai/moderate/status', AIModerationStatusView.as_view(), name='ai-moderation-status'),
 ]
