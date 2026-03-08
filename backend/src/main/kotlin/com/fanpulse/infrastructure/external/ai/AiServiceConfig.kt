@@ -66,20 +66,6 @@ class AiServiceConfig(
     }
 
     /**
-     * Shared ObjectMapper configured for Django API snake_case JSON convention.
-     *
-     * Django uses snake_case field names (e.g., `is_flagged`, `model_used`)
-     * while Kotlin uses camelCase (e.g., `isFlagged`, `modelUsed`).
-     * This mapper handles the conversion automatically.
-     */
-    @Bean(name = ["aiServiceObjectMapper"])
-    fun aiServiceObjectMapper(): ObjectMapper {
-        return ObjectMapper()
-            .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
-            .registerKotlinModule()
-    }
-
-    /**
      * WebClient configured for the Django AI Sidecar service.
      *
      * Features:
@@ -87,9 +73,15 @@ class AiServiceConfig(
      * - Jackson snake_case codec for request/response serialization
      * - Netty HttpClient with connect + read timeouts from AiServiceProperties
      * - Used by all AI adapter implementations
+     *
+     * Note: ObjectMapper is created locally (not as a bean) to avoid overriding
+     * Spring Boot's default camelCase ObjectMapper used by MVC message converters.
      */
     @Bean(name = ["aiServiceWebClient"])
-    fun aiServiceWebClient(aiServiceObjectMapper: ObjectMapper): WebClient {
+    fun aiServiceWebClient(): WebClient {
+        val aiServiceObjectMapper = ObjectMapper()
+            .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+            .registerKotlinModule()
         logger.info { "Configuring AI service WebClient with base URL: ${aiServiceProperties.baseUrl}" }
 
         val httpClient = HttpClient.create()
