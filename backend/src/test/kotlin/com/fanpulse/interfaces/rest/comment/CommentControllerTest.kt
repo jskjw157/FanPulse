@@ -224,7 +224,7 @@ class CommentControllerTest {
         fun `should return error when postId is missing`() {
             mockMvc.get("/api/v1/comments")
                 .andExpect {
-                    status { isInternalServerError() }
+                    status { isBadRequest() }
                 }
         }
 
