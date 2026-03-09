@@ -7,6 +7,7 @@ import mu.KotlinLogging
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.ServletWebRequest
@@ -192,6 +193,19 @@ class GlobalExceptionHandler {
     }
 
     // === Validation Exceptions ===
+
+    @ExceptionHandler(MissingServletRequestParameterException::class)
+    fun handleMissingParam(
+        ex: MissingServletRequestParameterException,
+        request: WebRequest
+    ): ResponseEntity<ProblemDetail> {
+        logger.debug { "Missing parameter: ${ex.parameterName}" }
+        return createResponse(
+            ErrorType.INVALID_REQUEST,
+            detail = "Required parameter '${ex.parameterName}' is missing",
+            request = request
+        )
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidationExceptions(
