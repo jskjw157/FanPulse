@@ -1,14 +1,12 @@
 package com.fanpulse.integration
 
-import com.fanpulse.domain.ai.FilterResult
-import com.fanpulse.domain.ai.port.CommentFilterPort
 import com.fanpulse.domain.comment.CommentStatus
 import com.fanpulse.infrastructure.persistence.comment.CommentFilterLogJpaRepository
 import com.fanpulse.infrastructure.persistence.comment.CommentJpaRepository
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.ninjasquad.springmockk.MockkBean
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import io.micrometer.core.instrument.MeterRegistry
-import io.mockk.every
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,30 +16,56 @@ import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import java.util.*
 
 /**
- * 댓글 AI 필터링 통합 테스트
+ * 댓글 AI 필터링 E2E 테스트
  *
- * Controller → Service → CommentFilterPort(mock) → DB 저장 → 메트릭 전체 흐름 검증.
- * H2 인메모리 DB, AI 서비스 비활성화(NoOp) + MockkBean으로 필터 결과 주입.
+ * MockkBean이 아닌 WireMock으로 Django AI Sidecar를 stub하여
+ * Controller → Service → AiCommentFilterAdapter → HTTP → DB → Metrics 전체 흐름을 검증.
+ *
+ * 핵심 검증: Fail-Pending 접합점 — WireMock 500 → CB fallback → filterType="fallback" → PENDING → 202
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@TestPropertySource(properties = ["fanpulse.ai-service.enabled=false"])
-@DisplayName("댓글 AI 필터링 통합 테스트")
+@DisplayName("댓글 AI 필터링 E2E 테스트")
 class CommentAiFilterIntegrationTest {
+
+    companion object {
+        private val wireMock = WireMockServer(wireMockConfig().dynamicPort())
+
+        @JvmStatic
+        @BeforeAll
+        fun startWireMock() {
+            wireMock.start()
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun stopWireMock() {
+            wireMock.stop()
+        }
+
+        @JvmStatic
+        @DynamicPropertySource
+        fun overrideProps(registry: DynamicPropertyRegistry) {
+            registry.add("fanpulse.ai-service.base-url") {
+                "http://localhost:${wireMock.port()}"
+            }
+            registry.add("fanpulse.ai-service.api-key") { "test-api-key" }
+            // Retry 비활성화 — 테스트 속도 (500ms 대기 제거)
+            registry.add("resilience4j.retry.instances.aiService.maxAttempts") { "1" }
+        }
+    }
 
     @Autowired
     private lateinit var mockMvc: MockMvc
-
-    @Autowired
-    private lateinit var objectMapper: ObjectMapper
 
     @Autowired
     private lateinit var commentRepository: CommentJpaRepository
@@ -52,9 +76,6 @@ class CommentAiFilterIntegrationTest {
     @Autowired
     private lateinit var meterRegistry: MeterRegistry
 
-    @MockkBean
-    private lateinit var commentFilterPort: CommentFilterPort
-
     private val postId = "507f1f77bcf86cd799439011"
     private val userId = UUID.randomUUID()
 
@@ -63,20 +84,36 @@ class CommentAiFilterIntegrationTest {
         commentRepository.deleteAll()
         filterLogRepository.deleteAll()
         meterRegistry.clear()
+        wireMock.resetAll()
     }
 
     @Nested
-    @DisplayName("댓글 생성 → AI 필터링 → DB 저장 통합 흐름")
-    inner class CreateCommentFlow {
+    @DisplayName("댓글 생성 → AI 필터링 → DB 저장 E2E 흐름")
+    inner class CreateCommentE2EFlow {
 
         @Test
         @WithMockUser
-        @DisplayName("AI가 승인 → APPROVED 상태로 저장, FilterLog 기록, 메트릭 발행")
-        fun `should save APPROVED comment when AI approves`() {
-            every { commentFilterPort.filterComment(any()) } returns FilterResult(
-                isFiltered = false,
-                filterType = "llm",
-                reason = null
+        @DisplayName("Django AI가 승인 → APPROVED 상태로 저장, FilterLog 기록, 메트릭 발행")
+        fun `should save APPROVED comment when Django AI approves`() {
+            // WireMock: Django가 LLM 승인 응답 반환
+            wireMock.stubFor(
+                post(urlEqualTo("/api/ai/filter"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody("""
+                                {
+                                    "is_filtered": false,
+                                    "action": null,
+                                    "rule_id": null,
+                                    "rule_name": null,
+                                    "filter_type": "LLM",
+                                    "matched_pattern": null,
+                                    "reason": null
+                                }
+                            """.trimIndent())
+                    )
             )
 
             mockMvc.post("/api/v1/comments") {
@@ -101,25 +138,42 @@ class CommentAiFilterIntegrationTest {
 
             val logs = filterLogRepository.findAll()
             assertEquals(1, logs.size)
-            assertEquals("llm", logs[0].filterType)
+            assertEquals("LLM", logs[0].filterType)
             assertFalse(logs[0].isFiltered)
 
-            // 메트릭 검증 (상태별 개별 카운터)
+            // 메트릭 검증
             val counter = meterRegistry.find("comment.filter.approved")
-                .tag("filter_type", "llm")
+                .tag("filter_type", "LLM")
                 .counter()
             assertNotNull(counter)
             assertEquals(1.0, counter!!.count())
+
+            // WireMock: Django 호출 확인
+            wireMock.verify(postRequestedFor(urlEqualTo("/api/ai/filter")))
         }
 
         @Test
         @WithMockUser
-        @DisplayName("AI가 차단 → BLOCKED 상태로 저장, 차단 사유 기록")
-        fun `should save BLOCKED comment when AI filters`() {
-            every { commentFilterPort.filterComment(any()) } returns FilterResult(
-                isFiltered = true,
-                filterType = "llm",
-                reason = "욕설 포함"
+        @DisplayName("Django AI가 차단 → BLOCKED 상태로 저장, 차단 사유 기록")
+        fun `should save BLOCKED comment when Django AI filters`() {
+            wireMock.stubFor(
+                post(urlEqualTo("/api/ai/filter"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody("""
+                                {
+                                    "is_filtered": true,
+                                    "action": "block",
+                                    "rule_id": 5,
+                                    "rule_name": "spam_url_filter",
+                                    "filter_type": "rule",
+                                    "matched_pattern": "http[s]?://",
+                                    "reason": "URL 포함 스팸으로 판단"
+                                }
+                            """.trimIndent())
+                    )
             )
 
             mockMvc.post("/api/v1/comments") {
@@ -139,15 +193,15 @@ class CommentAiFilterIntegrationTest {
             val comments = commentRepository.findAll()
             assertEquals(1, comments.size)
             assertEquals(CommentStatus.BLOCKED, comments[0].status)
-            assertEquals("욕설 포함", comments[0].blockReason)
+            assertEquals("URL 포함 스팸으로 판단", comments[0].blockReason)
 
             val logs = filterLogRepository.findAll()
             assertEquals(1, logs.size)
             assertTrue(logs[0].isFiltered)
-            assertEquals("욕설 포함", logs[0].reason)
+            assertEquals("URL 포함 스팸으로 판단", logs[0].reason)
 
             val counter = meterRegistry.find("comment.filter.blocked")
-                .tag("filter_type", "llm")
+                .tag("filter_type", "rule")
                 .counter()
             assertNotNull(counter)
             assertEquals(1.0, counter!!.count())
@@ -155,12 +209,16 @@ class CommentAiFilterIntegrationTest {
 
         @Test
         @WithMockUser
-        @DisplayName("AI 장애(fallback) → PENDING 상태 유지, 202 Accepted (Fail-Pending)")
-        fun `should keep PENDING when AI fails with fallback`() {
-            every { commentFilterPort.filterComment(any()) } returns FilterResult(
-                isFiltered = false,
-                filterType = "fallback",
-                reason = null
+        @DisplayName("Django 장애(500) → CB fallback → PENDING 상태, 202 Accepted (Fail-Pending 접합점)")
+        fun `should keep PENDING when Django returns 500 via Fail-Pending chain`() {
+            // WireMock: Django 500 에러 — CB fallback 트리거
+            wireMock.stubFor(
+                post(urlEqualTo("/api/ai/filter"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(500)
+                            .withBody("Internal Server Error")
+                    )
             )
 
             mockMvc.post("/api/v1/comments") {
@@ -177,15 +235,20 @@ class CommentAiFilterIntegrationTest {
                 jsonPath("$.status") { value("PENDING") }
             }
 
+            // DB: PENDING 상태로 저장됨
             val comments = commentRepository.findAll()
             assertEquals(1, comments.size)
             assertEquals(CommentStatus.PENDING, comments[0].status)
 
+            // 메트릭: fallback 타입으로 기록됨
             val counter = meterRegistry.find("comment.filter.pending")
                 .tag("filter_type", "fallback")
                 .counter()
             assertNotNull(counter)
             assertEquals(1.0, counter!!.count())
+
+            // WireMock: Django 호출이 시도되었음을 확인
+            wireMock.verify(postRequestedFor(urlEqualTo("/api/ai/filter")))
         }
     }
 
@@ -196,19 +259,39 @@ class CommentAiFilterIntegrationTest {
         @Test
         @DisplayName("GET은 APPROVED만 반환 — BLOCKED, PENDING은 제외")
         fun `should return only APPROVED comments`() {
-            // 3개 댓글을 각각 다른 상태로 생성
-            val filterResults = listOf(
-                FilterResult(isFiltered = false, filterType = "llm"),     // → APPROVED
-                FilterResult(isFiltered = true, filterType = "rule", reason = "스팸"), // → BLOCKED
-                FilterResult(isFiltered = false, filterType = "fallback") // → PENDING
+            // WireMock: content 기반 매칭으로 3가지 다른 응답
+            wireMock.stubFor(
+                post(urlEqualTo("/api/ai/filter"))
+                    .withRequestBody(containing("\uC2B9\uC778"))  // "승인"
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody("""{"is_filtered": false, "filter_type": "LLM"}""")
+                    )
             )
+            wireMock.stubFor(
+                post(urlEqualTo("/api/ai/filter"))
+                    .withRequestBody(containing("\uCC28\uB2E8"))  // "차단"
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody("""{"is_filtered": true, "filter_type": "rule", "reason": "\uC2A4\uD338"}""")
+                    )
+            )
+            wireMock.stubFor(
+                post(urlEqualTo("/api/ai/filter"))
+                    .withRequestBody(containing("\uBCF4\uB958"))  // "보류"
+                    .willReturn(
+                        aResponse()
+                            .withStatus(500)
+                            .withBody("Internal Server Error")
+                    )
+            )
+
+            // 인증된 사용자로 3개 댓글 생성
             val contents = listOf("승인 댓글", "차단 댓글", "보류 댓글")
-
-            filterResults.forEachIndexed { index, result ->
-                every { commentFilterPort.filterComment(contents[index]) } returns result
-            }
-
-            // 인증된 사용자로 3개 댓글 생성 (requestAttr로 userId 설정)
             contents.forEach { commentText ->
                 mockMvc.post("/api/v1/comments") {
                     contentType = MediaType.APPLICATION_JSON
