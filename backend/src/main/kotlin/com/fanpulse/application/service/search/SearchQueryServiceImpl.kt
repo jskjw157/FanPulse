@@ -13,7 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.springframework.dao.DataAccessException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -28,15 +27,8 @@ class SearchQueryServiceImpl(
 ) : SearchQueryService {
 
     override fun search(query: String, limit: Int): SearchResponse {
-        val safeLimit = limit.coerceIn(1, 10)
-        logger.debug { "Unified search query='$query', limit=$safeLimit" }
-
-        return try {
-            executeSearch(query, safeLimit)
-        } catch (e: DataAccessException) {
-            logger.error(e) { "Database error during search: query=$query" }
-            throw SearchServiceException("Search temporarily unavailable", e)
-        }
+        logger.debug { "Unified search query='$query', limit=$limit" }
+        return executeSearch(query, limit)
     }
 
     private fun executeSearch(query: String, safeLimit: Int): SearchResponse {

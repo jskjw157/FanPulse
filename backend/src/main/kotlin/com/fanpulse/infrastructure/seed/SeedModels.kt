@@ -2,6 +2,8 @@ package com.fanpulse.infrastructure.seed
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.UUID
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -15,7 +17,10 @@ data class SeedArtist(
     val debutDate: Instant? = null,
     val active: Boolean? = null,
     val members: List<String>? = null
-)
+) {
+    fun debutDateAsLocalDate(): LocalDate? =
+        debutDate?.atZone(ZoneId.of("Asia/Seoul"))?.toLocalDate()
+}
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SeedLiveEvent(
