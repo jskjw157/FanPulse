@@ -1,9 +1,11 @@
 """
-Test 1.3: URL 리네임 테스트
+URL 정리 및 리네임 테스트
 
-새 URL 패턴이 올바르게 라우팅되고, 이전 URL은 404를 반환하는지 검증합니다.
+Phase 3 스키마 경량화로 제거된 URL과
+Phase 1 /api/ai/* 리네임을 모두 검증합니다.
 - /api/ai/summarize, /api/ai/filter, /api/ai/moderate 라우팅 확인
-- 이전 URL (/api/summarize 등) → 404
+- 이전 URL (/api/summarize, /api/comments/filter/test 등) → 404
+- 제거된 URL (/api/news/db, /api/comments/filter/rules 등) → 404
 - /api/health → 유지
 """
 from django.test import TestCase, override_settings
@@ -20,7 +22,6 @@ class NewUrlPatternTest(TestCase):
 
     # ─────────────────────────────────────────
     # 새 URL이 정상 라우팅되는지 확인
-    # (인증 통과 후 비즈니스 에러는 OK — 라우팅만 확인)
     # ─────────────────────────────────────────
 
     def test_new_summarize_url_routed(self):
@@ -93,6 +94,30 @@ class NewUrlPatternTest(TestCase):
             format="json",
             **self.auth_header,
         )
+        self.assertEqual(response.status_code, 404)
+
+    # ─────────────────────────────────────────
+    # 제거된 DB/CRUD URL 404 확인 (Phase 3)
+    # ─────────────────────────────────────────
+
+    def test_db_news_list_returns_404(self):
+        """제거된 /api/news/db → 404"""
+        response = self.client.get("/api/news/db", **self.auth_header)
+        self.assertEqual(response.status_code, 404)
+
+    def test_db_news_detail_returns_404(self):
+        """제거된 /api/news/db/<id> → 404"""
+        response = self.client.get("/api/news/db/some-id", **self.auth_header)
+        self.assertEqual(response.status_code, 404)
+
+    def test_filter_rules_list_returns_404(self):
+        """제거된 /api/ai/filter/rules → 404"""
+        response = self.client.get("/api/ai/filter/rules", **self.auth_header)
+        self.assertEqual(response.status_code, 404)
+
+    def test_filter_logs_returns_404(self):
+        """제거된 /api/ai/filter/logs → 404"""
+        response = self.client.get("/api/ai/filter/logs", **self.auth_header)
         self.assertEqual(response.status_code, 404)
 
     # ─────────────────────────────────────────

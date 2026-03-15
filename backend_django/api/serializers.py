@@ -280,43 +280,9 @@ class SummarizeResponseSerializer(serializers.Serializer):
 
 #######################
 # 댓글 필터링 Serializers
+# NOTE: CommentFilterRuleSerializer 제거됨 (Phase 3 슬리밍)
+# 필터 규칙 CRUD는 Spring이 담당 - Django는 AI 필터 실행(test/batch)만 수행
 #######################
-
-class CommentFilterRuleSerializer(serializers.Serializer):
-    """
-    댓글 필터링 규칙 Serializer
-    """
-    id = serializers.UUIDField(read_only=True)
-    name = serializers.CharField(max_length=100, help_text="규칙 이름")
-    filter_type = serializers.ChoiceField(
-        choices=['keyword', 'regex', 'spam', 'url', 'repeat'],
-        help_text="필터 타입: keyword(금칙어), regex(정규식), spam(스팸), url(URL차단), repeat(반복문자)"
-    )
-    pattern = serializers.CharField(help_text="필터링 패턴 (키워드는 쉼표 구분)")
-    action = serializers.ChoiceField(
-        choices=['block', 'hide', 'review'],
-        default='block',
-        help_text="조치: block(차단), hide(숨김), review(검토대기)"
-    )
-    is_active = serializers.BooleanField(default=True, help_text="활성화 여부")
-    priority = serializers.IntegerField(default=0, help_text="우선순위 (높을수록 먼저 적용)")
-    description = serializers.CharField(required=False, allow_blank=True, help_text="규칙 설명")
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-
-    class Meta:
-        swagger_schema_fields = {
-            "example": {
-                "name": "욕설 필터",
-                "filter_type": "keyword",
-                "pattern": "욕설1,욕설2,비속어",
-                "action": "block",
-                "is_active": True,
-                "priority": 10,
-                "description": "일반적인 욕설 및 비속어 차단"
-            }
-        }
-
 
 class CommentFilterTestRequestSerializer(serializers.Serializer):
     """
@@ -428,29 +394,8 @@ class CommentCreateRequestSerializer(serializers.Serializer):
         }
 
 
-class FilteredCommentLogSerializer(serializers.Serializer):
-    """
-    필터링된 댓글 로그 Serializer
-    """
-    id = serializers.UUIDField(read_only=True)
-    comment_id = serializers.UUIDField(allow_null=True)
-    filter_rule_id = serializers.UUIDField(allow_null=True)
-    original_content = serializers.CharField()
-    matched_pattern = serializers.CharField()
-    action_taken = serializers.CharField()
-    created_at = serializers.DateTimeField(read_only=True)
-
-    class Meta:
-        swagger_schema_fields = {
-            "example": {
-                "id": "550e8400-e29b-41d4-a716-446655440000",
-                "comment_id": "660e8400-e29b-41d4-a716-446655440001",
-                "filter_rule_id": "770e8400-e29b-41d4-a716-446655440002",
-                "original_content": "필터링된 댓글 내용",
-                "matched_pattern": "금칙어",
-                "action_taken": "block"
-            }
-        }
+# NOTE: FilteredCommentLogSerializer 제거됨 (Phase 3 슬리밍)
+# 로그 조회는 Spring이 담당
 
 
 #######################

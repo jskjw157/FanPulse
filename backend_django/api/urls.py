@@ -1,5 +1,11 @@
 """
 URL routing for API endpoints
+
+AI Sidecar 전용 엔드포인트만 유지합니다.
+제거된 엔드포인트:
+- /api/news/db (DBNewsListView, DBNewsDetailView) - Spring이 DB 직접 조회
+- /api/ai/filter/rules (CommentFilterRuleListView) - CRUD는 Spring 담당
+- /api/ai/filter/logs (FilteredCommentLogListView) - 로그 조회는 Spring 담당
 """
 from django.urls import path
 from .views import (
@@ -11,15 +17,10 @@ from .views import (
     BatchSummarizeView,
     SummarizedNewsListView,
     SummarizedNewsDetailView,
-    DBNewsListView,
-    DBNewsDetailView,
-    # 댓글 필터링 API
+    # 댓글 필터링 AI 서비스 API (유지)
     CommentFilterTestView,
     CommentFilterBatchView,
-    CommentFilterRuleListView,
-    CommentFilterRuleDetailView,
-    FilteredCommentLogListView,
-    # AI 모더레이션 API
+    # AI 모더레이션 API (유지)
     AIModerationCheckView,
     AIModerationBatchView,
     AIModerationStatusView,
@@ -35,16 +36,12 @@ urlpatterns = [
     path('news/batch-summarize', BatchSummarizeView.as_view(), name='batch-summarize'),
     path('news/summarized', SummarizedNewsListView.as_view(), name='summarized-news-list'),
     path('news/summarized/<str:filename>', SummarizedNewsDetailView.as_view(), name='summarized-news-detail'),
-    # PostgreSQL DB 뉴스 조회
-    path('news/db', DBNewsListView.as_view(), name='db-news-list'),
-    path('news/db/<str:news_id>', DBNewsDetailView.as_view(), name='db-news-detail'),
 
-    # 댓글 자동 필터링 API
+    # 댓글 자동 필터링 API (/api/ai/* 접두사)
     path('ai/filter', CommentFilterTestView.as_view(), name='comment-filter-test'),
     path('ai/filter/batch', CommentFilterBatchView.as_view(), name='comment-filter-batch'),
-    path('ai/filter/rules', CommentFilterRuleListView.as_view(), name='comment-filter-rules'),
-    path('ai/filter/rules/<str:rule_id>', CommentFilterRuleDetailView.as_view(), name='comment-filter-rule-detail'),
-    path('ai/filter/logs', FilteredCommentLogListView.as_view(), name='filtered-comment-logs'),
+    # NOTE: /api/ai/filter/rules 제거됨 - CRUD는 Spring 담당
+    # NOTE: /api/ai/filter/logs 제거됨 - 로그 조회는 Spring 담당
 
     # AI 모더레이션 API
     path('ai/moderate', AIModerationCheckView.as_view(), name='ai-moderation-check'),

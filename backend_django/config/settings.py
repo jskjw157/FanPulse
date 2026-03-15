@@ -164,21 +164,9 @@ else:
 #######################
 # 비밀번호 검증 설정
 #######################
-# 사용자 비밀번호 생성 시 적용되는 검증 규칙
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
+# AI Sidecar 전용 서비스 - 사용자 인증 없음
+# 비밀번호 검증 규칙 불필요
+AUTH_PASSWORD_VALIDATORS = []
 
 
 #######################
