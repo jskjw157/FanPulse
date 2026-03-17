@@ -1257,7 +1257,8 @@ class ChunkedReviewer:
                     print(f"   ❌ 그룹 {group_idx + 1} 실패: {e}")
 
         # 4. Meta-review (오탐 제거)
-        if self.ENABLE_META_REVIEW and len(all_issues) > 3:
+        has_critical = any(i.severity == Severity.CRITICAL for i in all_issues)
+        if self.ENABLE_META_REVIEW and (len(all_issues) > 3 or has_critical):
             all_issues = self._meta_review(all_issues)
 
         # 5. 결과 병합
