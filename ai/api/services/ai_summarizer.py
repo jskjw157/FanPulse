@@ -18,10 +18,16 @@
 # - transformers, torch, sentencepiece 패키지 필요
 #######################
 """
-import torch
 import logging
 
 logger = logging.getLogger(__name__)
+
+try:
+    import torch
+    _TORCH_AVAILABLE = True
+except ImportError:
+    torch = None
+    _TORCH_AVAILABLE = False
 
 #######################
 # 지연 로딩 (Lazy Loading) 변수
