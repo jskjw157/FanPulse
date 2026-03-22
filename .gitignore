@@ -55,3 +55,6 @@ ai/summarized_data/
 .claude/settings.local.json
 .mcp.json
 .playwright-mcp/
+
+# Worktrees
+.worktrees/
