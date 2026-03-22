@@ -37,6 +37,7 @@ GitHub_이슈_분석.md
 __pycache__/
 *.pyc
 *.pyo
+*.sqlite3
 
 # Claude Agent Farm
 .heartbeats/
