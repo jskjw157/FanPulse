@@ -1,8 +1,16 @@
 {
+<<<<<<< HEAD
   "sessionCount": 13,
   "lastSession": {
     "startedAt": "2026-03-22T05:55:31.703Z",
     "platform": "claude",
     "level": "Enterprise"
+=======
+  "sessionCount": 10,
+  "lastSession": {
+    "startedAt": "2026-02-11T14:18:23.903Z",
+    "platform": "claude",
+    "level": "Starter"
+>>>>>>> origin/master
   }
 }
