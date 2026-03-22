@@ -12,10 +12,10 @@ COPY src ./src
 RUN gradle bootJar -x test --no-daemon
 
 # ── Stage 2: Runtime ──
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd -r appgroup && useradd -r -g appgroup -s /bin/false appuser
 
 COPY --from=builder /app/build/libs/*.jar app.jar
 

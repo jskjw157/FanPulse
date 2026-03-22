@@ -2,6 +2,7 @@ package com.fanpulse.infrastructure.seed
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -12,7 +13,7 @@ data class SeedArtist(
     val isGroup: Boolean = false,
     val profileImageUrl: String? = null,
     val description: String? = null,
-    val debutDate: Instant? = null,
+    val debutDate: LocalDate? = null,
     val active: Boolean? = null,
     val members: List<String>? = null
 )
