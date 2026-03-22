@@ -1,8 +1,15 @@
 {
-  "sessionCount": 2,
+  "sessionCount": 4,
   "lastSession": {
-    "startedAt": "2026-03-22T06:57:43.310Z",
+    "startedAt": "2026-03-22T08:03:43.293Z",
     "platform": "claude",
     "level": "Enterprise"
+  },
+  "activeFeatures": {
+    "telegram-pr-review": {
+      "phase": "plan",
+      "startedAt": "2026-03-22",
+      "planPath": "docs/01-plan/features/telegram-pr-review.plan.md"
+    }
   }
 }
