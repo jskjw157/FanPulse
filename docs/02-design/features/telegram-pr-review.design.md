@@ -26,8 +26,6 @@ Developer        GitHub          GitHub Action     Telegram       Claude Code (�
    │               │                 │                │                │
    │─ PR 생성 ────→│                 │                │                │
    │               │─ PR 이벤트 ────→│                │                │
-   │               │                 │── gh api ─────→│                │
-   │               │                 │  (pending 설정) │                │
    │               │                 │── curl ───────→│                │
    │               │                 │← 200 OK ──────│                │
    │               │                 │ (즉시 종료)     │                │
@@ -74,27 +72,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # gh pr view --json files는 존재하지 않는 필드이므로 REST API 사용
-          FILES=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files \
-            --jq '.[].filename')
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --json files --jq '.files[].path')
           if echo "$FILES" | grep -qE '\.kt$|\.java$|\.py$|\.ts$|\.tsx$|\.js$|\.jsx$'; then
             echo "should_notify=true" >> $GITHUB_OUTPUT
           else
             echo "should_notify=false" >> $GITHUB_OUTPUT
             echo "No code files changed, skipping notification"
           fi
-
-      - name: Set initial pending status
-        if: steps.check.outputs.should_notify == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Claude Code가 오프라인이어도 pending 상태가 설정되어 Ruleset이 머지를 대기시킴
-          gh api repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }} \
-            -f state=pending \
-            -f context=claude-code-review \
-            -f description="Waiting for Claude Code review..." \
-            -f target_url="${{ github.event.pull_request.html_url }}"
 
       - name: Send Telegram notification
         if: steps.check.outputs.should_notify == 'true'
