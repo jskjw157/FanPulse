@@ -323,15 +323,11 @@ Enforcement: active
 
 ## 8. cokacdir 봇 서버 설정
 
-### 8-1. 설치
+### 8-1. 사전 조건
 
-```bash
-/bin/bash -c "$(curl -fsSL https://cokacdir.cokac.com/install.sh)"
-```
-
-사전 조건:
 - Claude Code CLI 설치: `npm install -g @anthropic-ai/claude-code`
 - gh CLI 인증: `gh auth login`
+- cokacdir 바이너리 설치: `curl -fsSL https://cokacdir.cokac.com/install.sh | bash`
 
 ### 8-2. BotFather 봇 생성
 
@@ -339,11 +335,17 @@ Enforcement: active
 2. 봇 이름 + username 설정 (예: `fanpulse_review_bot`)
 3. API 토큰 복사 (예: `1234567890:ABCdef...`)
 
-### 8-3. 봇 서버 시작
+### 8-3. 서비스 등록 + 봇 서버 시작
 
 ```bash
-cokacdir --ccserver YOUR_BOT_TOKEN
+npx -y service-setup-cokacdir YOUR_BOT_TOKEN
 ```
+
+이 한 줄로:
+- macOS: `~/Library/LaunchAgents/com.cokacdir.server.plist` 생성 → 부팅 시 자동 시작
+- Linux: systemd 서비스 등록 → 부팅 시 자동 시작
+- 로그: `tail -f ~/Library/Logs/cokacdir/cokacdir.log` (macOS)
+- 중지: `launchctl bootout gui/$(id -u)/com.cokacdir.server` (macOS)
 
 ### 8-4. 오너 등록 (Imprinting)
 
@@ -368,11 +370,8 @@ cokacdir는 Claude Code 세션을 **영구 보존**한다:
 
 ### 8-7. 자동 시작 (재부팅 시)
 
-```bash
-# crontab에 추가
-crontab -e
-@reboot nohup cokacdir --ccserver YOUR_BOT_TOKEN &
-```
+`npx -y service-setup-cokacdir`로 설치하면 자동 처리됨.
+수동 crontab 설정 불필요.
 
 ### 8-8. 권한 관련
 
