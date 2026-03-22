@@ -1,8 +1,10 @@
-# Design: Claude Code Telegram Channel PR Review
+# Design: Claude Code Telegram PR Review (cokacdir)
 
 > Plan: docs/01-plan/features/telegram-pr-review.plan.md
 > Created: 2026-03-22
+> Updated: 2026-03-22 (Channels → cokacdir 전환)
 > 통신 방식: 방안 B (단방향 알림 + Claude Code가 커밋 상태 직접 설정)
+> 봇 런타임: cokacdir --ccserver (Rust 바이너리, Channels 의존 없음)
 
 ## 1. 파일 구조
 
@@ -22,15 +24,17 @@ FanPulse/
 ## 2. 시퀀스 다이어그램
 
 ```
-Developer        GitHub          GitHub Action     Telegram       Claude Code (로컬)
+Developer        GitHub          GitHub Action     Telegram       cokacdir (로컬)
    │               │                 │                │                │
-   │─ PR 생성 ────→│                 │                │                │
-   │               │─ PR 이벤트 ────→│                │                │
+   │─ PR 생성 ────→│                 │                │           [--ccserver 상시 실행]
+   │               │─ PR 이벤트 ────→│                │           [세션: /start ~/FanPulse]
    │               │                 │── curl ───────→│                │
    │               │                 │← 200 OK ──────│                │
    │               │                 │ (즉시 종료)     │                │
    │               │                 │                │── 폴링 수신 ──→│
    │               │                 │                │                │
+   │               │                 │                │  Claude Code CLI 실행
+   │               │                 │                │  (--resume 세션 복원)
    │               │                 │                │   gh pr diff   │
    │               │                 │                │   코드 리뷰     │
    │               │                 │                │   gh pr comment │
@@ -140,10 +144,12 @@ event: synchronize
 url: https://github.com/ohchaeeun/FanPulse/pull/195
 ```
 
-### Claude Code에서 수신되는 형태
+### cokacdir → Claude Code에 전달되는 형태
 
-```xml
-<channel source="telegram" chat_id="123456" sender_id="789">
+cokacdir가 Telegram 메시지를 수신하면 Claude Code CLI에 stdin으로 메시지 내용을 전달.
+Claude Code는 `.claude/rules/02-pr-review-instructions.md`의 규칙에 따라 `[PR-REVIEW-REQUEST]`를 인식하고 리뷰를 수행한다.
+
+```
 [PR-REVIEW-REQUEST]
 repo: ohchaeeun/FanPulse
 pr: #195
@@ -154,7 +160,6 @@ base: master
 sha: abc1234567890
 event: synchronize
 url: https://github.com/ohchaeeun/FanPulse/pull/195
-</channel>
 ```
 
 ## 5. Claude Code Instructions (`.claude/rules/02-pr-review-instructions.md`)
@@ -316,68 +321,116 @@ Enforcement: active
 # API를 사용할 경우 먼저 GET으로 현재 ruleset을 조회 후 수정하여 PUT해야 함
 ```
 
-## 8. Claude Code 실행 설정
+## 8. cokacdir 봇 서버 설정
 
-### 시작 명령어
+### 8-1. 설치
 
 ```bash
-claude --channels plugin:telegram@claude-plugins-official
+/bin/bash -c "$(curl -fsSL https://cokacdir.cokac.com/install.sh)"
 ```
 
-### 필요 사전 설정
+사전 조건:
+- Claude Code CLI 설치: `npm install -g @anthropic-ai/claude-code`
+- gh CLI 인증: `gh auth login`
 
-| 항목 | 명령어 | 비고 |
-|------|--------|------|
-| Telegram 플러그인 설치 | `/plugin install telegram@claude-plugins-official` | Claude Code 내 실행 |
-| 봇 토큰 설정 | `/telegram:configure <token>` | BotFather에서 받은 토큰 |
-| 계정 페어링 | `/telegram:access pair <code>` | 봇에 메시지 후 받는 코드 |
-| 접근 제한 | `/telegram:access policy allowlist` | 허용된 사용자만 |
-| gh CLI 인증 | `gh auth login` | GitHub API 접근용 |
-| Bun 설치 | `curl -fsSL https://bun.sh/install \| bash` | 채널 플러그인 런타임 |
+### 8-2. BotFather 봇 생성
 
-### 권한 관련
+1. Telegram에서 @BotFather → `/newbot`
+2. 봇 이름 + username 설정 (예: `fanpulse_review_bot`)
+3. API 토큰 복사 (예: `1234567890:ABCdef...`)
 
-Claude Code가 리뷰 수행 시 `gh` 명령을 사용하므로, 터미널을 떠나있을 때 권한 프롬프트에서
-멈출 수 있다. 두 가지 해결 방법:
+### 8-3. 봇 서버 시작
 
-1. **allowedTools 사전 설정** (권장):
-   `.claude/settings.json`에 다음 추가:
-   ```json
-   {
-     "permissions": {
-       "allow": [
-         "Bash(gh pr diff:*)",
-         "Bash(gh pr comment:*)",
-         "Bash(gh pr view:*)",
-         "Bash(gh api:*)",
-         "Read",
-         "Grep",
-         "Glob"
-       ]
-     }
-   }
-   ```
+```bash
+cokacdir --ccserver YOUR_BOT_TOKEN
+```
 
-2. **`--dangerously-skip-permissions`** (주의):
-   모든 도구를 허가 없이 실행. 신뢰 환경에서만 사용.
+### 8-4. 오너 등록 (Imprinting)
 
-## 9. Fallback: Claude Code 오프라인 시
+봇 최초 실행 후 Telegram에서 봇에게 **첫 메시지를 보낸 사용자**가 자동으로 오너로 등록.
+⚠️ 외부인이 먼저 메시지를 보내지 않도록 즉시 등록할 것.
 
-Claude Code가 꺼져있으면 Telegram 메시지가 수신되지 않고, 커밋 상태도 설정되지 않는다.
+### 8-5. 세션 설정 (Telegram에서 실행)
+
+```
+/start ~/source/FanPulse          # 작업 디렉토리 설정 (세션 자동 복원)
+/instruction [PR 리뷰 규칙]       # 시스템 프롬프트 추가 (선택사항, .claude/rules/와 조합)
+/silent                            # 도구 호출 중간 메시지 숨김
+```
+
+### 8-6. 세션 관리 방식
+
+cokacdir는 Claude Code 세션을 **영구 보존**한다:
+- `bot_settings.json`에 마지막 세션 경로 저장
+- `/start` 없이 메시지 보내면 마지막 세션 자동 복원
+- Claude Code `--resume SESSION_ID`로 기존 세션 이어서 실행
+- 세션 히스토리 (대화 내역)도 복원됨
+
+### 8-7. 자동 시작 (재부팅 시)
+
+```bash
+# crontab에 추가
+crontab -e
+@reboot nohup cokacdir --ccserver YOUR_BOT_TOKEN &
+```
+
+### 8-8. 권한 관련
+
+cokacdir는 Claude Code를 `--dangerously-skip-permissions`로 실행한다.
+별도의 allowedTools 설정이 필요 없음 — 모든 도구가 자동 허용.
+
+⚠️ 오너 등록이 완료된 후에는 해당 Telegram 사용자 ID만 봇 사용 가능.
+
+### 8-9. 주요 Telegram 명령어
+
+| 명령어 | 설명 |
+|--------|------|
+| `/start [path]` | 세션 시작/복원 |
+| `/stop` | 현재 AI 작업 중단 |
+| `/clear` | 대화 기록 초기화 |
+| `/pwd` | 현재 작업 디렉토리 확인 |
+| `/instruction [text]` | 시스템 프롬프트 설정/확인 |
+| `/instruction_clear` | 시스템 프롬프트 삭제 |
+| `/silent` | 도구 호출 메시지 숨김 토글 |
+| `/session` | 현재 세션 ID 확인 |
+| `/model [provider:model]` | AI 모델 변경 (예: `claude:claude-sonnet-4-6`) |
+| `/shell [command]` | 셸 명령 직접 실행 |
+| `/download [path]` | 파일 다운로드 |
+
+### 8-10. 의존성 비교 (기존 Channels vs cokacdir)
+
+| 항목 | Channels (이전 설계) | cokacdir (현재) |
+|------|---------------------|-----------------|
+| 런타임 | Bun (JS) | 없음 (Rust 바이너리) |
+| Claude Code Channels | 필요 (연구 프리뷰) | **불필요** |
+| 플러그인 설치 | `/plugin install` + 페어링 | **불필요** |
+| 권한 설정 | allowedTools 수동 설정 | **자동** (--dangerously-skip-permissions) |
+| 세션 복원 | 기존 세션에 이벤트 push | **--resume로 세션 복원** |
+| 자동 시작 | 수동 `--channels` 플래그 | **crontab @reboot** |
+
+## 9. Fallback: cokacdir 오프라인 시
+
+cokacdir 봇 서버가 꺼져있으면 Telegram 메시지가 수신되지 않고, 커밋 상태도 설정되지 않는다.
 이 경우 PR에 `claude-code-review` 상태가 없어서 Ruleset에 의해 머지가 차단된다.
 
 ### 대응 방안
 
 | 상황 | 대응 |
 |------|------|
-| Claude Code 임시 오프라인 | Claude Code 켜면 밀린 Telegram 메시지 처리 |
+| cokacdir 임시 오프라인 | 재시작하면 밀린 Telegram 메시지 자동 처리 |
 | 장기 오프라인 | admin 권한으로 `--admin` 머지 |
 | 긴급 핫픽스 | Ruleset 일시 비활성화 또는 admin 머지 |
+| 재부팅 | `@reboot` crontab으로 자동 재시작 |
 
 ### Telegram 메시지 큐잉
 
 Telegram은 봇이 오프라인이어도 메시지를 보관한다 (24시간 이내).
-Claude Code가 다시 켜지면 밀린 메시지를 순차적으로 처리한다.
+cokacdir가 재시작되면 밀린 메시지를 순차적으로 처리한다.
+
+### 네트워크 재연결
+
+cokacdir는 네트워크 단절 시 exponential backoff으로 자동 재연결 (5초 → 최대 60초).
+세션은 `bot_settings.json`에 영구 저장되므로 재시작 후에도 세션이 복원된다.
 
 단, **동일 PR에 여러 이벤트(synchronize)가 쌓인 경우** 마지막 SHA만 리뷰하면 된다.
 Claude Code instructions에서 동일 PR의 이전 리뷰 요청은 스킵하도록 명시.
