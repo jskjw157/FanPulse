@@ -1,0 +1,88 @@
+services:
+  postgres:
+    image: postgres:14
+    container_name: fanpulse-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fanpulse}
+      POSTGRES_USER: ${POSTGRES_USER:-fanpulse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fanpulse}
+    volumes:
+      - fanpulse_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fanpulse} -d ${POSTGRES_DB:-fanpulse}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - fanpulse-net
+
+  spring:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fanpulse-spring
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-fanpulse}
+      DB_USERNAME: ${POSTGRES_USER:-fanpulse}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-fanpulse}
+      AI_SERVICE_URL: http://django-ai:8000
+      JWT_SECRET: ${JWT_SECRET:-default-dev-secret-key-256-bits-long-for-hs256-algorithm}
+      FANPULSE_SCHEDULER_LIVE_DISCOVERY_ENABLED: "false"
+      FANPULSE_SCHEDULER_METADATA_REFRESH_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: on-failure
+    networks:
+      - fanpulse-net
+
+  django-ai:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    container_name: fanpulse-django-ai
+    ports:
+      - "8000:8000"
+    environment:
+      USE_POSTGRES: "true"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-fanpulse}
+      POSTGRES_USER: ${POSTGRES_USER:-fanpulse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fanpulse}
+      DJANGO_DEBUG: "false"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,django-ai"
+      AI_SERVICE_ACCEPTED_KEYS: ${AI_API_KEY:-test-api-key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: on-failure
+    networks:
+      - fanpulse-net
+
+volumes:
+  fanpulse_postgres_data:
+
+networks:
+  fanpulse-net:
+    driver: bridge
