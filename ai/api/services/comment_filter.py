@@ -144,7 +144,6 @@ class CommentFilterService:
                 **inputs,
                 max_new_tokens=64,
                 do_sample=False,
-                temperature=0.0,
                 pad_token_id=tokenizer.eos_token_id,
             )
 
@@ -167,6 +166,8 @@ class CommentFilterService:
             filter_type="LLM",
         )
 
+    def batch_filter(self, texts: list) -> list:
+        return [self.filter_comment(text) for text in texts]
 
 
 

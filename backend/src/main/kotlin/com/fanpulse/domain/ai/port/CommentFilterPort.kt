@@ -16,7 +16,7 @@ interface CommentFilterPort {
      * 댓글 내용에 대한 AI 필터링 검사를 수행합니다.
      *
      * LLM 기반 필터링과 규칙 기반 필터링을 조합하여 검사합니다.
-     * AI 서비스 장애 시 Fail-Open 전략에 따라 허용(isFiltered=false) 결과를 반환합니다.
+     * AI 서비스 장애 시 Fail-Pending 전략에 따라 PENDING 상태를 유지합니다.
      *
      * @param content 필터링할 댓글 내용
      * @return 필터링 결과 ([FilterResult])

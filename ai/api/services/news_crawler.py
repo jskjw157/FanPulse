@@ -773,7 +773,9 @@ class SummarizedNewsManager:
     @staticmethod
     def read_summarized_file(filename: str) -> dict:
         """특정 요약 파일 내용 읽기"""
-        file_path = SUMMARIZED_DATA_DIR / filename
+        file_path = (SUMMARIZED_DATA_DIR / filename).resolve()
+        if not str(file_path).startswith(str(SUMMARIZED_DATA_DIR.resolve())):
+            return {'success': False, 'error': '잘못된 파일명입니다.', 'items': []}
 
         if not file_path.exists():
             return {'success': False, 'error': '파일을 찾을 수 없습니다.', 'items': []}
@@ -798,7 +800,9 @@ class SummarizedNewsManager:
     @staticmethod
     def delete_summarized_file(filename: str) -> dict:
         """요약 파일 삭제"""
-        file_path = SUMMARIZED_DATA_DIR / filename
+        file_path = (SUMMARIZED_DATA_DIR / filename).resolve()
+        if not str(file_path).startswith(str(SUMMARIZED_DATA_DIR.resolve())):
+            return {'success': False, 'error': '잘못된 파일명입니다.'}
 
         if not file_path.exists():
             return {'success': False, 'error': '파일을 찾을 수 없습니다.'}
