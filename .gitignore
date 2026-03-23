@@ -58,3 +58,4 @@ ai/summarized_data/
 
 # Worktrees
 .worktrees/
+ai/.env
