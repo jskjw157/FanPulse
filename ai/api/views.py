@@ -354,7 +354,7 @@ class SummarizeView(APIView):
             return Response(
                 {
                     'error': 'Internal server error',
-                    'details': str(e),
+                    'details': 'An internal error occurred',
                     'request_id': str(request_id)
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -703,7 +703,7 @@ class BatchSummarizeView(APIView):
                     'bullets': [],
                     'keywords': [],
                     'summarized': False,
-                    'error': str(e)
+                    'error': 'Summarization failed'
                 })
 
         # 결과 저장

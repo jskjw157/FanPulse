@@ -562,7 +562,9 @@ class SavedNewsReader:
     @staticmethod
     def read_json_file(filename: str) -> dict:
         """특정 JSON 파일 내용 읽기"""
-        file_path = NEWS_DATA_DIR / filename
+        file_path = (NEWS_DATA_DIR / filename).resolve()
+        if not str(file_path).startswith(str(NEWS_DATA_DIR.resolve())):
+            return {'success': False, 'error': '잘못된 파일명입니다.', 'items': []}
 
         if not file_path.exists():
             return {'success': False, 'error': '파일을 찾을 수 없습니다.', 'items': []}
@@ -585,7 +587,9 @@ class SavedNewsReader:
     @staticmethod
     def delete_json_file(filename: str) -> dict:
         """JSON 파일 삭제"""
-        file_path = NEWS_DATA_DIR / filename
+        file_path = (NEWS_DATA_DIR / filename).resolve()
+        if not str(file_path).startswith(str(NEWS_DATA_DIR.resolve())):
+            return {'success': False, 'error': '잘못된 파일명입니다.'}
 
         if not file_path.exists():
             return {'success': False, 'error': '파일을 찾을 수 없습니다.'}
