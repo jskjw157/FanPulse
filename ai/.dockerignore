@@ -1,7 +1,11 @@
 .git
+.gitignore
+.env
+.env.*
 __pycache__
 *.pyc
-db.sqlite3
-.env
-*.log
-legacy/
+*.pyo
+.pytest_cache
+htmlcov
+*.md
+Dockerfile
