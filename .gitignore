@@ -51,3 +51,6 @@ agent_farm_report_*.html
 .claude/settings.local.json
 .mcp.json
 .playwright-mcp/
+
+# Git worktrees
+.worktrees/
