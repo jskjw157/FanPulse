@@ -1,8 +1,8 @@
 .git
+.gitignore
+.idea
 .gradle
 build
-*.log
-.idea
-.vscode
-docker-compose.yml
-test-output.log
+*.md
+src/test
+Dockerfile

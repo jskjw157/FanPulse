@@ -16,6 +16,10 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks:
       - fanpulse-net
 
@@ -34,9 +38,11 @@ services:
       DB_USERNAME: ${POSTGRES_USER:-fanpulse}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-fanpulse}
       AI_SERVICE_URL: http://django-ai:8000
+      AI_SERVICE_API_KEY: ${AI_API_KEY:-test-api-key}
       JWT_SECRET: ${JWT_SECRET:-default-dev-secret-key-256-bits-long-for-hs256-algorithm}
       FANPULSE_SCHEDULER_LIVE_DISCOVERY_ENABLED: "false"
       FANPULSE_SCHEDULER_METADATA_REFRESH_ENABLED: "false"
+      JAVA_TOOL_OPTIONS: "-Xmx512m -Xms256m"
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,6 +53,10 @@ services:
       retries: 12
       start_period: 30s
     restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 768M
     networks:
       - fanpulse-net
 
@@ -77,6 +87,10 @@ services:
       retries: 12
       start_period: 15s
     restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks:
       - fanpulse-net
 
