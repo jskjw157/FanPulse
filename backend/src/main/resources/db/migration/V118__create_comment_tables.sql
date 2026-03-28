@@ -3,6 +3,13 @@
 -- Depends on: users (V2)
 
 -- =====================================================
+-- DROP Django-created tables (different schema)
+-- Spring/Flyway owns the canonical schema
+-- =====================================================
+DROP TABLE IF EXISTS comment_filter_logs CASCADE;
+DROP TABLE IF EXISTS comments CASCADE;
+
+-- =====================================================
 -- COMMENTS TABLE
 -- =====================================================
 CREATE TABLE comments (
