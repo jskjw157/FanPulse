@@ -17,8 +17,8 @@ from datetime import datetime
 
 CLAUDE_CLI = "/opt/homebrew/bin/claude"
 COKACDIR = "/usr/local/bin/cokacdir"
-CHAT_ID = os.environ.get("COKACDIR_CHAT_ID", "7787917549")
-API_KEY = os.environ.get("COKACDIR_API_KEY", "ed63edaed666d89a")
+CHAT_ID = os.environ.get("COKACDIR_CHAT_ID", "")
+API_KEY = os.environ.get("COKACDIR_API_KEY", "")
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 PROJECT_DIR = "/Users/ohchaeeun/source/FanPulse"
 PORT = 8788
@@ -93,13 +93,18 @@ def notify_telegram(pr_num: int, success: bool, error: str = ""):
         msg = f"PR #{pr_num} 자동 리뷰 완료"
     else:
         msg = f"PR #{pr_num} 자동 리뷰 실패: {error}" if error else f"PR #{pr_num} 자동 리뷰 실패"
-    try:
-        subprocess.run(
-            [COKACDIR, "--sendfile", "/dev/null", "--chat", CHAT_ID, "--key", API_KEY],
-            capture_output=True, timeout=5
-        )
-    except Exception:
-        pass
+    if CHAT_ID and API_KEY:
+        try:
+            tmp = f"/tmp/pr-review-notify-{pr_num}.txt"
+            with open(tmp, "w") as f:
+                f.write(msg)
+            subprocess.run(
+                [COKACDIR, "--sendfile", tmp, "--chat", CHAT_ID, "--key", API_KEY],
+                capture_output=True, timeout=10
+            )
+            os.remove(tmp)
+        except Exception:
+            pass
     log(f"Telegram notify: {msg}")
 
 
