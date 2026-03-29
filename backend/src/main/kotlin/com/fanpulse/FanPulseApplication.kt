@@ -1,3 +1,4 @@
+// Webhook pipeline verification test
 package com.fanpulse
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
