@@ -1,6 +1,8 @@
 # 😀 FanPulse
 
 글로벌 K-POP 팬들을 위한 인터랙티브 플랫폼
+- notion: https://www.notion.so/oduckprogrammer/FanPulse-1979da8ee78480939281ee7ebf60256e?source=copy_link
+- mockup: https://mpycns.readdy.co/community
 
 ## 📌 프로젝트 개요
 
@@ -204,17 +206,21 @@ User → API Gateway → Auth Service
 ```bash
 # 저장소 클론
 git clone https://github.com/your-org/fanpulse.git
-cd fanpulse/backend
+cd fanpulse
 
 # 환경 변수 설정
 cp .env.example .env
+set -a; source .env; set +a
 
-# Docker로 데이터베이스 실행
-docker-compose up -d postgres mongodb redis
+# Docker로 PostgreSQL 실행
+docker compose up -d postgres
 
 # Spring Boot 애플리케이션 실행
+cd backend
 ./gradlew bootRun
 ```
+
+MongoDB와 Redis는 별도 설치/실행이 필요합니다.
 
 ### 프론트엔드 실행
 
@@ -286,19 +292,25 @@ http://localhost:8080/swagger-ui.html
 
 ---
 
-## 📝 라이선스
+## License
 
-This project is licensed under the MIT License
+This project is source-available for reference only.
+All rights are reserved.
+
 
 ---
 
 ## 👥 팀
 
+-   **PM**: 정지원
 -   **Backend**: 정지원
+-   **기획**: 정지원, 이승구
+-   **디자인**: 정지원(AI)
 -   **Android**: 나유성
 -   **iOS**: 김송
--   **Crawler**: 정지원
+-   **Crawler**: 정지원, 나영민
 -   **DevOps**: 정지원
+-   **AI**: 장종화, 나영민
 
 ---
 

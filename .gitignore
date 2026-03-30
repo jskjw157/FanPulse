@@ -10,7 +10,8 @@ dev-debug.log
 node_modules/
 
 # Environment variables
-.env
+.env*.local
+backend/.env
 
 # Editor directories and files
 .idea
@@ -27,3 +28,38 @@ node_modules/
 # Task files
 # tasks.json
 # tasks/ 
+*.skill
+validation-report.md
+doc/mvp/GitHub_이슈_분석.md
+doc/mvp/GitHub_이슈_정리_실행.md
+GitHub_이슈_분석.md
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.sqlite3
+
+# Claude Agent Farm
+.heartbeats/
+.claude_agent_farm_state.json
+.claude_agent_farm_backups/
+agent_farm_report_*.html
+
+#data
+ai/news_data/
+ai/summarized_data/
+# OpenCode / Sisyphus working files
+.sisyphus/
+
+# Claude Code local settings
+.claude/settings.local.json
+.mcp.json
+.playwright-mcp/
+
+# Worktrees
+.worktrees/
+ai/.env
+
+# Review channel
+logs/
+.env.review

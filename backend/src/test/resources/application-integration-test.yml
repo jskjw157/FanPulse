@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: fanpulse-backend-integration-test
+
+  # DataSource uses local PostgreSQL (override via environment variables)
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fanpulse}
+    username: ${DB_USERNAME:fanpulse}
+    password: ${DB_PASSWORD:fanpulse}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # Changed from 'validate' to 'update' for integration tests
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    out-of-order: false
+    clean-disabled: false  # Allow clean in test environment
+
+fanpulse:
+  security:
+    rate-limit:
+      enabled: false  # Disable rate limiting in integration tests
+
+  youtube:
+    oembed:
+      base-url: http://localhost:8089/oembed
+      timeout-ms: 3000
+      retry:
+        max-attempts: 2
+        delay-ms: 500
+
+  scheduler:
+    metadata-refresh:
+      enabled: false
+      live-cron: "0 0 * * * *"
+      all-cron: "0 0 0 * * *"
+      batch-size: 10
+      batch-delay-ms: 100
+
+# Resilience4j - disabled for tests
+resilience4j:
+  circuitbreaker:
+    instances:
+      youtubeOEmbed:
+        registerHealthIndicator: false
+        slidingWindowSize: 100
+        minimumNumberOfCalls: 100
+        failureRateThreshold: 100
+        waitDurationInOpenState: 1s
+
+logging:
+  level:
+    com.fanpulse: DEBUG
+    org.flywaydb: INFO

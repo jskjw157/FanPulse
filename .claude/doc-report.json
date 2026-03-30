@@ -1,0 +1,267 @@
+{
+  "summary": {
+    "total_items": 138,
+    "documented": 98,
+    "missing": 40,
+    "doc_coverage": 71.01,
+    "by_priority": {
+      "critical": 33,
+      "important": 1,
+      "nice_to_have": 6
+    }
+  },
+  "missing_docs": {
+    "critical": [
+      {
+        "file": "script/claude_code_crawler/claude_code_crawler.py",
+        "line": 21,
+        "type": "class",
+        "name": "ClaudeCodeCrawler",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public class"
+      },
+      {
+        "file": "script/claude_code_crawler/anthropic_blog_crawler.py",
+        "line": 21,
+        "type": "class",
+        "name": "AnthropicBlogCrawler",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public class"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 18,
+        "type": "class",
+        "name": "TestClaudeCodeCrawlerFilters",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public class"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 102,
+        "type": "class",
+        "name": "TestAnthropicBlogCrawlerFilters",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public class"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 179,
+        "type": "class",
+        "name": "TestCodexDocsCrawlerFilters",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public class"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 19,
+        "type": "function",
+        "name": "setUp",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 22,
+        "type": "function",
+        "name": "test_docs_en_allowed",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 27,
+        "type": "function",
+        "name": "test_docs_ko_blocked",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 32,
+        "type": "function",
+        "name": "test_assets_blocked",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 37,
+        "type": "function",
+        "name": "test_normalize_url",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 43,
+        "type": "function",
+        "name": "test_exclude_pattern",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 47,
+        "type": "function",
+        "name": "test_strip_noise",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 70,
+        "type": "function",
+        "name": "test_trim_to_first_heading",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 88,
+        "type": "function",
+        "name": "test_compress_markdown",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 97,
+        "type": "function",
+        "name": "test_compact_mode_keeps_links",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 103,
+        "type": "function",
+        "name": "setUp",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 106,
+        "type": "function",
+        "name": "test_news_post_allowed",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 113,
+        "type": "function",
+        "name": "test_news_index_blocked",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 116,
+        "type": "function",
+        "name": "test_blog_post_allowed",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      },
+      {
+        "file": "script/claude_code_crawler/tests/test_filters.py",
+        "line": 121,
+        "type": "function",
+        "name": "test_assets_blocked",
+        "priority": "critical",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      }
+    ],
+    "important": [
+      {
+        "file": "script/codex_crawler/codex_docs_crawler.py",
+        "line": 373,
+        "type": "function",
+        "name": "main",
+        "priority": "important",
+        "language": "python",
+        "reason": "Missing docstring for public function"
+      }
+    ],
+    "nice_to_have": [
+      {
+        "file": "script/doc_analyzer.py",
+        "line": 17,
+        "type": "function",
+        "name": "__init__",
+        "priority": "nice_to_have",
+        "language": "python",
+        "reason": "Missing docstring"
+      },
+      {
+        "file": "script/config_validator.py",
+        "line": 17,
+        "type": "function",
+        "name": "__init__",
+        "priority": "nice_to_have",
+        "language": "python",
+        "reason": "Missing docstring"
+      },
+      {
+        "file": "script/code_review_analyzer.py",
+        "line": 18,
+        "type": "function",
+        "name": "__init__",
+        "priority": "nice_to_have",
+        "language": "python",
+        "reason": "Missing docstring"
+      },
+      {
+        "file": "script/claude_code_crawler/claude_code_crawler.py",
+        "line": 22,
+        "type": "function",
+        "name": "__init__",
+        "priority": "nice_to_have",
+        "language": "python",
+        "reason": "Missing docstring"
+      },
+      {
+        "file": "script/claude_code_crawler/anthropic_blog_crawler.py",
+        "line": 22,
+        "type": "function",
+        "name": "__init__",
+        "priority": "nice_to_have",
+        "language": "python",
+        "reason": "Missing docstring"
+      },
+      {
+        "file": "script/codex_crawler/codex_docs_crawler.py",
+        "line": 45,
+        "type": "function",
+        "name": "__init__",
+        "priority": "nice_to_have",
+        "language": "python",
+        "reason": "Missing docstring"
+      }
+    ]
+  },
+  "recommendations": [
+    "Focus on 33 critical items (public classes/exported functions)"
+  ]
+}

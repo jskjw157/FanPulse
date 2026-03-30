@@ -1,0 +1,28 @@
+{
+  "summary": {
+    "agents": {
+      "total": 1,
+      "valid": 1,
+      "invalid": 0
+    },
+    "skills": {
+      "total": 0,
+      "valid": 0,
+      "invalid": 0
+    },
+    "hooks": {
+      "total": 0,
+      "valid": 0,
+      "invalid": 0
+    },
+    "rules": {
+      "total": 0,
+      "valid": 0,
+      "invalid": 0
+    }
+  },
+  "errors": [],
+  "warnings": [],
+  "total_issues": 0,
+  "is_valid": true
+}
