@@ -37,6 +37,7 @@ GitHub_이슈_분석.md
 __pycache__/
 *.pyc
 *.pyo
+*.sqlite3
 
 # Claude Agent Farm
 .heartbeats/
@@ -44,6 +45,9 @@ __pycache__/
 .claude_agent_farm_backups/
 agent_farm_report_*.html
 
+#data
+ai/news_data/
+ai/summarized_data/
 # OpenCode / Sisyphus working files
 .sisyphus/
 
@@ -51,3 +55,11 @@ agent_farm_report_*.html
 .claude/settings.local.json
 .mcp.json
 .playwright-mcp/
+
+# Worktrees
+.worktrees/
+ai/.env
+
+# Review channel
+logs/
+.env.review

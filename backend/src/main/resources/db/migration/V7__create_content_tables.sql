@@ -5,7 +5,7 @@
 -- =====================================================
 -- CRAWLED_NEWS TABLE
 -- =====================================================
-CREATE TABLE crawled_news (
+CREATE TABLE IF NOT EXISTS crawled_news (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(255) NOT NULL,
     content TEXT,
@@ -29,7 +29,7 @@ COMMENT ON COLUMN crawled_news.created_at IS '저장된 시간';
 -- =====================================================
 -- CRAWLED_CHARTS TABLE (현재 순위)
 -- =====================================================
-CREATE TABLE crawled_charts (
+CREATE TABLE IF NOT EXISTS crawled_charts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     chart_source VARCHAR(100) NOT NULL,
     chart_period VARCHAR(20) NOT NULL,
@@ -59,7 +59,7 @@ COMMENT ON COLUMN crawled_charts.updated_at IS '최신 업데이트';
 -- =====================================================
 -- CRAWLED_CHARTS_HISTORY TABLE (히스토리)
 -- =====================================================
-CREATE TABLE crawled_charts_history (
+CREATE TABLE IF NOT EXISTS crawled_charts_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     chart_source VARCHAR(100) NOT NULL,
     chart_period VARCHAR(20) NOT NULL,
@@ -85,7 +85,7 @@ COMMENT ON COLUMN crawled_charts_history.crawled_at IS '크롤링/적재 시각'
 -- =====================================================
 -- CRAWLED_CONCERTS TABLE
 -- =====================================================
-CREATE TABLE crawled_concerts (
+CREATE TABLE IF NOT EXISTS crawled_concerts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     event_name VARCHAR(255) NOT NULL,
     artist VARCHAR(255),
@@ -111,7 +111,7 @@ COMMENT ON COLUMN crawled_concerts.created_at IS '저장된 시간';
 -- =====================================================
 -- CRAWLED_ADS TABLE
 -- =====================================================
-CREATE TABLE crawled_ads (
+CREATE TABLE IF NOT EXISTS crawled_ads (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_name VARCHAR(200) NOT NULL,
     description TEXT,

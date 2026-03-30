@@ -97,7 +97,7 @@ class SeedLoaderRunner(
 
                     seed.description?.let { created.updateDescription(it) }
                     seed.profileImageUrl?.let { created.updateProfileImage(it) }
-                    seed.debutDateAsLocalDate()?.let { created.updateDebutDate(it) }
+                    seed.debutDate?.let { created.updateDebutDate(it) }
                     seed.active?.let { active -> if (active) created.activate() else created.deactivate() }
 
                     if (seed.isGroup && !seed.members.isNullOrEmpty()) {
@@ -116,7 +116,7 @@ class SeedLoaderRunner(
                     seed.agency?.let { existing.agency = it }
                     seed.description?.let { existing.updateDescription(it) }
                     seed.profileImageUrl?.let { existing.updateProfileImage(it) }
-                    seed.debutDateAsLocalDate()?.let { existing.updateDebutDate(it) }
+                    seed.debutDate?.let { existing.updateDebutDate(it) }
                     seed.active?.let { active -> if (active) existing.activate() else existing.deactivate() }
 
                     // NOTE: existing.isGroup is immutable (val). We cannot change it during upsert.
