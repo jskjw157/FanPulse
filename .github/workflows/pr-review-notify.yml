@@ -1,0 +1,102 @@
+name: PR Review Notify
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: pr-notify-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  notify:
+    name: Notify Telegram
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Check for reviewable files
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --json files --jq '.files[].path')
+          if echo "$FILES" | grep -qE '\.kt$|\.java$|\.py$|\.ts$|\.tsx$|\.js$|\.jsx$'; then
+            echo "should_notify=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_notify=false" >> $GITHUB_OUTPUT
+            echo "No code files changed, skipping notification"
+          fi
+
+      - name: Trigger PR review via webhook
+        if: steps.check.outputs.should_notify == 'true'
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          PR_TITLE_RAW: ${{ github.event.pull_request.title }}
+        run: |
+          TITLE_JSON=$(echo "$PR_TITLE_RAW" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read().strip()))")
+          PAYLOAD=$(cat <<EOF
+          {
+            "repo": "${{ github.repository }}",
+            "pr": ${{ github.event.pull_request.number }},
+            "title": ${TITLE_JSON},
+            "author": "${{ github.event.pull_request.user.login }}",
+            "head": "${{ github.event.pull_request.head.ref }}",
+            "base": "${{ github.event.pull_request.base.ref }}",
+            "sha": "${{ github.event.pull_request.head.sha }}",
+            "event": "${{ github.event.action }}",
+            "url": "${{ github.event.pull_request.html_url }}"
+          }
+          EOF
+          )
+
+          # webhook 호출 (signature 포함)
+          if [ -n "$WEBHOOK_SECRET" ]; then
+            SIGNATURE="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | awk '{print $NF}')"
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${WEBHOOK_URL}" \
+              -H "Content-Type: application/json" \
+              -H "X-Hub-Signature-256: ${SIGNATURE}" \
+              -d "$PAYLOAD")
+          else
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${WEBHOOK_URL}" \
+              -H "Content-Type: application/json" \
+              -d "$PAYLOAD")
+          fi
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "Response: $BODY (HTTP $HTTP_CODE)"
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "::warning::Webhook call failed with HTTP $HTTP_CODE"
+          fi
+
+      - name: Send Telegram notification
+        if: steps.check.outputs.should_notify == 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          PR_NUM="${{ github.event.pull_request.number }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          EVENT_TYPE="${{ github.event.action }}"
+
+          MESSAGE="🔔 PR #${PR_NUM} 리뷰 요청
+          제목: ${PR_TITLE}
+          작성자: ${PR_AUTHOR}
+          이벤트: ${EVENT_TYPE}
+          ${PR_URL}"
+
+          curl -s -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MESSAGE}" > /dev/null

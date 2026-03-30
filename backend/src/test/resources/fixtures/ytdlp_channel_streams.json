@@ -1,0 +1,29 @@
+{
+  "entries": [
+    {
+      "id": "abc123xyz",
+      "title": "LIVE NOW - Sample Stream",
+      "webpage_url": "https://www.youtube.com/watch?v=abc123xyz",
+      "live_status": "is_live",
+      "thumbnail": "https://i.ytimg.com/vi/abc123xyz/hqdefault.jpg",
+      "timestamp": 1767225600,
+      "view_count": 12345
+    },
+    {
+      "id": "def456uvw",
+      "title": "Upcoming Stream",
+      "webpage_url": "https://www.youtube.com/watch?v=def456uvw",
+      "live_status": "is_upcoming",
+      "thumbnail": "https://i.ytimg.com/vi/def456uvw/hqdefault.jpg",
+      "release_timestamp": 1767312000
+    },
+    {
+      "id": "ghi789rst",
+      "title": "Past Stream Archive",
+      "webpage_url": "https://www.youtube.com/watch?v=ghi789rst",
+      "live_status": "was_live",
+      "thumbnail": "https://i.ytimg.com/vi/ghi789rst/hqdefault.jpg",
+      "upload_date": "20260101"
+    }
+  ]
+}

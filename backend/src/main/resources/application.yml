@@ -1,0 +1,228 @@
+spring:
+  application:
+    name: fanpulse-backend
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fanpulse}
+    username: ${DB_USERNAME:fanpulse}
+    password: ${DB_PASSWORD:fanpulse}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    out-of-order: false
+    clean-disabled: true
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:default-secret-key-that-is-at-least-256-bits-long-for-hs256-algorithm-please-change-in-production}
+  access-expiration: 3600000    # 1시간 (밀리초)
+  refresh-expiration: 604800000  # 7일 (밀리초)
+
+fanpulse:
+  ai-service:
+    # Feature Flag: set to false to disable AI service integration and use NoOp adapters (Fail-Open).
+    # true  → AiModerationAdapter / AiCommentFilterAdapter / AiNewsSummarizerAdapter (real HTTP calls)
+    # false → NoOpContentModerationAdapter / NoOpCommentFilterAdapter / NoOpNewsSummarizerAdapter (permissive no-op)
+    enabled: true
+    base-url: ${AI_SERVICE_URL:http://localhost:8001}
+    # API Key for Django AI Sidecar authentication (X-Api-Key header)
+    api-key: ${AI_SERVICE_API_KEY:}
+    timeout:
+      connect: 3s
+      read: 5s
+      summarize-read: 30s
+
+  seed:
+    enabled: ${FANPULSE_SEED_ENABLED:false}
+    dir: ${FANPULSE_SEED_DIR:seed}
+
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:test-google-client-id.apps.googleusercontent.com}
+
+  youtube:
+    oembed:
+      base-url: https://www.youtube.com/oembed
+      timeout-ms: 5000
+      retry:
+        max-attempts: 3
+        delay-ms: 1000
+
+  discovery:
+    ytdlp:
+      command: yt-dlp
+      timeout-ms: 30000   # 30초 타임아웃
+      playlist-limit: 30   # 채널당 30개
+      extract-flat: false
+
+  scheduler:
+    metadata-refresh:
+      enabled: true
+      live-cron: "0 0 * * * *"
+      all-cron: "0 0 0 * * *"
+      batch-size: 50
+      batch-delay-ms: 1000
+    live-discovery:
+      enabled: true
+      cron: "0 0 * * * *"  # 매시간 실행
+      channel-delay-ms: 500
+      max-concurrency: 5
+
+# Resilience4j Circuit Breaker
+resilience4j:
+  circuitbreaker:
+    instances:
+      # AI Content Moderation (moderation check + batch)
+      aiModeration:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 60
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - com.fanpulse.infrastructure.external.ai.AiServiceException
+        ignoreExceptions:
+          # 401 is Fail-Closed: auth failures are not transient and must propagate
+          - org.springframework.web.reactive.function.client.WebClientResponseException$Unauthorized
+
+      # AI Comment Filter (separate circuit breaker for comment filtering)
+      aiCommentFilter:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 60
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - com.fanpulse.infrastructure.external.ai.AiServiceException
+        ignoreExceptions:
+          # 401 is Fail-Closed: auth failures are not transient and must propagate
+          - org.springframework.web.reactive.function.client.WebClientResponseException$Unauthorized
+
+      # AI Summarizer (separate circuit breaker, longer wait for AI inference)
+      aiSummarizer:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 60
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - com.fanpulse.infrastructure.external.ai.AiServiceException
+        ignoreExceptions:
+          # 401 is Fail-Closed: auth failures are not transient and must propagate
+          - org.springframework.web.reactive.function.client.WebClientResponseException$Unauthorized
+
+      youtubeOEmbed:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException.ServiceUnavailable
+          - org.springframework.web.reactive.function.client.WebClientResponseException.GatewayTimeout
+          - com.fanpulse.infrastructure.external.youtube.QuotaExceededException
+          - com.fanpulse.infrastructure.external.youtube.UnexpectedClientException
+        ignoreExceptions:
+          - com.fanpulse.infrastructure.external.youtube.VideoNotFoundException
+          - com.fanpulse.infrastructure.external.youtube.RateLimitExceededException
+
+      # P0-2: yt-dlp Circuit Breaker 설정
+      ytdlp:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 60s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - java.lang.IllegalStateException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+
+  # Retry 설정
+  retry:
+    instances:
+      # AI Service: shared retry for moderation, filter, summarizer
+      aiService:
+        maxAttempts: 2
+        waitDuration: 500ms
+        retryExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientResponseException$InternalServerError
+          - org.springframework.web.reactive.function.client.WebClientResponseException$ServiceUnavailable
+          - com.fanpulse.infrastructure.external.ai.AiServiceException
+
+      ytdlp:
+        maxAttempts: 3
+        waitDuration: 2s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - java.lang.IllegalStateException
+          - java.io.IOException
+
+  # TimeLimiter 설정 (reactive WebClient에서는 .timeout() operator로 처리)
+  timelimiter:
+    instances:
+      aiModeration:
+        timeoutDuration: 5s
+      aiCommentFilter:
+        timeoutDuration: 5s
+      aiSummarizer:
+        timeoutDuration: 30s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,circuitbreakers,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+logging:
+  level:
+    com.fanpulse: DEBUG
+    org.springframework.web: INFO

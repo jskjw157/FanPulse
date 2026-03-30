@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "myPageBg.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
