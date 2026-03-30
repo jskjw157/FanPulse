@@ -1,5 +1,6 @@
 package com.aos.fanpulse.presentation.login
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,6 +40,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -59,6 +61,8 @@ fun LoginScreen (
     viewModel: LoginViewModel = hiltViewModel(),
     onGoHome: () -> Unit
 ) {
+
+    val context = LocalContext.current
 
     var selectedTab by rememberSaveable {
         mutableStateOf(LoginState.LOGIN)
@@ -106,8 +110,10 @@ fun LoginScreen (
 
             OutlinedButton(
                 onClick = {
-//                    viewModel.googleLogin(context)
-                    onGoHome()
+                    viewModel.googleLogin(context){
+                        if (it) onGoHome()
+                        else Toast.makeText(context, "실패했어", Toast.LENGTH_SHORT).show()
+                    }
                           },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(100.dp),
