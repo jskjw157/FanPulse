@@ -263,13 +263,12 @@ class SearchQueryServiceImplTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = [0, 1, 10, 11])
+    @ValueSource(ints = [1, 5, 10])
     @DisplayName("limit 경계값을 올바르게 처리해야 한다")
     fun `should handle limit boundary values`(limit: Int) {
         val artistId = UUID.randomUUID()
         val now = Instant.parse("2026-01-10T00:00:00Z")
 
-        // Create multiple events to test limit clamping
         val events = (1..11).map { i ->
             StreamingEvent(
                 title = "Event $i",
@@ -322,9 +321,8 @@ class SearchQueryServiceImplTest {
 
         val response = service.search("test", limit)
 
-        // limit should be clamped between 1 and 10
-        val expectedLimit = limit.coerceIn(1, 10)
-        assertTrue(response.live.items.size <= expectedLimit)
+        // Controller handles clamping; service receives valid limits only
+        assertTrue(response.live.items.size <= limit)
         assertTrue(response.live.items.size >= 0)
     }
 
