@@ -6,6 +6,9 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
 import java.util.*
 
+/**
+ * 컨트롤러에서 전달받는 댓글 생성 요청 모델.
+ */
 @Schema(description = "댓글 생성 요청 (Controller)")
 data class CreateCommentRequest(
     @Schema(description = "게시글 ID (MongoDB ObjectId)")
@@ -18,6 +21,9 @@ data class CreateCommentRequest(
     val parentCommentId: UUID? = null
 )
 
+/**
+ * 페이지네이션이 적용된 댓글 목록 응답 모델.
+ */
 @Schema(description = "댓글 목록 응답")
 data class CommentListResponse(
     @Schema(description = "댓글 목록")
@@ -36,6 +42,9 @@ data class CommentListResponse(
     val totalPages: Int
 )
 
+/**
+ * 서비스 레이어에서 사용하는 댓글 생성 커맨드 (userId 포함).
+ */
 @Schema(description = "댓글 생성 커맨드 (Service)")
 data class CreateCommentCommand(
     @Schema(description = "게시글 ID (MongoDB ObjectId)")
@@ -51,6 +60,9 @@ data class CreateCommentCommand(
     val parentCommentId: UUID? = null
 )
 
+/**
+ * 도메인 엔티티를 API 응답으로 변환하는 댓글 응답 모델.
+ */
 @Schema(description = "댓글 응답")
 data class CommentResponse(
     @Schema(description = "댓글 ID")

@@ -21,6 +21,10 @@ import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * REST controller for K-POP news articles.
+ * 뉴스 기사 목록 조회 및 상세 조회 API를 제공한다.
+ */
 @RestController
 @RequestMapping("/api/v1/news")
 @Tag(name = "News", description = "K-POP news articles")

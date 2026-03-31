@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
 import java.util.UUID
 
+/**
+ * 라이브 이벤트와 뉴스 검색 결과를 통합한 응답 모델.
+ */
 @Schema(description = "Unified search response")
 data class SearchResponse(
     @Schema(description = "Live (streaming events) search result")
@@ -13,6 +16,9 @@ data class SearchResponse(
     val news: SearchCategoryResponse<SearchNewsItem>
 )
 
+/**
+ * 검색 결과의 카테고리별 항목 리스트와 전체 개수를 담는 제네릭 모델.
+ */
 @Schema(description = "Search result category")
 data class SearchCategoryResponse<T>(
     @Schema(description = "Items in this category")
@@ -22,6 +28,9 @@ data class SearchCategoryResponse<T>(
     val totalCount: Long
 )
 
+/**
+ * 통합 검색 결과에 포함되는 라이브 스트리밍 이벤트 항목.
+ */
 @Schema(description = "Live search item")
 data class SearchLiveItem(
     @Schema(description = "Streaming event ID")
@@ -46,6 +55,9 @@ data class SearchLiveItem(
     val scheduledAt: Instant
 )
 
+/**
+ * 통합 검색 결과에 포함되는 뉴스 기사 항목.
+ */
 @Schema(description = "News search item")
 data class SearchNewsItem(
     @Schema(description = "News ID")

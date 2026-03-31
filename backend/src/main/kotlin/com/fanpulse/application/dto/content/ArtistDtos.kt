@@ -8,6 +8,9 @@ import java.util.*
 
 // === Response DTOs ===
 
+/**
+ * 아티스트 상세 정보를 포함하는 응답 모델.
+ */
 @Schema(description = "Artist detail response")
 data class ArtistResponse(
     @Schema(description = "Artist ID")
@@ -60,6 +63,9 @@ data class ArtistResponse(
     }
 }
 
+/**
+ * 목록 화면에 사용하는 간략한 아티스트 정보.
+ */
 @Schema(description = "Artist summary for list views")
 data class ArtistSummary(
     @Schema(description = "Artist ID")
@@ -92,6 +98,9 @@ data class ArtistSummary(
     }
 }
 
+/**
+ * 페이지네이션이 적용된 아티스트 목록 응답.
+ */
 @Schema(description = "Paginated list of artists")
 data class ArtistListResponse(
     @Schema(description = "List of artists")

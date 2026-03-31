@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * 도메인 포트를 통해 APPROVED 댓글을 페이징 조회한다.
+ */
 @Service
 @Transactional(readOnly = true)
 class CommentQueryServiceImpl(

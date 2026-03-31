@@ -23,6 +23,9 @@ import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * 댓글 생성(AI 필터링 포함) 및 게시글별 댓글 조회 API를 제공한다.
+ */
 @RestController
 @RequestMapping("/api/v1/comments")
 @Tag(name = "Comments", description = "댓글 생성 및 조회 (AI 필터링 적용)")

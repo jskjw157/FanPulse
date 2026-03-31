@@ -20,6 +20,10 @@ import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * REST controller for music chart rankings.
+ * 음원 차트 목록 조회 및 날짜별 차트 데이터 API를 제공한다.
+ */
 @RestController
 @RequestMapping("/api/v1/charts")
 @Tag(name = "Charts", description = "Music chart rankings")

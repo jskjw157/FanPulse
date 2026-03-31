@@ -6,6 +6,10 @@ import org.springframework.stereotype.Component
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * yt-dlp 실행 결과(JSON)를 파싱하여 [YtDlpEntry] 리스트로 변환한다.
+ * 플레이리스트 형식과 개별 엔트리 라인 형식을 모두 지원한다.
+ */
 @Component
 class YtDlpOutputParser(
     private val objectMapper: ObjectMapper
@@ -47,10 +51,21 @@ class YtDlpOutputParser(
     }
 }
 
+/**
+ * yt-dlp playlist output model.
+ * yt-dlp의 플레이리스트 JSON 출력을 역직렬화하기 위한 모델.
+ */
 data class YtDlpPlaylist(
     val entries: List<YtDlpEntry?>? = emptyList()
 )
 
+/**
+ * yt-dlp가 추출한 개별 영상/스트리밍 메타데이터.
+ *
+ * @property id YouTube video ID
+ * @property live_status live broadcast status (e.g., "is_live", "is_upcoming", "was_live")
+ * @property concurrent_view_count current viewer count for live streams
+ */
 data class YtDlpEntry(
     val id: String? = null,
     val title: String? = null,

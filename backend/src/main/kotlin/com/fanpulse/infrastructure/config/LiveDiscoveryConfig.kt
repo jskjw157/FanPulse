@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
+/**
+ * 아티스트 채널에서 라이브 스트리밍을 탐색하기 위한 yt-dlp 설정 및 서비스 빈을 구성한다.
+ */
 @Configuration
 class LiveDiscoveryConfig {
     @Value("\${fanpulse.discovery.ytdlp.command:yt-dlp}")

@@ -8,6 +8,9 @@ import java.util.*
 
 // === Response DTOs ===
 
+/**
+ * 뉴스 기사 상세 정보를 포함하는 응답 모델.
+ */
 @Schema(description = "News detail response")
 data class NewsResponse(
     @Schema(description = "News ID")
@@ -60,6 +63,9 @@ data class NewsResponse(
     }
 }
 
+/**
+ * 목록 화면에 사용하는 간략한 뉴스 정보.
+ */
 @Schema(description = "News summary for list views")
 data class NewsSummary(
     @Schema(description = "News ID")
@@ -96,6 +102,9 @@ data class NewsSummary(
     }
 }
 
+/**
+ * 페이지네이션이 적용된 뉴스 목록 응답.
+ */
 @Schema(description = "Paginated list of news")
 data class NewsListResponse(
     @Schema(description = "List of news")
@@ -116,6 +125,9 @@ data class NewsListResponse(
 
 // === Filter ===
 
+/**
+ * 뉴스 조회 시 사용하는 필터 조건.
+ */
 @Schema(description = "Filter criteria for news")
 data class NewsFilter(
     @Schema(description = "Filter by artist ID")

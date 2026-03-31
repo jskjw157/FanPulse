@@ -10,6 +10,9 @@ import java.util.UUID
 
 // === Response DTOs ===
 
+/**
+ * 아티스트 채널 상세 정보 응답 모델.
+ */
 @Schema(description = "Artist channel response")
 data class ArtistChannelResponse(
     @Schema(description = "Channel ID")
@@ -58,6 +61,9 @@ data class ArtistChannelResponse(
     }
 }
 
+/**
+ * 아티스트 채널 목록 응답 모델.
+ */
 @Schema(description = "List of artist channels")
 data class ArtistChannelListResponse(
     @Schema(description = "List of channels")
@@ -69,6 +75,9 @@ data class ArtistChannelListResponse(
 
 // === Request DTOs (Admin) ===
 
+/**
+ * 관리자가 새 아티스트 채널을 크롤링 대상으로 등록하는 요청 모델.
+ */
 @Schema(description = "Create artist channel request")
 data class CreateArtistChannelRequest(
     @field:NotNull(message = "Artist ID is required")
@@ -95,6 +104,9 @@ data class CreateArtistChannelRequest(
     val isActive: Boolean = true
 )
 
+/**
+ * 기존 아티스트 채널 정보를 부분 수정하는 요청 모델. null 필드는 변경하지 않는다.
+ */
 @Schema(description = "Update artist channel request")
 data class UpdateArtistChannelRequest(
     @Schema(description = "Channel handle")
