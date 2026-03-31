@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Size
 
 // === Request DTOs ===
 
+/**
+ * 이메일/비밀번호 기반 회원가입 요청 모델.
+ */
 @Schema(description = "Email/password signup request")
 data class SignupRequest(
     @field:NotBlank(message = "Email is required")
@@ -25,6 +28,9 @@ data class SignupRequest(
     val password: String
 )
 
+/**
+ * 이메일/비밀번호 기반 로그인 요청 모델.
+ */
 @Schema(description = "Email/password login request")
 data class LoginRequest(
     @field:NotBlank(message = "Email is required")
@@ -37,6 +43,9 @@ data class LoginRequest(
     val password: String
 )
 
+/**
+ * Google OAuth 로그인 시 클라이언트 SDK에서 받은 ID 토큰을 전달하는 요청 모델.
+ */
 @Schema(description = "Google OAuth login request")
 data class GoogleLoginRequest(
     @field:NotBlank(message = "ID token is required")
@@ -44,6 +53,9 @@ data class GoogleLoginRequest(
     val idToken: String
 )
 
+/**
+ * 만료된 액세스 토큰을 갱신하기 위한 리프레시 토큰 요청 모델.
+ */
 @Schema(description = "Token refresh request")
 data class RefreshTokenRequest(
     @field:NotBlank(message = "Refresh token is required")
@@ -51,6 +63,9 @@ data class RefreshTokenRequest(
     val refreshToken: String
 )
 
+/**
+ * 현재 비밀번호 확인 후 새 비밀번호로 변경하는 요청 모델.
+ */
 @Schema(description = "Password change request")
 data class ChangePasswordRequest(
     @field:NotBlank(message = "Current password is required")
@@ -65,6 +80,9 @@ data class ChangePasswordRequest(
 
 // === Response DTOs ===
 
+/**
+ * 인증 성공 시 반환하는 JWT 토큰 응답 모델.
+ */
 @Schema(description = "Authentication token response")
 data class TokenResponse(
     @Schema(description = "JWT access token")
@@ -83,6 +101,9 @@ data class TokenResponse(
     val refreshExpiresIn: Long? = null
 )
 
+/**
+ * 별도 반환 데이터가 없는 작업의 결과 메시지 응답.
+ */
 @Schema(description = "Simple message response")
 data class MessageResponse(
     @Schema(description = "Response message")

@@ -5,6 +5,16 @@ import jakarta.persistence.*
 import java.time.Instant
 import java.util.*
 
+/**
+ * JPA entity for AI comment filter audit logs.
+ * 댓글 AI 필터링 결과를 기록하는 감사 로그 엔티티.
+ *
+ * @property commentId 필터링 대상 댓글 ID
+ * @property isFiltered AI가 유해하다고 판단했는지 여부
+ * @property filterType 필터 유형 (ai / fallback 등)
+ * @property reason 차단 사유 (nullable)
+ * @property ruleName 적용된 규칙명 (nullable)
+ */
 @Entity
 @Table(name = "comment_filter_logs")
 class CommentFilterLog private constructor(

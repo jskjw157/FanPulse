@@ -9,6 +9,9 @@ import java.util.*
 
 // === Response DTOs ===
 
+/**
+ * 차트 순위 엔트리를 포함하는 상세 응답 모델.
+ */
 @Schema(description = "Chart detail response")
 data class ChartResponse(
     @Schema(description = "Chart ID")
@@ -37,6 +40,9 @@ data class ChartResponse(
     }
 }
 
+/**
+ * 차트 내 개별 순위 항목 (트랙, 아티스트, 순위 변동 포함).
+ */
 @Schema(description = "Chart entry response")
 data class ChartEntryResponse(
     @Schema(description = "Entry ID")
@@ -89,6 +95,9 @@ data class ChartEntryResponse(
     }
 }
 
+/**
+ * 목록 화면에 사용하는 간략한 차트 정보.
+ */
 @Schema(description = "Chart summary for list views")
 data class ChartSummary(
     @Schema(description = "Chart ID")
@@ -113,6 +122,9 @@ data class ChartSummary(
     }
 }
 
+/**
+ * 차트 목록 응답 모델.
+ */
 @Schema(description = "List of charts")
 data class ChartListResponse(
     @Schema(description = "List of chart summaries")

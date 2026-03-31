@@ -18,6 +18,9 @@ import org.springframework.web.bind.annotation.RestController
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * 라이브 스트리밍과 뉴스를 통합 검색하는 API 엔드포인트를 제공한다.
+ */
 @RestController
 @RequestMapping("/api/v1/search")
 @Tag(name = "Search", description = "Unified search across live streaming events and news")

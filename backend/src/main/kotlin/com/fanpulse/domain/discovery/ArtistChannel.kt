@@ -5,6 +5,21 @@ import jakarta.persistence.*
 import java.time.Instant
 import java.util.UUID
 
+/**
+ * 아티스트의 스트리밍 플랫폼 채널 정보를 관리하는 엔티티.
+ * 라이브 탐색 스케줄러가 이 채널을 크롤링하여 새로운 라이브 이벤트를 발견한다.
+ *
+ * @property id channel unique identifier
+ * @property artistId associated artist ID
+ * @property platform streaming platform (e.g., YOUTUBE)
+ * @property channelHandle platform-specific handle (e.g., @NewJeans_official)
+ * @property channelId platform-specific channel ID
+ * @property channelUrl full channel URL
+ * @property isOfficial whether this is an official artist channel
+ * @property isActive whether crawling is enabled for this channel
+ * @property lastCrawledAt last successful crawl timestamp
+ * @property createdAt channel registration timestamp
+ */
 @Entity
 @Table(
     name = "artist_channels",
@@ -48,6 +63,7 @@ class ArtistChannel(
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now()
 ) {
+    /** Updates the last crawled timestamp. 크롤링 완료 시 호출된다. */
     fun markCrawled(now: Instant = Instant.now()) {
         lastCrawledAt = now
     }
