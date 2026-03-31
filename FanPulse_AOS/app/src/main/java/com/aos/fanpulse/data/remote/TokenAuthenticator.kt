@@ -3,6 +3,8 @@ package com.aos.fanpulse.data.remote
 import com.aos.fanpulse.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
@@ -17,42 +19,53 @@ class TokenAuthenticator @Inject constructor(
     private val authServiceProvider: Provider<AuthApiService>
 ) : Authenticator {
 
+    private val mutex = Mutex()
+
     override fun authenticate(route: Route?, response: Response): Request? {
-        // 1. 이미 재시도를 한 요청인지 확인 (무한 루프 방지)
         if (response.count() >= 2) return null
 
         return runBlocking {
-            // 2. 저장소에서 Refresh Token 꺼내기
-            val refreshToken = authRepository.refreshToken.first()
+            // 🌟 자물쇠를 걸어서 하나의 스레드(요청)만 진입하게 만듭니다.
+            mutex.withLock {
+                // 1. 내가 자물쇠를 기다리는 동안, 앞선 다른 요청이 이미 토큰을 갱신해 두었는지 확인!
+                // 실패했던 원본 요청의 토큰과 현재 DataStore에 있는 토큰을 비교합니다.
+                val failedToken = extractTokenFromRequest(response.request, "fanpulse_access_token")
+                val currentToken = authRepository.accessToken.first() // accessToken도 저장한다고 가정
 
-            if (!refreshToken.isNullOrEmpty()) {
-                // 3. 서버에 새 토큰 요청 (동기적 실행)
-                // 서버가 쿠키 기반이므로 요청 시 Cookie 헤더에 리프레시 토큰을 실어 보냅니다.
-                val refreshResponse = authServiceProvider.get()
-                    .refreshTokens("fanpulse_refresh_token=$refreshToken")
-                    .execute()
+                // 만약 두 토큰이 다르다면? 앞선 요청이 이미 새 토큰을 받아와 저장한 것입니다.
+                if (currentToken != null && failedToken != currentToken) {
+                    // 서버에 갱신 요청을 또 할 필요 없이, 방금 갱신된 새 토큰으로 바로 다시 쏘면 됩니다!
+                    return@runBlocking response.request.newBuilder()
+                        .header("Cookie", "fanpulse_access_token=$currentToken")
+                        .build()
+                }
 
-                if (refreshResponse.isSuccessful) {
-                    // 4. 응답 헤더의 Set-Cookie에서 새 토큰들 추출
-                    val cookies = refreshResponse.headers().values("Set-Cookie")
-                    val newAccess = extractToken(cookies, "fanpulse_access_token")
-                    val newRefresh = extractToken(cookies, "fanpulse_refresh_token")
+                // 2. 아무도 갱신하지 않았다면, 내가 직접 갱신하러 갑니다.
+                val refreshToken = authRepository.refreshToken.first()
+                if (!refreshToken.isNullOrEmpty()) {
+                    val refreshResponse = authServiceProvider.get()
+                        .refreshTokens("fanpulse_refresh_token=$refreshToken")
+                        .execute()
 
-                    if (newAccess != null && newRefresh != null) {
-                        // 5. DataStore 업데이트
-                        authRepository.updateTokens(newAccess, newRefresh)
+                    if (refreshResponse.isSuccessful) {
+                        val cookies = refreshResponse.headers().values("Set-Cookie")
+                        val newAccess = extractToken(cookies, "fanpulse_access_token")
+                        val newRefresh = extractToken(cookies, "fanpulse_refresh_token")
 
-                        // 6. 실패했던 원래 요청에 새 액세스 토큰 쿠키를 입혀서 다시 보냄
-                        return@runBlocking response.request.newBuilder()
-                            .header("Cookie", "fanpulse_access_token=$newAccess")
-                            .build()
+                        if (newAccess != null && newRefresh != null) {
+                            authRepository.updateTokens(newAccess, newRefresh)
+
+                            return@runBlocking response.request.newBuilder()
+                                .header("Cookie", "fanpulse_access_token=$newAccess")
+                                .build()
+                        }
                     }
                 }
-            }
 
-            // 갱신 실패 시 (Refresh Token 만료 등) 모든 정보 삭제 및 null 반환 (재시도 중단)
-            authRepository.clearAll()
-            null
+                // 갱신 실패 시
+                authRepository.clearAll()
+                null
+            }
         }
     }
 
@@ -71,6 +84,15 @@ class TokenAuthenticator @Inject constructor(
         return cookies.find { it.contains(key) }
             ?.substringAfter("$key=")
             ?.substringBefore(";")
+            ?.trim()
+    }
+
+    // 원본 요청(Request)의 Header에서 특정 토큰을 뽑아오는 헬퍼 함수
+    private fun extractTokenFromRequest(request: Request, key: String): String? {
+        val cookieHeader = request.header("Cookie") ?: return null
+        return cookieHeader.split(";")
+            .find { it.trim().startsWith("$key=") }
+            ?.substringAfter("$key=")
             ?.trim()
     }
 }
