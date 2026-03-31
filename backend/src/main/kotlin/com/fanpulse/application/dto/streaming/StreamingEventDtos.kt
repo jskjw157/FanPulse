@@ -9,6 +9,9 @@ import java.util.UUID
 
 // === Response DTOs ===
 
+/**
+ * 스트리밍 이벤트 전체 상세 정보 응답 모델.
+ */
 @Schema(description = "Streaming event detail response")
 data class StreamingEventResponse(
     @Schema(description = "Event ID")
@@ -77,6 +80,9 @@ data class StreamingEventResponse(
     }
 }
 
+/**
+ * 목록 화면에 사용하는 간략한 스트리밍 이벤트 정보.
+ */
 @Schema(description = "Streaming event summary for list views")
 data class StreamingEventSummary(
     @Schema(description = "Event ID")
@@ -117,6 +123,9 @@ data class StreamingEventSummary(
     }
 }
 
+/**
+ * 페이지네이션이 적용된 스트리밍 이벤트 목록 응답.
+ */
 @Schema(description = "Paginated list of streaming events")
 data class StreamingEventListResponse(
     @Schema(description = "List of events")
@@ -137,6 +146,9 @@ data class StreamingEventListResponse(
 
 // === Cursor-based Pagination DTOs (for MVP API spec) ===
 
+/**
+ * API 성공/실패 플래그를 포함하는 표준 응답 래퍼.
+ */
 @Schema(description = "Standard API response wrapper")
 data class ApiResponse<T>(
     @Schema(description = "Request success status")
@@ -150,6 +162,9 @@ data class ApiResponse<T>(
     }
 }
 
+/**
+ * 무한 스크롤을 위한 커서 기반 페이지네이션 응답 모델.
+ */
 @Schema(description = "Cursor-based pagination response")
 data class CursorPageResponse<T>(
     @Schema(description = "List of items")
@@ -162,6 +177,9 @@ data class CursorPageResponse<T>(
     val hasMore: Boolean
 )
 
+/**
+ * 아티스트 이름이 조인된 스트리밍 이벤트 목록 항목.
+ */
 @Schema(description = "Streaming event item for list views (with artist name)")
 data class StreamingEventListItem(
     @Schema(description = "Event ID")
@@ -192,6 +210,9 @@ data class StreamingEventListItem(
     val viewerCount: Int
 )
 
+/**
+ * 아티스트 이름이 조인된 스트리밍 이벤트 상세 응답.
+ */
 @Schema(description = "Streaming event detail (with artist name)")
 data class StreamingEventDetailResponse(
     @Schema(description = "Event ID")
@@ -236,6 +257,9 @@ data class StreamingEventDetailResponse(
 
 // === Query Parameters ===
 
+/**
+ * 스트리밍 이벤트 조회 시 사용하는 필터 조건.
+ */
 @Schema(description = "Filter criteria for streaming events")
 data class StreamingEventFilter(
     @Schema(description = "Filter by status", example = "LIVE")

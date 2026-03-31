@@ -4,6 +4,18 @@ import jakarta.persistence.*
 import java.time.Instant
 import java.util.*
 
+/**
+ * AI 필터링 결과에 따라 PENDING → APPROVED / BLOCKED 상태가 결정되는 댓글 엔티티.
+ *
+ * @property id unique comment identifier
+ * @property postId target post identifier (MongoDB ObjectId)
+ * @property userId comment author's user ID
+ * @property content comment text content
+ * @property status current moderation status (PENDING, APPROVED, BLOCKED)
+ * @property parentCommentId parent comment ID for threaded replies (null for top-level)
+ * @property createdAt creation timestamp
+ * @property updatedAt last modification timestamp
+ */
 @Entity
 @Table(name = "comments")
 class Comment private constructor(
@@ -38,6 +50,10 @@ class Comment private constructor(
         private set
 
     companion object {
+        /**
+         * Factory method to create a new comment in PENDING status.
+         * 새 댓글을 PENDING 상태로 생성한다. AI 필터링 후 상태가 결정된다.
+         */
         fun create(
             postId: String,
             userId: UUID,
@@ -60,11 +76,13 @@ class Comment private constructor(
         }
     }
 
+    /** Transitions the comment to APPROVED status. AI 필터 통과 시 호출된다. */
     fun approve() {
         this.status = CommentStatus.APPROVED
         this.updatedAt = Instant.now()
     }
 
+    /** Transitions the comment to BLOCKED status with a reason. AI 필터 차단 시 호출된다. */
     fun block(reason: String) {
         require(reason.isNotBlank()) { "Block reason cannot be blank" }
         this.status = CommentStatus.BLOCKED

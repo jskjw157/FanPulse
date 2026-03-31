@@ -19,6 +19,10 @@ import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * REST controller for artist information.
+ * 아티스트 목록 조회 및 상세 정보 API를 제공한다.
+ */
 @RestController
 @RequestMapping("/api/v1/artists")
 @Tag(name = "Artists", description = "K-POP artist information")

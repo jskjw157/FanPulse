@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
+/**
+ * 스트리밍 이벤트 메타데이터(제목, 썸네일 등) 주기적 갱신 설정.
+ */
 @Configuration
 class MetadataRefreshConfig {
 

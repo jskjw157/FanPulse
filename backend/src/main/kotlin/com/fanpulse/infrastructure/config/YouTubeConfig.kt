@@ -8,6 +8,9 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 
+/**
+ * YouTube 영상 메타데이터 조회를 위한 snake_case WebClient를 구성한다.
+ */
 @Configuration
 class YouTubeConfig {
 

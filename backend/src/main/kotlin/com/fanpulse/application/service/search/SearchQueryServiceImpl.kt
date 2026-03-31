@@ -18,6 +18,14 @@ import org.springframework.transaction.annotation.Transactional
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * [SearchQueryService] 구현체.
+ * Kotlin 코루틴으로 스트리밍/뉴스 검색을 병렬 수행하고, N+1 방지를 위해 아티스트를 배치 로딩한다.
+ *
+ * @property streamingEventPort 스트리밍 이벤트 조회 포트
+ * @property newsPort 뉴스 조회 포트
+ * @property artistPort 아티스트 조회 포트 (배치 로딩용)
+ */
 @Service
 @Transactional(readOnly = true)
 class SearchQueryServiceImpl(

@@ -23,6 +23,16 @@ import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * 애플리케이션 시작 시 JSON 시드 파일에서 아티스트, 라이브 이벤트, 뉴스 데이터를 로드한다.
+ * `fanpulse.seed.enabled=true`일 때만 실행되며 완료 후 프로세스를 종료한다.
+ *
+ * @property objectMapper JSON 역직렬화에 사용하는 Jackson ObjectMapper
+ * @property txManager 시드 데이터 삽입의 트랜잭션 관리자
+ * @property artistPort 아티스트 도메인 포트
+ * @property streamingEventPort 스트리밍 이벤트 도메인 포트
+ * @property newsPort 뉴스 도메인 포트
+ */
 @Component
 class SeedLoaderRunner(
     private val objectMapper: ObjectMapper,
@@ -348,6 +358,15 @@ class SeedLoaderRunner(
     }
 }
 
+/**
+ * 시드 데이터 로딩 작업의 결과를 요약하는 데이터 클래스.
+ *
+ * @property processed total number of seed entries processed
+ * @property inserted number of newly created records
+ * @property updated number of existing records updated (upsert)
+ * @property failed number of entries that failed to process
+ * @property skippedReason reason for skipping (e.g., file not found), null if executed
+ */
 private data class SeedResult(
     val processed: Int,
     val inserted: Int,

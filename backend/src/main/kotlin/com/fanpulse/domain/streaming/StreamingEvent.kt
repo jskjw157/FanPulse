@@ -4,6 +4,15 @@ import jakarta.persistence.*
 import java.time.Instant
 import java.util.*
 
+/**
+ * 스트리밍 이벤트 도메인 엔티티. SCHEDULED → LIVE → ENDED 상태 전이를 관리한다.
+ * 외부 소스(yt-dlp)에서 발견된 데이터로 메타데이터를 업데이트하는 메서드를 제공한다.
+ *
+ * @property id 이벤트 고유 식별자
+ * @property streamUrl 임베드 가능한 스트리밍 URL
+ * @property artistId 연결된 아티스트 ID
+ * @property createdAt 이벤트 생성 시각
+ */
 @Entity
 @Table(name = "streaming_events")
 class StreamingEvent(
@@ -205,8 +214,15 @@ class StreamingEvent(
     }
 }
 
+/**
+ * 스트리밍 이벤트의 생명주기 상태를 나타내는 열거형.
+ * SCHEDULED(예정) → LIVE(실시간 방송 중) → ENDED(종료) 순서로 전이한다.
+ */
 enum class StreamingStatus {
+    /** 방송 예정 상태. 아직 시작되지 않은 스트리밍. */
     SCHEDULED,
+    /** 실시간 방송 중. 시청자가 실시간으로 시청 가능한 상태. */
     LIVE,
+    /** 방송 종료. 다시보기로 전환될 수 있는 상태. */
     ENDED
 }

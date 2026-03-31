@@ -20,6 +20,9 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
+/**
+ * 아티스트 채널 CRUD 및 라이브 스트리밍 수동 탐색 트리거를 제공한다.
+ */
 @RestController
 @RequestMapping("/admin/artist-channels")
 @Tag(name = "Artist Channels (Admin)", description = "Artist channel management for live stream discovery")

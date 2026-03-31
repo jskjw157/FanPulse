@@ -16,6 +16,14 @@ import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * AI 댓글 필터링 → 상태 결정 → 저장 → 로그 기록 → 메트릭 발행 파이프라인을 수행한다.
+ *
+ * @property commentFilterPort AI Sidecar 댓글 필터 포트 (Fail-Pending fallback 포함)
+ * @property commentPort 댓글 영속성 포트
+ * @property filterLogPort 필터 로그 영속성 포트
+ * @property meterRegistry Micrometer 메트릭 레지스트리
+ */
 @Service
 class CommentCommandServiceImpl(
     private val commentFilterPort: CommentFilterPort,

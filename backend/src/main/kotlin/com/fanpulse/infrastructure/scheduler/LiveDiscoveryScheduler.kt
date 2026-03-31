@@ -11,6 +11,11 @@ import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * 주기적으로 아티스트 채널의 라이브 스트리밍을 발견하는 스케줄러.
+ * ShedLock으로 다중 인스턴스 환경에서 동시 실행을 방지한다.
+ * `fanpulse.scheduler.live-discovery.enabled=true` 설정 시에만 활성화된다.
+ */
 @Component
 @ConditionalOnProperty(
     name = ["fanpulse.scheduler.live-discovery.enabled"],

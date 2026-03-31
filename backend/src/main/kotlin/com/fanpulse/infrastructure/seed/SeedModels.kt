@@ -5,6 +5,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
+/**
+ * JSON 시드 파일에서 아티스트 데이터를 역직렬화하기 위한 모델.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SeedArtist(
     val name: String,
@@ -18,6 +21,9 @@ data class SeedArtist(
     val members: List<String>? = null
 )
 
+/**
+ * JSON 시드 파일에서 라이브 이벤트 데이터를 역직렬화하기 위한 모델.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SeedLiveEvent(
     val title: String,
@@ -36,6 +42,9 @@ data class SeedLiveEvent(
     val externalId: String? = null
 )
 
+/**
+ * JSON 시드 파일에서 뉴스 데이터를 역직렬화하기 위한 모델.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SeedNews(
     val title: String,

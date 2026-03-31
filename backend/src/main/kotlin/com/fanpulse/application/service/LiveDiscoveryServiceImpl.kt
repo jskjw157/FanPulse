@@ -26,6 +26,16 @@ import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * 코루틴 기반 병렬 라이브 스트리밍 발견 서비스 구현체.
+ * Semaphore로 동시 처리 수를 제한하고, Batch DB 작업으로 I/O를 최적화한다.
+ *
+ * @property channelPort 아티스트 채널 조회/저장 포트
+ * @property discoveryPort 외부 플랫폼 스트림 발견 포트 (yt-dlp)
+ * @property eventPort 스트리밍 이벤트 저장/조회 포트
+ * @property channelDelayMs 채널 간 처리 지연 시간 (밀리초, rate limiting 용도)
+ * @property maxConcurrency 동시 처리 가능한 최대 채널 수
+ */
 class LiveDiscoveryServiceImpl(
     private val channelPort: ArtistChannelPort,
     private val discoveryPort: StreamDiscoveryPort,

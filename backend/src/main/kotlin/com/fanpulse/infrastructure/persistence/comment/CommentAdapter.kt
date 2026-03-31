@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
 
+/**
+ * JPA adapter for [CommentPort].
+ * 댓글 도메인 포트를 Spring Data JPA로 구현한다.
+ */
 @Component
 class CommentAdapter(
     private val repository: CommentJpaRepository
