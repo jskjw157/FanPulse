@@ -10,6 +10,9 @@ import io.swagger.v3.oas.models.tags.Tag
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
+/**
+ * API 문서 메타데이터, 서버 목록, JWT 인증 스키마를 정의한다.
+ */
 @Configuration
 class OpenApiConfig {
 

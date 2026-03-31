@@ -18,6 +18,10 @@ import org.springframework.web.bind.annotation.*
 import java.time.Instant
 import java.util.UUID
 
+/**
+ * 라이브 스트리밍 이벤트 조회 API 엔드포인트를 제공한다.
+ * MVP 커서 기반 페이지네이션과 레거시 오프셋 기반 페이지네이션을 모두 지원한다.
+ */
 @RestController
 @RequestMapping("/api/v1/streaming-events")
 @Tag(name = "Streaming Events", description = "Live streaming event discovery and information")

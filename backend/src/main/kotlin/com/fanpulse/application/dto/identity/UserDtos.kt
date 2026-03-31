@@ -11,6 +11,9 @@ import java.util.UUID
 
 // === Response DTOs ===
 
+/**
+ * 사용자 프로필 기본 정보 응답 모델.
+ */
 @Schema(description = "User profile response")
 data class UserResponse(
     @Schema(description = "User ID")
@@ -39,6 +42,9 @@ data class UserResponse(
     }
 }
 
+/**
+ * 사용자 설정(테마, 언어, 알림) 응답 모델.
+ */
 @Schema(description = "User settings response")
 data class UserSettingsResponse(
     @Schema(description = "Theme (LIGHT/DARK)")
@@ -65,6 +71,9 @@ data class UserSettingsResponse(
 
 // === Request DTOs ===
 
+/**
+ * 사용자 프로필 부분 수정 요청 모델. null 필드는 변경하지 않는다.
+ */
 @Schema(description = "Profile update request")
 data class UpdateProfileRequest(
     @field:Size(min = 2, max = 50, message = "Username must be 2-50 characters")
@@ -72,6 +81,9 @@ data class UpdateProfileRequest(
     val username: String? = null
 )
 
+/**
+ * 사용자 설정 부분 수정 요청 모델. null 필드는 변경하지 않는다.
+ */
 @Schema(description = "Settings update request")
 data class UpdateSettingsRequest(
     @Schema(description = "Theme (light/dark)", example = "dark")

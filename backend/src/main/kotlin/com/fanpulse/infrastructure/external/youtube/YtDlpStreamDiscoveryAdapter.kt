@@ -17,6 +17,14 @@ import java.util.concurrent.TimeUnit
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * yt-dlp CLI를 사용하여 YouTube 채널에서 라이브/예정/종료된 스트리밍을 발견하는 어댑터.
+ * CircuitBreaker와 Retry 패턴으로 외부 프로세스 호출의 안정성을 보장한다.
+ *
+ * @property config yt-dlp CLI 실행 설정 (커맨드 경로, 타임아웃, 재생목록 제한 등)
+ * @property outputParser yt-dlp JSON 출력 파서
+ * @property videoIdExtractor YouTube 비디오 ID 추출기
+ */
 @Component
 class YtDlpStreamDiscoveryAdapter(
     private val config: YtDlpConfig,
