@@ -1,6 +1,6 @@
 package com.aos.fanpulse.di
 
-import com.aos.fanpulse.data.remote.AuthApiService
+import com.aos.fanpulse.data.remote.AuthenticationApiService
 import com.aos.fanpulse.data.remote.TokenAuthenticator
 import dagger.Module
 import dagger.Provides
@@ -20,7 +20,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    const val baseUrl = "http://10.0.2.2:8080/api/v1/"
+    const val baseUrl = "http://192.168.201.50:8080/api/v1/"
 
     @Provides
     @Singleton
@@ -56,7 +56,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
-        return retrofit.create(AuthApiService::class.java)
+    fun provideAuthApiService(retrofit: Retrofit): AuthenticationApiService {
+        return retrofit.create(AuthenticationApiService::class.java)
     }
 }

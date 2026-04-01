@@ -1,6 +1,6 @@
 package com.aos.fanpulse.di
 
-import com.aos.fanpulse.data.remote.AuthApiService
+import com.aos.fanpulse.data.remote.AuthenticationApiService
 import com.aos.fanpulse.domain.repository.GoogleSignInRepository
 import com.aos.fanpulse.domain.repository.AuthRepository
 import com.aos.fanpulse.domain.usecase.GoogleLoginUseCase
@@ -18,7 +18,7 @@ object UseCaseModule {
     @Singleton
     fun provideGoogleLoginUseCase(
         googleSignInRepository: GoogleSignInRepository,
-        authApiService: AuthApiService,
+        authApiService: AuthenticationApiService,
         authRepository: AuthRepository
     ): GoogleLoginUseCase = GoogleLoginUseCase(googleSignInRepository, authApiService, authRepository)
 }
