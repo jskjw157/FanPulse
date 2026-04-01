@@ -16,7 +16,7 @@ class TokenAuthenticator @Inject constructor(
     private val authRepository: AuthRepository,
     // AuthService는 토큰 갱신 API를 호출하는 Retrofit 인터페이스입니다.
     // Provider를 사용하는 이유는 NetworkModule 내에서 서로 참조하는 순환 참조를 막기 위함입니다.
-    private val authServiceProvider: Provider<AuthApiService>
+    private val authServiceProvider: Provider<AuthenticationApiService>
 ) : Authenticator {
 
     private val mutex = Mutex()
@@ -25,7 +25,6 @@ class TokenAuthenticator @Inject constructor(
         if (response.count() >= 2) return null
 
         return runBlocking {
-            // 🌟 자물쇠를 걸어서 하나의 스레드(요청)만 진입하게 만듭니다.
             mutex.withLock {
                 // 1. 내가 자물쇠를 기다리는 동안, 앞선 다른 요청이 이미 토큰을 갱신해 두었는지 확인!
                 // 실패했던 원본 요청의 토큰과 현재 DataStore에 있는 토큰을 비교합니다.
@@ -43,18 +42,26 @@ class TokenAuthenticator @Inject constructor(
                 // 2. 아무도 갱신하지 않았다면, 내가 직접 갱신하러 갑니다.
                 val refreshToken = authRepository.refreshToken.first()
                 if (!refreshToken.isNullOrEmpty()) {
-                    val refreshResponse = authServiceProvider.get()
-                        .refreshTokens("fanpulse_refresh_token=$refreshToken")
-                        .execute()
+                    // 2. 서버 명세에 맞춰 요청 객체 생성
+                    val refreshRequest = RefreshRequest(refreshToken = refreshToken)
+
+                    // 3. 토큰 갱신 API 호출 (인터페이스가 suspend인 경우)
+                    // 주의: .execute()는 Call<T>일 때만 사용하므로,
+                    // 인터페이스가 suspend라면 별도의 처리가 필요하거나
+                    // 전용 동기용 API를 따로 만드는 것이 좋습니다.
+                    val refreshResponse = authServiceProvider.get().refreshTokens(refreshRequest)
 
                     if (refreshResponse.isSuccessful) {
+                        // 4. 헤더에서 쿠키 추출
                         val cookies = refreshResponse.headers().values("Set-Cookie")
                         val newAccess = extractToken(cookies, "fanpulse_access_token")
                         val newRefresh = extractToken(cookies, "fanpulse_refresh_token")
 
                         if (newAccess != null && newRefresh != null) {
+                            // 5. 로컬 저장소 업데이트 (코루틴 스코프 확인 필요)
                             authRepository.updateTokens(newAccess, newRefresh)
 
+                            // 6. 실패했던 원래 요청(originalRequest)을 새 토큰으로 수정하여 재시도
                             return@runBlocking response.request.newBuilder()
                                 .header("Cookie", "fanpulse_access_token=$newAccess")
                                 .build()
