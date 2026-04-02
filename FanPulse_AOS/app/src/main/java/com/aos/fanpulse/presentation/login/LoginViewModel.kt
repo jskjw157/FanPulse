@@ -3,7 +3,7 @@ package com.aos.fanpulse.presentation.login
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.aos.fanpulse.domain.usecase.GoogleLoginUseCase
+import com.aos.fanpulse.domain.usecase.GoogleSignInUseCase
 import com.aos.fanpulse.presentation.common.LoginState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val googleLoginUseCase: GoogleLoginUseCase,
+    private val googleLoginUseCase: GoogleSignInUseCase,
 ) : ContainerHost<LoginContract.SignInState, LoginContract.SideEffect>, ViewModel() {
 
     override val container: Container<LoginContract.SignInState, LoginContract.SideEffect> =

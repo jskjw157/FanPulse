@@ -1,6 +1,5 @@
-package com.aos.fanpulse.data.remote
+package com.aos.fanpulse.data.remote.apiservice
 
-import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET

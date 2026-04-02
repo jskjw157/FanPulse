@@ -2,7 +2,7 @@ package com.aos.fanpulse.data.repository
 
 import androidx.datastore.core.DataStore
 import com.aos.fanpulse.datastore.UserData
-import com.aos.fanpulse.domain.repository.AuthRepository
+import com.aos.fanpulse.domain.repository.AuthenticationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -12,7 +12,7 @@ import javax.inject.Inject
  * */
 class AuthRepositoryImpl @Inject constructor(
     private val userDataStore: DataStore<UserData>, // DataStore를 직접 주입받아야 합니다.
-) : AuthRepository {
+) : AuthenticationRepository {
 
     // 1. Access Token 읽기 (Flow)
     override val accessToken: Flow<String?> = userDataStore.data

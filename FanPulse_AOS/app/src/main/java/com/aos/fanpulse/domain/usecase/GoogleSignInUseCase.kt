@@ -1,17 +1,17 @@
 package com.aos.fanpulse.domain.usecase
 
 import android.content.Context
-import com.aos.fanpulse.data.remote.AuthenticationApiService
-import com.aos.fanpulse.data.remote.GoogleLoginRequest
-import com.aos.fanpulse.domain.repository.AuthRepository
+import com.aos.fanpulse.data.remote.apiservice.AuthenticationApiService
+import com.aos.fanpulse.data.remote.apiservice.GoogleLoginRequest
+import com.aos.fanpulse.domain.repository.AuthenticationRepository
 import com.aos.fanpulse.domain.repository.GoogleSignInRepository
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import javax.inject.Inject
 
-class GoogleLoginUseCase @Inject constructor(
+class GoogleSignInUseCase @Inject constructor(
     private val googleSignInRepository: GoogleSignInRepository,
     private val authApiService: AuthenticationApiService,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthenticationRepository
 ) {
     suspend operator fun invoke(activityContext: Context): Result<Unit> {
         return runCatching {
