@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 /**
  * 데이터 저장
  * */
-interface AuthRepository {
+interface AuthenticationRepository {
     val accessToken: Flow<String?>
     val refreshToken: Flow<String?>
     suspend fun updateTokens(access: String, refresh: String)

@@ -2,7 +2,7 @@ package com.aos.fanpulse.di
 
 import com.aos.fanpulse.data.repository.AuthRepositoryImpl
 import com.aos.fanpulse.data.repository.GoogleSignInRepositoryImpl
-import com.aos.fanpulse.domain.repository.AuthRepository
+import com.aos.fanpulse.domain.repository.AuthenticationRepository
 import com.aos.fanpulse.domain.repository.GoogleSignInRepository
 import dagger.Binds
 import dagger.Module
@@ -25,5 +25,5 @@ abstract class RepositoryModule {
     @Singleton
     abstract fun bindAuthRepository(
         authRepositoryImpl: AuthRepositoryImpl
-    ): AuthRepository
+    ): AuthenticationRepository
 }
