@@ -1,6 +1,8 @@
 package com.aos.fanpulse.data.remote
 
-import com.aos.fanpulse.domain.repository.AuthRepository
+import com.aos.fanpulse.data.remote.apiservice.AuthenticationApiService
+import com.aos.fanpulse.data.remote.apiservice.RefreshRequest
+import com.aos.fanpulse.domain.repository.AuthenticationRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -13,8 +15,8 @@ import javax.inject.Provider
 import javax.inject.Inject
 
 class TokenAuthenticator @Inject constructor(
-    private val authRepository: AuthRepository,
     // AuthService는 토큰 갱신 API를 호출하는 Retrofit 인터페이스입니다.
+    private val authRepository: AuthenticationRepository,
     // Provider를 사용하는 이유는 NetworkModule 내에서 서로 참조하는 순환 참조를 막기 위함입니다.
     private val authServiceProvider: Provider<AuthenticationApiService>
 ) : Authenticator {

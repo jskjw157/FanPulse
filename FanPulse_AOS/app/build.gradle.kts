@@ -102,6 +102,14 @@ dependencies {
     implementation(libs.okhttp.urlconnection)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // 1. MockK 핵심 라이브러리 (로컬 단위 테스트 용)
+    testImplementation("io.mockk:mockk:1.13.10")
+    androidTestImplementation("io.mockk:mockk-android:1.13.10")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation(kotlin("test"))
 }
 protobuf {
     protoc {

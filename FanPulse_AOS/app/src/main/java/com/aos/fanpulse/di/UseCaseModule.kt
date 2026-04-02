@@ -1,9 +1,9 @@
 package com.aos.fanpulse.di
 
-import com.aos.fanpulse.data.remote.AuthenticationApiService
+import com.aos.fanpulse.data.remote.apiservice.AuthenticationApiService
 import com.aos.fanpulse.domain.repository.GoogleSignInRepository
-import com.aos.fanpulse.domain.repository.AuthRepository
-import com.aos.fanpulse.domain.usecase.GoogleLoginUseCase
+import com.aos.fanpulse.domain.repository.AuthenticationRepository
+import com.aos.fanpulse.domain.usecase.GoogleSignInUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,6 +19,6 @@ object UseCaseModule {
     fun provideGoogleLoginUseCase(
         googleSignInRepository: GoogleSignInRepository,
         authApiService: AuthenticationApiService,
-        authRepository: AuthRepository
-    ): GoogleLoginUseCase = GoogleLoginUseCase(googleSignInRepository, authApiService, authRepository)
+        authRepository: AuthenticationRepository
+    ): GoogleSignInUseCase = GoogleSignInUseCase(googleSignInRepository, authApiService, authRepository)
 }
