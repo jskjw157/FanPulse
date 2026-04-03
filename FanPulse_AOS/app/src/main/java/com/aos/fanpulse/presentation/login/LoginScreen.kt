@@ -52,10 +52,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aos.fanpulse.R
 
-enum class LoginState {
-    LOGIN, SIGNUP
-}
-
 @Composable
 fun LoginScreen (
     viewModel: LoginViewModel = hiltViewModel(),
@@ -63,10 +59,6 @@ fun LoginScreen (
 ) {
 
     val context = LocalContext.current
-
-    var selectedTab by rememberSaveable {
-        mutableStateOf(LoginState.LOGIN)
-    }
 
     Box(
         modifier = Modifier

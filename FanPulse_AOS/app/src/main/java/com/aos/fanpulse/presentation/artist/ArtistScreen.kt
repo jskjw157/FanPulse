@@ -320,16 +320,6 @@ fun ArtistItem(artist: Artist) {
     }
 }
 
-// Data Classes
-data class Artist(
-    val id: Int,
-    val name: String,
-    val description: String,
-    val followers: Int,
-    val imageRes: Int,
-    val ranking: Int
-)
-
 // Sample Data
 fun getArtistList(): List<Artist> {
     return listOf(
