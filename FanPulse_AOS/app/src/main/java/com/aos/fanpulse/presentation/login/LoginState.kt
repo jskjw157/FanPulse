@@ -1,4 +1,4 @@
-package com.aos.fanpulse.presentation.common
+package com.aos.fanpulse.presentation.login
 
 sealed interface LoginState {
     object Idle : LoginState
