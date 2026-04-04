@@ -71,6 +71,6 @@ export function useHomeSections(): UseHomeSectionsReturn {
     latestNews,
     state,
     error,
-    refresh: fetchAll,
+    refresh: () => fetchAll(),
   };
 }

@@ -169,11 +169,14 @@ test.describe('Auth - 로그인 페이지', () => {
     await page.goto('/login')
     await page.locator('#gis-btn').click()
 
+    await page.waitForURL('/', { timeout: 30000 })
     await expect(page).toHaveURL('/')
   })
 })
 
 test.describe('Auth - ProtectedRoute', () => {
+  test.describe.configure({ mode: 'serial' })
+
   test('비로그인 상태에서 마이페이지 접근 시 로그인 페이지로 리다이렉트된다', async ({
     page,
   }) => {
@@ -182,6 +185,7 @@ test.describe('Auth - ProtectedRoute', () => {
 
     await page.goto('/mypage')
 
+    await page.waitForURL('/login', { timeout: 30000 })
     await expect(page).toHaveURL('/login')
   })
 
@@ -193,6 +197,7 @@ test.describe('Auth - ProtectedRoute', () => {
 
     await page.goto('/notifications')
 
+    await page.waitForURL('/login', { timeout: 30000 })
     await expect(page).toHaveURL('/login')
   })
 
@@ -204,6 +209,7 @@ test.describe('Auth - ProtectedRoute', () => {
 
     await page.goto('/post-create')
 
+    await page.waitForURL('/login', { timeout: 30000 })
     await expect(page).toHaveURL('/login')
   })
 
@@ -213,6 +219,7 @@ test.describe('Auth - ProtectedRoute', () => {
 
     await page.goto('/mypage')
 
+    await page.waitForURL('/mypage', { timeout: 30000 })
     await expect(page).toHaveURL('/mypage')
     // 마이페이지 헤더, 사용자 정보, 로그아웃 버튼이 표시되는지 확인
     await expect(page.getByRole('heading', { name: '마이페이지' })).toBeVisible()
@@ -223,6 +230,8 @@ test.describe('Auth - ProtectedRoute', () => {
 })
 
 test.describe('Auth - 로그아웃', () => {
+  test.describe.configure({ mode: 'serial' })
+
   test('마이페이지에서 로그아웃 시 로그인 페이지로 이동한다', async ({ page }) => {
     await mockGoogleIdentityServices(page)
 
@@ -255,11 +264,13 @@ test.describe('Auth - 로그아웃', () => {
     })
 
     await page.goto('/mypage')
+    await page.waitForURL('/mypage', { timeout: 30000 })
     await expect(page).toHaveURL('/mypage')
 
     // 로그아웃 버튼 클릭
     await page.getByRole('button', { name: '로그아웃' }).click()
 
+    await page.waitForURL('/login', { timeout: 30000 })
     await expect(page).toHaveURL('/login')
   })
 })

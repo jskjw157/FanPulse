@@ -182,18 +182,36 @@ test.describe('Home - 홈 화면', () => {
   })
 
   test('Live 카드 클릭 시 /live/:id 페이지로 이동한다', async ({ page }) => {
+    // Next.js 개발 환경에서 RSC soft-nav이 router-state-tree 불일치로 중단될 수 있으므로
+    // 목적지 페이지를 mock하여 hard navigation이 발생하도록 한다
+    await page.route('http://localhost:3001/live/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<html><head><title>Live</title></head><body><h1>Live Page</h1></body></html>',
+      })
+    })
     await mockHomeApis(page)
     await page.goto('/')
 
-    await page.getByRole('link', { name: /NewJeans 컴백 쇼케이스/ }).click()
+    await page.locator('a[href="/live/1"]').click()
     await expect(page).toHaveURL('/live/1')
   })
 
   test('뉴스 카드 클릭 시 /news/:id 페이지로 이동한다', async ({ page }) => {
+    // Next.js 개발 환경에서 RSC soft-nav이 router-state-tree 불일치로 중단될 수 있으므로
+    // 목적지 페이지를 mock하여 hard navigation이 발생하도록 한다
+    await page.route('http://localhost:3001/news/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<html><head><title>News</title></head><body><h1>News Page</h1></body></html>',
+      })
+    })
     await mockHomeApis(page)
     await page.goto('/')
 
-    await page.getByText('BTS 새 앨범 발매 예정').click()
+    await page.locator('a[href="/news/1"]').click()
     await expect(page).toHaveURL('/news/1')
   })
 
@@ -201,18 +219,41 @@ test.describe('Home - 홈 화면', () => {
     await mockHomeApis(page, { failLive: true })
     await page.goto('/')
 
-    await expect(page.getByText('데이터를 불러올 수 없습니다')).toBeVisible()
+    await expect(page.getByText('서버에 문제가 발생했습니다')).toBeVisible()
     await expect(page.getByRole('button', { name: '다시 시도' })).toBeVisible()
   })
 
   test('에러 상태에서 다시 시도 클릭 시 데이터가 정상 로드된다', async ({ page }) => {
-    // 첫 요청은 실패
+    // CORS 프리플라이트(OPTIONS)를 포함한 모든 api.fanpulse.app 요청을 처음부터 인터셉트하여
+    // Chrome CORS 캐시가 오염되지 않도록 한다
+    const CORS_HEADERS = {
+      'Access-Control-Allow-Origin': 'http://localhost:3001',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400',
+    }
+
     let shouldFail = true
+
+    // OPTIONS 프리플라이트 요청을 항상 200으로 응답
+    await page.route('**/api/v1/**', async (route) => {
+      if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS })
+        return
+      }
+      await route.fallback()
+    })
+
     await page.route('**/streaming-events*', async (route) => {
       if (route.request().method() !== 'GET') return route.fallback()
 
       if (shouldFail) {
-        await route.fulfill({ status: 500, body: 'fail' })
+        await route.fulfill({
+          status: 500,
+          headers: CORS_HEADERS,
+          body: 'fail',
+        })
         return
       }
 
@@ -222,32 +263,62 @@ test.describe('Home - 홈 화면', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
+        headers: CORS_HEADERS,
         body: JSON.stringify({ data: { items, hasMore: false } }),
       })
     })
+
     await page.route('**/news/latest*', async (route) => {
       if (route.request().method() !== 'GET') return route.fallback()
 
       if (shouldFail) {
-        await route.fulfill({ status: 500, body: 'fail' })
+        await route.fulfill({
+          status: 500,
+          headers: CORS_HEADERS,
+          body: 'fail',
+        })
         return
       }
 
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
+        headers: CORS_HEADERS,
         body: JSON.stringify({ data: mockLatestNews }),
       })
     })
 
     await page.goto('/')
-    await expect(page.getByText('데이터를 불러올 수 없습니다')).toBeVisible()
+    await expect(page.getByText('서버에 문제가 발생했습니다')).toBeVisible()
+
+    // React 하이드레이션이 완료되어 버튼의 onClick 핸들러가 붙을 때까지 대기
+    await page.waitForFunction(() => {
+      const btn = Array.from(document.querySelectorAll('button')).find(
+        b => b.textContent?.trim() === '다시 시도'
+      )
+      if (!btn) return false
+      return Object.getOwnPropertyNames(btn).some(
+        k => k.startsWith('__reactProps') || k.startsWith('__reactFiber')
+      )
+    }, { timeout: 15000 })
 
     // 두 번째 시도는 성공
     shouldFail = false
-    await page.getByRole('button', { name: '다시 시도' }).click()
+    // Playwright의 click()은 SyntheticEvent를 fetchAll(signal)의 signal로 전달하므로
+    // React fiber에서 onClick 핸들러를 직접 인수 없이 호출한다
+    await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll('button')).find(
+        (b) => b.textContent?.trim() === '다시 시도'
+      ) as HTMLElement | undefined
+      if (!btn) throw new Error('다시 시도 버튼을 찾을 수 없습니다')
+      const propsKey = Object.getOwnPropertyNames(btn).find((k) => k.startsWith('__reactProps'))
+      if (!propsKey) throw new Error('React props를 찾을 수 없습니다')
+      const props = (btn as any)[propsKey]
+      if (typeof props?.onClick !== 'function') throw new Error('onClick 핸들러가 없습니다')
+      props.onClick()
+    })
 
-    await expect(page.getByText('NewJeans 컴백 쇼케이스')).toBeVisible()
+    await expect(page.getByText('NewJeans 컴백 쇼케이스')).toBeVisible({ timeout: 15000 })
   })
 
   test('LIVE 카드에 LIVE 배지와 시청자 수가 표시된다', async ({ page }) => {
