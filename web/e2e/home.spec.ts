@@ -291,32 +291,9 @@ test.describe('Home - 홈 화면', () => {
     await page.goto('/')
     await expect(page.getByText('서버에 문제가 발생했습니다')).toBeVisible()
 
-    // React 하이드레이션이 완료되어 버튼의 onClick 핸들러가 붙을 때까지 대기
-    await page.waitForFunction(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(
-        b => b.textContent?.trim() === '다시 시도'
-      )
-      if (!btn) return false
-      return Object.getOwnPropertyNames(btn).some(
-        k => k.startsWith('__reactProps') || k.startsWith('__reactFiber')
-      )
-    }, { timeout: 15000 })
-
     // 두 번째 시도는 성공
     shouldFail = false
-    // Playwright의 click()은 SyntheticEvent를 fetchAll(signal)의 signal로 전달하므로
-    // React fiber에서 onClick 핸들러를 직접 인수 없이 호출한다
-    await page.evaluate(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(
-        (b) => b.textContent?.trim() === '다시 시도'
-      ) as HTMLElement | undefined
-      if (!btn) throw new Error('다시 시도 버튼을 찾을 수 없습니다')
-      const propsKey = Object.getOwnPropertyNames(btn).find((k) => k.startsWith('__reactProps'))
-      if (!propsKey) throw new Error('React props를 찾을 수 없습니다')
-      const props = (btn as any)[propsKey]
-      if (typeof props?.onClick !== 'function') throw new Error('onClick 핸들러가 없습니다')
-      props.onClick()
-    })
+    await page.getByRole('button', { name: '다시 시도' }).click()
 
     await expect(page.getByText('NewJeans 컴백 쇼케이스')).toBeVisible({ timeout: 15000 })
   })
