@@ -1,4 +1,4 @@
-package com.fanpulse.infrastructure.web.identity
+package com.fanpulse.interfaces.rest.identity
 
 import com.fanpulse.application.dto.identity.*
 import com.fanpulse.application.service.identity.UserService
