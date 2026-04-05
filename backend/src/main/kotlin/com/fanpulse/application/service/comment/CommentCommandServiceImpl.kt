@@ -52,7 +52,7 @@ class CommentCommandServiceImpl(
         // 4. 댓글 저장
         val saved = commentPort.save(comment)
 
-        // 5. 필터 로그 저장 (runCatching으로 격리 — 실패해도 댓글 저장에 영향 없음)
+        // 5. 필터 로그 저장 (REQUIRES_NEW 트랜잭션으로 격리 — 실패해도 댓글 저장에 영향 없음)
         runCatching {
             val log = CommentFilterLog.create(saved.id, filterResult)
             filterLogPort.save(log)
