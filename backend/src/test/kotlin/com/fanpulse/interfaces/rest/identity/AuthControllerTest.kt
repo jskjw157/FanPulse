@@ -1,6 +1,11 @@
 package com.fanpulse.interfaces.rest.identity
 
-import com.fanpulse.application.identity.*
+import com.fanpulse.application.dto.identity.*
+import com.fanpulse.application.identity.InvalidGoogleTokenException
+import com.fanpulse.application.identity.InvalidTokenException
+import com.fanpulse.application.identity.OAuthEmailNotVerifiedException
+import com.fanpulse.application.identity.RefreshTokenReusedException
+import com.fanpulse.application.service.identity.AuthService
 import com.fanpulse.infrastructure.security.JwtTokenProvider
 import com.fanpulse.infrastructure.security.SecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -116,6 +121,7 @@ class AuthControllerTest {
             val request = mapOf("refreshToken" to "valid_refresh_token")
             val response = TokenResponse(
                 accessToken = "new_access_token",
+                expiresIn = 3600L,
                 refreshToken = "new_refresh_token"
             )
 

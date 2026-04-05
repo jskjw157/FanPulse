@@ -1,6 +1,9 @@
 package com.fanpulse.application.identity
 
+import com.fanpulse.application.dto.identity.GoogleLoginRequest
 import com.fanpulse.application.identity.command.GoogleLoginHandler
+import com.fanpulse.application.service.identity.AuthService
+import com.fanpulse.application.service.identity.AuthServiceImpl
 import com.fanpulse.domain.identity.*
 import com.fanpulse.domain.identity.port.RefreshTokenPort
 import com.fanpulse.domain.identity.port.TokenPort
@@ -35,7 +38,7 @@ class AuthServiceTest {
         refreshTokenPort = mockk(relaxed = true)
         googleLoginHandler = mockk()
 
-        authService = AuthService(
+        authService = AuthServiceImpl(
             userPort = userPort,
             tokenPort = tokenPort,
             refreshTokenPort = refreshTokenPort,

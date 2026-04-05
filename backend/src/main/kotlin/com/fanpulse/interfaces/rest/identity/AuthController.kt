@@ -1,7 +1,8 @@
 package com.fanpulse.interfaces.rest.identity
 
-import com.fanpulse.application.dto.identity.RefreshTokenRequest
-import com.fanpulse.application.identity.*
+import com.fanpulse.application.dto.identity.*
+import com.fanpulse.application.identity.InvalidTokenException
+import com.fanpulse.application.service.identity.AuthService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -82,7 +83,9 @@ class AuthController(
         val tokenResponse = authService.refreshToken(refreshToken)
 
         // 웹: 쿠키 갱신
-        setAuthCookies(response, tokenResponse.accessToken, tokenResponse.refreshToken)
+        if (tokenResponse.refreshToken != null) {
+            setAuthCookies(response, tokenResponse.accessToken, tokenResponse.refreshToken)
+        }
 
         // 모바일: 응답 바디로 토큰 반환
         return ResponseEntity.ok(tokenResponse)
