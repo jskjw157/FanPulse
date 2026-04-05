@@ -162,25 +162,6 @@ resilience4j:
           - com.fanpulse.infrastructure.external.youtube.VideoNotFoundException
           - com.fanpulse.infrastructure.external.youtube.RateLimitExceededException
 
-      # AI Sidecar 통합 Circuit Breaker (#221)
-      # 개별 어댑터(aiModeration, aiCommentFilter, aiSummarizer)와 공유하는 기본 설정
-      aiSidecar:
-        registerHealthIndicator: true
-        slidingWindowType: COUNT_BASED
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 30s
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        recordExceptions:
-          - java.io.IOException
-          - java.util.concurrent.TimeoutException
-          - org.springframework.web.reactive.function.client.WebClientResponseException
-          - com.fanpulse.infrastructure.external.ai.AiServiceException
-        ignoreExceptions:
-          - org.springframework.web.reactive.function.client.WebClientResponseException$Unauthorized
-
       # P0-2: yt-dlp Circuit Breaker 설정
       ytdlp:
         registerHealthIndicator: true

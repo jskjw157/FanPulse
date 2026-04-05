@@ -18,10 +18,14 @@ import reactor.core.publisher.Mono
 import java.time.Duration
 
 /**
- * AI Sidecar Circuit Breaker 장애 시나리오 테스트 (#221).
+ * AI Sidecar 어댑터 Circuit Breaker 장애 시나리오 테스트 (#221).
  *
- * Circuit Breaker 이름 `aiSidecar`(application.yml)가 Django AI Sidecar
- * 장애 상황에서 Fallback을 올바르게 호출하는지 검증한다.
+ * 각 어댑터(`aiCommentFilter`, `aiModeration`, `aiSummarizer`)가
+ * Django AI Sidecar 장애 상황에서 Fallback을 올바르게 호출하는지 검증한다.
+ *
+ * 주의: 이 테스트는 WireMock 기반 단위 테스트로, Fallback 로직과 Circuit Breaker
+ * 설정 파라미터를 직접 검증한다. Spring AOP(`@CircuitBreaker` 어노테이션)가
+ * 올바르게 바인딩되는지는 통합 테스트(`@SpringBootTest`)에서 별도로 검증해야 한다.
  *
  * 검증 시나리오:
  * 1. **500 에러**: AI Sidecar 가 500 반환 시 Fallback 호출
@@ -43,10 +47,14 @@ class AiSidecarCircuitBreakerTest : AbstractAiServiceWireMockTest() {
     }
 
     /**
-     * `aiSidecar` 이름으로 Circuit Breaker 인스턴스를 생성한다.
-     * application.yml 의 `aiSidecar` 설정과 동일한 파라미터를 사용한다.
+     * 주어진 이름으로 Circuit Breaker 인스턴스를 생성한다.
+     * application.yml 의 어댑터별 설정(aiCommentFilter, aiModeration, aiSummarizer)과
+     * 동일한 파라미터를 사용한다.
+     *
+     * @param name 어댑터에 대응하는 CB 이름 (예: "aiCommentFilter")
      */
-    private fun buildAiSidecarCircuitBreaker(
+    private fun buildCircuitBreaker(
+        name: String,
         minimumCalls: Int = 10,
         failureRateThreshold: Float = 50.0f
     ): CircuitBreaker {
@@ -59,12 +67,11 @@ class AiSidecarCircuitBreakerTest : AbstractAiServiceWireMockTest() {
             .permittedNumberOfCallsInHalfOpenState(3)
             .recordExceptions(
                 WebClientResponseException::class.java,
-                AiServiceException::class.java,
-                RuntimeException::class.java
+                AiServiceException::class.java
             )
             .ignoreExceptions(WebClientResponseException.Unauthorized::class.java)
             .build()
-        return CircuitBreakerRegistry.of(config).circuitBreaker("aiSidecar")
+        return CircuitBreakerRegistry.of(config).circuitBreaker(name)
     }
 
     // =========================================================================
@@ -88,7 +95,7 @@ class AiSidecarCircuitBreakerTest : AbstractAiServiceWireMockTest() {
                     )
             )
 
-            val cb = buildAiSidecarCircuitBreaker(minimumCalls = 1, failureRateThreshold = 100.0f)
+            val cb = buildCircuitBreaker("aiCommentFilter", minimumCalls = 1, failureRateThreshold = 100.0f)
 
             // when: Circuit Breaker 로 감싸서 호출 → 500 예외 → Fallback
             val result = CircuitBreaker.decorateCheckedSupplier(cb) {
@@ -119,7 +126,7 @@ class AiSidecarCircuitBreakerTest : AbstractAiServiceWireMockTest() {
                     )
             )
 
-            val cb = buildAiSidecarCircuitBreaker(minimumCalls = 1, failureRateThreshold = 100.0f)
+            val cb = buildCircuitBreaker("aiModeration", minimumCalls = 1, failureRateThreshold = 100.0f)
 
             // when
             val result = CircuitBreaker.decorateCheckedSupplier(cb) {
@@ -151,7 +158,7 @@ class AiSidecarCircuitBreakerTest : AbstractAiServiceWireMockTest() {
                     )
             )
 
-            val cb = buildAiSidecarCircuitBreaker(minimumCalls = 1, failureRateThreshold = 100.0f)
+            val cb = buildCircuitBreaker("aiSummarizer", minimumCalls = 1, failureRateThreshold = 100.0f)
 
             // when
             val result = CircuitBreaker.decorateCheckedSupplier(cb) {
@@ -316,7 +323,7 @@ class AiSidecarCircuitBreakerTest : AbstractAiServiceWireMockTest() {
             )
 
             // 4회 실패로 Circuit 을 OPEN 시키는 설정 (failureRateThreshold=100%)
-            val cb = buildAiSidecarCircuitBreaker(minimumCalls = 4, failureRateThreshold = 100.0f)
+            val cb = buildCircuitBreaker("aiCommentFilter", minimumCalls = 4, failureRateThreshold = 100.0f)
 
             // when: 4회 호출하여 슬라이딩 윈도우 채우기
             repeat(4) {
