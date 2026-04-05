@@ -71,6 +71,7 @@ export function useHomeSections(): UseHomeSectionsReturn {
     latestNews,
     state,
     error,
-    refresh: fetchAll,
+    // SyntheticEvent가 AbortSignal로 전달되는 것을 방지하기 위해 래핑
+    refresh: () => fetchAll(),
   };
 }

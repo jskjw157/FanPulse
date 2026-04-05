@@ -26,6 +26,17 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    isAuthenticated: true,
+    isLoading: false,
+    user: { id: '1', email: 'test@example.com', username: '테스트유저' },
+    logout: vi.fn(),
+    refreshAuth: vi.fn(),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 describe('Smoke Test - All Pages Render', () => {
   it('renders Login Page', () => {
     render(<LoginPage />)
