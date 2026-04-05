@@ -1,4 +1,4 @@
-package com.fanpulse.infrastructure.web.streaming
+package com.fanpulse.interfaces.rest.streaming
 
 import com.fanpulse.application.dto.streaming.*
 import com.fanpulse.application.service.streaming.StreamingEventQueryService
@@ -32,35 +32,29 @@ class StreamingEventController(
     // === MVP API Spec: Cursor-based Pagination ===
 
     /**
-     * Gets streaming events with cursor-based pagination (MVP API).
+     * 커서 기반 페이지네이션으로 스트리밍 이벤트를 조회한다 (MVP API).
      *
-     * This is the primary endpoint for fetching streaming events in the MVP API.
-     * It uses cursor-based pagination for stable, efficient pagination that works well
-     * with frequently updated datasets.
+     * MVP API의 스트리밍 이벤트 조회 주요 엔드포인트이다.
+     * 자주 갱신되는 데이터셋에서 안정적이고 효율적인 커서 기반 페이지네이션을 사용한다.
      *
-     * Cursor Pagination Flow:
-     * 1. Call endpoint without cursor parameter to get the first page
-     * 2. Each response includes a nextCursor (if more pages exist) and hasMore flag
-     * 3. Pass nextCursor to the next request to get the following page
-     * 4. Stop when hasMore=false or nextCursor is null
+     * 커서 페이지네이션 흐름:
+     * 1. cursor 파라미터 없이 호출하여 첫 번째 페이지를 조회한다
+     * 2. 각 응답에는 nextCursor(추가 페이지가 있는 경우)와 hasMore 플래그가 포함된다
+     * 3. 다음 요청에 nextCursor를 전달하여 다음 페이지를 조회한다
+     * 4. hasMore=false 또는 nextCursor가 null이면 종료한다
      *
-     * Example request sequence:
-     * - Request 1: GET /api/v1/streaming-events?status=LIVE&limit=20
-     * - Request 2: GET /api/v1/streaming-events?status=LIVE&limit=20&cursor={nextCursor from request 1}
-     * - Request 3: GET /api/v1/streaming-events?status=LIVE&limit=20&cursor={nextCursor from request 2}
+     * 요청 순서 예시:
+     * - 요청 1: GET /api/v1/streaming-events?status=LIVE&limit=20
+     * - 요청 2: GET /api/v1/streaming-events?status=LIVE&limit=20&cursor={요청 1의 nextCursor}
+     * - 요청 3: GET /api/v1/streaming-events?status=LIVE&limit=20&cursor={요청 2의 nextCursor}
      *
-     * @param status Optional status filter (LIVE, SCHEDULED, or ENDED). Omit to get all events.
-     * @param limit Number of items per page (1-50, default 20). Larger limits may impact performance.
-     * @param cursor Encoded cursor from nextCursor of previous response, or omit for first page
-     *
-     * @return ApiResponse containing CursorPageResponse with:
-     *   - items: List of streaming events with artist names (length <= limit)
-     *   - nextCursor: Base64-encoded cursor for next page (null if no more pages)
-     *   - hasMore: Boolean flag indicating if more pages exist
-     *
-     * Status codes:
-     * - 200 OK: Events retrieved successfully (may be empty list if no matches)
-     * - 400 Bad Request: Invalid limit or malformed cursor
+     * @param status 상태 필터 (LIVE, SCHEDULED, ENDED). 생략 시 전체 조회
+     * @param limit 페이지당 항목 수 (1-50, 기본값 20). 값이 클수록 성능에 영향
+     * @param cursor 이전 응답의 nextCursor를 Base64 인코딩한 값. 첫 페이지는 생략
+     * @return CursorPageResponse를 포함한 ApiResponse:
+     *   - items: 아티스트 이름 포함 스트리밍 이벤트 목록 (길이 <= limit)
+     *   - nextCursor: 다음 페이지용 Base64 인코딩 커서 (페이지 없으면 null)
+     *   - hasMore: 추가 페이지 존재 여부 플래그
      */
     @GetMapping
     @Operation(
@@ -106,15 +100,14 @@ class StreamingEventController(
     }
 
     /**
-     * Gets detailed information about a specific streaming event.
+     * 특정 스트리밍 이벤트의 상세 정보를 조회한다.
      *
-     * Returns comprehensive event information including artist name, stream URL with
-     * YouTube parameters, and current viewer count. This endpoint is used after the user
-     * selects an event from the cursor-paginated list.
+     * 아티스트 이름, YouTube 파라미터가 포함된 스트림 URL, 현재 시청자 수 등
+     * 이벤트의 전체 정보를 반환한다. 커서 페이지네이션 목록에서 이벤트 선택 후 호출한다.
      *
-     * @param id The unique identifier (UUID) of the streaming event
-     * @return ApiResponse containing StreamingEventDetailResponse with complete event details
-     * @throws NoSuchElementException (returns 404) if event with given ID is not found
+     * @param id 스트리밍 이벤트의 고유 식별자 (UUID)
+     * @return 완전한 이벤트 정보를 포함한 StreamingEventDetailResponse의 ApiResponse
+     * @throws NoSuchElementException 해당 ID의 이벤트가 없으면 404 반환
      */
     @GetMapping("/{id}")
     @Operation(
