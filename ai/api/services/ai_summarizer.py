@@ -18,6 +18,7 @@
 # - transformers, torch, sentencepiece 패키지 필요
 #######################
 """
+import contextlib
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,16 +29,6 @@ try:
 except ImportError:
     torch = None
     TORCH_AVAILABLE = False
-
-
-class _NullContextManager:
-    """torch가 없을 때 torch.no_grad() 대체용 no-op 컨텍스트 매니저."""
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        pass
 
 
 #######################
@@ -87,6 +78,12 @@ def _get_pipeline():
 # 환경 점검 및 LLM 모델 로딩
 #######################
 def _get_llm_model(model_name):
+    if not TORCH_AVAILABLE:
+        raise RuntimeError(
+            "_get_llm_model은 torch 없이 호출할 수 없습니다. "
+            "torch를 설치하거나 LLM 기능을 비활성화하십시오."
+        )
+
     import sys
 
     print("===== ENV CHECK =====")
@@ -109,7 +106,7 @@ def _get_llm_model(model_name):
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
         bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.float16 if TORCH_AVAILABLE else None,
+        bnb_4bit_compute_dtype=torch.float16,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -269,7 +266,7 @@ class AISummarizer:
                 # 종화 모델 변경안
                 #######################
                 # do_sample=False (greedy decoding)일 때는 temperature/top_p 무시됨
-                no_grad = torch.no_grad() if TORCH_AVAILABLE else _NullContextManager()
+                no_grad = torch.no_grad() if TORCH_AVAILABLE else contextlib.nullcontext()
                 with no_grad:
                     outputs = model.generate(
                         **inputs,
