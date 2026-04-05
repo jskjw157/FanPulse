@@ -175,7 +175,6 @@ test.describe('Auth - 로그인 페이지', () => {
 })
 
 test.describe('Auth - ProtectedRoute', () => {
-  test.describe.configure({ mode: 'serial' })
 
   test('비로그인 상태에서 마이페이지 접근 시 로그인 페이지로 리다이렉트된다', async ({
     page,
@@ -230,7 +229,6 @@ test.describe('Auth - ProtectedRoute', () => {
 })
 
 test.describe('Auth - 로그아웃', () => {
-  test.describe.configure({ mode: 'serial' })
 
   test('마이페이지에서 로그아웃 시 로그인 페이지로 이동한다', async ({ page }) => {
     await mockGoogleIdentityServices(page)

@@ -184,7 +184,7 @@ test.describe('Home - 홈 화면', () => {
   test('Live 카드 클릭 시 /live/:id 페이지로 이동한다', async ({ page }) => {
     // Next.js 개발 환경에서 RSC soft-nav이 router-state-tree 불일치로 중단될 수 있으므로
     // 목적지 페이지를 mock하여 hard navigation이 발생하도록 한다
-    await page.route('http://localhost:3001/live/**', async (route) => {
+    await page.route('**/live/**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'text/html',
@@ -201,7 +201,7 @@ test.describe('Home - 홈 화면', () => {
   test('뉴스 카드 클릭 시 /news/:id 페이지로 이동한다', async ({ page }) => {
     // Next.js 개발 환경에서 RSC soft-nav이 router-state-tree 불일치로 중단될 수 있으므로
     // 목적지 페이지를 mock하여 hard navigation이 발생하도록 한다
-    await page.route('http://localhost:3001/news/**', async (route) => {
+    await page.route('**/news/**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'text/html',
@@ -227,7 +227,7 @@ test.describe('Home - 홈 화면', () => {
     // CORS 프리플라이트(OPTIONS)를 포함한 모든 api.fanpulse.app 요청을 처음부터 인터셉트하여
     // Chrome CORS 캐시가 오염되지 않도록 한다
     const CORS_HEADERS = {
-      'Access-Control-Allow-Origin': 'http://localhost:3001',
+      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',

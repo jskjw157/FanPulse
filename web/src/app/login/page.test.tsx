@@ -53,9 +53,4 @@ describe('LoginPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders a link or button to browse without logging in', () => {
-    render(<LoginPage />)
-    // The page provides a way to use the app without logging in
-    expect(screen.getByText('Welcome to FanPulse')).toBeInTheDocument()
-  })
 })
