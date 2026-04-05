@@ -5,21 +5,10 @@ import java.util.UUID
 
 /**
  * 인증 서비스 인터페이스.
- * 회원가입, 로그인, 토큰 관리를 담당한다.
+ * Google OAuth 로그인 및 토큰 관리를 담당한다.
+ * 이메일/비밀번호 인증은 추후 구현 시 추가한다.
  */
 interface AuthService {
-
-    /**
-     * 이메일/비밀번호로 신규 사용자를 등록한다.
-     * @throws IllegalArgumentException 이미 존재하는 이메일 또는 사용자명인 경우
-     */
-    fun signup(request: SignupRequest): TokenResponse
-
-    /**
-     * 이메일/비밀번호로 사용자를 인증한다.
-     * @throws IllegalArgumentException 자격 증명이 유효하지 않은 경우
-     */
-    fun login(request: LoginRequest): TokenResponse
 
     /**
      * Google OAuth로 사용자를 인증한다.

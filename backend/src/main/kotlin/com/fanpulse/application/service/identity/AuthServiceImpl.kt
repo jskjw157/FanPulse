@@ -30,21 +30,8 @@ class AuthServiceImpl(
 
     companion object {
         private const val REFRESH_TOKEN_EXPIRATION_DAYS = 7L
+        // TokenPort의 액세스 토큰 만료 설정(jwt.access-token-expiration)과 반드시 동기화해야 한다
         private const val ACCESS_TOKEN_EXPIRATION_SECONDS = 3600L
-    }
-
-    /**
-     * 이메일/비밀번호 회원가입은 아직 구현되지 않았다.
-     */
-    override fun signup(request: SignupRequest): TokenResponse {
-        throw UnsupportedOperationException("이메일/비밀번호 회원가입은 아직 지원되지 않습니다.")
-    }
-
-    /**
-     * 이메일/비밀번호 로그인은 아직 구현되지 않았다.
-     */
-    override fun login(request: LoginRequest): TokenResponse {
-        throw UnsupportedOperationException("이메일/비밀번호 로그인은 아직 지원되지 않습니다.")
     }
 
     /**
