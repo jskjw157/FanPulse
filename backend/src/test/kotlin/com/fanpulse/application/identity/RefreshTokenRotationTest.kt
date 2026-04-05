@@ -1,10 +1,12 @@
 package com.fanpulse.application.identity
 
-import com.fanpulse.domain.common.DomainEventPublisher
+import com.fanpulse.application.dto.identity.GoogleLoginRequest
+import com.fanpulse.application.identity.command.GoogleLoginHandler
+import com.fanpulse.application.service.identity.AuthService
+import com.fanpulse.application.service.identity.AuthServiceImpl
 import com.fanpulse.domain.identity.Email
 import com.fanpulse.domain.identity.User
 import com.fanpulse.domain.identity.Username
-import com.fanpulse.application.identity.command.GoogleLoginHandler
 import com.fanpulse.domain.identity.port.RefreshTokenPort
 import com.fanpulse.domain.identity.port.RefreshTokenRecord
 import com.fanpulse.domain.identity.port.TokenPort
@@ -59,7 +61,7 @@ class RefreshTokenRotationTest {
         refreshTokenPort = mockk(relaxed = true)
         googleLoginHandler = mockk(relaxed = true)
 
-        authService = AuthService(
+        authService = AuthServiceImpl(
             userPort = userPort,
             tokenPort = tokenPort,
             refreshTokenPort = refreshTokenPort,

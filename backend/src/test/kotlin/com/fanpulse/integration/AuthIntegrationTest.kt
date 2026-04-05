@@ -1,8 +1,8 @@
 package com.fanpulse.integration
 
-import com.fanpulse.application.identity.AuthService
-import com.fanpulse.application.identity.GoogleLoginRequest
+import com.fanpulse.application.dto.identity.GoogleLoginRequest
 import com.fanpulse.application.identity.RefreshTokenReusedException
+import com.fanpulse.application.service.identity.AuthService
 import com.fanpulse.application.identity.command.GoogleLoginHandler
 import com.fanpulse.domain.identity.Email
 import com.fanpulse.domain.identity.User

@@ -102,6 +102,42 @@ data class TokenResponse(
 )
 
 /**
+ * Google OAuth 로그인 성공 시 사용자 정보와 토큰을 함께 반환하는 응답 모델.
+ */
+@Schema(description = "Authentication response with user info and tokens")
+data class AuthResponse(
+    @Schema(description = "User ID")
+    val userId: java.util.UUID,
+
+    @Schema(description = "User email address")
+    val email: String,
+
+    @Schema(description = "User display name")
+    val username: String,
+
+    @Schema(description = "JWT access token")
+    val accessToken: String,
+
+    @Schema(description = "Refresh token")
+    val refreshToken: String
+)
+
+/**
+ * 인증된 사용자의 기본 정보 모델.
+ */
+@Schema(description = "Authenticated user info")
+data class UserInfo(
+    @Schema(description = "User ID")
+    val id: java.util.UUID,
+
+    @Schema(description = "User email address")
+    val email: String,
+
+    @Schema(description = "User display name")
+    val username: String
+)
+
+/**
  * 별도 반환 데이터가 없는 작업의 결과 메시지 응답.
  */
 @Schema(description = "Simple message response")
