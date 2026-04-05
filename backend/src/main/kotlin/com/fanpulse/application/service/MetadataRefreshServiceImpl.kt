@@ -9,7 +9,6 @@ import io.micrometer.core.instrument.Timer
 import kotlinx.coroutines.delay
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.util.*
 
 private val logger = KotlinLogging.logger {}
@@ -59,7 +58,17 @@ class MetadataRefreshServiceImpl(
         return refreshEvents(events)
     }
 
-    @Transactional
+    /**
+     * 단일 이벤트 메타데이터를 갱신한다.
+     *
+     * 트랜잭션 보장: 이 suspend 함수 자체에는 @Transactional을 적용하지 않는다.
+     * Spring @Transactional은 ThreadLocal 기반이므로 코루틴 컨텍스트 전환 시
+     * 트랜잭션이 소실될 수 있기 때문이다 (#166).
+     *
+     * DB 쓰기는 [TransactionalMetadataUpdater.updateEventMetadata]에서
+     * @Transactional(propagation = REQUIRES_NEW)로 독립 트랜잭션 내에서 수행되므로
+     * 원자성이 보장된다.
+     */
     override suspend fun refreshEvent(eventId: UUID): Boolean {
         logger.info { "Refreshing single event: $eventId" }
 
@@ -83,6 +92,13 @@ class MetadataRefreshServiceImpl(
         }
     }
 
+    /**
+     * 이벤트 목록의 메타데이터를 배치 단위로 갱신한다.
+     *
+     * 각 이벤트의 DB 쓰기는 [TransactionalMetadataUpdater.updateEventMetadata]에서
+     * @Transactional(propagation = REQUIRES_NEW)로 개별 트랜잭션 내에서 수행된다.
+     * 하나의 이벤트 갱신 실패가 다른 이벤트에 영향을 주지 않는다.
+     */
     private suspend fun refreshEvents(events: List<StreamingEvent>): RefreshResult {
         val startTime = System.nanoTime()
         val errors = mutableListOf<RefreshError>()
