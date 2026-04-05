@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
 /**
- * Controller for authenticated user's profile and settings.
+ * 인증된 사용자의 프로필 및 설정 관련 API 엔드포인트를 제공한다.
  *
- * Note: In production, userId should be extracted from JWT token via SecurityContext.
- * Current implementation uses @RequestAttribute which should be set by JwtAuthenticationFilter.
+ * 참고: 프로덕션에서는 SecurityContext의 JWT 토큰에서 userId를 추출해야 한다.
+ * 현재 구현은 JwtAuthenticationFilter가 설정하는 @RequestAttribute를 사용한다.
  */
 @RestController
 @RequestMapping("/api/v1/me")
