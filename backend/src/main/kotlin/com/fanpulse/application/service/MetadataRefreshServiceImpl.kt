@@ -9,7 +9,6 @@ import io.micrometer.core.instrument.Timer
 import kotlinx.coroutines.delay
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.util.*
 
 private val logger = KotlinLogging.logger {}
@@ -59,7 +58,6 @@ class MetadataRefreshServiceImpl(
         return refreshEvents(events)
     }
 
-    @Transactional
     override suspend fun refreshEvent(eventId: UUID): Boolean {
         logger.info { "Refreshing single event: $eventId" }
 
