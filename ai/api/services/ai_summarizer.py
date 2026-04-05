@@ -24,10 +24,21 @@ logger = logging.getLogger(__name__)
 
 try:
     import torch
-    _TORCH_AVAILABLE = True
+    TORCH_AVAILABLE = True
 except ImportError:
     torch = None
-    _TORCH_AVAILABLE = False
+    TORCH_AVAILABLE = False
+
+
+class _NullContextManager:
+    """torch가 없을 때 torch.no_grad() 대체용 no-op 컨텍스트 매니저."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
 
 #######################
 # 지연 로딩 (Lazy Loading) 변수
@@ -80,10 +91,13 @@ def _get_llm_model(model_name):
 
     print("===== ENV CHECK =====")
     print("Python exe :", sys.executable)
-    print("Torch ver  :", torch.__version__)
-    print("CUDA avail :", torch.cuda.is_available())
-    print("CUDA ver   :", torch.version.cuda)
-    print("GPU name   :", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
+    if TORCH_AVAILABLE:
+        print("Torch ver  :", torch.__version__)
+        print("CUDA avail :", torch.cuda.is_available())
+        print("CUDA ver   :", torch.version.cuda)
+        print("GPU name   :", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
+    else:
+        print("Torch      : not available")
     print("=====================")
     from transformers import (
         AutoTokenizer,
@@ -95,7 +109,7 @@ def _get_llm_model(model_name):
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
         bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_compute_dtype=torch.float16 if TORCH_AVAILABLE else None,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -153,7 +167,7 @@ def _get_model(language='ko'):
             "model": pipeline_fn(
                 task="summarization",
                 model="facebook/bart-large-cnn",
-                device=0 if torch.cuda.is_available() else -1
+                device=0 if (TORCH_AVAILABLE and torch.cuda.is_available()) else -1
             )
         }
 
@@ -255,7 +269,8 @@ class AISummarizer:
                 # 종화 모델 변경안
                 #######################
                 # do_sample=False (greedy decoding)일 때는 temperature/top_p 무시됨
-                with torch.no_grad():
+                no_grad = torch.no_grad() if TORCH_AVAILABLE else _NullContextManager()
+                with no_grad:
                     outputs = model.generate(
                         **inputs,
                         max_new_tokens=max_length,
