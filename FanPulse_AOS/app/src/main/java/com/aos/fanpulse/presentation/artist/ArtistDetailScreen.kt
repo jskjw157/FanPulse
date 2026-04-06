@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 // Data Classes
 data class ArtistDetail(
@@ -43,6 +44,8 @@ enum class ArtistTab {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArtistDetailScreen(
+    viewModel: ArtistDetailViewModel = hiltViewModel(),
+    artistId: String? = null,
     onBackClick: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(ArtistTab.OVERVIEW) }
@@ -67,6 +70,10 @@ fun ArtistDetailScreen(
             Color(0xFFD946A6)
         )
     )
+
+    if (artistId != null){
+        viewModel.getArtistDetail(artistId)
+    }
 
     Scaffold(
         topBar = {

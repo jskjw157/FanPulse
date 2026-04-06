@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.aos.fanpulse.presentation.ads.AdsScreen
 import com.aos.fanpulse.presentation.artist.ArtistDetailScreen
 import com.aos.fanpulse.presentation.artist.ArtistScreen
@@ -71,7 +73,8 @@ fun NavGraph(
                     { NavigationActions(navController).navigateCommunityPost() },
                     { NavigationActions(navController).navigateSearch()},
                     { NavigationActions(navController).navigateCommunityPostDetail() },
-                    { NavigationActions(navController).navigateNotifications()}
+                    { NavigationActions(navController).navigateNotifications() },
+                    { NavigationActions(navController).navigateArtist() }
                 )
             }
             composable(MainTabScreen.Voting.route) { VotingScreen() }
@@ -179,11 +182,19 @@ fun NavGraph(
         }
 
         composable(SubScreen.Artist.route) {
-            ArtistScreen()
+            ArtistScreen(){
+                NavigationActions(navController).navigateArtistDetail(it)
+            }
         }
 
-        composable(SubScreen.ArtistDetail.route) {
-            ArtistDetailScreen()
+        composable(
+            route = SubScreen.ArtistDetail.route, // "artist_detail/{artistId}"
+            arguments = listOf(navArgument("artistId") { type = NavType.StringType })
+        ) {backStackEntry ->
+            // 전달받은 id 꺼내기
+            val artistId = backStackEntry.arguments?.getString("artistId") ?: ""
+
+            ArtistDetailScreen(artistId = artistId)
         }
     }
 }

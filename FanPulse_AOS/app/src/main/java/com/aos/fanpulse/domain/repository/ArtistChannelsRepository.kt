@@ -12,7 +12,7 @@ class ArtistChannelsRepository @Inject constructor(
     private val apiService: ArtistChannelsApiService
 ) {
     /**
-     * 아티스트 채널 목록 조회 (Admin 전용)
+     * 아티스트 채널 목록 조회 (Admin 전용) -> 3. UseCase 없음
      */
     suspend fun getArtistChannels(): Response<ArtistChannelListResponse> {
         return apiService.getArtistChannels()
@@ -35,7 +35,7 @@ class ArtistChannelsRepository @Inject constructor(
     }
 
     /**
-     * 특정 ID로 채널 상세 정보 조회
+     * 특정 ID로 채널 상세 정보 조회 -> 1. UseCase 없음
      */
     suspend fun getArtistChannelDetail(
         channelId: String
@@ -44,7 +44,7 @@ class ArtistChannelsRepository @Inject constructor(
     }
 
     /**
-     * 아티스트 채널 삭제
+     * 아티스트 채널 삭제 -> 2. UseCase 없음
      */
     suspend fun deleteArtistChannel(
         id: String
@@ -64,7 +64,7 @@ class ArtistChannelsRepository @Inject constructor(
     }
 
     /**
-     * 특정 아티스트의 채널 목록 조회
+     * 특정 아티스트의 채널 목록 조회 -> 1. UseCase 없음
      */
     suspend fun getArtistChannels(
         artistId: String

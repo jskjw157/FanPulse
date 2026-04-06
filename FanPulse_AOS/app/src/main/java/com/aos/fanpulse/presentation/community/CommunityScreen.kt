@@ -72,6 +72,7 @@ fun CommunityScreen(
     goSearchScreen: () -> Unit,
     goPostDetailScreen: () -> Unit,
     goNotificationScreen: () -> Unit,
+    goArtistScreen: () -> Unit,
 ){
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -184,9 +185,14 @@ fun CommunityScreen(
 //                containerColor = Color.White, // 시트 배경색
 //                dragHandle = { BottomSheetDefaults.DragHandle() }
 //            ) {
-                BottomSheetContent{
-                    showBottomSheet = it
-                }
+                BottomSheetContent(
+                    setShowModal = { isVisible ->
+                        showBottomSheet = isVisible
+                    },
+                    goArtistScreen = {
+                        goArtistScreen()
+                    }
+                )
 //            }
             }
         }
@@ -201,7 +207,8 @@ data class Artist(
 
 @Composable
 fun BottomSheetContent(
-    setShowModal: (Boolean) -> Unit
+    setShowModal: (Boolean) -> Unit,
+    goArtistScreen: () -> Unit,
 ) {
 
     var searchQuery by remember { mutableStateOf("") }
@@ -294,7 +301,10 @@ fun BottomSheetContent(
                         ArtistCard(
                             artist = artist,
                             isSelected = selectedArtist == artist.name,
-                            onClick = { selectedArtist = artist.name }
+                            onClick = {
+                                selectedArtist = artist.name
+                                goArtistScreen()
+                            }
                         )
                     }
                 }
@@ -570,5 +580,5 @@ fun CommunityItem(
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    CommunityScreen({},{},{}, {})
+    CommunityScreen({},{},{},{},{})
 }

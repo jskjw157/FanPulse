@@ -9,6 +9,7 @@ import javax.inject.Inject
 
 /**
  * 데이터의 입구와 출구 역할
+ * 데이터를 어떻게 가져오고 보낼 것인가?
  * */
 class AuthRepositoryImpl @Inject constructor(
     private val userDataStore: DataStore<UserData>, // DataStore를 직접 주입받아야 합니다.

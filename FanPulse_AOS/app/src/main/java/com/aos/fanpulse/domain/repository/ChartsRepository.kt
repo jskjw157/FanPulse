@@ -11,7 +11,7 @@ class ChartsRepository @Inject constructor(
 ) {
     /**
      * 특정 차트 ID로 상세 데이터 조회 (이전 API)
-     * @param chartId 조회할 차트의 고유 ID
+     * @param chartId 조회할 차트의 고유 ID -> UseCase 없음
      */
     suspend fun getChartDetail(
         chartId: String
@@ -21,7 +21,7 @@ class ChartsRepository @Inject constructor(
 
     /**
      * 특정 플랫폼의 최신 차트 데이터 조회
-     * @param chartType 차트 플랫폼 종류 (예: MELON, SPOTIFY 등)
+     * @param chartType 차트 플랫폼 종류 (예: MELON, SPOTIFY 등) -> UseCase 없음
      */
     suspend fun getLatestChart(
         chartType: String

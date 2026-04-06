@@ -56,7 +56,7 @@ class NewsRepository @Inject constructor(
     }
 
     /**
-     * 최신 뉴스 목록 조회
+     * 최신 뉴스 목록 조회 -> UseCase 없음
      */
     suspend fun getLatestNews(
         limit: Int = 10

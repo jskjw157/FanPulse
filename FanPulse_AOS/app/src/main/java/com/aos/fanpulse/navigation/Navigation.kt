@@ -42,7 +42,11 @@ sealed class SubScreen(route: String) : Screen(route) {
     object Chart : SubScreen("chart")
     object Ads : SubScreen("ads")
     object Artist : SubScreen("artist")
-    object ArtistDetail : SubScreen("artist_detail")
+    object ArtistDetail : SubScreen("artist_detail/{artistId}") {
+        fun createRoute(artistId: String): String {
+            return "artist_detail/$artistId"
+        }
+    }
 
     object Detail : SubScreen("detail/{taskId}?title={title}") {
         fun createRoute(taskId: Int, title: String): String {
@@ -174,8 +178,8 @@ class NavigationActions(private val navController: NavHostController){
         }
     }
 
-    fun navigateArtistDetail() {
-        navController.navigate(SubScreen.ArtistDetail.route) {
+    fun navigateArtistDetail(artistId: String) {
+        navController.navigate(SubScreen.ArtistDetail.createRoute(artistId)) {
             launchSingleTop = true
         }
     }

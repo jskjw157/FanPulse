@@ -110,6 +110,9 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation(kotlin("test"))
+
+    // Coil for Compose
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
 protobuf {
     protoc {

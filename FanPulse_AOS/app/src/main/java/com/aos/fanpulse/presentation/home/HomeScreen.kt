@@ -1,5 +1,6 @@
 package com.aos.fanpulse.presentation.home
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -34,22 +35,17 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,8 +63,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aos.fanpulse.R
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -641,8 +637,15 @@ fun HomeScreen(
     }
 }
 
+data class MenuItem(
+    val id: String,
+    val text: String,
+    @DrawableRes val iconRes: Int
+)
+
 @Composable
 fun RightDrawer(
+    viewModel: HomeViewModel = hiltViewModel(),
     isOpen: Boolean,
     onDismiss: () -> Unit,
     onMenuItemClick: (String) -> Unit
@@ -736,65 +739,13 @@ fun RightDrawer(
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                 ) {
-                    DrawerMenuItem(
-                        iconRes = R.drawable.icon_home,
-                        text = "차트",
-                        onClick = { onMenuItemClick("chart") }
-                    )
-
-                    DrawerMenuItem(
-                        iconRes = R.drawable.icon_news,
-                        text = "뉴스",
-                        onClick = { onMenuItemClick("news") }
-                    )
-
-                    DrawerMenuItem(
-                        iconRes = R.drawable.icon_home_1,
-                        text = "콘서트",
-                        onClick = { onMenuItemClick("concert") }
-                    )
-
-                    DrawerMenuItem(
-                        iconRes = R.drawable.icon_home_1,
-                        text = "티켓",
-                        onClick = { onMenuItemClick("tickets") }
-                    )
-
-                    DrawerMenuItem(
-                        iconRes = R.drawable.icon_home_1,
-                        text = "멤버십",
-                        onClick = { onMenuItemClick("membership") }
-                    )
-
-                    DrawerMenuItem(
-                        iconRes = R.drawable.icon_home_1,
-                        text = "리워드",
-                        onClick = { onMenuItemClick("ads") }
-                    )
-
-                    DrawerMenuItem(
-                        iconRes = R.drawable.icon_home_1,
-                        text = "즐겨찾기",
-                        onClick = { onMenuItemClick("favorites") }
-                    )
-
-                    DrawerMenuItem(
-                        iconRes = R.drawable.icon_home_1,
-                        text = "저장됨",
-                        onClick = { onMenuItemClick("saved") }
-                    )
-
-                    DrawerMenuItem(
-                        iconRes = R.drawable.icon_settings,
-                        text = "설정",
-                        onClick = { onMenuItemClick("settings") }
-                    )
-
-                    DrawerMenuItem(
-                        iconRes = R.drawable.icon_home_1,
-                        text = "고객센터",
-                        onClick = { onMenuItemClick("support") }
-                    )
+                    viewModel.setDrawerMenuItems().forEach { item ->
+                        DrawerMenuItem(
+                            iconRes = item.iconRes,
+                            text = item.text,
+                            onClick = { onMenuItemClick(item.id) }
+                        )
+                    }
                 }
             }
         }
