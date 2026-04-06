@@ -39,6 +39,16 @@ function buildReviewPrompt(data: Record<string, unknown>): string {
     `sha: ${data.sha}`,
     `event: ${data.event}`,
     `url: ${data.url}`,
+    "",
+    "## 리뷰 규칙",
+    "- `gh pr diff ${pr번호}`로 diff만 리뷰. diff에 없는 파일은 절대 리뷰하지 마.",
+    "- 이슈 심각도를 반드시 아래 형식으로 분류:",
+    "  - 🔴 **Critical**: 버그, 보안, 데이터 손실 위험",
+    "  - 🟡 **Medium**: 설계 개선, 테스트 누락, 설정 불일치",
+    "  - 🟢 **Low**: 컨벤션, 네이밍, 코드 스타일",
+    "- 각 이슈마다 해당 코드 스니펫과 수정 방향을 제시",
+    "- AI 관련 표기(Co-Authored-By, Generated with Claude 등) 절대 금지",
+    "- 한국어로 작성",
   ].join("\n");
 }
 
