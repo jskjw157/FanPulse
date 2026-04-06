@@ -115,7 +115,7 @@ async function postReviewComment(prNum: number, body: string): Promise<void> {
 // claude -p 실행으로 리뷰 수행
 async function runReview(prompt: string, prNum: number, repo: string, sha: string): Promise<void> {
   log(`PR #${prNum} starting review...`);
-  await setCommitStatus(repo, sha, "pending", "코드 리뷰 진행 중");
+  await setCommitStatus(repo, sha, "pending", "Claude Code 리뷰 진행 중");
 
   try {
     const proc = Bun.spawn([CLAUDE_BIN, "-p", "--no-session-persistence"], {
@@ -158,7 +158,7 @@ async function runReview(prompt: string, prNum: number, repo: string, sha: strin
       log(`PR #${prNum} review completed`);
       const reviewText = stdoutText.trim();
       if (reviewText) {
-        const body = reviewText;
+        const body = `> 🤖 Claude Code 리뷰\n\n${reviewText}`;
         await postReviewComment(prNum, body);
       }
       // 🔴 Critical 이슈가 있으면 failure, 없으면 success
