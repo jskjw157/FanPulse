@@ -57,6 +57,7 @@ fun NavGraph(
             composable(MainTabScreen.Home.route) { HomeScreen(
                 { NavigationActions(navController).navigateSearch() },
                 { NavigationActions(navController).navigateNotifications() },
+                { NavigationActions(navController).navigateArtist() },
                 { NavigationActions(navController).navigateChart() },
                 { NavigationActions(navController).navigateNews() },
                 { NavigationActions(navController).navigateConcert() },

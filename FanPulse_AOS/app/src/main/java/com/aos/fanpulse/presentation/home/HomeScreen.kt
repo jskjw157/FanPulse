@@ -71,6 +71,7 @@ import com.aos.fanpulse.R
 fun HomeScreen(
     goSearchScreen: () -> Unit,
     goNotificationScreen: () -> Unit,
+    goArtistScreen: () -> Unit,
     goChartScreen: () -> Unit,
     goNewsScreen: () -> Unit,
     goConcertScreen: () -> Unit,
@@ -601,6 +602,9 @@ fun HomeScreen(
             onMenuItemClick = { menuItem ->
                 isDrawerOpen = false
                 when(menuItem){
+                    "artist" -> {
+                        goArtistScreen()
+                    }
                     "chart" -> {
                         goChartScreen()
                     }
@@ -628,7 +632,7 @@ fun HomeScreen(
                     "settings" -> {
                         goSettingsScreen()
                     }
-                    "support" -> {
+                    "customer_service" -> {
                         goSupportScreen()
                     }
                 }
@@ -1149,5 +1153,5 @@ fun SetBestGroupItem(){
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    HomeScreen ({},{},{},{},{},{},{},{},{},{},{},{},)
+    HomeScreen ({}, {},{},{},{},{},{},{},{},{},{},{},{},)
 }
