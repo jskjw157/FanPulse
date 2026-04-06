@@ -45,9 +45,67 @@ function buildReviewPrompt(data: Record<string, unknown>): string {
 // 동시 리뷰 방지
 const activeReviews = new Set<number>();
 
+// 커밋 상태 세팅 (claude-code-review status check)
+async function setCommitStatus(
+  repo: string,
+  sha: string,
+  state: "pending" | "success" | "failure",
+  description: string
+): Promise<void> {
+  try {
+    const proc = Bun.spawn(
+      [
+        "gh", "api",
+        `repos/${repo}/statuses/${sha}`,
+        "-f", `state=${state}`,
+        "-f", "context=claude-code-review",
+        "-f", `description=${description}`,
+      ],
+      {
+        cwd: PROJECT_DIR,
+        env: { ...process.env, HOME: "/Users/ohchaeeun" },
+        stdout: "pipe",
+        stderr: "pipe",
+      }
+    );
+    const exitCode = await proc.exited;
+    if (exitCode !== 0) {
+      const stderr = await new Response(proc.stderr).text();
+      log(`setCommitStatus failed (${state}): ${stderr.slice(0, 200)}`);
+    }
+  } catch (err) {
+    log(`setCommitStatus error: ${err}`);
+  }
+}
+
+// PR에 리뷰 코멘트 포스트
+async function postReviewComment(prNum: number, body: string): Promise<void> {
+  try {
+    const proc = Bun.spawn(
+      ["gh", "pr", "comment", String(prNum), "--body", body],
+      {
+        cwd: PROJECT_DIR,
+        env: { ...process.env, HOME: "/Users/ohchaeeun" },
+        stdout: "pipe",
+        stderr: "pipe",
+      }
+    );
+    const exitCode = await proc.exited;
+    if (exitCode === 0) {
+      log(`PR #${prNum} review comment posted`);
+    } else {
+      const stderr = await new Response(proc.stderr).text();
+      log(`PR #${prNum} comment post failed: ${stderr.slice(0, 200)}`);
+    }
+  } catch (err) {
+    log(`PR #${prNum} comment post error: ${err}`);
+  }
+}
+
 // claude -p 실행으로 리뷰 수행
-async function runReview(prompt: string, prNum: number): Promise<void> {
+async function runReview(prompt: string, prNum: number, repo: string, sha: string): Promise<void> {
   log(`PR #${prNum} starting review...`);
+  await setCommitStatus(repo, sha, "pending", "Claude Code 리뷰 진행 중");
 
   try {
     const proc = Bun.spawn([CLAUDE_BIN, "-p", "--no-session-persistence"], {
@@ -62,26 +120,52 @@ async function runReview(prompt: string, prNum: number): Promise<void> {
       stderr: "pipe",
     });
 
-    // 15분 타임아웃
+    // 15분 타임아웃 (process kill → pipe EOF → Promise.all 해제)
+    let timedOut = false;
     const timeout = setTimeout(() => {
+      timedOut = true;
       proc.kill();
       activeReviews.delete(prNum);
       log(`PR #${prNum} review timed out (15min)`);
     }, 15 * 60 * 1000);
 
-    const exitCode = await proc.exited;
+    // stdout/stderr 동시에 읽어 pipe buffer deadlock 방지
+    const [stdoutText, stderrText, exitCode] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
+
     clearTimeout(timeout);
     activeReviews.delete(prNum);
 
+    if (timedOut) {
+      await setCommitStatus(repo, sha, "failure", "리뷰 타임아웃 (15분)");
+      return;
+    }
+
     if (exitCode === 0) {
       log(`PR #${prNum} review completed`);
+      const reviewText = stdoutText.trim();
+      if (reviewText) {
+        const body = `> 🤖 Claude Code 리뷰\n\n${reviewText}`;
+        await postReviewComment(prNum, body);
+      }
+      // 🔴 Critical 이슈가 있으면 failure, 없으면 success
+      const hasCritical = reviewText.includes("🔴");
+      await setCommitStatus(
+        repo, sha,
+        hasCritical ? "failure" : "success",
+        hasCritical ? "Critical 이슈 발견 — 수정 필요" : "리뷰 완료 — 이슈 없음"
+      );
     } else {
-      const stderr = await new Response(proc.stderr).text();
-      log(`PR #${prNum} review failed (exit ${exitCode}): ${stderr.slice(0, 300)}`);
+      log(`PR #${prNum} review failed (exit ${exitCode}): ${stderrText.slice(0, 300)}`);
+      await setCommitStatus(repo, sha, "failure", "리뷰 실행 오류");
     }
   } catch (err) {
     activeReviews.delete(prNum);
     log(`PR #${prNum} review spawn error: ${err}`);
+    await setCommitStatus(repo, sha, "failure", "리뷰 실행 오류");
   }
 }
 
@@ -142,7 +226,7 @@ const server = Bun.serve({
 
     // 비동기 리뷰 시작 (HTTP 응답은 즉시 반환)
     const prompt = buildReviewPrompt(data);
-    runReview(prompt, prNum);
+    runReview(prompt, prNum, String(data.repo), String(data.sha));
 
     log(`PR #${prNum} review queued (sha: ${String(data.sha).slice(0, 8)})`);
     return Response.json({ status: "ok", pr: prNum, action: "queued" });
