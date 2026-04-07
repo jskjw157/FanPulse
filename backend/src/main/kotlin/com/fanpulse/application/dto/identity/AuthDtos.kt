@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import java.util.UUID
 
 // === Request DTOs ===
 
@@ -95,10 +96,52 @@ data class TokenResponse(
     val expiresIn: Long,
 
     @Schema(description = "Refresh token for obtaining new access tokens")
-    val refreshToken: String? = null,
+    val refreshToken: String,
 
     @Schema(description = "Refresh token expiration in seconds", example = "604800")
-    val refreshExpiresIn: Long? = null
+    val refreshExpiresIn: Long
+)
+
+/**
+ * Google OAuth 로그인 성공 시 사용자 정보와 토큰을 함께 반환하는 응답 모델.
+ */
+@Schema(description = "Authentication response with user info and tokens")
+data class AuthResponse(
+    @Schema(description = "User ID", example = "550e8400-e29b-41d4-a716-446655440000")
+    val userId: UUID,
+
+    @Schema(description = "User email address", example = "fan@example.com")
+    val email: String,
+
+    @Schema(description = "User display name", example = "kpop_fan123")
+    val username: String,
+
+    @Schema(description = "JWT access token", example = "eyJhbGciOiJIUzI1NiJ9...")
+    val accessToken: String,
+
+    @Schema(description = "Refresh token", example = "eyJhbGciOiJIUzI1NiJ9...")
+    val refreshToken: String,
+
+    @Schema(description = "Access token expiration in seconds", example = "3600")
+    val expiresIn: Long,
+
+    @Schema(description = "Refresh token expiration in seconds", example = "604800")
+    val refreshExpiresIn: Long
+)
+
+/**
+ * 인증된 사용자의 기본 정보 모델.
+ */
+@Schema(description = "Authenticated user info")
+data class UserInfo(
+    @Schema(description = "User ID", example = "550e8400-e29b-41d4-a716-446655440000")
+    val id: UUID,
+
+    @Schema(description = "User email address", example = "fan@example.com")
+    val email: String,
+
+    @Schema(description = "User display name", example = "kpop_fan123")
+    val username: String
 )
 
 /**

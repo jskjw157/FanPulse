@@ -30,6 +30,12 @@ class JwtTokenProvider(
     @Value("\${jwt.refresh-expiration:604800000}")
     private val refreshTokenExpiration: Long
 ) {
+    /** 액세스 토큰 만료 시간(초). 밀리초 설정값을 변환한다. */
+    val accessTokenExpirationSeconds: Long get() = accessTokenExpiration / 1000
+
+    /** 리프레시 토큰 만료 시간(초). 밀리초 설정값을 변환한다. */
+    val refreshTokenExpirationSeconds: Long get() = refreshTokenExpiration / 1000
+
     init {
         validateSecretKey(secret)
     }
