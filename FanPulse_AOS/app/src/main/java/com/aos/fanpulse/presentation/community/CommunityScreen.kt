@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -62,8 +63,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aos.fanpulse.R
-import com.aos.fanpulse.presentation.notifications.Notification
+import com.aos.fanpulse.presentation.common.CommonTopAppBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,28 +75,25 @@ fun CommunityScreen(
     goPostDetailScreen: () -> Unit,
     goNotificationScreen: () -> Unit,
     goArtistScreen: () -> Unit,
+    viewModel: CommunityScreenViewModel = hiltViewModel(),
 ){
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
 
+    val filterRadioButton = viewModel.setFilterRadioButtonItems()
+    var selectedFilterRadioButton by remember { mutableStateOf(filterRadioButton[0]) }
+
     Column {
-        TopAppBar(
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.White
-            ),
-            title = {
-                Text(text = "Community")
-            },
-            actions = {
-                // 오른쪽 아이콘들 (순서대로 배치됨)
-                IconButton(onClick = { goSearchScreen() }) {
-                    Icon(painter = painterResource(id = R.drawable.icon_search), contentDescription = null, tint = Color.Black)
-                }
-                IconButton(onClick = { goNotificationScreen()}) {
-                    Icon(painter = painterResource(id = R.drawable.icon_alarm_inactive), contentDescription = null, tint = Color.Black)
-                }
-            }
+
+        CommonTopAppBar(
+            isActiveLeftTextTitle = true,
+            leftTextTitle = "Community",
+            isActiveRightSearch = true,
+            onRightSearch = { goSearchScreen() },
+            isActiveRightNotification = true,
+            onRightNotification = { goNotificationScreen() },
         )
+
         Box (modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
@@ -146,8 +145,12 @@ fun CommunityScreen(
                         ),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(3) { index ->
-                        CommunityRadioButtonItem()
+                    items(filterRadioButton) { item ->
+                        CommunityRadioButtonItem(
+                            text = item.text,
+                            isSelected = (item == selectedFilterRadioButton),
+                            onClick = { selectedFilterRadioButton = item }
+                        )
                     }
                 }
                 LazyColumn(
@@ -400,29 +403,27 @@ fun ArtistCard(
 
 @Composable
 fun CommunityRadioButtonItem(
+    text: String,           // 보여줄 텍스트
+    isSelected: Boolean,    // 선택 여부 (부모가 알려줌)
+    onClick: () -> Unit     // 클릭 시 실행할 동작 (부모에게 전달)
 ) {
-    var isSelected by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
             .background(
-                // 2. 상태에 따른 배경색 분기
                 color = if (isSelected) colorResource(id = R.color.color_1) else colorResource(id = R.color.color_2),
                 shape = RoundedCornerShape(100.dp)
             )
-            .clickable {
-                isSelected = !isSelected
-            }
+            .clickable { onClick() }
     ) {
         Text(
-            // 4. 상태에 따른 글자색 분기
             color = if (isSelected) Color.White else Color.Black,
-            text = "Latest Posts",
+            text = text,
             modifier = Modifier
                 .padding(
                     top = 4.dp,
                     bottom = 4.dp,
-                    start = 12.dp, // 디자인상 좌우 패딩을 조금 더 넓히면 보기 좋습니다
+                    start = 12.dp,
                     end = 12.dp
                 ),
             fontSize = 12.sp,

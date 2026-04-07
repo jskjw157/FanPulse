@@ -65,8 +65,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aos.fanpulse.R
+import com.aos.fanpulse.presentation.common.CommonTopAppBar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     goSearchScreen: () -> Unit,
@@ -87,57 +87,16 @@ fun HomeScreen(
 
     Box (modifier = Modifier.fillMaxSize()){
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .paint(
-                    painter = painterResource(id = R.drawable.loginscreen_bg),
-                    contentScale = ContentScale.Crop
-                )
+            modifier = Modifier.fillMaxWidth()
         ) {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                ),
-                title = {
-                    IconButton(
-                        onClick = { /* 검색 클릭 이벤트 */ },
-                        modifier = Modifier
-                            .height(28.dp)
-                            .width(81.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.home_title),
-                            contentDescription = null,
-                            tint = Color.Unspecified
-                        )
-                    }
-                },
-                actions = {
-                    // 오른쪽 아이콘들 (순서대로 배치됨)
-                    IconButton(onClick = { goSearchScreen() }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.icon_search),
-                            contentDescription = null,
-                            tint = Color.Unspecified
-                        )
-                    }
-                    IconButton(onClick = { goNotificationScreen() }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.icon_alarm_inactive),
-                            contentDescription = null,
-                            tint = Color.Unspecified
-                        )
-                    }
-                    IconButton(
-                        onClick = { isDrawerOpen = true }
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.icon_inventory),
-                            contentDescription = null,
-                            tint = Color.Unspecified
-                        )
-                    }
-                }
+            CommonTopAppBar(
+                isActiveLeftImage = true,
+                isActiveRightSearch = true,
+                onRightSearch = { goSearchScreen() },
+                isActiveRightNotification = true,
+                onRightNotification = { goNotificationScreen() },
+                isActiveRightMenu = true,
+                onRightMenu = { isDrawerOpen = true }
             )
             LazyColumn(
                 modifier = Modifier
@@ -701,39 +660,24 @@ fun RightDrawer(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "닫기",
-                            tint = colorResource(id = R.color.color_1)
-                        )
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "메뉴",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = colorResource(id = R.color.color_1)
-                        )
-                        Icon(
-                            painter = painterResource(id = R.drawable.home_title),
-                            contentDescription = null,
-                            tint = colorResource(id = R.color.color_1),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
+                CommonTopAppBar(
+                    isActiveLeftTextTitle = true,
+                    leftTextTitle = "메뉴",
+                    onLeftTextTile = {},
+                    leftImage = null,
+                    onLeftBack = {},
+                    centerTextTitle = null,
+                    isActiveRightClose = true,
+                    onRightClose = { onDismiss() },
+                    onRightWrite = {},
+                    onRightSetting = {},
+                    onRightRefresh = {},
+                    onRightShare = {},
+                    onRightBookmark = {},
+                    onRightSearch = {},
+                    onRightNotification = {},
+                    onRightMenu = {}
+                )
 
                 Divider(color = Color.LightGray.copy(alpha = 0.3f))
 
