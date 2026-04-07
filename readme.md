@@ -250,7 +250,7 @@ PostgreSQL 단일 DB, Flyway 마이그레이션으로 스키마 관리.
 
 ### 사전 요구사항
 
-- Docker & Docker Compose
+- Docker & Docker Compose (또는 Podman & podman-compose)
 - (로컬 개발 시) JDK 17, Python 3.11, Node.js 18+
 
 ### 방법 1. Docker Compose (권장)
@@ -263,17 +263,18 @@ git clone https://github.com/FanPulse/FanPulse.git
 cd FanPulse
 
 # 2) 환경변수 설정
-cp .env.docker.example .env
+cp .env.example .env
 # .env 파일을 열어 실제 값으로 수정:
 #   GOOGLE_CLIENT_ID  -> Google Cloud Console > 웹 애플리케이션 클라이언트 ID
 #   JWT_SECRET        -> 프로덕션용 256비트 이상 비밀키
 #   AI_API_KEY        -> Spring Boot <-> Django AI Sidecar 간 인증키
 
-# 3) 전체 서비스 실행
-docker compose up -d --build
+# 3) 전체 서비스 실행 (Docker 또는 Podman)
+docker compose up -d --build    # Docker 사용 시
+# podman compose up -d --build  # Podman 사용 시
 
 # 4) 상태 확인
-docker compose ps
+docker compose ps                 # Podman: podman compose ps
 docker compose logs -f spring     # Spring Boot 로그
 docker compose logs -f django-ai  # Django AI 로그
 ```
@@ -286,10 +287,10 @@ docker compose logs -f django-ai  # Django AI 로그
 
 ```bash
 # 서비스 중지
-docker compose down
+docker compose down               # Podman: podman compose down
 
 # 서비스 중지 + DB 볼륨 삭제
-docker compose down -v
+docker compose down -v             # Podman: podman compose down -v
 ```
 
 ### 방법 2. 로컬 개발 (Backend)
@@ -339,7 +340,7 @@ npm run dev
 
 ## 환경변수
 
-### .env.docker.example (Docker Compose 전체 실행용)
+### .env.example (Docker/Podman Compose 전체 실행용)
 
 - `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` -- PostgreSQL 접속 정보
 - `JWT_SECRET` -- JWT 서명 비밀키 (프로덕션 시 반드시 변경)
