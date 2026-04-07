@@ -83,6 +83,8 @@ fun CommunityScreen(
     val filterRadioButton = viewModel.setFilterRadioButtonItems()
     var selectedFilterRadioButton by remember { mutableStateOf(filterRadioButton[0]) }
 
+    val feedInfoList = viewModel.setFeedInfoItems()
+
     Column {
 
         CommonTopAppBar(
@@ -100,6 +102,7 @@ fun CommunityScreen(
                     .background(colorResource(id = R.color.white))
                     .fillMaxHeight()
             ) {
+                Spacer((Modifier.height(16.dp)))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -135,7 +138,7 @@ fun CommunityScreen(
                     )
                     Spacer((Modifier.width(16.dp)))
                 }
-                //      setButton
+                //   Filter Button
                 LazyRow(
                     modifier = Modifier
                         .padding(
@@ -153,12 +156,21 @@ fun CommunityScreen(
                         )
                     }
                 }
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 0.dp),
+                    thickness = 1.dp,
+                    color = Color(0xFFEEEEEE)
+                )
+
+                //  게시물
                 LazyColumn(
                     modifier = Modifier.padding(top = 6.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(5) { index ->
+                    items(feedInfoList) { item ->
                         CommunityItem(
+                            item,
                             goPostDetailScreen = {
                                 //  게시물에 대한 정보가 필요
                                 goPostDetailScreen()
@@ -167,6 +179,7 @@ fun CommunityScreen(
                     }
                 }
             }
+
             FloatingActionButton(
                 onClick = {
                     goPostScreen()
@@ -404,8 +417,8 @@ fun ArtistCard(
 @Composable
 fun CommunityRadioButtonItem(
     text: String,           // 보여줄 텍스트
-    isSelected: Boolean,    // 선택 여부 (부모가 알려줌)
-    onClick: () -> Unit     // 클릭 시 실행할 동작 (부모에게 전달)
+    isSelected: Boolean,    // 선택 여부
+    onClick: () -> Unit     // 클릭 시 실행할 동작
 ) {
 
     Box(
@@ -434,6 +447,7 @@ fun CommunityRadioButtonItem(
 
 @Composable
 fun CommunityItem(
+    feedInfo: FeedInfo,
     goPostDetailScreen: () -> Unit
 ){
     Column (
