@@ -1,0 +1,177 @@
+package com.fanpulse.application.service.identity
+
+import com.fanpulse.application.dto.identity.*
+import com.fanpulse.application.identity.InvalidTokenException
+import com.fanpulse.application.identity.RefreshTokenReusedException
+import com.fanpulse.application.identity.command.GoogleLoginCommand
+import com.fanpulse.application.identity.command.GoogleLoginHandler
+import com.fanpulse.domain.identity.port.RefreshTokenPort
+import com.fanpulse.domain.identity.port.TokenInvalidationResult
+import com.fanpulse.domain.identity.port.TokenPort
+import com.fanpulse.domain.identity.port.UserPort
+import mu.KotlinLogging
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
+import java.util.UUID
+
+private val logger = KotlinLogging.logger {}
+
+/**
+ * 인증 서비스 구현체.
+ * Google OAuth 로그인 및 토큰 관리를 지원한다.
+ */
+@Service
+class AuthServiceImpl(
+    private val userPort: UserPort,
+    private val tokenPort: TokenPort,
+    private val refreshTokenPort: RefreshTokenPort,
+    private val googleLoginHandler: GoogleLoginHandler
+) : AuthService {
+
+    /**
+     * Google OAuth로 사용자를 인증한다.
+     *
+     * @param request Google 로그인 요청 (ID 토큰 포함)
+     * @return 사용자 정보와 JWT 토큰이 담긴 응답
+     * @throws com.fanpulse.application.identity.InvalidGoogleTokenException Google 토큰 검증 실패 시
+     * @throws com.fanpulse.application.identity.OAuthEmailNotVerifiedException Google에서 이메일 미인증 시
+     */
+    @Transactional
+    override fun googleLogin(request: GoogleLoginRequest): AuthResponse {
+        logger.debug { "Google 로그인 시도" }
+
+        val command = GoogleLoginCommand(idToken = request.idToken)
+        val user = googleLoginHandler.handle(command)
+
+        val accessToken = tokenPort.generateAccessToken(user.id)
+        val refreshTokenStr = tokenPort.generateRefreshToken(user.id)
+
+        val refreshExpirationSeconds = tokenPort.getRefreshTokenExpirationSeconds()
+        val expiresAt = Instant.now().plusSeconds(refreshExpirationSeconds)
+        refreshTokenPort.save(user.id, refreshTokenStr, expiresAt)
+
+        logger.info { "Google 로그인 성공: ${user.id}" }
+
+        return AuthResponse(
+            userId = user.id,
+            email = user.email,
+            username = user.username,
+            accessToken = accessToken,
+            refreshToken = refreshTokenStr,
+            expiresIn = tokenPort.getAccessTokenExpirationSeconds(),
+            refreshExpiresIn = refreshExpirationSeconds
+        )
+    }
+
+    /**
+     * 리프레시 토큰을 검증하고 새 액세스/리프레시 토큰을 발급한다.
+     * CAS 패턴으로 토큰 로테이션의 Race Condition을 방지한다.
+     *
+     * @param request 리프레시 토큰 요청
+     * @return 새 액세스 토큰과 리프레시 토큰이 담긴 응답
+     * @throws InvalidTokenException 토큰이 유효하지 않거나 리프레시 토큰이 아닌 경우
+     * @throws RefreshTokenReusedException 이미 사용된 토큰이 재사용된 경우 (보안 침해 감지)
+     */
+    @Transactional
+    override fun refreshToken(request: RefreshTokenRequest): TokenResponse {
+        val refreshToken = request.refreshToken
+        logger.debug { "토큰 갱신 요청" }
+
+        if (!tokenPort.validateToken(refreshToken)) {
+            throw InvalidTokenException("토큰이 유효하지 않거나 만료되었습니다.")
+        }
+
+        val tokenType = tokenPort.getTokenType(refreshToken)
+        if (tokenType != "refresh") {
+            throw InvalidTokenException("리프레시 토큰이 아닙니다.")
+        }
+
+        val userId = tokenPort.getUserIdFromToken(refreshToken)
+
+        when (refreshTokenPort.findAndInvalidateByToken(refreshToken)) {
+            is TokenInvalidationResult.NotFound -> {
+                logger.warn { "미등록 리프레시 토큰 사용 시도 차단. 사용자: $userId" }
+                throw InvalidTokenException("리프레시 토큰이 저장소에 등록되어 있지 않습니다.")
+            }
+            is TokenInvalidationResult.AlreadyInvalidated -> {
+                logger.warn { "리프레시 토큰 재사용 감지. 사용자: $userId - 모든 토큰 무효화" }
+                refreshTokenPort.invalidateAllByUserId(userId)
+                throw RefreshTokenReusedException()
+            }
+            is TokenInvalidationResult.Invalidated -> {
+                // CAS 성공: 원자적으로 무효화 완료
+            }
+        }
+
+        userPort.findById(userId)
+            ?: throw InvalidTokenException("사용자를 찾을 수 없습니다.")
+
+        val newAccessToken = tokenPort.generateAccessToken(userId)
+        val newRefreshToken = tokenPort.generateRefreshToken(userId)
+
+        val refreshExpirationSeconds = tokenPort.getRefreshTokenExpirationSeconds()
+        val expiresAt = Instant.now().plusSeconds(refreshExpirationSeconds)
+        refreshTokenPort.save(userId, newRefreshToken, expiresAt)
+
+        logger.debug { "토큰 갱신 완료. 사용자: $userId" }
+
+        return TokenResponse(
+            accessToken = newAccessToken,
+            expiresIn = tokenPort.getAccessTokenExpirationSeconds(),
+            refreshToken = newRefreshToken,
+            refreshExpiresIn = refreshExpirationSeconds
+        )
+    }
+
+    /**
+     * 사용자의 모든 리프레시 토큰을 무효화하여 로그아웃 처리한다.
+     *
+     * @param userId 로그아웃할 사용자 ID
+     */
+    @Transactional
+    override fun logout(userId: UUID) {
+        logger.debug { "로그아웃 요청. 사용자: $userId" }
+        refreshTokenPort.invalidateAllByUserId(userId)
+        logger.info { "로그아웃 완료. 사용자: $userId" }
+    }
+
+    /**
+     * 액세스 토큰의 유효성을 검증하고 사용자 ID를 반환한다.
+     *
+     * @param token 검증할 액세스 토큰
+     * @return 토큰이 유효하면 사용자 ID
+     * @throws InvalidTokenException 토큰이 유효하지 않은 경우
+     */
+    override fun validateAccessToken(token: String): UUID {
+        if (!tokenPort.validateToken(token)) {
+            throw InvalidTokenException()
+        }
+
+        val tokenType = tokenPort.getTokenType(token)
+        if (tokenType != "access") {
+            throw InvalidTokenException("액세스 토큰이 아닙니다.")
+        }
+
+        return tokenPort.getUserIdFromToken(token)
+    }
+
+    /**
+     * 액세스 토큰의 유효성을 검증하고 사용자 정보를 반환한다.
+     *
+     * @param token 검증할 액세스 토큰
+     * @return 인증된 사용자 정보
+     * @throws InvalidTokenException 토큰이 유효하지 않거나 사용자를 찾을 수 없는 경우
+     */
+    override fun validateTokenAndGetUser(token: String): UserInfo {
+        val userId = validateAccessToken(token)
+        val user = userPort.findById(userId)
+            ?: throw InvalidTokenException("사용자를 찾을 수 없습니다.")
+
+        return UserInfo(
+            id = user.id,
+            email = user.email,
+            username = user.username
+        )
+    }
+}

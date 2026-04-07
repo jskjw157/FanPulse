@@ -1,4 +1,4 @@
-package com.fanpulse.infrastructure.web.discovery
+package com.fanpulse.interfaces.rest.discovery
 
 import com.fanpulse.application.dto.discovery.*
 import com.fanpulse.application.service.LiveDiscoveryResult

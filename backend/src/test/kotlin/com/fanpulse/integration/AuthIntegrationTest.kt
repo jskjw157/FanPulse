@@ -1,8 +1,9 @@
 package com.fanpulse.integration
 
-import com.fanpulse.application.identity.AuthService
-import com.fanpulse.application.identity.GoogleLoginRequest
+import com.fanpulse.application.dto.identity.GoogleLoginRequest
+import com.fanpulse.application.dto.identity.RefreshTokenRequest
 import com.fanpulse.application.identity.RefreshTokenReusedException
+import com.fanpulse.application.service.identity.AuthService
 import com.fanpulse.application.identity.command.GoogleLoginHandler
 import com.fanpulse.domain.identity.Email
 import com.fanpulse.domain.identity.User
@@ -106,7 +107,7 @@ class AuthIntegrationTest {
         assertTrue(tokenPort.validateToken(loginResponse.refreshToken))
 
         // When - Step 2: Refresh token
-        val refreshResponse = authService.refreshToken(loginResponse.refreshToken)
+        val refreshResponse = authService.refreshToken(RefreshTokenRequest(loginResponse.refreshToken))
 
         // Then - Verify refresh response
         assertNotNull(refreshResponse.accessToken)
@@ -162,7 +163,7 @@ class AuthIntegrationTest {
         assertFalse(tokenBeforeRefresh?.invalidated ?: true, "Token should not be invalidated before use")
 
         // When - Use the token
-        authService.refreshToken(originalToken)
+        authService.refreshToken(RefreshTokenRequest(originalToken))
 
         // Then - Old token should be invalidated
         val tokenAfterRefresh = refreshTokenPort.findByToken(originalToken)
@@ -180,7 +181,7 @@ class AuthIntegrationTest {
         val firstToken = loginResponse.refreshToken
 
         // Use the token once (this invalidates it)
-        val refreshResponse = authService.refreshToken(firstToken)
+        val refreshResponse = authService.refreshToken(RefreshTokenRequest(firstToken))
         val secondToken = refreshResponse.refreshToken
 
         // Verify first token is now invalidated
@@ -189,7 +190,7 @@ class AuthIntegrationTest {
 
         // When - Try to reuse the already-used token (security breach attempt)
         val exception = assertThrows<RefreshTokenReusedException> {
-            authService.refreshToken(firstToken)
+            authService.refreshToken(RefreshTokenRequest(firstToken))
         }
 
         // Then - Should throw RefreshTokenReusedException
@@ -219,7 +220,7 @@ class AuthIntegrationTest {
         repeat(threadCount) {
             executor.submit {
                 try {
-                    authService.refreshToken(refreshToken)
+                    authService.refreshToken(RefreshTokenRequest(refreshToken))
                     successCount.incrementAndGet()
                 } catch (e: Exception) {
                     failureCount.incrementAndGet()
@@ -279,7 +280,7 @@ class AuthIntegrationTest {
         // When - Perform multiple refresh operations
         var currentToken = loginResponse.refreshToken
         repeat(5) {
-            val refreshResponse = authService.refreshToken(currentToken)
+            val refreshResponse = authService.refreshToken(RefreshTokenRequest(currentToken))
             currentToken = refreshResponse.refreshToken
             generatedTokens.add(currentToken)
         }
@@ -302,7 +303,7 @@ class AuthIntegrationTest {
         var currentToken = loginResponse.refreshToken
 
         repeat(3) {
-            val refreshResponse = authService.refreshToken(currentToken)
+            val refreshResponse = authService.refreshToken(RefreshTokenRequest(currentToken))
             currentToken = refreshResponse.refreshToken
             tokenChain.add(currentToken)
         }
@@ -332,7 +333,7 @@ class AuthIntegrationTest {
         // Breaking the chain - using an old token should invalidate all
         val oldToken = tokenChain[1] // Use second token (already invalidated)
         assertThrows<RefreshTokenReusedException> {
-            authService.refreshToken(oldToken)
+            authService.refreshToken(RefreshTokenRequest(oldToken))
         }
 
         // After security breach, even the last valid token should be invalidated

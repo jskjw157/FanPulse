@@ -1,8 +1,13 @@
 package com.fanpulse.application.identity
 
+import com.fanpulse.application.dto.identity.GoogleLoginRequest
+import com.fanpulse.application.dto.identity.RefreshTokenRequest
 import com.fanpulse.application.identity.command.GoogleLoginHandler
+import com.fanpulse.application.service.identity.AuthService
+import com.fanpulse.application.service.identity.AuthServiceImpl
 import com.fanpulse.domain.identity.*
 import com.fanpulse.domain.identity.port.RefreshTokenPort
+import com.fanpulse.domain.identity.port.TokenInvalidationResult
 import com.fanpulse.domain.identity.port.TokenPort
 import com.fanpulse.domain.identity.port.UserPort
 import io.mockk.*
@@ -35,7 +40,7 @@ class AuthServiceTest {
         refreshTokenPort = mockk(relaxed = true)
         googleLoginHandler = mockk()
 
-        authService = AuthService(
+        authService = AuthServiceImpl(
             userPort = userPort,
             tokenPort = tokenPort,
             refreshTokenPort = refreshTokenPort,
@@ -60,6 +65,8 @@ class AuthServiceTest {
             every { googleLoginHandler.handle(any()) } returns user
             every { tokenPort.generateAccessToken(user.id) } returns "access_token"
             every { tokenPort.generateRefreshToken(user.id) } returns "refresh_token"
+            every { tokenPort.getAccessTokenExpirationSeconds() } returns 3600L
+            every { tokenPort.getRefreshTokenExpirationSeconds() } returns 604800L
 
             // When
             val result = authService.googleLogin(request)
@@ -70,6 +77,8 @@ class AuthServiceTest {
             assertEquals("refresh_token", result.refreshToken)
             assertEquals(user.email, result.email)
             assertEquals(user.username, result.username)
+            assertEquals(3600L, result.expiresIn)
+            assertEquals(604800L, result.refreshExpiresIn)
 
             verify { googleLoginHandler.handle(any()) }
         }
@@ -119,16 +128,39 @@ class AuthServiceTest {
             every { tokenPort.validateToken(refreshToken) } returns true
             every { tokenPort.getTokenType(refreshToken) } returns "refresh"
             every { tokenPort.getUserIdFromToken(refreshToken) } returns userId
+            every { refreshTokenPort.findAndInvalidateByToken(refreshToken) } returns TokenInvalidationResult.Invalidated
             every { userPort.findById(userId) } returns user
             every { tokenPort.generateAccessToken(userId) } returns "new_access_token"
             every { tokenPort.generateRefreshToken(userId) } returns "new_refresh_token"
+            every { tokenPort.getAccessTokenExpirationSeconds() } returns 3600L
+            every { tokenPort.getRefreshTokenExpirationSeconds() } returns 604800L
 
             // When
-            val result = authService.refreshToken(refreshToken)
+            val result = authService.refreshToken(RefreshTokenRequest(refreshToken))
 
             // Then
             assertEquals("new_access_token", result.accessToken)
             assertEquals("new_refresh_token", result.refreshToken)
+            assertEquals(3600L, result.expiresIn)
+            assertEquals(604800L, result.refreshExpiresIn)
+        }
+
+        @Test
+        @DisplayName("저장소에 미등록된 Refresh Token은 거부해야 한다")
+        fun `should reject refresh token not found in rotation store`() {
+            // Given
+            val refreshToken = "unregistered_refresh_token"
+            val userId = UUID.randomUUID()
+
+            every { tokenPort.validateToken(refreshToken) } returns true
+            every { tokenPort.getTokenType(refreshToken) } returns "refresh"
+            every { tokenPort.getUserIdFromToken(refreshToken) } returns userId
+            every { refreshTokenPort.findAndInvalidateByToken(refreshToken) } returns TokenInvalidationResult.NotFound
+
+            // When & Then
+            assertThrows<InvalidTokenException> {
+                authService.refreshToken(RefreshTokenRequest(refreshToken))
+            }
         }
 
         @Test
@@ -140,7 +172,7 @@ class AuthServiceTest {
 
             // When & Then
             assertThrows<InvalidTokenException> {
-                authService.refreshToken(invalidToken)
+                authService.refreshToken(RefreshTokenRequest(invalidToken))
             }
         }
 
@@ -154,7 +186,7 @@ class AuthServiceTest {
 
             // When & Then
             assertThrows<InvalidTokenException> {
-                authService.refreshToken(accessToken)
+                authService.refreshToken(RefreshTokenRequest(accessToken))
             }
         }
     }

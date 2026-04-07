@@ -1,4 +1,4 @@
-package com.fanpulse.infrastructure.web.streaming
+package com.fanpulse.interfaces.rest.streaming
 
 import com.fanpulse.application.dto.streaming.*
 import com.fanpulse.application.service.streaming.StreamingEventQueryService

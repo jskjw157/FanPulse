@@ -56,6 +56,11 @@ ai/summarized_data/
 .mcp.json
 .playwright-mcp/
 
+# bkit / PDCA tool files
+.bkit-memory.json
+.pdca-status.json
+.pdca-snapshots/
+
 # Worktrees
 .worktrees/
 ai/.env
