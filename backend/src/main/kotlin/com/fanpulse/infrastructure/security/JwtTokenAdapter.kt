@@ -61,4 +61,8 @@ class JwtTokenAdapter(
     override fun getAccessTokenExpirationSeconds(): Long {
         return jwtTokenProvider.accessTokenExpirationSeconds
     }
+
+    override fun getRefreshTokenExpirationSeconds(): Long {
+        return jwtTokenProvider.refreshTokenExpirationSeconds
+    }
 }

@@ -6,6 +6,7 @@ import com.fanpulse.application.identity.RefreshTokenReusedException
 import com.fanpulse.application.identity.command.GoogleLoginCommand
 import com.fanpulse.application.identity.command.GoogleLoginHandler
 import com.fanpulse.domain.identity.port.RefreshTokenPort
+import com.fanpulse.domain.identity.port.TokenInvalidationResult
 import com.fanpulse.domain.identity.port.TokenPort
 import com.fanpulse.domain.identity.port.UserPort
 import mu.KotlinLogging
@@ -28,10 +29,6 @@ class AuthServiceImpl(
     private val googleLoginHandler: GoogleLoginHandler
 ) : AuthService {
 
-    companion object {
-        private const val REFRESH_TOKEN_EXPIRATION_DAYS = 7L
-    }
-
     /**
      * Google OAuth로 사용자를 인증한다.
      *
@@ -50,7 +47,8 @@ class AuthServiceImpl(
         val accessToken = tokenPort.generateAccessToken(user.id)
         val refreshTokenStr = tokenPort.generateRefreshToken(user.id)
 
-        val expiresAt = Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
+        val refreshExpirationSeconds = tokenPort.getRefreshTokenExpirationSeconds()
+        val expiresAt = Instant.now().plusSeconds(refreshExpirationSeconds)
         refreshTokenPort.save(user.id, refreshTokenStr, expiresAt)
 
         logger.info { "Google 로그인 성공: ${user.id}" }
@@ -60,28 +58,24 @@ class AuthServiceImpl(
             email = user.email,
             username = user.username,
             accessToken = accessToken,
-            refreshToken = refreshTokenStr
+            refreshToken = refreshTokenStr,
+            expiresIn = tokenPort.getAccessTokenExpirationSeconds(),
+            refreshExpiresIn = refreshExpirationSeconds
         )
     }
 
     /**
-     * RefreshTokenRequest를 이용해 액세스 토큰을 갱신한다.
-     */
-    @Transactional
-    override fun refreshToken(request: RefreshTokenRequest): TokenResponse {
-        return refreshToken(request.refreshToken)
-    }
-
-    /**
-     * 리프레시 토큰 문자열을 직접 사용해 액세스 토큰을 갱신한다.
-     * 리프레시 토큰 로테이션을 구현한다.
+     * 리프레시 토큰을 검증하고 새 액세스/리프레시 토큰을 발급한다.
+     * CAS 패턴으로 토큰 로테이션의 Race Condition을 방지한다.
      *
-     * @param refreshToken 유효한 리프레시 토큰
+     * @param request 리프레시 토큰 요청
      * @return 새 액세스 토큰과 리프레시 토큰이 담긴 응답
      * @throws InvalidTokenException 토큰이 유효하지 않거나 리프레시 토큰이 아닌 경우
      * @throws RefreshTokenReusedException 이미 사용된 토큰이 재사용된 경우 (보안 침해 감지)
      */
-    private fun refreshToken(refreshToken: String): TokenResponse {
+    @Transactional
+    override fun refreshToken(request: RefreshTokenRequest): TokenResponse {
+        val refreshToken = request.refreshToken
         logger.debug { "토큰 갱신 요청" }
 
         if (!tokenPort.validateToken(refreshToken)) {
@@ -94,17 +88,20 @@ class AuthServiceImpl(
         }
 
         val userId = tokenPort.getUserIdFromToken(refreshToken)
-        val tokenRecord = refreshTokenPort.findByToken(refreshToken)
 
-        if (tokenRecord == null) {
-            logger.warn { "미등록 리프레시 토큰 사용 시도 차단. 사용자: $userId" }
-            throw InvalidTokenException("리프레시 토큰이 저장소에 등록되어 있지 않습니다.")
-        } else if (tokenRecord.invalidated) {
-            logger.warn { "리프레시 토큰 재사용 감지. 사용자: $userId - 모든 토큰 무효화" }
-            refreshTokenPort.invalidateAllByUserId(userId)
-            throw RefreshTokenReusedException()
-        } else {
-            refreshTokenPort.invalidate(refreshToken)
+        when (refreshTokenPort.findAndInvalidateByToken(refreshToken)) {
+            is TokenInvalidationResult.NotFound -> {
+                logger.warn { "미등록 리프레시 토큰 사용 시도 차단. 사용자: $userId" }
+                throw InvalidTokenException("리프레시 토큰이 저장소에 등록되어 있지 않습니다.")
+            }
+            is TokenInvalidationResult.AlreadyInvalidated -> {
+                logger.warn { "리프레시 토큰 재사용 감지. 사용자: $userId - 모든 토큰 무효화" }
+                refreshTokenPort.invalidateAllByUserId(userId)
+                throw RefreshTokenReusedException()
+            }
+            is TokenInvalidationResult.Invalidated -> {
+                // CAS 성공: 원자적으로 무효화 완료
+            }
         }
 
         userPort.findById(userId)
@@ -113,7 +110,8 @@ class AuthServiceImpl(
         val newAccessToken = tokenPort.generateAccessToken(userId)
         val newRefreshToken = tokenPort.generateRefreshToken(userId)
 
-        val expiresAt = Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
+        val refreshExpirationSeconds = tokenPort.getRefreshTokenExpirationSeconds()
+        val expiresAt = Instant.now().plusSeconds(refreshExpirationSeconds)
         refreshTokenPort.save(userId, newRefreshToken, expiresAt)
 
         logger.debug { "토큰 갱신 완료. 사용자: $userId" }
@@ -121,7 +119,8 @@ class AuthServiceImpl(
         return TokenResponse(
             accessToken = newAccessToken,
             expiresIn = tokenPort.getAccessTokenExpirationSeconds(),
-            refreshToken = newRefreshToken
+            refreshToken = newRefreshToken,
+            refreshExpiresIn = refreshExpirationSeconds
         )
     }
 

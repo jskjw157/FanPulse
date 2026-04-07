@@ -4,6 +4,19 @@ import java.time.Instant
 import java.util.*
 
 /**
+ * 토큰 원자적 무효화 결과.
+ * CAS(Compare-And-Swap) 패턴으로 동시 요청 시 Race Condition을 방지한다.
+ */
+sealed class TokenInvalidationResult {
+    /** 토큰이 원자적으로 무효화됨 (정상 처리) */
+    data object Invalidated : TokenInvalidationResult()
+    /** 이미 무효화된 토큰 재사용 감지 (보안 침해 가능성) */
+    data object AlreadyInvalidated : TokenInvalidationResult()
+    /** 저장소에 토큰이 존재하지 않음 */
+    data object NotFound : TokenInvalidationResult()
+}
+
+/**
  * Domain Port for Refresh Token operations.
  * Refresh Token Rotation을 위한 토큰 저장/무효화 인터페이스
  *
@@ -30,6 +43,17 @@ interface RefreshTokenPort {
      * @return RefreshTokenRecord 또는 null
      */
     fun findByToken(token: String): RefreshTokenRecord?
+
+    /**
+     * 토큰을 원자적으로 조회하고 무효화합니다 (CAS 패턴).
+     *
+     * `UPDATE ... WHERE token = ? AND invalidated = false` 쿼리로
+     * DB 레벨에서 동시 요청 간 Race Condition을 방지한다.
+     *
+     * @param token 무효화할 Refresh Token
+     * @return 무효화 결과 (성공 / 이미 무효화 / 미등록)
+     */
+    fun findAndInvalidateByToken(token: String): TokenInvalidationResult
 
     /**
      * 특정 Refresh Token을 무효화합니다.

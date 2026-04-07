@@ -2,12 +2,14 @@ package com.fanpulse.infrastructure.persistence.identity
 
 import com.fanpulse.domain.identity.port.RefreshTokenPort
 import com.fanpulse.domain.identity.port.RefreshTokenRecord
+import com.fanpulse.domain.identity.port.TokenInvalidationResult
 import jakarta.persistence.*
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.util.*
 
@@ -59,6 +61,14 @@ interface RefreshTokenJpaRepositoryInterface : JpaRepository<RefreshTokenEntity,
     @Query("UPDATE RefreshTokenEntity r SET r.invalidated = true WHERE r.token = :token")
     fun invalidateByToken(token: String): Int
 
+    /**
+     * CAS(Compare-And-Swap) 패턴: 활성 토큰만 원자적으로 무효화.
+     * WHERE 조건에 invalidated = false를 포함하여 동시 요청 시 하나만 성공한다.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE RefreshTokenEntity r SET r.invalidated = true WHERE r.token = :token AND r.invalidated = false")
+    fun casInvalidateByToken(token: String): Int
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE RefreshTokenEntity r SET r.invalidated = true WHERE r.userId = :userId")
     fun invalidateAllByUserId(userId: UUID): Int
@@ -87,6 +97,20 @@ class RefreshTokenAdapter(
 
     override fun findByToken(token: String): RefreshTokenRecord? {
         return repository.findByToken(token)?.toRecord()
+    }
+
+    @Transactional
+    override fun findAndInvalidateByToken(token: String): TokenInvalidationResult {
+        val updated = repository.casInvalidateByToken(token)
+        if (updated > 0) {
+            return TokenInvalidationResult.Invalidated
+        }
+        val existing = repository.findByToken(token)
+        return if (existing != null && existing.invalidated) {
+            TokenInvalidationResult.AlreadyInvalidated
+        } else {
+            TokenInvalidationResult.NotFound
+        }
     }
 
     override fun invalidate(token: String) {

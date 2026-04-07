@@ -59,4 +59,11 @@ interface TokenPort {
      * @return 만료 시간(초)
      */
     fun getAccessTokenExpirationSeconds(): Long
+
+    /**
+     * 리프레시 토큰의 만료 시간을 초 단위로 반환한다.
+     *
+     * @return 만료 시간(초)
+     */
+    fun getRefreshTokenExpirationSeconds(): Long
 }

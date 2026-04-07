@@ -99,7 +99,7 @@ data class TokenResponse(
     val refreshToken: String,
 
     @Schema(description = "Refresh token expiration in seconds", example = "604800")
-    val refreshExpiresIn: Long? = null
+    val refreshExpiresIn: Long
 )
 
 /**
@@ -107,20 +107,26 @@ data class TokenResponse(
  */
 @Schema(description = "Authentication response with user info and tokens")
 data class AuthResponse(
-    @Schema(description = "User ID")
+    @Schema(description = "User ID", example = "550e8400-e29b-41d4-a716-446655440000")
     val userId: UUID,
 
-    @Schema(description = "User email address")
+    @Schema(description = "User email address", example = "fan@example.com")
     val email: String,
 
-    @Schema(description = "User display name")
+    @Schema(description = "User display name", example = "kpop_fan123")
     val username: String,
 
-    @Schema(description = "JWT access token")
+    @Schema(description = "JWT access token", example = "eyJhbGciOiJIUzI1NiJ9...")
     val accessToken: String,
 
-    @Schema(description = "Refresh token")
-    val refreshToken: String
+    @Schema(description = "Refresh token", example = "eyJhbGciOiJIUzI1NiJ9...")
+    val refreshToken: String,
+
+    @Schema(description = "Access token expiration in seconds", example = "3600")
+    val expiresIn: Long,
+
+    @Schema(description = "Refresh token expiration in seconds", example = "604800")
+    val refreshExpiresIn: Long
 )
 
 /**
@@ -128,13 +134,13 @@ data class AuthResponse(
  */
 @Schema(description = "Authenticated user info")
 data class UserInfo(
-    @Schema(description = "User ID")
+    @Schema(description = "User ID", example = "550e8400-e29b-41d4-a716-446655440000")
     val id: UUID,
 
-    @Schema(description = "User email address")
+    @Schema(description = "User email address", example = "fan@example.com")
     val email: String,
 
-    @Schema(description = "User display name")
+    @Schema(description = "User display name", example = "kpop_fan123")
     val username: String
 )
 

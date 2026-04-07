@@ -9,16 +9,14 @@ import com.fanpulse.domain.identity.Email
 import com.fanpulse.domain.identity.User
 import com.fanpulse.domain.identity.Username
 import com.fanpulse.domain.identity.port.RefreshTokenPort
-import com.fanpulse.domain.identity.port.RefreshTokenRecord
+import com.fanpulse.domain.identity.port.TokenInvalidationResult
 import com.fanpulse.domain.identity.port.TokenPort
 import com.fanpulse.domain.identity.port.UserPort
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import java.time.Instant
 import java.util.*
 
 /**
@@ -86,21 +84,17 @@ class RefreshTokenRotationTest {
             every { tokenPort.getTokenType(oldRefreshToken) } returns "refresh"
             every { tokenPort.getUserIdFromToken(oldRefreshToken) } returns testUserId
             every { userPort.findById(testUserId) } returns testUser
-            every { refreshTokenPort.findByToken(oldRefreshToken) } returns RefreshTokenRecord(
-                id = UUID.randomUUID(),
-                userId = testUserId,
-                token = oldRefreshToken,
-                expiresAt = Instant.now().plusSeconds(3600),
-                invalidated = false
-            )
+            every { refreshTokenPort.findAndInvalidateByToken(oldRefreshToken) } returns TokenInvalidationResult.Invalidated
             every { tokenPort.generateAccessToken(testUserId) } returns newAccessToken
             every { tokenPort.generateRefreshToken(testUserId) } returns newRefreshToken
+            every { tokenPort.getAccessTokenExpirationSeconds() } returns 3600L
+            every { tokenPort.getRefreshTokenExpirationSeconds() } returns 604800L
 
             // When
             val result = authService.refreshToken(RefreshTokenRequest(oldRefreshToken))
 
-            // Then
-            verify { refreshTokenPort.invalidate(oldRefreshToken) }
+            // Then — 원자적 CAS로 무효화가 findAndInvalidateByToken 내부에서 수행됨
+            verify { refreshTokenPort.findAndInvalidateByToken(oldRefreshToken) }
             verify { refreshTokenPort.save(testUserId, newRefreshToken, any()) }
             assertEquals(newAccessToken, result.accessToken)
             assertEquals(newRefreshToken, result.refreshToken)
@@ -118,15 +112,11 @@ class RefreshTokenRotationTest {
             every { tokenPort.getTokenType(oldRefreshToken) } returns "refresh"
             every { tokenPort.getUserIdFromToken(oldRefreshToken) } returns testUserId
             every { userPort.findById(testUserId) } returns testUser
-            every { refreshTokenPort.findByToken(oldRefreshToken) } returns RefreshTokenRecord(
-                id = UUID.randomUUID(),
-                userId = testUserId,
-                token = oldRefreshToken,
-                expiresAt = Instant.now().plusSeconds(3600),
-                invalidated = false
-            )
+            every { refreshTokenPort.findAndInvalidateByToken(oldRefreshToken) } returns TokenInvalidationResult.Invalidated
             every { tokenPort.generateAccessToken(testUserId) } returns newAccessToken
             every { tokenPort.generateRefreshToken(testUserId) } returns newRefreshToken
+            every { tokenPort.getAccessTokenExpirationSeconds() } returns 3600L
+            every { tokenPort.getRefreshTokenExpirationSeconds() } returns 604800L
 
             // When
             val result = authService.refreshToken(RefreshTokenRequest(oldRefreshToken))
@@ -150,13 +140,7 @@ class RefreshTokenRotationTest {
             every { tokenPort.validateToken(invalidatedToken) } returns true
             every { tokenPort.getTokenType(invalidatedToken) } returns "refresh"
             every { tokenPort.getUserIdFromToken(invalidatedToken) } returns testUserId
-            every { refreshTokenPort.findByToken(invalidatedToken) } returns RefreshTokenRecord(
-                id = UUID.randomUUID(),
-                userId = testUserId,
-                token = invalidatedToken,
-                expiresAt = Instant.now().plusSeconds(3600),
-                invalidated = true  // Already invalidated!
-            )
+            every { refreshTokenPort.findAndInvalidateByToken(invalidatedToken) } returns TokenInvalidationResult.AlreadyInvalidated
 
             // When & Then
             assertThrows<RefreshTokenReusedException> {
@@ -178,13 +162,7 @@ class RefreshTokenRotationTest {
             every { tokenPort.validateToken(invalidatedToken) } returns true
             every { tokenPort.getTokenType(invalidatedToken) } returns "refresh"
             every { tokenPort.getUserIdFromToken(invalidatedToken) } returns testUserId
-            every { refreshTokenPort.findByToken(invalidatedToken) } returns RefreshTokenRecord(
-                id = UUID.randomUUID(),
-                userId = testUserId,
-                token = invalidatedToken,
-                expiresAt = Instant.now().plusSeconds(3600),
-                invalidated = true
-            )
+            every { refreshTokenPort.findAndInvalidateByToken(invalidatedToken) } returns TokenInvalidationResult.AlreadyInvalidated
 
             // When & Then
             // TODO: 보안 이벤트 발행 기능 구현 후 테스트 활성화

@@ -7,7 +7,7 @@ import com.fanpulse.application.service.identity.AuthService
 import com.fanpulse.application.service.identity.AuthServiceImpl
 import com.fanpulse.domain.identity.*
 import com.fanpulse.domain.identity.port.RefreshTokenPort
-import com.fanpulse.domain.identity.port.RefreshTokenRecord
+import com.fanpulse.domain.identity.port.TokenInvalidationResult
 import com.fanpulse.domain.identity.port.TokenPort
 import com.fanpulse.domain.identity.port.UserPort
 import io.mockk.*
@@ -15,7 +15,6 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.extension.ExtendWith
-import java.time.Instant
 import java.util.*
 
 /**
@@ -66,6 +65,8 @@ class AuthServiceTest {
             every { googleLoginHandler.handle(any()) } returns user
             every { tokenPort.generateAccessToken(user.id) } returns "access_token"
             every { tokenPort.generateRefreshToken(user.id) } returns "refresh_token"
+            every { tokenPort.getAccessTokenExpirationSeconds() } returns 3600L
+            every { tokenPort.getRefreshTokenExpirationSeconds() } returns 604800L
 
             // When
             val result = authService.googleLogin(request)
@@ -76,6 +77,8 @@ class AuthServiceTest {
             assertEquals("refresh_token", result.refreshToken)
             assertEquals(user.email, result.email)
             assertEquals(user.username, result.username)
+            assertEquals(3600L, result.expiresIn)
+            assertEquals(604800L, result.refreshExpiresIn)
 
             verify { googleLoginHandler.handle(any()) }
         }
@@ -125,17 +128,12 @@ class AuthServiceTest {
             every { tokenPort.validateToken(refreshToken) } returns true
             every { tokenPort.getTokenType(refreshToken) } returns "refresh"
             every { tokenPort.getUserIdFromToken(refreshToken) } returns userId
-            every { refreshTokenPort.findByToken(refreshToken) } returns RefreshTokenRecord(
-                id = UUID.randomUUID(),
-                userId = userId,
-                token = refreshToken,
-                expiresAt = Instant.now().plusSeconds(604800),
-                invalidated = false
-            )
+            every { refreshTokenPort.findAndInvalidateByToken(refreshToken) } returns TokenInvalidationResult.Invalidated
             every { userPort.findById(userId) } returns user
             every { tokenPort.generateAccessToken(userId) } returns "new_access_token"
             every { tokenPort.generateRefreshToken(userId) } returns "new_refresh_token"
             every { tokenPort.getAccessTokenExpirationSeconds() } returns 3600L
+            every { tokenPort.getRefreshTokenExpirationSeconds() } returns 604800L
 
             // When
             val result = authService.refreshToken(RefreshTokenRequest(refreshToken))
@@ -143,6 +141,26 @@ class AuthServiceTest {
             // Then
             assertEquals("new_access_token", result.accessToken)
             assertEquals("new_refresh_token", result.refreshToken)
+            assertEquals(3600L, result.expiresIn)
+            assertEquals(604800L, result.refreshExpiresIn)
+        }
+
+        @Test
+        @DisplayName("저장소에 미등록된 Refresh Token은 거부해야 한다")
+        fun `should reject refresh token not found in rotation store`() {
+            // Given
+            val refreshToken = "unregistered_refresh_token"
+            val userId = UUID.randomUUID()
+
+            every { tokenPort.validateToken(refreshToken) } returns true
+            every { tokenPort.getTokenType(refreshToken) } returns "refresh"
+            every { tokenPort.getUserIdFromToken(refreshToken) } returns userId
+            every { refreshTokenPort.findAndInvalidateByToken(refreshToken) } returns TokenInvalidationResult.NotFound
+
+            // When & Then
+            assertThrows<InvalidTokenException> {
+                authService.refreshToken(RefreshTokenRequest(refreshToken))
+            }
         }
 
         @Test

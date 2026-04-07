@@ -58,7 +58,9 @@ class AuthControllerTest {
                 email = "user@gmail.com",
                 username = "googleuser",
                 accessToken = "access_token",
-                refreshToken = "refresh_token"
+                refreshToken = "refresh_token",
+                expiresIn = 3600L,
+                refreshExpiresIn = 604800L
             )
 
             every { authService.googleLogin(any()) } returns response
@@ -72,8 +74,11 @@ class AuthControllerTest {
                 jsonPath("$.userId") { value(userId.toString()) }
                 jsonPath("$.email") { value("user@gmail.com") }
                 jsonPath("$.username") { value("googleuser") }
-                jsonPath("$.accessToken") { value("access_token") }
-                jsonPath("$.refreshToken") { value("refresh_token") }
+                // 토큰은 httpOnly 쿠키로만 전달, 응답 바디에 미포함
+                jsonPath("$.accessToken") { doesNotExist() }
+                jsonPath("$.refreshToken") { doesNotExist() }
+                cookie { value("fanpulse_access_token", "access_token") }
+                cookie { value("fanpulse_refresh_token", "refresh_token") }
             }
         }
 
@@ -122,7 +127,8 @@ class AuthControllerTest {
             val response = TokenResponse(
                 accessToken = "new_access_token",
                 expiresIn = 3600L,
-                refreshToken = "new_refresh_token"
+                refreshToken = "new_refresh_token",
+                refreshExpiresIn = 604800L
             )
 
             every { authService.refreshToken(any()) } returns response
