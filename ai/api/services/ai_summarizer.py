@@ -18,10 +18,18 @@
 # - transformers, torch, sentencepiece 패키지 필요
 #######################
 """
-import torch
+import contextlib
 import logging
 
 logger = logging.getLogger(__name__)
+
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    torch = None
+    TORCH_AVAILABLE = False
+
 
 #######################
 # 지연 로딩 (Lazy Loading) 변수
@@ -70,15 +78,21 @@ def _get_pipeline():
 # 환경 점검 및 LLM 모델 로딩
 #######################
 def _get_llm_model(model_name):
+    if not TORCH_AVAILABLE:
+        raise RuntimeError(
+            "_get_llm_model은 torch 없이 호출할 수 없습니다. "
+            "torch를 설치하거나 LLM 기능을 비활성화하십시오."
+        )
+
     import sys
 
-    print("===== ENV CHECK =====")
-    print("Python exe :", sys.executable)
-    print("Torch ver  :", torch.__version__)
-    print("CUDA avail :", torch.cuda.is_available())
-    print("CUDA ver   :", torch.version.cuda)
-    print("GPU name   :", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
-    print("=====================")
+    logger.info("===== ENV CHECK =====")
+    logger.info("Python exe : %s", sys.executable)
+    logger.info("Torch ver  : %s", torch.__version__)
+    logger.info("CUDA avail : %s", torch.cuda.is_available())
+    logger.info("CUDA ver   : %s", torch.version.cuda)
+    logger.info("GPU name   : %s", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
+    logger.info("=====================")
     from transformers import (
         AutoTokenizer,
         AutoModelForCausalLM,
@@ -122,8 +136,14 @@ def _get_model(language='ko'):
         로드된 요약 모델 (pipeline 객체)
 
     Raises:
-        RuntimeError: 모델 로딩 실패 시
+        RuntimeError: torch가 없거나 모델 로딩 실패 시
     """
+    if not TORCH_AVAILABLE:
+        raise RuntimeError(
+            "_get_model은 torch 없이 호출할 수 없습니다. "
+            "torch를 설치하거나 AI 요약 기능을 비활성화하십시오."
+        )
+
     global _models
 
     if language in _models:
@@ -147,7 +167,7 @@ def _get_model(language='ko'):
             "model": pipeline_fn(
                 task="summarization",
                 model="facebook/bart-large-cnn",
-                device=0 if torch.cuda.is_available() else -1
+                device=0 if (TORCH_AVAILABLE and torch.cuda.is_available()) else -1
             )
         }
 
@@ -249,7 +269,8 @@ class AISummarizer:
                 # 종화 모델 변경안
                 #######################
                 # do_sample=False (greedy decoding)일 때는 temperature/top_p 무시됨
-                with torch.no_grad():
+                no_grad = torch.no_grad() if TORCH_AVAILABLE else contextlib.nullcontext()
+                with no_grad:
                     outputs = model.generate(
                         **inputs,
                         max_new_tokens=max_length,
