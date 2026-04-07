@@ -1,6 +1,10 @@
 package com.fanpulse.e2e
 
-import com.fanpulse.application.identity.*
+import com.fanpulse.application.dto.identity.AuthResponse
+import com.fanpulse.application.dto.identity.GoogleLoginRequest
+import com.fanpulse.application.dto.identity.TokenResponse
+import com.fanpulse.application.identity.InvalidGoogleTokenException
+import com.fanpulse.application.identity.OAuthEmailNotVerifiedException
 import com.fanpulse.application.identity.command.GoogleLoginHandler
 import com.fanpulse.domain.identity.Email
 import com.fanpulse.domain.identity.User

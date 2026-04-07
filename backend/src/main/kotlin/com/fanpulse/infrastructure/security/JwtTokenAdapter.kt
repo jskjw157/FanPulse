@@ -57,4 +57,8 @@ class JwtTokenAdapter(
             throw IllegalArgumentException("Invalid token", e)
         }
     }
+
+    override fun getAccessTokenExpirationSeconds(): Long {
+        return jwtTokenProvider.accessTokenExpirationSeconds
+    }
 }
