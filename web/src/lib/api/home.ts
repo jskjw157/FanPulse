@@ -24,5 +24,13 @@ export async function fetchLatestNews(limit = 10, signal?: AbortSignal): Promise
     params: { limit },
     signal,
   });
-  return data.data;
+
+  const result = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : null;
+
+  if (result === null) {
+    console.error('[fetchLatestNews] 예상치 못한 응답 구조:', data);
+    return [];
+  }
+
+  return result;
 }
