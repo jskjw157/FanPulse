@@ -58,10 +58,11 @@ class ArtistControllerTest {
             // When & Then
             mockMvc.get("/api/v1/artists").andExpect {
                 status { isOk() }
-                jsonPath("$.content") { isArray() }
-                jsonPath("$.content[0].id") { value(artistId.toString()) }
-                jsonPath("$.content[0].name") { value("BTS") }
-                jsonPath("$.totalElements") { value(1) }
+                jsonPath("$.success") { value(true) }
+                jsonPath("$.data.content") { isArray() }
+                jsonPath("$.data.content[0].id") { value(artistId.toString()) }
+                jsonPath("$.data.content[0].name") { value("BTS") }
+                jsonPath("$.data.totalElements") { value(1) }
             }
         }
     }
@@ -80,9 +81,10 @@ class ArtistControllerTest {
             // When & Then
             mockMvc.get("/api/v1/artists/{id}", artistId).andExpect {
                 status { isOk() }
-                jsonPath("$.id") { value(artistId.toString()) }
-                jsonPath("$.name") { value("BTS") }
-                jsonPath("$.agency") { value("HYBE") }
+                jsonPath("$.success") { value(true) }
+                jsonPath("$.data.id") { value(artistId.toString()) }
+                jsonPath("$.data.name") { value("BTS") }
+                jsonPath("$.data.agency") { value("HYBE") }
             }
         }
 
@@ -123,7 +125,8 @@ class ArtistControllerTest {
                 param("q", "BTS")
             }.andExpect {
                 status { isOk() }
-                jsonPath("$.content[0].name") { value("BTS") }
+                jsonPath("$.success") { value(true) }
+                jsonPath("$.data.content[0].name") { value("BTS") }
             }
         }
     }
