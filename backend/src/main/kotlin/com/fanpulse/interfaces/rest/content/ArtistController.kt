@@ -3,11 +3,12 @@ package com.fanpulse.interfaces.rest.content
 import com.fanpulse.application.dto.content.ArtistListResponse
 import com.fanpulse.application.dto.content.ArtistResponse
 import com.fanpulse.application.service.content.ArtistQueryService
+import com.fanpulse.interfaces.rest.common.ApiResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponse as SwaggerApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import mu.KotlinLogging
@@ -36,7 +37,7 @@ class ArtistController(
         description = "Returns a paginated list of artists"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Artists retrieved successfully",
             content = [Content(schema = Schema(implementation = ArtistListResponse::class))]
@@ -57,7 +58,7 @@ class ArtistController(
 
         @Parameter(description = "Sort direction")
         @RequestParam(defaultValue = "asc") sortDir: String
-    ): ResponseEntity<ArtistListResponse> {
+    ): ResponseEntity<ApiResponse<ArtistListResponse>> {
         logger.debug { "Getting artists, activeOnly=$activeOnly" }
         val sort = Sort.by(
             if (sortDir.equals("desc", ignoreCase = true)) Sort.Direction.DESC else Sort.Direction.ASC,
@@ -70,7 +71,7 @@ class ArtistController(
         } else {
             queryService.getAll(pageable)
         }
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/{id}")
@@ -79,20 +80,20 @@ class ArtistController(
         description = "Returns detailed information about a specific artist"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Artist retrieved successfully",
             content = [Content(schema = Schema(implementation = ArtistResponse::class))]
         ),
-        ApiResponse(responseCode = "404", description = "Artist not found")
+        SwaggerApiResponse(responseCode = "404", description = "Artist not found")
     )
     fun getArtist(
         @Parameter(description = "Artist ID")
         @PathVariable id: UUID
-    ): ResponseEntity<ArtistResponse> {
+    ): ResponseEntity<ApiResponse<ArtistResponse>> {
         logger.debug { "Getting artist by ID: $id" }
         val response = queryService.getById(id)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/search")
@@ -109,10 +110,10 @@ class ArtistController(
 
         @Parameter(description = "Page size")
         @RequestParam(defaultValue = "20") size: Int
-    ): ResponseEntity<ArtistListResponse> {
+    ): ResponseEntity<ApiResponse<ArtistListResponse>> {
         logger.debug { "Searching artists with query: $q" }
         val pageable = PageRequest.of(page, size.coerceIn(1, 100))
         val response = queryService.search(q, pageable)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 }

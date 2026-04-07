@@ -3,12 +3,13 @@ package com.fanpulse.interfaces.rest.content
 import com.fanpulse.application.dto.content.ChartListResponse
 import com.fanpulse.application.dto.content.ChartResponse
 import com.fanpulse.application.service.content.ChartQueryService
+import com.fanpulse.interfaces.rest.common.ApiResponse
 import com.fanpulse.domain.content.ChartType
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponse as SwaggerApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import mu.KotlinLogging
@@ -37,20 +38,20 @@ class ChartController(
         description = "Returns detailed chart information with all entries"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Chart retrieved successfully",
             content = [Content(schema = Schema(implementation = ChartResponse::class))]
         ),
-        ApiResponse(responseCode = "404", description = "Chart not found")
+        SwaggerApiResponse(responseCode = "404", description = "Chart not found")
     )
     fun getChartById(
         @Parameter(description = "Chart ID")
         @PathVariable id: UUID
-    ): ResponseEntity<ChartResponse> {
+    ): ResponseEntity<ApiResponse<ChartResponse>> {
         logger.debug { "Getting chart by ID: $id" }
         val response = queryService.getById(id)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/{chartType}/latest")
@@ -59,20 +60,20 @@ class ChartController(
         description = "Returns the most recent chart for a specific type"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Chart retrieved successfully",
             content = [Content(schema = Schema(implementation = ChartResponse::class))]
         ),
-        ApiResponse(responseCode = "404", description = "Chart not found")
+        SwaggerApiResponse(responseCode = "404", description = "Chart not found")
     )
     fun getLatestChart(
         @Parameter(description = "Chart type")
         @PathVariable chartType: ChartType
-    ): ResponseEntity<ChartResponse> {
+    ): ResponseEntity<ApiResponse<ChartResponse>> {
         logger.debug { "Getting latest chart for type: $chartType" }
         val response = queryService.getLatestByType(chartType)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/{chartType}/date/{date}")
@@ -81,12 +82,12 @@ class ChartController(
         description = "Returns chart for a specific type and date"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Chart retrieved successfully",
             content = [Content(schema = Schema(implementation = ChartResponse::class))]
         ),
-        ApiResponse(responseCode = "404", description = "Chart not found")
+        SwaggerApiResponse(responseCode = "404", description = "Chart not found")
     )
     fun getChartByDate(
         @Parameter(description = "Chart type")
@@ -94,10 +95,10 @@ class ChartController(
 
         @Parameter(description = "Chart date (YYYY-MM-DD)")
         @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate
-    ): ResponseEntity<ChartResponse> {
+    ): ResponseEntity<ApiResponse<ChartResponse>> {
         logger.debug { "Getting chart for type: $chartType and date: $date" }
         val response = queryService.getByTypeAndDate(chartType, date)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/{chartType}/history")
@@ -114,9 +115,9 @@ class ChartController(
 
         @Parameter(description = "End date (YYYY-MM-DD)")
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) endDate: LocalDate
-    ): ResponseEntity<ChartListResponse> {
+    ): ResponseEntity<ApiResponse<ChartListResponse>> {
         logger.debug { "Getting chart history for type: $chartType from $startDate to $endDate" }
         val response = queryService.getByDateRange(chartType, startDate, endDate)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 }

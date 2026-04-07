@@ -5,11 +5,12 @@ import com.fanpulse.application.dto.content.NewsListResponse
 import com.fanpulse.application.dto.content.NewsResponse
 import com.fanpulse.application.service.content.NewsQueryService
 import com.fanpulse.domain.content.NewsCategory
+import com.fanpulse.interfaces.rest.common.ApiResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponse as SwaggerApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import mu.KotlinLogging
@@ -38,7 +39,7 @@ class NewsController(
         description = "Returns a paginated list of news articles"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "News retrieved successfully",
             content = [Content(schema = Schema(implementation = NewsListResponse::class))]
@@ -62,7 +63,7 @@ class NewsController(
 
         @Parameter(description = "Sort direction")
         @RequestParam(defaultValue = "desc") sortDir: String
-    ): ResponseEntity<NewsListResponse> {
+    ): ResponseEntity<ApiResponse<NewsListResponse>> {
         logger.debug { "Getting news with artistId=$artistId, category=$category" }
         val sort = Sort.by(
             if (sortDir.equals("asc", ignoreCase = true)) Sort.Direction.ASC else Sort.Direction.DESC,
@@ -72,7 +73,7 @@ class NewsController(
         val filter = NewsFilter(artistId = artistId, category = category)
 
         val response = queryService.getAll(filter, pageable)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/{id}")
@@ -81,20 +82,20 @@ class NewsController(
         description = "Returns detailed information about a specific news article"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "News retrieved successfully",
             content = [Content(schema = Schema(implementation = NewsResponse::class))]
         ),
-        ApiResponse(responseCode = "404", description = "News not found")
+        SwaggerApiResponse(responseCode = "404", description = "News not found")
     )
     fun getNewsById(
         @Parameter(description = "News ID")
         @PathVariable id: UUID
-    ): ResponseEntity<NewsResponse> {
+    ): ResponseEntity<ApiResponse<NewsResponse>> {
         logger.debug { "Getting news by ID: $id" }
         val response = queryService.getById(id)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/latest")
@@ -105,10 +106,10 @@ class NewsController(
     fun getLatestNews(
         @Parameter(description = "Number of articles to return")
         @RequestParam(defaultValue = "10") limit: Int
-    ): ResponseEntity<List<NewsResponse>> {
+    ): ResponseEntity<ApiResponse<List<NewsResponse>>> {
         logger.debug { "Getting latest $limit news" }
         val response = queryService.getLatest(limit.coerceIn(1, 50))
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/search")
@@ -125,10 +126,10 @@ class NewsController(
 
         @Parameter(description = "Page size")
         @RequestParam(defaultValue = "20") size: Int
-    ): ResponseEntity<NewsListResponse> {
+    ): ResponseEntity<ApiResponse<NewsListResponse>> {
         logger.debug { "Searching news with query: $q" }
         val pageable = PageRequest.of(page, size.coerceIn(1, 100))
         val response = queryService.search(q, pageable)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 }
