@@ -2,8 +2,10 @@ package com.aos.fanpulse.presentation.artist
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.aos.fanpulse.R
 import com.aos.fanpulse.domain.repository.ArtistsRepository
 import com.aos.fanpulse.domain.usecase.SearchArtistsUseCase
+import com.aos.fanpulse.presentation.common.FilterRadioButtonItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
@@ -18,9 +20,20 @@ class ArtistViewModel @Inject constructor(
     override val container: Container<ArtistContract.ArtistState, ArtistContract.SideEffect> =
         container(initialState = ArtistContract.ArtistState(emptyList()))
 
+    init {
+        getArtists()
+    }
+
     fun goArtistDetailScreen(artistId: String) = intent {
         postSideEffect(ArtistContract.SideEffect.NavigateArtistDetail(artistId))
     }
+
+    fun setFilterRadioButtonItems() = listOf(
+        FilterRadioButtonItem("전체", R.drawable.icon_artist_filter_total, true),
+        FilterRadioButtonItem("보이그룹",R.drawable.icon_artist_filter_boy_group, false),
+        FilterRadioButtonItem("걸그룹",R.drawable.icon_artist_filter_girl_group, false),
+        FilterRadioButtonItem("솔로",R.drawable.icon_artist_filter_solo, false)
+    )
 
     fun getArtists() = intent {
         //  API 호출 전

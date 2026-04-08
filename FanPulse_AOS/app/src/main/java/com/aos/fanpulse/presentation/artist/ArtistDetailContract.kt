@@ -12,7 +12,5 @@ object ArtistDetailContract {
 
     sealed interface SideEffect {
         data class ShowToast(val message: String) : SideEffect
-        object NavigateArtist : SideEffect
-        object NavigateHome : SideEffect
     }
 }

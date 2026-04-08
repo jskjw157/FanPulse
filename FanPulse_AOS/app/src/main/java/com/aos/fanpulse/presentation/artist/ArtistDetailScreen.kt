@@ -15,10 +15,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aos.fanpulse.R
+import com.aos.fanpulse.presentation.common.CommonTopAppBar
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 
 // Data Classes
 data class ArtistDetail(
@@ -48,6 +53,13 @@ fun ArtistDetailScreen(
     artistId: String? = null,
     onBackClick: () -> Unit = {}
 ) {
+    val state by viewModel.collectAsState()
+    viewModel.collectSideEffect { sideEffect ->
+        when (sideEffect) {
+            is ArtistDetailContract.SideEffect.ShowToast -> {}
+        }
+    }
+
     var selectedTab by remember { mutableStateOf(ArtistTab.OVERVIEW) }
     var isFollowing by remember { mutableStateOf(false) }
 
@@ -75,43 +87,21 @@ fun ArtistDetailScreen(
         viewModel.getArtistDetail(artistId)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "아티스트",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Share"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                )
-            )
-        }
-    ) { paddingValues ->
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        CommonTopAppBar(
+            isActiveLeftBack = true,
+            onLeftBack = { onBackClick() },
+            isActiveCenterTextTitle = true,
+            centerTextTitle = "아티스트",
+            isActiveRightShare = true,
+            onRightShare = {  }
+        )
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .background(Color.White)
         ) {
             // Artist Header Image

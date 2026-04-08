@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.community
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,42 +7,26 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -58,8 +41,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,7 +55,6 @@ fun CommunityScreen(
     goSearchScreen: () -> Unit,
     goPostDetailScreen: () -> Unit,
     goNotificationScreen: () -> Unit,
-    goArtistScreen: () -> Unit,
     viewModel: CommunityScreenViewModel = hiltViewModel(),
 ){
     val sheetState = rememberModalBottomSheetState()
@@ -195,219 +175,10 @@ fun CommunityScreen(
             }
 
             if (showBottomSheet) {
-//            ModalBottomSheet(
-//                onDismissRequest = { showBottomSheet = false },
-//                sheetState = sheetState,
-//                containerColor = Color.White, // 시트 배경색
-//                dragHandle = { BottomSheetDefaults.DragHandle() }
-//            ) {
-                BottomSheetContent(
+                CommunityBottomSheetScreen(
                     setShowModal = { isVisible ->
                         showBottomSheet = isVisible
-                    },
-                    goArtistScreen = {
-                        goArtistScreen()
                     }
-                )
-//            }
-            }
-        }
-    }
-}
-
-data class Artist(
-    val name: String,
-    val posts: Int,
-    val verified: Boolean = false
-)
-
-@Composable
-fun BottomSheetContent(
-    setShowModal: (Boolean) -> Unit,
-    goArtistScreen: () -> Unit,
-) {
-
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedArtist by remember { mutableStateOf<String?>(null) }
-
-    val artists = listOf(
-        Artist("1234", 1234, verified = true),
-        Artist("IU", 456),
-        Artist("BLACKPINK", 389),
-        Artist("SEVENTEEN", 267),
-        Artist("NewJeans", 198),
-        Artist("Stray Kids", 156),
-        Artist("TWICE", 234),
-        Artist("TXT", 145),
-        Artist("ENHYPEN", 178),
-        Artist("ITZY", 123),
-        Artist("LE SSERAFIM", 167),
-        Artist("BNFITN", 89)
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
-            .clickable { setShowModal(false) }
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.8f)
-                .align(Alignment.BottomCenter)
-                .clickable(enabled = false) {},
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            color = Color.White
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Select Artist",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    IconButton(onClick = {
-                        setShowModal(false)
-                    }) {
-                        Icon(
-                            painter = painterResource(R.drawable.icon_close),
-                            contentDescription = null,
-                        )
-                    }
-                }
-
-                HorizontalDivider(color = Color(0xFFEEEEEE))
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    placeholder = { Text("아티스트 검색...", fontSize = 14.sp) },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.icon_search),
-                            contentDescription = null,
-                        )
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = Color(0xFFEEEEEE),
-                        focusedBorderColor = Color(0xFF9C27B0)
-                    ),
-                    singleLine = true
-                )
-
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(artists.filter {
-                        it.name.contains(searchQuery, ignoreCase = true)
-                    }) { artist ->
-                        ArtistCard(
-                            artist = artist,
-                            isSelected = selectedArtist == artist.name,
-                            onClick = {
-                                selectedArtist = artist.name
-                                goArtistScreen()
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ArtistCard(
-    artist: Artist,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) Color(0xFFF3E5F5) else Color.White,
-        border = BorderStroke(
-            2.dp,
-            if (isSelected) Color(0xFF9C27B0) else Color(0xFFEEEEEE)
-        )
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Verified Badge
-            if (artist.verified) {
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF9C27B0)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = "인증",
-                        tint = Color.White,
-                        modifier = Modifier.size(10.dp)
-                    )
-                }
-            }
-
-            // Content
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                // Artist Icon
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(if (isSelected) Color(0xFF9C27B0) else Color(0xFFE1BEE7)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .background(if (isSelected) Color.White else Color(0xFFBA68C8))
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Artist Name
-                Text(
-                    text = artist.name,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-
-                // Post Count
-                Text(
-                    text = "${artist.posts}",
-                    fontSize = 10.sp,
-                    color = Color.Gray
                 )
             }
         }
@@ -595,5 +366,5 @@ fun CommunityItem(
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    CommunityScreen({},{},{},{},{})
+    CommunityScreen({},{},{},{})
 }

@@ -16,9 +16,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -45,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -57,6 +61,8 @@ import coil.compose.AsyncImage
 import com.aos.fanpulse.R
 import com.aos.fanpulse.data.remote.apiservice.Artist
 import com.aos.fanpulse.presentation.artist.ArtistContract
+import com.aos.fanpulse.presentation.common.CommonTopAppBar
+import com.aos.fanpulse.presentation.community.CommunityRadioButtonItem
 import com.aos.fanpulse.presentation.login.LoginViewModel
 import com.aos.fanpulse.presentation.notifications.NotificationIcon
 import org.orbitmvi.orbit.compose.collectAsState
@@ -66,13 +72,14 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 @Composable
 fun ArtistScreen(
     viewModel: ArtistViewModel = hiltViewModel(),
-    goArtistDetail: (String) -> Unit
+    goSearchScreen: () -> Unit = {},
+    goNotificationScreen: () -> Unit = {},
+    goArtistDetail: (String) -> Unit = {}
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("전체", "보이그룹", "걸그룹", "솔로")
-    // ViewModel의 State를 Compose State로 변환 (reduce로 넣은 값들이 여기로 옵니다)
+    val filterRadioButton = viewModel.setFilterRadioButtonItems()
+    var selectedFilterRadioButton by remember { mutableStateOf(filterRadioButton[0]) }
+
     val state by viewModel.collectAsState()
-    viewModel.getArtists()
 
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -94,49 +101,19 @@ fun ArtistScreen(
             .fillMaxSize()
             .background(colorResource(id = R.color.color_12))
     ) {
-        // Top App Bar
-        TopAppBar(
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = colorResource(id = R.color.color_1)
-            ),
-            title = {
-                Icon(
-                    painter = painterResource(id = R.drawable.home_title),
-                    contentDescription = "홈 타이틀 로고",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(80.dp, 24.dp)
-                )
-            },
-            actions = {
-                IconButton(onClick = { /* 검색 */ }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.icon_search),
-                        contentDescription = "검색",
-                        tint = Color.White
-                    )
-                }
-                IconButton(onClick = { /* 알림 */ }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.icon_search),
-                        contentDescription = "알림",
-                        tint = Color.White
-                    )
-                }
-                IconButton(onClick = { /* 메뉴 */ }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.icon_search),
-                        contentDescription = "메뉴",
-                        tint = Color.White
-                    )
-                }
-            }
+        CommonTopAppBar(
+            isActiveLeftImage = true,
+            isActiveRightSearch = true,
+            onRightSearch = { goSearchScreen() },
+            isActiveRightNotification = true,
+            onRightNotification = { goNotificationScreen() },
         )
 
         // Title Section
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(colorResource(id = R.color.color_12))
                 .padding(16.dp)
         ) {
             Text(
@@ -153,78 +130,29 @@ fun ArtistScreen(
             )
         }
 
-        // Tab Row
-        ScrollableTabRow(
-            selectedTabIndex = selectedTab,
-            containerColor = Color.White,
-            contentColor = colorResource(id = R.color.color_1),
-            edgePadding = 16.dp,
-            indicator = { tabPositions ->
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                    height = 3.dp,
-                    color = colorResource(id = R.color.color_1)
-                )
-            },
-            divider = {}
+        //   Filter Button
+        LazyRow(
+            modifier = Modifier
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 8.dp
+                ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 12.dp)
-                    ) {
-                        if (index == 0) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_search),
-                                contentDescription = null,
-                                tint = if (selectedTab == index)
-                                    colorResource(id = R.color.color_1) else Color.Gray,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                        } else if (index == 1) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_search),
-                                contentDescription = null,
-                                tint = if (selectedTab == index)
-                                    colorResource(id = R.color.color_1) else Color.Gray,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                        } else if (index == 2) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_person),
-                                contentDescription = null,
-                                tint = if (selectedTab == index)
-                                    colorResource(id = R.color.color_1) else Color.Gray,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                        } else {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_search),
-                                contentDescription = null,
-                                tint = if (selectedTab == index)
-                                    colorResource(id = R.color.color_1) else Color.Gray,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                        }
-                        Text(
-                            text = title,
-                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                            color = if (selectedTab == index)
-                                colorResource(id = R.color.color_1) else Color.Gray
-                        )
+            items(filterRadioButton) { item ->
+                ArtistRadioButtonItem(
+                    text = item.text,
+                    filterImage = item.image,
+                    isSelected = (item == selectedFilterRadioButton),
+                    onClick = {
+                        //  필터 필요함
+                        selectedFilterRadioButton = item
                     }
-                }
+                )
             }
         }
+
         if (state.isLoading) {
             CircularProgressIndicator()
         } else {
@@ -246,6 +174,45 @@ fun ArtistScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ArtistRadioButtonItem(
+    text: String,           // 보여줄 텍스트
+    filterImage: Int?,
+    isSelected: Boolean,    // 선택 여부
+    onClick: () -> Unit     // 클릭 시 실행할 동작
+) {
+
+    Box(
+        modifier = Modifier
+            .background(
+                color = if (isSelected) colorResource(id = R.color.color_1) else colorResource(id = R.color.color_2),
+                shape = RoundedCornerShape(100.dp)
+            )
+            .clickable { onClick() }
+    ) {
+        Row (
+            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            if (filterImage != null){
+                Image(
+                    painter = painterResource(id = filterImage),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    colorFilter = ColorFilter.tint(if (isSelected) Color.White else colorResource(R.color.color_3))
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(
+                color = if (isSelected) Color.White else colorResource(R.color.color_3),
+                text = text,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

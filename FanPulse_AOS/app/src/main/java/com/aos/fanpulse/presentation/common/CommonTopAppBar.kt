@@ -1,6 +1,7 @@
 package com.aos.fanpulse.presentation.common
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -133,16 +135,15 @@ fun CommonTopAppBar(
             //  중앙
             title = {
                 if (isActiveCenterTextTitle){
-                    IconButton(
-                        onClick = {  },
-                        modifier = Modifier
-                            .height(28.dp)
-                            .width(81.dp)
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = centerTextTitle.toString(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White
+                            fontSize = 18.sp,
+                            color = Color.White,
+                            modifier = Modifier.clickable { /* 클릭 */ }
                         )
                     }
                 }

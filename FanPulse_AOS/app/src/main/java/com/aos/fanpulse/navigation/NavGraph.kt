@@ -74,8 +74,7 @@ fun NavGraph(
                     { NavigationActions(navController).navigateCommunityPost() },
                     { NavigationActions(navController).navigateSearch()},
                     { NavigationActions(navController).navigateCommunityPostDetail() },
-                    { NavigationActions(navController).navigateNotifications() },
-                    { NavigationActions(navController).navigateArtist() }
+                    { NavigationActions(navController).navigateNotifications() }
                 )
             }
             composable(MainTabScreen.Voting.route) { VotingScreen() }
@@ -183,9 +182,11 @@ fun NavGraph(
         }
 
         composable(SubScreen.Artist.route) {
-            ArtistScreen(){
-                NavigationActions(navController).navigateArtistDetail(it)
-            }
+            ArtistScreen(
+                goSearchScreen = { NavigationActions(navController).navigateSearch() },
+                goNotificationScreen = { NavigationActions(navController).navigateNotifications() },
+                goArtistDetail = { NavigationActions(navController).navigateArtistDetail(it) }
+            )
         }
 
         composable(
