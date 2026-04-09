@@ -27,7 +27,11 @@ sealed class SubScreen(route: String) : Screen(route) {
     object Settings : SubScreen("settings")
     object Error : SubScreen("error")
     object Search : SubScreen("search")
-    object NewsDetail : SubScreen("news_detail")
+    object NewsDetail : SubScreen("news_detail/{newsId}"){
+        fun createRoute(newsId: String): String {
+            return "artist_detail/$newsId"
+        }
+    }
     object Voting : SubScreen("voting")
     object Tickets : SubScreen("tickets")
     object News : SubScreen("news")
@@ -45,12 +49,6 @@ sealed class SubScreen(route: String) : Screen(route) {
     object ArtistDetail : SubScreen("artist_detail/{artistId}") {
         fun createRoute(artistId: String): String {
             return "artist_detail/$artistId"
-        }
-    }
-
-    object Detail : SubScreen("detail/{taskId}?title={title}") {
-        fun createRoute(taskId: Int, title: String): String {
-            return "detail/$taskId?title=$title"
         }
     }
 }

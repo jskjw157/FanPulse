@@ -30,7 +30,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "http://192.168.201.50:8080/api/v1/"
+    private const val BASE_URL = "http://192.168.201.57:8080/api/v1/"
 
     // 브라우저의 쿠키 보관함 역할을 합니다.
     @Provides

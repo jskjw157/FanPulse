@@ -121,9 +121,15 @@ fun NavGraph(
                 { navController.popBackStack() }
             )
         }
-        composable (SubScreen.NewsDetail.route){
-            NewsDetailScreen()
+
+        composable (
+            route = SubScreen.NewsDetail.route,
+            arguments = listOf(navArgument("newsId") { type = NavType.StringType })
+        ){ backStackEntry ->
+            val newsId = backStackEntry.arguments?.getString("newsId") ?: ""
+            NewsDetailScreen(newsId = newsId)
         }
+
         composable(SubScreen.Voting.route) {
             VotingScreen()
         }
@@ -190,9 +196,9 @@ fun NavGraph(
         }
 
         composable(
-            route = SubScreen.ArtistDetail.route, // "artist_detail/{artistId}"
+            route = SubScreen.ArtistDetail.route,
             arguments = listOf(navArgument("artistId") { type = NavType.StringType })
-        ) {backStackEntry ->
+        ) { backStackEntry ->
             // 전달받은 id 꺼내기
             val artistId = backStackEntry.arguments?.getString("artistId") ?: ""
 
