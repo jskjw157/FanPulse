@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option java_package = "com.aos.fanpulse.datastore";
+option java_multiple_files = true;
+
+message UserData {
+  string accessToken = 1;
+  string refreshToken = 2;
+}
