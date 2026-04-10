@@ -31,11 +31,12 @@ class TokenAuthenticator @Inject constructor(
                 // 1. 내가 자물쇠를 기다리는 동안, 앞선 다른 요청이 이미 토큰을 갱신해 두었는지 확인!
                 // 실패했던 원본 요청의 토큰과 현재 DataStore에 있는 토큰을 비교합니다.
                 val failedToken = extractTokenFromRequest(response.request, "fanpulse_access_token")
-                val currentToken = authRepository.accessToken.first() // accessToken도 저장한다고 가정
 
-                // 만약 두 토큰이 다르다면? 앞선 요청이 이미 새 토큰을 받아와 저장한 것입니다.
+                // [참고] 여기서는 캐시보다 DataStore에서 직접 꺼내오는 것이 더 안전할 수 있습니다.
+                // 갱신 직전에는 가장 정확한 '최신 상태'가 필요하기 때문입니다.
+                val currentToken = authRepository.accessToken.first()
+
                 if (currentToken != null && failedToken != currentToken) {
-                    // 서버에 갱신 요청을 또 할 필요 없이, 방금 갱신된 새 토큰으로 바로 다시 쏘면 됩니다!
                     return@runBlocking response.request.newBuilder()
                         .header("Cookie", "fanpulse_access_token=$currentToken")
                         .build()
@@ -80,13 +81,10 @@ class TokenAuthenticator @Inject constructor(
 
     // 재시도 횟수를 체크하기 위한 확장 함수
     private fun Response.count(): Int {
-        var result = 1
-        var lastResponse = this.priorResponse
-        while (lastResponse != null) {
-            result++
-            lastResponse = lastResponse.priorResponse
-        }
-        return result
+        var count = 1
+        var res = this
+        while (res.priorResponse != null) { count++; res = res.priorResponse!! }
+        return count
     }
 
     private fun extractToken(cookies: List<String>, key: String): String? {

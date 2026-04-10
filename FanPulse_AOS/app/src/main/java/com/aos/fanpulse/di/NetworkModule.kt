@@ -1,5 +1,6 @@
 package com.aos.fanpulse.di
 
+import com.aos.fanpulse.BuildConfig
 import com.aos.fanpulse.BuildConfig.BASE_URL
 import com.aos.fanpulse.data.remote.apiservice.ArtistChannelsApiService
 import com.aos.fanpulse.data.remote.apiservice.ArtistsApiService
@@ -54,9 +55,13 @@ object NetworkModule {
             .cookieJar(cookieJar)                                               // withCredentials: true 역할을 수행
             .addInterceptor(authInterceptor)
             .authenticator(tokenAuthenticator)                                  // 401 에러(자동 갱신) 처리
-            .addInterceptor(HttpLoggingInterceptor().apply {        // 통신 로그캣 출력
-                level = HttpLoggingInterceptor.Level.BODY
-            })
+            .apply {
+                if (BuildConfig.DEBUG) {
+                    addInterceptor(HttpLoggingInterceptor().apply {
+                        level = HttpLoggingInterceptor.Level.BODY
+                    })
+                }
+            }
             .connectTimeout(30, TimeUnit.SECONDS)
             .build()
     }

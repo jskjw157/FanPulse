@@ -107,6 +107,8 @@ dependencies {
     implementation(libs.androidx.datastore.core)
     implementation(libs.protobuf.kotlin.lite)
     implementation(libs.protobuf.javalite)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.datastore:datastore-preferences-core:1.1.1")
 
     //  okhttp3, retrofit
     implementation(libs.okhttp)

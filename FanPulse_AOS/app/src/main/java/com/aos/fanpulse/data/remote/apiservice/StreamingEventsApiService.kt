@@ -10,7 +10,7 @@ interface StreamingEventsApiService {
     /**
      * 1. 스트리밍 이벤트 목록 조회 (커서 기반)
      */
-    @GET("/api/v1/streaming-events")
+    @GET("streaming-events")
     suspend fun getStreamingEvents(
         @Query("status") status: String? = null, // LIVE, SCHEDULED, ENDED
         @Query("limit") limit: Int = 20,
@@ -20,7 +20,7 @@ interface StreamingEventsApiService {
     /**
      * 2. 스트리밍 이벤트 상세 조회
      */
-    @GET("/api/v1/streaming-events/{id}")
+    @GET("streaming-events/{id}")
     suspend fun getStreamingEventById(
         @Path("id") id: String
     ): Response<StreamingBaseResponse<StreamingEventDetail>>
@@ -28,7 +28,7 @@ interface StreamingEventsApiService {
     /**
      * 3. 예정된(Scheduled) 이벤트 목록
      */
-    @GET("/api/v1/streaming-events/scheduled")
+    @GET("streaming-events/scheduled")
     suspend fun getScheduledEvents(
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
@@ -37,7 +37,7 @@ interface StreamingEventsApiService {
     /**
      * 4. 현재 진행 중인(Live) 이벤트 목록
      */
-    @GET("/api/v1/streaming-events/live")
+    @GET("streaming-events/live")
     suspend fun getLiveEvents(
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
@@ -46,7 +46,7 @@ interface StreamingEventsApiService {
     /**
      * 5. 레거시/필터 검색 목록
      */
-    @GET("/api/v1/streaming-events/legacy")
+    @GET("streaming-events/legacy")
     suspend fun getLegacyEvents(
         @Query("status") status: String? = null,
         @Query("platform") platform: String? = "YOUTUBE",
@@ -62,7 +62,7 @@ interface StreamingEventsApiService {
     /**
      * 6. 특정 아티스트의 이벤트 목록
      */
-    @GET("/api/v1/streaming-events/artist/{artistId}")
+    @GET("streaming-events/artist/{artistId}")
     suspend fun getArtistEvents(
         @Path("artistId") artistId: String,
         @Query("page") page: Int = 0,

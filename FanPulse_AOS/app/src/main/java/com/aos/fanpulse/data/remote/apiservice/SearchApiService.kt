@@ -10,7 +10,7 @@ interface SearchApiService {
      * @param query 검색어 (최소 2자 이상)
      * @param limit 카테고리당 최대 아이템 수 (기본 10, 최대 10)
      */
-    @GET("api/v1/search")
+    @GET("search")
     suspend fun searchAll(
         @Query("q") query: String,
         @Query("limit") limit: Int = 10

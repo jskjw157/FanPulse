@@ -10,13 +10,13 @@ interface UserProfileApiService {
      * 현재 로그인한 사용자의 상세 프로필 정보 조회
      * (Header에 Authorization 토큰이 포함되어야 함)
      */
-    @GET("api/v1/me")
+    @GET("me")
     suspend fun getMyProfile(): Response<MyProfile>
 
     /**
      * 내 프로필 정보 수정 (닉네임 등)
      */
-    @PATCH("api/v1/me")
+    @PATCH("me")
     suspend fun updateProfile(
         @Body request: UpdateProfileRequest
     ): Response<MyProfile> // 응답은 기존 MyProfile 모델 재사용
@@ -25,13 +25,13 @@ interface UserProfileApiService {
      * 현재 로그인한 사용자의 앱 환경 설정 조회
      * (테마, 언어, 알림 설정 등)
      */
-    @GET("api/v1/me/settings") // 실제 명세의 URL 확인 필요
+    @GET("me/settings") // 실제 명세의 URL 확인 필요
     suspend fun getMySettings(): Response<UserSettings>
 
     /**
      * 앱 환경 설정 수정
      */
-    @PATCH("api/v1/me/settings")
+    @PATCH("me/settings")
     suspend fun updateSettings(
         @Body request: UpdateSettingsRequest
     ): Response<UserSettings> // 응답은 기존 UserSettings 모델 재사용
@@ -39,7 +39,7 @@ interface UserProfileApiService {
     /**
      * 비밀번호 변경
      */
-    @PATCH("api/v1/me/password")
+    @PATCH("me/password")
     suspend fun changePassword(
         @Body request: ChangePasswordRequest
     ): Response<MessageResponse>

@@ -12,7 +12,7 @@ interface CommentsApiService {
      * 특정 게시글의 댓글 목록 조회 (페이징)
      * @param postId 대상 게시글 ID
      */
-    @GET("api/v1/comments")
+    @GET("comments")
     suspend fun getComments(
         @Query("postId") postId: String,
         @Query("page") page: Int = 0,
@@ -23,7 +23,7 @@ interface CommentsApiService {
      * 새 댓글 또는 답글 작성
      * @param request 댓글 작성에 필요한 데이터
      */
-    @POST("api/v1/comments")
+    @POST("comments")
     suspend fun createComment(
         @Body request: CommentRequest
     ): Response<Comment>

@@ -11,7 +11,7 @@ interface ChartsApiService {
     /**
      * 특정 차트 ID로 상세 데이터 조회 (이전 API)
      */
-    @GET("api/v1/charts/{id}")
+    @GET("charts/{id}")
     suspend fun getChartDetail(
         @Path("id") chartId: String
     ): Response<ChartDetail>
@@ -21,7 +21,7 @@ interface ChartsApiService {
      * 특정 플랫폼의 최신 차트 데이터 조회
      * @param chartType 차트 플랫폼 종류 (MELON, SPOTIFY 등)
      */
-    @GET("api/v1/charts/{chartType}/latest")
+    @GET("charts/{chartType}/latest")
     suspend fun getLatestChart(
         @Path("chartType") chartType: String
     ): Response<ChartDetail>
@@ -33,7 +33,7 @@ interface ChartsApiService {
      * @param startDate 시작 날짜 (YYYY-MM-DD)
      * @param endDate 종료 날짜 (YYYY-MM-DD)
      */
-    @GET("api/v1/charts/{chartType}/history")
+    @GET("charts/{chartType}/history")
     suspend fun getChartHistory(
         @Path("chartType") chartType: String,
         @Query("startDate") startDate: String,
@@ -46,7 +46,7 @@ interface ChartsApiService {
      * @param chartType 차트 플랫폼 종류 (MELON, SPOTIFY 등)
      * @param date 조회하고 싶은 날짜 (YYYY-MM-DD 형식)
      */
-    @GET("api/v1/charts/{chartType}/date/{date}")
+    @GET("charts/{chartType}/date/{date}")
     suspend fun getChartByDate(
         @Path("chartType") chartType: String,
         @Path("date") date: String
