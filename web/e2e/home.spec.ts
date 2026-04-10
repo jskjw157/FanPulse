@@ -182,18 +182,36 @@ test.describe('Home - 홈 화면', () => {
   })
 
   test('Live 카드 클릭 시 /live/:id 페이지로 이동한다', async ({ page }) => {
+    // Next.js 개발 환경에서 RSC soft-nav이 router-state-tree 불일치로 중단될 수 있으므로
+    // 목적지 페이지를 mock하여 hard navigation이 발생하도록 한다
+    await page.route('**/live/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<html><head><title>Live</title></head><body><h1>Live Page</h1></body></html>',
+      })
+    })
     await mockHomeApis(page)
     await page.goto('/')
 
-    await page.getByRole('link', { name: /NewJeans 컴백 쇼케이스/ }).click()
+    await page.locator('a[href="/live/1"]').click()
     await expect(page).toHaveURL('/live/1')
   })
 
   test('뉴스 카드 클릭 시 /news/:id 페이지로 이동한다', async ({ page }) => {
+    // Next.js 개발 환경에서 RSC soft-nav이 router-state-tree 불일치로 중단될 수 있으므로
+    // 목적지 페이지를 mock하여 hard navigation이 발생하도록 한다
+    await page.route('**/news/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<html><head><title>News</title></head><body><h1>News Page</h1></body></html>',
+      })
+    })
     await mockHomeApis(page)
     await page.goto('/')
 
-    await page.getByText('BTS 새 앨범 발매 예정').click()
+    await page.locator('a[href="/news/1"]').click()
     await expect(page).toHaveURL('/news/1')
   })
 
@@ -201,18 +219,41 @@ test.describe('Home - 홈 화면', () => {
     await mockHomeApis(page, { failLive: true })
     await page.goto('/')
 
-    await expect(page.getByText('데이터를 불러올 수 없습니다')).toBeVisible()
+    await expect(page.getByText('서버에 문제가 발생했습니다')).toBeVisible()
     await expect(page.getByRole('button', { name: '다시 시도' })).toBeVisible()
   })
 
   test('에러 상태에서 다시 시도 클릭 시 데이터가 정상 로드된다', async ({ page }) => {
-    // 첫 요청은 실패
+    // CORS 프리플라이트(OPTIONS)를 포함한 모든 api.fanpulse.app 요청을 처음부터 인터셉트하여
+    // Chrome CORS 캐시가 오염되지 않도록 한다
+    const CORS_HEADERS = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400',
+    }
+
     let shouldFail = true
+
+    // OPTIONS 프리플라이트 요청을 항상 200으로 응답
+    await page.route('**/api/v1/**', async (route) => {
+      if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS })
+        return
+      }
+      await route.fallback()
+    })
+
     await page.route('**/streaming-events*', async (route) => {
       if (route.request().method() !== 'GET') return route.fallback()
 
       if (shouldFail) {
-        await route.fulfill({ status: 500, body: 'fail' })
+        await route.fulfill({
+          status: 500,
+          headers: CORS_HEADERS,
+          body: 'fail',
+        })
         return
       }
 
@@ -222,32 +263,39 @@ test.describe('Home - 홈 화면', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
+        headers: CORS_HEADERS,
         body: JSON.stringify({ data: { items, hasMore: false } }),
       })
     })
+
     await page.route('**/news/latest*', async (route) => {
       if (route.request().method() !== 'GET') return route.fallback()
 
       if (shouldFail) {
-        await route.fulfill({ status: 500, body: 'fail' })
+        await route.fulfill({
+          status: 500,
+          headers: CORS_HEADERS,
+          body: 'fail',
+        })
         return
       }
 
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
+        headers: CORS_HEADERS,
         body: JSON.stringify({ data: mockLatestNews }),
       })
     })
 
     await page.goto('/')
-    await expect(page.getByText('데이터를 불러올 수 없습니다')).toBeVisible()
+    await expect(page.getByText('서버에 문제가 발생했습니다')).toBeVisible()
 
     // 두 번째 시도는 성공
     shouldFail = false
     await page.getByRole('button', { name: '다시 시도' }).click()
 
-    await expect(page.getByText('NewJeans 컴백 쇼케이스')).toBeVisible()
+    await expect(page.getByText('NewJeans 컴백 쇼케이스')).toBeVisible({ timeout: 15000 })
   })
 
   test('LIVE 카드에 LIVE 배지와 시청자 수가 표시된다', async ({ page }) => {

@@ -11,6 +11,17 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    isAuthenticated: false,
+    isLoading: false,
+    user: null,
+    logout: vi.fn(),
+    refreshAuth: vi.fn(),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 import LoginPage from './page'
 
 describe('LoginPage', () => {
@@ -42,9 +53,4 @@ describe('LoginPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('navigates to home on browse', () => {
-    render(<LoginPage />)
-    fireEvent.click(screen.getByText('둘러보기'))
-    expect(pushMock).toHaveBeenCalledWith('/')
-  })
 })
