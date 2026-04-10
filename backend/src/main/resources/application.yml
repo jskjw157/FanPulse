@@ -64,8 +64,8 @@ fanpulse:
   discovery:
     ytdlp:
       command: yt-dlp
-      timeout-ms: 30000   # 30초 타임아웃
-      playlist-limit: 30   # 채널당 30개
+      timeout-ms: 60000   # 60초 타임아웃
+      playlist-limit: 10   # 채널당 10개
       extract-flat: false
 
   scheduler:
@@ -192,12 +192,9 @@ resilience4j:
           - com.fanpulse.infrastructure.external.ai.AiServiceException
 
       ytdlp:
-        maxAttempts: 3
+        maxAttempts: 2
         waitDuration: 2s
-        enableExponentialBackoff: true
-        exponentialBackoffMultiplier: 2
         retryExceptions:
-          - java.lang.IllegalStateException
           - java.io.IOException
 
   # TimeLimiter 설정 (reactive WebClient에서는 .timeout() operator로 처리)

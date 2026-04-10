@@ -19,6 +19,14 @@ export async function fetchUpcoming(limit = 5, signal?: AbortSignal): Promise<Pa
   return data.data;
 }
 
+export async function fetchRecentLives(limit = 10, signal?: AbortSignal): Promise<PaginatedResponse<Live>> {
+  const { data } = await apiClient.get('/streaming-events', {
+    params: { status: 'ENDED', limit },
+    signal,
+  });
+  return data.data;
+}
+
 export async function fetchLatestNews(limit = 10, signal?: AbortSignal): Promise<News[]> {
   const { data } = await apiClient.get('/news/latest', {
     params: { limit },

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { fetchLiveNow, fetchUpcoming, fetchLatestNews } from '@/lib/api/home';
+import { fetchLiveNow, fetchUpcoming, fetchRecentLives, fetchLatestNews } from '@/lib/api/home';
 import type { Live } from '@/types/live';
 import type { News } from '@/types/news';
 import type { AsyncState } from '@/types/common';
@@ -19,6 +19,7 @@ function getErrorMessage(error: unknown): string {
 interface UseHomeSectionsReturn {
   liveNow: Live[];
   upcoming: Live[];
+  recentLives: Live[];
   latestNews: News[];
   state: AsyncState;
   error: string | null;
@@ -28,6 +29,7 @@ interface UseHomeSectionsReturn {
 export function useHomeSections(): UseHomeSectionsReturn {
   const [liveNow, setLiveNow] = useState<Live[]>([]);
   const [upcoming, setUpcoming] = useState<Live[]>([]);
+  const [recentLives, setRecentLives] = useState<Live[]>([]);
   const [latestNews, setLatestNews] = useState<News[]>([]);
   const [state, setState] = useState<AsyncState>('loading');
   const [error, setError] = useState<string | null>(null);
@@ -36,23 +38,26 @@ export function useHomeSections(): UseHomeSectionsReturn {
     setState('loading');
     setError(null);
 
-    try {
-      const [liveRes, upcomingRes, newsRes] = await Promise.all([
-        fetchLiveNow(5, signal),
-        fetchUpcoming(5, signal),
-        fetchLatestNews(10, signal),
-      ]);
+    const [liveRes, upcomingRes, recentRes, newsRes] = await Promise.allSettled([
+      fetchLiveNow(5, signal),
+      fetchUpcoming(5, signal),
+      fetchRecentLives(10, signal),
+      fetchLatestNews(10, signal),
+    ]);
 
-      if (signal?.aborted) return;
+    if (signal?.aborted) return;
 
-      setLiveNow(liveRes.items);
-      setUpcoming(upcomingRes.items);
-      setLatestNews(newsRes);
-      setState('success');
-    } catch (err) {
-      if (signal?.aborted) return;
-      setError(getErrorMessage(err));
+    setLiveNow(liveRes.status === 'fulfilled' ? liveRes.value.items : []);
+    setUpcoming(upcomingRes.status === 'fulfilled' ? upcomingRes.value.items : []);
+    setRecentLives(recentRes.status === 'fulfilled' ? recentRes.value.items : []);
+    setLatestNews(newsRes.status === 'fulfilled' ? newsRes.value : []);
+
+    const coresFailed = liveRes.status === 'rejected' && upcomingRes.status === 'rejected';
+    if (coresFailed) {
+      setError(getErrorMessage(liveRes.reason));
       setState('error');
+    } else {
+      setState('success');
     }
   }, []);
 
@@ -68,6 +73,7 @@ export function useHomeSections(): UseHomeSectionsReturn {
   return {
     liveNow,
     upcoming,
+    recentLives,
     latestNews,
     state,
     error,
