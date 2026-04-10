@@ -5,7 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
-import androidx.datastore.preferences.core.emptyPreferences
+import com.aos.fanpulse.ApplicationScope
 import com.aos.fanpulse.data.local.UserDataSerializer
 import com.aos.fanpulse.datastore.UserData
 import dagger.Module
@@ -25,7 +25,8 @@ object DataStoreModule {
     @Provides
     @Singleton
     fun provideUserDataStore(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        @ApplicationScope scope: CoroutineScope
     ): DataStore<UserData> {
         return DataStoreFactory.create(
             serializer = UserDataSerializer,
@@ -34,7 +35,7 @@ object DataStoreModule {
                 produceNewData = { UserData.getDefaultInstance() } // 파일 손상 시 빈 데이터(초기값)로 대체
             ),
             migrations = emptyList(),
-            scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+            scope = scope
         )
     }
 }
