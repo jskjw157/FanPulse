@@ -35,8 +35,6 @@ class LoginViewModel @Inject constructor(
                         loginStatus = LoginState.Success
                     )
                 }
-                // 성공 시 부수 효과로 토스트 메시지 표시
-                postSideEffect(LoginContract.SideEffect.ShowToast("Login successful: $credential"))
                 //  성공시 mainScreen으로 가기
                 //  postSideEffect(LoginContract.SideEffect.NavigateToMain)
                 withContext(Dispatchers.Main) {

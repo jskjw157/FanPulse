@@ -39,7 +39,7 @@ object NetworkModule {
     @Singleton
     fun provideCookieJar(): CookieJar {
         return JavaNetCookieJar(CookieManager().apply {
-            setCookiePolicy(CookiePolicy.ACCEPT_ALL)
+            setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER)
         })
     }
 

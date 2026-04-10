@@ -38,6 +38,7 @@ class TokenAuthenticator @Inject constructor(
 
                 if (currentToken != null && failedToken != currentToken) {
                     return@runBlocking response.request.newBuilder()
+                        .removeHeader("Cookie")
                         .header("Cookie", "fanpulse_access_token=$currentToken")
                         .build()
                 }
@@ -56,16 +57,17 @@ class TokenAuthenticator @Inject constructor(
 
                     if (refreshResponse.isSuccessful) {
                         // 4. 헤더에서 쿠키 추출
-                        val cookies = refreshResponse.headers().values("Set-Cookie")
-                        val newAccess = extractToken(cookies, "fanpulse_access_token")
-                        val newRefresh = extractToken(cookies, "fanpulse_refresh_token")
+                        val tokenResponse = refreshResponse.body()
+                        val newAccess = tokenResponse?.accessToken
+                        val newRefresh = tokenResponse?.refreshToken
 
-                        if (newAccess != null && newRefresh != null) {
-                            // 5. 로컬 저장소 업데이트 (코루틴 스코프 확인 필요)
+                        if (!newAccess.isNullOrEmpty() && !newRefresh.isNullOrEmpty()) {
+                            // 5. 로컬 저장소 업데이트
                             authRepository.updateTokens(newAccess, newRefresh)
 
                             // 6. 실패했던 원래 요청(originalRequest)을 새 토큰으로 수정하여 재시도
                             return@runBlocking response.request.newBuilder()
+                                .removeHeader("Cookie") // 중복 방지를 위해 기존 쿠키 헤더 제거
                                 .header("Cookie", "fanpulse_access_token=$newAccess")
                                 .build()
                         }
