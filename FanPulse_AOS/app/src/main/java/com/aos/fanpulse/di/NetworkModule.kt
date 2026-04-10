@@ -1,5 +1,6 @@
 package com.aos.fanpulse.di
 
+import com.aos.fanpulse.BuildConfig.BASE_URL
 import com.aos.fanpulse.data.remote.apiservice.ArtistChannelsApiService
 import com.aos.fanpulse.data.remote.apiservice.ArtistsApiService
 import com.aos.fanpulse.data.remote.AuthenticationInterceptor
@@ -30,7 +31,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "http://192.168.201.57:8080/api/v1/"
+//    private const val BASE_URL = ""
 
     // 브라우저의 쿠키 보관함 역할을 합니다.
     @Provides

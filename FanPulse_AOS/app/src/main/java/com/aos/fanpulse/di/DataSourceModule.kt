@@ -1,6 +1,6 @@
 package com.aos.fanpulse.di
 
-import com.aos.fanpulse.data.local.GoogleSignInDataSource
+import com.aos.fanpulse.data.remote.GoogleSignInDataSource
 import com.aos.fanpulse.data.local.GoogleSignInDataSourceImpl
 import dagger.Binds
 import dagger.Module
