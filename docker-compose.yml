@@ -41,8 +41,9 @@ services:
       AI_SERVICE_API_KEY: ${AI_API_KEY:-test-api-key}
       JWT_SECRET: ${JWT_SECRET:-default-dev-secret-key-256-bits-long-for-hs256-algorithm}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-test-google-client-id.apps.googleusercontent.com}
-      FANPULSE_SCHEDULER_LIVE_DISCOVERY_ENABLED: "false"
-      FANPULSE_SCHEDULER_METADATA_REFRESH_ENABLED: "false"
+      FANPULSE_SCHEDULER_LIVE_DISCOVERY_ENABLED: "${FANPULSE_SCHEDULER_LIVE_DISCOVERY_ENABLED:-false}"
+      FANPULSE_SCHEDULER_METADATA_REFRESH_ENABLED: "${FANPULSE_SCHEDULER_METADATA_REFRESH_ENABLED:-false}"
+      FANPULSE_SCHEDULER_LIVE_DISCOVERY_MAX_CONCURRENCY: "${FANPULSE_SCHEDULER_LIVE_DISCOVERY_MAX_CONCURRENCY:-2}"
       JAVA_TOOL_OPTIONS: "-Xmx512m -Xms256m"
     depends_on:
       postgres:
@@ -57,7 +58,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 768M
+          memory: 1536M
     networks:
       - fanpulse-net
 

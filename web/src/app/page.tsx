@@ -6,11 +6,19 @@ import LatestNewsSection from './components/home/LatestNewsSection';
 import SkeletonCard from '@/components/ui/SkeletonCard';
 
 export default function Home() {
-  const { liveNow, upcoming, latestNews, state, error, refresh } = useHomeSections();
+  const { liveNow, upcoming, recentLives, latestNews, state, error, refresh } = useHomeSections();
 
   if (state === 'loading') {
     return (
       <main className="max-w-7xl mx-auto pb-20">
+        <section className="px-4 py-3">
+          <div className="h-6 w-24 bg-gray-200 rounded mb-3" />
+          <div className="flex gap-4 overflow-hidden">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        </section>
         <section className="px-4 py-3">
           <div className="h-6 w-24 bg-gray-200 rounded mb-3" />
           <div className="flex gap-4 overflow-hidden">
@@ -67,6 +75,13 @@ export default function Home() {
       <LiveSection
         title="Upcoming"
         lives={upcoming}
+        state={state}
+        onRetry={refresh}
+      />
+
+      <LiveSection
+        title="Recent Lives"
+        lives={recentLives}
         state={state}
         onRetry={refresh}
       />

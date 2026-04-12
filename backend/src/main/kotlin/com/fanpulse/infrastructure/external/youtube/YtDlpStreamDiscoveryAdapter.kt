@@ -63,8 +63,8 @@ class YtDlpStreamDiscoveryAdapter(
             "Invalid channel handle format: $handle"
         }
         val normalized = if (handle.startsWith("@")) handle else "@$handle"
-        // /videos 탭에서 라이브 영상 포함하여 크롤링 (K-Pop 채널 지원)
-        return "https://www.youtube.com/$normalized/videos"
+        // /streams 탭에서 라이브/예정/종료 스트리밍만 크롤링
+        return "https://www.youtube.com/$normalized/streams"
     }
 
     private fun executeYtDlp(channelUrl: String): String {
