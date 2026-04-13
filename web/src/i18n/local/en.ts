@@ -9,7 +9,14 @@ const enTranslations = {
   "search.noResults": "No results found for \"{{query}}\"",
   "search.noResultsHint": "Try a different keyword",
   "search.errorRetry": "Retry",
-  "search.removeRecent": "Remove"
+  "search.removeRecent": "Remove",
+  "news.title": "News",
+  "news.loadMore": "Load More",
+  "news.loading": "Loading...",
+  "news.empty": "No news available",
+  "news.error.retry": "Retry",
+  "news.allLoaded": "All news loaded",
+  "news.seeMore": "See More"
 };
 
 export default enTranslations;
