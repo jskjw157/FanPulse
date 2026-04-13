@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { searchAll, type SearchResultItem } from '@/lib/api/search';
+import { searchAll } from '@/lib/api/search';
 import type { Live } from '@/types/live';
 import type { News } from '@/types/news';
 import type { AsyncState } from '@/types/common';
@@ -18,20 +18,6 @@ function getErrorMessage(error: unknown): string {
   return '검색 결과를 불러올 수 없습니다';
 }
 
-function splitResults(items: SearchResultItem[]): { lives: Live[]; news: News[] } {
-  const lives: Live[] = [];
-  const news: News[] = [];
-
-  for (const item of items) {
-    if (item.type === 'LIVE' && item.live) {
-      lives.push(item.live);
-    } else if (item.type === 'NEWS' && item.news) {
-      news.push(item.news);
-    }
-  }
-
-  return { lives, news };
-}
 
 interface UseSearchReturn {
   query: string;
@@ -65,9 +51,8 @@ export function useSearch(): UseSearchReturn {
 
       if (controller.signal.aborted) return;
 
-      const { lives: liveItems, news: newsItems } = splitResults(result.items);
-      setLives(liveItems);
-      setNews(newsItems);
+      setLives(result.live?.items ?? []);
+      setNews(result.news?.items ?? []);
       setState('success');
     } catch (err) {
       if (axios.isCancel(err) || (err instanceof DOMException && err.name === 'AbortError')) {
