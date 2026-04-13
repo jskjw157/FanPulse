@@ -1,5 +1,7 @@
 "use client";
 
+import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import NewsCard from './NewsCard';
 import SkeletonCard from '@/components/ui/SkeletonCard';
 import type { News } from '@/types/news';
@@ -13,10 +15,18 @@ interface LatestNewsSectionProps {
 }
 
 export default function LatestNewsSection({ news, state, error, onRetry }: LatestNewsSectionProps) {
+  const { t } = useTranslation();
+
   return (
     <section aria-label="최신 뉴스">
       <div className="flex items-center justify-between px-4 py-3">
         <h2 className="text-lg font-bold text-gray-900">최신 뉴스</h2>
+        <Link
+          href="/news"
+          className="text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors"
+        >
+          {t('news.seeMore')}
+        </Link>
       </div>
 
       {state === 'loading' && (
