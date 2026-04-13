@@ -23,6 +23,7 @@ import com.aos.fanpulse.presentation.concert.ConcertScreen
 import com.aos.fanpulse.presentation.error.ErrorScreen
 import com.aos.fanpulse.presentation.favorites.FavoritesScreen
 import com.aos.fanpulse.presentation.home.HomeScreen
+import com.aos.fanpulse.presentation.live.LiveScreen
 import com.aos.fanpulse.presentation.login.LoginScreen
 import com.aos.fanpulse.presentation.membership.MembershipScreen
 import com.aos.fanpulse.presentation.my.MyScreen
@@ -55,20 +56,23 @@ fun NavGraph(
         }
         navigation(startDestination = MainTabScreen.Home.route, route = "main_tab") {
             composable(MainTabScreen.Home.route) { HomeScreen(
-                { NavigationActions(navController).navigateSearch() },
-                { NavigationActions(navController).navigateNotifications() },
-                { NavigationActions(navController).navigateArtist() },
-                { NavigationActions(navController).navigateChart() },
-                { NavigationActions(navController).navigateNews() },
-                { NavigationActions(navController).navigateConcert() },
-                { NavigationActions(navController).navigateTickets()},
-                {NavigationActions(navController).navigateMembership()},
-                {NavigationActions(navController).navigateAds()},
-                {NavigationActions(navController).navigateFavorites()},
-                {NavigationActions(navController).navigateSaved()},
-                {NavigationActions(navController).navigateSettings()},
-                {NavigationActions(navController).navigateSupport()},
-                )}
+                goSearchScreen = { NavigationActions(navController).navigateSearch() },
+                goNotificationScreen = { NavigationActions(navController).navigateNotifications() },
+                goArtistScreen = { NavigationActions(navController).navigateArtist() },
+                goChartScreen = { NavigationActions(navController).navigateChart() },
+                goNewsScreen = { NavigationActions(navController).navigateNews() },
+                goNewsDetailScreen = {NavigationActions(navController).navigateNewsDetail(it)},
+                goConcertScreen = { NavigationActions(navController).navigateConcert() },
+                goTicketsScreen = { NavigationActions(navController).navigateTickets()},
+                goMembershipScreen = {NavigationActions(navController).navigateMembership()},
+                goAdsScreen = {NavigationActions(navController).navigateAds()},
+                goFavoritesScreen = {NavigationActions(navController).navigateFavorites()},
+                goSavedScreen = {NavigationActions(navController).navigateSaved()},
+                goSettingsScreen = {NavigationActions(navController).navigateSettings()},
+                goSupportScreen = {NavigationActions(navController).navigateSupport()},
+                goLiveScreen = {NavigationActions(navController).navigateLive()},
+                goLiveDetailScreen = {NavigationActions(navController).navigateLiveDetail(it)}
+            )}
             composable(MainTabScreen.Community.route) {
                 CommunityScreen(
                     { NavigationActions(navController).navigateCommunityPost() },
@@ -81,6 +85,10 @@ fun NavGraph(
             composable(MainTabScreen.My.route) { MyScreen(
                 { NavigationActions(navController).navigateSettings() }
             )}
+            composable(MainTabScreen.Live.route) { LiveScreen(
+                goSearchScreen = { NavigationActions(navController).navigateSearch() },
+                goNotificationScreen = { NavigationActions(navController).navigateNotifications() },
+            ) }
         }
 
         composable(SubScreen.CommunityPost.route) {
@@ -112,13 +120,16 @@ fun NavGraph(
                 navController.popBackStack()
             })
         }
+
         composable (SubScreen.Membership.route){
             MembershipScreen()
         }
+
         composable (SubScreen.News.route){
             NewsScreen(
-                {NavigationActions(navController).navigateSearch()},
-                { navController.popBackStack() }
+                goSearchScreen = {NavigationActions(navController).navigateSearch()},
+                onBackClick = { navController.popBackStack() },
+                goNewsDetailScreen = { NavigationActions(navController).navigateNewsDetail(it)}
             )
         }
 

@@ -40,12 +40,6 @@ import com.aos.fanpulse.presentation.common.CommonTopAppBar
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
-//data class RelatedNews(
-//    val category: String,
-//    val title: String,
-//    val imageUrl: String
-//)
-
 @Composable
 fun NewsDetailScreen(
     viewModel: NewsDetailViewModel = hiltViewModel(),

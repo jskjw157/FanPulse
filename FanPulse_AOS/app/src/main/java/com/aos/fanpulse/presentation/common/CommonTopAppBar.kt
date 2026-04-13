@@ -1,6 +1,7 @@
 package com.aos.fanpulse.presentation.common
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -21,6 +23,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -66,14 +69,22 @@ fun CommonTopAppBar(
 
     Box(
         modifier = Modifier.fillMaxWidth()
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF9333EA), // 왼쪽 시작 색상
+                        Color(0xFFDB2777)  // 오른쪽 끝 색상
+                    )
+                )
+            )
 //            .height(60.dp)
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.loginscreen_bg),
-            contentDescription = null,
-            modifier = Modifier.matchParentSize(),
-            contentScale = ContentScale.Crop
-        )
+//        Image(
+//            painter = painterResource(id = R.drawable.loginscreen_bg),
+//            contentDescription = null,
+//            modifier = Modifier.matchParentSize(),
+//            contentScale = ContentScale.Crop
+//        )
 
         TopAppBar(
             modifier = Modifier.fillMaxWidth(),
@@ -84,25 +95,8 @@ fun CommonTopAppBar(
             //  왼쪽
             navigationIcon = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Spacer(Modifier.width(16.dp))
-                    if (isActiveLeftTextTitle){
-                        TextButton(
-                            onClick = { onLeftTextTile() },
-                            modifier = Modifier
-                                .height(28.dp)
-                                .wrapContentWidth(),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                        ) {
-                            Text(
-                                text = leftTextTitle.toString(),
-                                fontSize = 18.sp,
-                                color = Color.White,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
                     if (isActiveLeftImage){
+                        Spacer(Modifier.width(16.dp))
                         IconButton(
                             onClick = { onLeftTextTile() },
                             modifier = Modifier
@@ -121,12 +115,28 @@ fun CommonTopAppBar(
                             onClick = { onLeftBack() },
                             modifier = Modifier
                                 .height(28.dp)
-                                .width(81.dp)
+                                .wrapContentWidth()
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.icon_left_arrow),
                                 contentDescription = null,
                                 tint = Color.Unspecified
+                            )
+                        }
+                    }
+                    if (isActiveLeftTextTitle){
+                        TextButton(
+                            onClick = { onLeftTextTile() },
+                            modifier = Modifier
+                                .wrapContentHeight()
+                                .wrapContentWidth()
+                        ) {
+                            Text(
+                                text = leftTextTitle.toString(),
+                                fontSize = 18.sp,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }

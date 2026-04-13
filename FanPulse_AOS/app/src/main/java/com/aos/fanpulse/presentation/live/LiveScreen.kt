@@ -28,6 +28,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -41,7 +42,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aos.fanpulse.presentation.common.CommonTopAppBar
 import com.aos.fanpulse.presentation.tickets.InfoRow
+import org.orbitmvi.orbit.compose.collectAsState
 
 private val LightGrayBackground = Color(0xFFF7F8FA)
 private val PrimaryPurple = Color(0xFF8B5CF6)
@@ -51,24 +55,39 @@ private val SoldOutGray = Color(0xFF6B7280)
 
 @Composable
 fun LiveScreen(
-
+    viewModel: LiveViewModel = hiltViewModel(),
+    goSearchScreen: () -> Unit = {},
+    goNotificationScreen: () -> Unit = {},
+    goLiveDetailScreen: (String) -> Unit = {},
 ) {
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
-    ) {
-        // 1. 메인 라이브 배너
-        MainLiveBanner()
+    val state by viewModel.collectAsState()
 
-        // 2. More Live Streams 섹션
-        LiveStreamsSection()
+    Column {
+        CommonTopAppBar(
+            isActiveLeftImage = true,
+            isActiveRightSearch = true,
+            onRightSearch = { goSearchScreen() },
+            isActiveRightNotification = true,
+            onRightNotification = { goNotificationScreen() },
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
 
-        // 3. Upcoming Concerts 섹션
-        UpcomingConcertsSection()
+            // 1. 메인 라이브 배너
+            MainLiveBanner()
+
+            // 2. More Live Streams 섹션
+            LiveStreamsSection()
+
+            // 3. Upcoming Concerts 섹션
+            UpcomingConcertsSection()
+        }
     }
 }
 
@@ -104,7 +123,6 @@ fun MainLiveBanner() {
                     .fillMaxSize()
                     .alpha(0.3f) // 그라데이션 위에 겹침
             )
-
 
             // 상단 뱃지들 (Live, View Count)
             Row(

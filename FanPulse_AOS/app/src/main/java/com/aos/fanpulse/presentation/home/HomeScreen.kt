@@ -65,24 +65,66 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aos.fanpulse.R
+import com.aos.fanpulse.presentation.artist.ArtistContract
 import com.aos.fanpulse.presentation.common.CommonTopAppBar
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
 fun HomeScreen(
-    goSearchScreen: () -> Unit,
-    goNotificationScreen: () -> Unit,
-    goArtistScreen: () -> Unit,
-    goChartScreen: () -> Unit,
-    goNewsScreen: () -> Unit,
-    goConcertScreen: () -> Unit,
-    goTicketsScreen: () -> Unit,
-    goMembershipScreen: () -> Unit,
-    goAdsScreen: () -> Unit,
-    goFavoritesScreen: () -> Unit,
-    goSavedScreen: () -> Unit,
-    goSettingsScreen: () -> Unit,
-    goSupportScreen: () -> Unit,
+    viewModel: HomeViewModel = hiltViewModel(),
+    goSearchScreen: () -> Unit = {},
+    goNotificationScreen: () -> Unit = {},
+    goArtistScreen: () -> Unit = {},
+    goChartScreen: () -> Unit = {},
+    goNewsScreen: () -> Unit = {},
+    goNewsDetailScreen: (String) -> Unit = {},
+    goConcertScreen: () -> Unit = {},
+    goTicketsScreen: () -> Unit = {},
+    goMembershipScreen: () -> Unit = {},
+    goAdsScreen: () -> Unit = {},
+    goFavoritesScreen: () -> Unit = {},
+    goSavedScreen: () -> Unit = {},
+    goSettingsScreen: () -> Unit = {},
+    goSupportScreen: () -> Unit = {},
+    goLiveScreen:() -> Unit = {},
+    goLiveDetailScreen:(String) -> Unit = {},
 ) {
+
+    val state by viewModel.collectAsState()
+
+    viewModel.collectSideEffect { sideEffect ->
+        when (sideEffect) {
+            HomeContract.SideEffect.NavigateAds -> {
+                goAdsScreen()
+            }
+            HomeContract.SideEffect.NavigateArtist -> goArtistScreen()
+            HomeContract.SideEffect.NavigateChart -> goChartScreen()
+            HomeContract.SideEffect.NavigateConcert -> goConcertScreen()
+            HomeContract.SideEffect.NavigateFavorites -> goFavoritesScreen()
+            HomeContract.SideEffect.NavigateLive -> {
+                goLiveScreen()
+            }
+            is HomeContract.SideEffect.NavigateLiveDetail -> {
+                goLiveDetailScreen(sideEffect.liveId)
+            }
+            HomeContract.SideEffect.NavigateNews -> goNewsScreen()
+            is HomeContract.SideEffect.NavigateNewsDetail -> {
+                goNewsDetailScreen(sideEffect.newsId)
+            }
+            HomeContract.SideEffect.NavigateNotification -> goNotificationScreen()
+            HomeContract.SideEffect.NavigateMembership -> goMembershipScreen()
+            HomeContract.SideEffect.NavigateSaved -> goSavedScreen()
+            HomeContract.SideEffect.NavigateSearch -> goSearchScreen()
+            HomeContract.SideEffect.NavigateSettings -> goSettingsScreen()
+            HomeContract.SideEffect.NavigateSupport -> goSupportScreen()
+            HomeContract.SideEffect.NavigateTickets -> goTicketsScreen()
+            is HomeContract.SideEffect.ShowToast -> {
+
+            }
+        }
+    }
+
     var isDrawerOpen by remember { mutableStateOf(false) }
 
     Box (modifier = Modifier.fillMaxSize()){
@@ -92,9 +134,9 @@ fun HomeScreen(
             CommonTopAppBar(
                 isActiveLeftImage = true,
                 isActiveRightSearch = true,
-                onRightSearch = { goSearchScreen() },
+                onRightSearch = { viewModel.goSearchScreen() },
                 isActiveRightNotification = true,
-                onRightNotification = { goNotificationScreen() },
+                onRightNotification = {  viewModel.goNotificationScreen() },
                 isActiveRightMenu = true,
                 onRightMenu = { isDrawerOpen = true }
             )
@@ -164,6 +206,9 @@ fun HomeScreen(
                         Row(
                             modifier = Modifier
                                 .padding(16.dp)
+                                .clickable{
+                                    viewModel.goNewsScreen()
+                                }
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.icon_news),
@@ -276,7 +321,9 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.weight(1f))
                             Text(
-                                modifier = Modifier,
+                                modifier = Modifier.clickable{
+                                    viewModel.goLiveScreen()
+                                },
                                 text = "View All",
                                 textAlign = TextAlign.Center,
                                 fontSize = 14.sp,
@@ -562,37 +609,37 @@ fun HomeScreen(
                 isDrawerOpen = false
                 when(menuItem){
                     "artist" -> {
-                        goArtistScreen()
+                        viewModel.goArtistScreen()
                     }
                     "chart" -> {
-                        goChartScreen()
+                        viewModel.goChartScreen()
                     }
                     "news" -> {
-                        goNewsScreen()
+                        viewModel.goNewsScreen()
                     }
                     "concert" -> {
-                        goConcertScreen()
+                        viewModel.goConcertScreen()
                     }
                     "tickets" -> {
-                        goTicketsScreen()
+                        viewModel.goTicketsScreen()
                     }
                     "membership" -> {
-                        goMembershipScreen()
+                        viewModel.goMembershipScreen()
                     }
                     "ads" -> {
-                        goAdsScreen()
+                        viewModel.goAdsScreen()
                     }
                     "favorites" -> {
-                        goFavoritesScreen()
+                        viewModel.goFavoritesScreen()
                     }
                     "saved" -> {
-                        goSavedScreen()
+                        viewModel.goSavedScreen()
                     }
                     "settings" -> {
-                        goSettingsScreen()
+                        viewModel.goSettingsScreen()
                     }
                     "customer_service" -> {
-                        goSupportScreen()
+                        viewModel.goSupportScreen()
                     }
                 }
             }
@@ -622,6 +669,8 @@ fun RightDrawer(
         animationSpec = tween(durationMillis = 300),
         label = "drawerOffset"
     )
+
+    val state by viewModel.collectAsState()
 
     // 스크림 (배경 어둡게)
     AnimatedVisibility(
@@ -663,20 +712,8 @@ fun RightDrawer(
                 CommonTopAppBar(
                     isActiveLeftTextTitle = true,
                     leftTextTitle = "메뉴",
-                    onLeftTextTile = {},
-                    leftImage = null,
-                    onLeftBack = {},
-                    centerTextTitle = null,
                     isActiveRightClose = true,
                     onRightClose = { onDismiss() },
-                    onRightWrite = {},
-                    onRightSetting = {},
-                    onRightRefresh = {},
-                    onRightShare = {},
-                    onRightBookmark = {},
-                    onRightSearch = {},
-                    onRightNotification = {},
-                    onRightMenu = {}
                 )
 
                 Divider(color = Color.LightGray.copy(alpha = 0.3f))
@@ -1097,5 +1134,5 @@ fun SetBestGroupItem(){
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    HomeScreen ({}, {},{},{},{},{},{},{},{},{},{},{},{},)
+    HomeScreen ()
 }

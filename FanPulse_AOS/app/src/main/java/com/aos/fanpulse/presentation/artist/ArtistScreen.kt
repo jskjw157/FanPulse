@@ -60,11 +60,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.aos.fanpulse.R
 import com.aos.fanpulse.data.remote.apiservice.Artist
-import com.aos.fanpulse.presentation.artist.ArtistContract
 import com.aos.fanpulse.presentation.common.CommonTopAppBar
-import com.aos.fanpulse.presentation.community.CommunityRadioButtonItem
-import com.aos.fanpulse.presentation.login.LoginViewModel
-import com.aos.fanpulse.presentation.notifications.NotificationIcon
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 

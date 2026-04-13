@@ -1,6 +1,7 @@
 package com.aos.fanpulse.presentation.news
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,20 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,33 +33,45 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.aos.fanpulse.R
+import com.aos.fanpulse.data.remote.apiservice.NewsDetail
+import com.aos.fanpulse.presentation.common.CommonTopAppBar
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 
-data class NewsItem(
-    val id: Int,
-    val imageRes: Int,
-    val category: String,
-    val title: String,
-    val viewCount: String,
-    val commentCount: String,
-    val source: String,
-    val categoryColor: Color = Color(0xFF9C27B0)
-)
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsScreen(
-    goSearchScreen: () -> Unit,
-    onBackClick: () -> Unit,
+    viewModel: NewsViewModel = hiltViewModel(),
+    goSearchScreen: () -> Unit = {},
+    goNewsDetailScreen: (String) -> Unit = {},
+    onBackClick: () -> Unit = {},
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("전체", "뉴스", "공연", "기사", "영상")
+
+    val state by viewModel.collectAsState()
+
+    viewModel.collectSideEffect { sideEffect ->
+        when (sideEffect) {
+            NewsContract.SideEffect.NavigateHome -> {}
+            is NewsContract.SideEffect.NavigateNewsDetail -> {
+                goNewsDetailScreen(sideEffect.newsId)
+            }
+            is NewsContract.SideEffect.ShowToast -> {}
+        }
+    }
+    val filterRadioButton = viewModel.setFilterRadioButtonItems()
+    var selectedFilterRadioButton by remember { mutableStateOf(filterRadioButton[0]) }
+
     Column (
         modifier = Modifier
             .fillMaxWidth()
@@ -73,58 +80,37 @@ fun NewsScreen(
                 contentScale = ContentScale.Crop
             )
     ) {
-        TopAppBar(
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            ),
-            title = {
-                Text(
-                    "뉴스",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.White
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = { onBackClick()}) {
-                    Icon(
-                        painter = painterResource(R.drawable.icon_left_arrow),
-                        contentDescription = "뒤로가기",
-                        tint = Color.White
-                    )
-                }
-            },
-            actions = {
-                IconButton(onClick = { goSearchScreen() }) {
-                    Icon(
-                        painter = painterResource(R.drawable.icon_search),
-                        contentDescription = "검색",
-                        tint = Color.Unspecified
-                    )
-                }
-            },
+        CommonTopAppBar(
+            isActiveLeftBack = true,
+            onLeftBack = { onBackClick() },
+            isActiveCenterTextTitle = true,
+            centerTextTitle = "뉴스",
+            isActiveRightSearch = true,
+            onRightSearch = { goSearchScreen() },
         )
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF121212))
+                .background(Color(0xFFFFFFFF))
         ) {
-            // Tab Row
-            ScrollableTabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = Color(0xFF1E1E1E),
-                contentColor = Color.White,
-                edgePadding = 0.dp
+            Spacer((Modifier.height(12.dp)))
+            //   Filter Button
+            LazyRow(
+                modifier = Modifier
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = 12.dp
+                    ),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = {
-                            Text(
-                                title,
-                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
-                            )
+                items(filterRadioButton) { item ->
+                    NewsRadioButtonItem(
+                        text = item.text,
+                        isSelected = (item == selectedFilterRadioButton),
+                        onClick = {
+                            //  필터 필요함
+                            selectedFilterRadioButton = item
                         }
                     )
                 }
@@ -132,11 +118,16 @@ fun NewsScreen(
 
             // News List
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFFDF2F8))
+                ,
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
-                items(getNewsItems()) { newsItem ->
-                    NewsCard(newsItem)
+                items(state.newsItem) { newsItem ->
+                    NewsCard( newsItem ){
+                        viewModel.goNewsDetail(it)
+                    }
                 }
             }
         }
@@ -144,17 +135,24 @@ fun NewsScreen(
 }
 
 @Composable
-fun NewsCard(newsItem: NewsItem) {
+fun NewsCard(
+    newsItem: NewsDetail,
+    goNewsDetail: (String) -> Unit,
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1E1E1E)
+            containerColor = Color(0xFFFFFFFF)
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column {
+        Column (
+            modifier = Modifier.clickable{
+                goNewsDetail(newsItem.id)
+            }
+        ){
 
             Box(
                 modifier = Modifier
@@ -165,21 +163,22 @@ fun NewsCard(newsItem: NewsItem) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color(0xFFE91E63),
-                                    Color(0xFF9C27B0)
-                                )
-                            )
-                        )
-                )
+                ){
+                    AsyncImage(
+                        model = newsItem.thumbnailUrl,
+                        contentDescription = "뉴스 썸네일",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop, // 영역에 꽉 차게 잘라서 보여줌 (중요)
+                        // placeholder = painterResource(R.drawable.img_placeholder), // 로딩 중에 보여줄 이미지 (선택)
+                        // error = painterResource(R.drawable.img_error) // URL이 null이거나 로드 실패 시 보여줄 이미지 (선택)
+                    )
+                }
                 Surface(
                     modifier = Modifier
                         .padding(8.dp)
                         .align(Alignment.TopStart),
-                    color = newsItem.categoryColor,
-                    shape = RoundedCornerShape(4.dp)
+//                    color = newsItem.categoryColor,
+                    shape = RoundedCornerShape(100.dp)
                 ) {
                     Text(
                         text = newsItem.category,
@@ -197,13 +196,23 @@ fun NewsCard(newsItem: NewsItem) {
             ) {
                 Text(
                     text = newsItem.title,
-                    color = Color.White,
+                    color = Color.Black,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     lineHeight = 20.sp
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = newsItem.content,
+                    color = Color.Black,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = 20.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -221,29 +230,29 @@ fun NewsCard(newsItem: NewsItem) {
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = newsItem.viewCount,
+                            text = newsItem.viewCount.toString(),
                             color = Color.Gray,
                             fontSize = 12.sp
                         )
 
                         Spacer(modifier = Modifier.width(12.dp))
 
-                        Icon(
-                            painter = painterResource(R.drawable.icon_chat),
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = Color.Gray
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = newsItem.commentCount,
-                            color = Color.Gray,
-                            fontSize = 12.sp
-                        )
+//                        Icon(
+//                            painter = painterResource(R.drawable.icon_chat),
+//                            contentDescription = null,
+//                            modifier = Modifier.size(14.dp),
+//                            tint = Color.Gray
+//                        )
+//                        Spacer(modifier = Modifier.width(4.dp))
+//                        Text(
+//                            text = newsItem.commentCount,
+//                            color = Color.Gray,
+//                            fontSize = 12.sp
+//                        )
                     }
 
                     Text(
-                        text = newsItem.source,
+                        text = newsItem.publishedAt,
                         color = Color.Gray,
                         fontSize = 12.sp
                     )
@@ -253,103 +262,48 @@ fun NewsCard(newsItem: NewsItem) {
     }
 }
 
-fun getNewsItems(): List<NewsItem> {
-    return listOf(
-        NewsItem(
-            id = 1,
-            imageRes = 0,
-            category = "공연",
-            title = "BTS 제 앨범 발매 예정",
-            viewCount = "1.2천",
-            commentCount = "2천",
-            source = "스포츠조선"
-        ),
-        NewsItem(
-            id = 2,
-            imageRes = 0,
-            category = "공연",
-            title = "BLACKPINK 월드투어 4차 공연",
-            viewCount = "982",
-            commentCount = "1.5천",
-            source = "텐아시아"
-        ),
-        NewsItem(
-            id = 3,
-            imageRes = 0,
-            category = "공연",
-            title = "SEVENTEEN 4월 컴백 1위",
-            viewCount = "856",
-            commentCount = "1.2천",
-            source = "스타뉴스"
-        ),
-        NewsItem(
-            id = 4,
-            imageRes = 0,
-            category = "기사",
-            title = "NewJeans 글로벌 인기 글로벌 증명",
-            viewCount = "745",
-            commentCount = "980",
-            source = "마이데일리"
-        ),
-        NewsItem(
-            id = 5,
-            imageRes = 0,
-            category = "공연",
-            title = "IVE 단독 콘서트부터 1천석 돌파",
-            viewCount = "1.1천",
-            commentCount = "1.8천",
-            source = "OSEN"
-        ),
-        NewsItem(
-            id = 6,
-            imageRes = 0,
-            category = "공연",
-            title = "Stray Kids 데뷔 후의 첫번째 매진",
-            viewCount = "923",
-            commentCount = "1.1천",
-            source = "스포츠동아"
-        ),
-        NewsItem(
-            id = 7,
-            imageRes = 0,
-            category = "영상",
-            title = "aespa 새 앨범 타이틀 곡 공개",
-            viewCount = "1.3천",
-            commentCount = "2.2천",
-            source = "엑스포츠뉴스"
-        ),
-        NewsItem(
-            id = 8,
-            imageRes = 0,
-            category = "공연",
-            title = "TWICE 밤을 통 생생한 열정",
-            viewCount = "1.5천",
-            commentCount = "2.5천",
-            source = "헤럴드팝"
-        ),
-        NewsItem(
-            id = 9,
-            imageRes = 0,
-            category = "기사",
-            title = "TXT 일본도 치고 전진",
-            viewCount = "687",
-            commentCount = "890",
-            source = "스타뉴스"
-        ),
-        NewsItem(
-            id = 10,
-            imageRes = 0,
-            category = "공연",
-            title = "LE SSERAFIM 새 앨범 대박 행진 시작",
-            viewCount = "1.4천",
-            commentCount = "2.1천",
-            source = "텐아시아"
+@Composable
+fun NewsRadioButtonItem(
+    text: String,           // 보여줄 텍스트
+    isSelected: Boolean,    // 선택 여부
+    onClick: () -> Unit     // 클릭 시 실행할 동작
+) {
+
+    Box(
+        modifier = Modifier
+            .background(
+                brush = if (isSelected) {
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFF9333EA), // 왼쪽 시작 색상
+                            Color(0xFFDB2777)  // 오른쪽 끝 색상
+                        )
+                    )
+                } else {
+                    SolidColor(colorResource(id = R.color.color_2))
+                },
+                shape = RoundedCornerShape(100.dp)
+            )
+            .clickable { onClick() }
+    ) {
+        Text(
+            color = if (isSelected) Color.White else Color.Black,
+            text = text,
+            modifier = Modifier
+                .padding(
+                    top = 4.dp,
+                    bottom = 4.dp,
+                    start = 12.dp,
+                    end = 12.dp
+                ),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium
         )
-    )
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    NewsScreen({},{})
+    NewsScreen()
 }

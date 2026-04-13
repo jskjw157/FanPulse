@@ -1,6 +1,8 @@
 package com.aos.fanpulse.navigation
 
+import android.net.http.SslCertificate.saveState
 import androidx.annotation.DrawableRes
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import com.aos.fanpulse.R
 
@@ -12,11 +14,12 @@ sealed class MainTabScreen(
 ) : Screen(route) {
     object Home : MainTabScreen("home", "Home", R.drawable.icon_home)
     object Community : MainTabScreen("community", "Community", R.drawable.icon_community)
+    object Live : MainTabScreen("live", "Live", R.drawable.icon_live)
     object Voting : MainTabScreen("voting", "Voting", R.drawable.icon_voting)
     object My : MainTabScreen("my", "My", R.drawable.icon_my)
 
     companion object {
-        val tabItems get() = listOf(Home, Community, Voting, My)
+        val tabItems get() = listOf(Home, Community, Live, Voting, My)
     }
 }
 
@@ -27,14 +30,14 @@ sealed class SubScreen(route: String) : Screen(route) {
     object Settings : SubScreen("settings")
     object Error : SubScreen("error")
     object Search : SubScreen("search")
+    object Voting : SubScreen("voting")
+    object Tickets : SubScreen("tickets")
+    object News : SubScreen("news")
     object NewsDetail : SubScreen("news_detail/{newsId}"){
         fun createRoute(newsId: String): String {
             return "artist_detail/$newsId"
         }
     }
-    object Voting : SubScreen("voting")
-    object Tickets : SubScreen("tickets")
-    object News : SubScreen("news")
     object Membership : SubScreen("membership")
     object TicketsDetail : SubScreen("tickets_detail")
     object Support : SubScreen("support")
@@ -51,11 +54,30 @@ sealed class SubScreen(route: String) : Screen(route) {
             return "artist_detail/$artistId"
         }
     }
+    object LiveDetail : SubScreen("live/{liveId}"){
+        fun createRoute(liveId: String): String {
+            return "live/$liveId"
+        }
+    }
 }
 class NavigationActions(private val navController: NavHostController){
     fun navigateHome() {
         navController.navigate(MainTabScreen.Home.route) {
             popUpTo(SubScreen.Login.route) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+    fun navigateLive() {
+        navController.navigate(MainTabScreen.Live.route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+    fun navigateLiveDetail(liveId: String) {
+        navController.navigate(SubScreen.LiveDetail.createRoute(liveId)) {
             launchSingleTop = true
         }
     }
@@ -83,12 +105,6 @@ class NavigationActions(private val navController: NavHostController){
 
     fun navigateSearch(){
         navController.navigate(SubScreen.Search.route){
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateNewsDetail() {
-        navController.navigate(SubScreen.NewsDetail.route) {
             launchSingleTop = true
         }
     }
@@ -163,6 +179,11 @@ class NavigationActions(private val navController: NavHostController){
         }
     }
 
+    fun navigateNewsDetail(newsId: String) {
+        navController.navigate(SubScreen.NewsDetail.createRoute(newsId)) {
+            launchSingleTop = true
+        }
+    }
 
     fun navigateAds() {
         navController.navigate(SubScreen.Ads.route) {

@@ -18,11 +18,9 @@ class ArtistViewModel @Inject constructor(
     private val searchArtistsUseCase: SearchArtistsUseCase,
 ): ContainerHost<ArtistContract.ArtistState, ArtistContract.SideEffect>, ViewModel() {
     override val container: Container<ArtistContract.ArtistState, ArtistContract.SideEffect> =
-        container(initialState = ArtistContract.ArtistState(emptyList()))
-
-    init {
-        getArtists()
-    }
+        container(initialState = ArtistContract.ArtistState(emptyList())){
+            getArtists()
+        }
 
     fun goArtistDetailScreen(artistId: String) = intent {
         postSideEffect(ArtistContract.SideEffect.NavigateArtistDetail(artistId))
