@@ -14,8 +14,8 @@ https://api.fanpulse.app
 
 ### 1.2 인증
 - 인증이 필요한 API는 `🔒` 표시
-- Header: `Authorization: Bearer <access_token>`
-- 토큰 만료 시 401 응답 → 클라이언트에서 재로그인 유도
+- httpOnly 쿠키 기반 세션 인증 (Authorization 헤더 불필요)
+- 쿠키 만료 시 401 응답 → 클라이언트에서 재로그인 유도
 
 ### 1.3 공통 Response 형식
 
@@ -27,14 +27,16 @@ https://api.fanpulse.app
 }
 ```
 
-**에러 응답**
+**에러 응답 (RFC 7807 Problem Detail)**
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "사용자에게 표시할 메시지"
-  }
+  "type": "https://api.fanpulse.com/errors/invalid-request",
+  "title": "Invalid Request",
+  "status": 400,
+  "detail": "상세 에러 메시지",
+  "instance": "/api/v1/...",
+  "timestamp": "2026-04-13T00:00:00Z",
+  "errorCode": "INVALID_REQUEST"
 }
 ```
 
@@ -91,95 +93,7 @@ Cursor 기반 페이지네이션 사용 (무한 스크롤 대응)
 
 ## 2. Identity Context (인증/사용자)
 
-### 2.1 POST `/api/v1/auth/signup` - 회원가입
-
-이메일/비밀번호로 회원가입
-
-**Request Body**
-```json
-{
-  "email": "user@example.com",
-  "password": "Password123!",
-  "passwordConfirm": "Password123!"
-}
-```
-
-| 필드 | 타입 | 필수 | 유효성 검사 |
-|------|------|------|-------------|
-| email | string | Y | 이메일 형식, 최대 100자 |
-| password | string | Y | 최소 8자, 영문+숫자+특수문자 |
-| passwordConfirm | string | Y | password와 일치 |
-
-**Response 201**
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "email": "user@example.com",
-      "createdAt": "2025-01-15T09:00:00Z"
-    }
-  }
-}
-```
-
-**에러 케이스**
-| 상황 | HTTP | 코드 |
-|------|------|------|
-| 이메일 형식 오류 | 400 | `VALIDATION_ERROR` |
-| 비밀번호 불일치 | 400 | `VALIDATION_ERROR` |
-| 이미 가입된 이메일 | 409 | `AUTH_EMAIL_EXISTS` |
-
----
-
-### 2.2 POST `/api/v1/auth/login` - 로그인
-
-이메일/비밀번호로 로그인
-
-**Request Body**
-```json
-{
-  "email": "user@example.com",
-  "password": "Password123!"
-}
-```
-
-| 필드 | 타입 | 필수 |
-|------|------|------|
-| email | string | Y |
-| password | string | Y |
-
-**Response 200**
-```json
-{
-  "success": true,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-    "expiresIn": 3600,
-    "user": {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "email": "user@example.com"
-    }
-  }
-}
-```
-
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| accessToken | string | JWT 액세스 토큰 |
-| expiresIn | number | 토큰 만료 시간 (초) |
-| user | object | 사용자 기본 정보 |
-
-**에러 케이스**
-| 상황 | HTTP | 코드 |
-|------|------|------|
-| 이메일/비밀번호 불일치 | 401 | `AUTH_INVALID_CREDENTIALS` |
-| 존재하지 않는 계정 | 401 | `AUTH_INVALID_CREDENTIALS` |
-
----
-
-### 2.3 POST `/api/v1/auth/google` - Google 로그인
+### 2.1 POST `/api/v1/auth/google` - Google 로그인
 
 Google ID Token으로 로그인/회원가입
 
@@ -221,7 +135,7 @@ Google ID Token으로 로그인/회원가입
 
 ---
 
-### 2.4 POST `/api/v1/auth/logout` 🔒 - 로그아웃
+### 2.2 POST `/api/v1/auth/logout` 🔒 - 로그아웃
 
 현재 세션 로그아웃 (서버에서 토큰 무효화)
 
@@ -242,7 +156,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 2.5 GET `/api/v1/me` 🔒 - 내 정보 조회
+### 2.3 GET `/api/v1/me` 🔒 - 내 정보 조회
 
 현재 로그인한 사용자 정보 조회
 
@@ -403,18 +317,21 @@ GET /api/v1/news?limit=20&cursor=xxx
 {
   "success": true,
   "data": {
-    "items": [
+    "content": [
       {
         "id": "550e8400-e29b-41d4-a716-446655440002",
+        "artistId": "550e8400-e29b-41d4-a716-446655440099",
         "title": "아티스트, 새 앨범 발매 예정",
-        "summary": "오는 2월 새 앨범 발매를 앞두고...",
-        "thumbnailUrl": "https://cdn.fanpulse.app/news/xxx.jpg",
-        "source": "팬펄스 뉴스",
+        "thumbnailUrl": null,
+        "sourceName": "팬펄스 뉴스",
+        "category": "RELEASE",
         "publishedAt": "2025-01-14T10:30:00Z"
       }
     ],
-    "nextCursor": "eyJpZCI6MTAwfQ",
-    "hasMore": true
+    "totalElements": 50,
+    "totalPages": 3,
+    "number": 0,
+    "size": 20
   }
 }
 ```
@@ -422,11 +339,14 @@ GET /api/v1/news?limit=20&cursor=xxx
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | id | string (UUID) | 뉴스 ID |
+| artistId | string (UUID) | 아티스트 ID |
 | title | string | 뉴스 제목 |
-| summary | string | 요약 (최대 100자, MVP는 `crawled_news.content` 기반) |
 | thumbnailUrl | string? | 썸네일 이미지 URL |
-| source | string | 출처 |
+| sourceName | string | 출처명 |
+| category | string | 카테고리 (`GENERAL` / `RELEASE` / `TOUR` 등) |
 | publishedAt | string (ISO8601) | 게시일 |
+
+> **참고**: 뉴스 목록은 Spring Data Page 형식 (`content` 배열 + 페이지 메타데이터)을 사용합니다.
 
 ---
 
@@ -440,11 +360,14 @@ GET /api/v1/news?limit=20&cursor=xxx
   "success": true,
   "data": {
     "id": "550e8400-e29b-41d4-a716-446655440002",
+    "artistId": "550e8400-e29b-41d4-a716-446655440099",
     "title": "아티스트, 새 앨범 발매 예정",
     "content": "오는 2월 새 앨범 발매를 앞두고 있는 아티스트가...(전체 본문)",
-    "thumbnailUrl": "https://cdn.fanpulse.app/news/xxx.jpg",
-    "source": "팬펄스 뉴스",
     "sourceUrl": "https://original-source.com/article/123",
+    "sourceName": "팬펄스 뉴스",
+    "thumbnailUrl": null,
+    "category": "RELEASE",
+    "viewCount": 1234,
     "publishedAt": "2025-01-14T10:30:00Z",
     "createdAt": "2025-01-14T11:00:00Z"
   }
@@ -455,6 +378,9 @@ GET /api/v1/news?limit=20&cursor=xxx
 |------|------|------|
 | content | string | 뉴스 본문 또는 요약 (MVP는 요약 텍스트) |
 | sourceUrl | string | 원문 링크 |
+| sourceName | string | 출처명 |
+| category | string | 카테고리 |
+| viewCount | number | 조회수 |
 
 **에러 케이스**
 | 상황 | HTTP | 코드 |
@@ -480,36 +406,36 @@ GET /api/v1/search?q=아티스트&limit=10
 | limit | number | N | 카테고리별 조회 개수 (기본 10) |
 
 **Response 200**
+
+> **주의**: 검색 API는 `success/data` 래퍼 없이 직접 응답합니다.
+
 ```json
 {
-  "success": true,
-  "data": {
-    "live": {
-      "items": [
-        {
-          "id": "...",
-          "title": "아티스트 팬미팅 라이브",
-          "artistId": "...",
-          "artistName": "아티스트",
-          "thumbnailUrl": "...",
-          "status": "SCHEDULED",
-          "scheduledAt": "2025-01-20T14:00:00Z"
-        }
-      ],
-      "totalCount": 5
-    },
-    "news": {
-      "items": [
-        {
-          "id": "...",
-          "title": "아티스트 새 앨범 소식",
-          "summary": "...",
-          "source": "팬펄스 뉴스",
-          "publishedAt": "2025-01-14T10:30:00Z"
-        }
-      ],
-      "totalCount": 23
-    }
+  "live": {
+    "items": [
+      {
+        "id": "...",
+        "title": "아티스트 팬미팅 라이브",
+        "artistId": "...",
+        "artistName": "아티스트",
+        "thumbnailUrl": "...",
+        "status": "SCHEDULED",
+        "scheduledAt": "2025-01-20T14:00:00Z"
+      }
+    ],
+    "totalCount": 5
+  },
+  "news": {
+    "items": [
+      {
+        "id": "...",
+        "title": "아티스트 새 앨범 소식",
+        "summary": "...",
+        "sourceName": "팬펄스 뉴스",
+        "publishedAt": "2025-01-14T10:30:00Z"
+      }
+    ],
+    "totalCount": 23
   }
 }
 ```
@@ -531,6 +457,8 @@ GET /api/v1/search?q=아티스트&limit=10
 
 다음 API는 MVP 이후 구현 예정:
 
+- `POST /api/v1/auth/signup` - 이메일 회원가입
+- `POST /api/v1/auth/login` - 이메일 로그인
 - `POST /api/v1/auth/apple` - Apple 로그인
 - `POST /api/v1/auth/kakao` - Kakao 로그인
 - `POST /api/v1/auth/refresh` - 토큰 갱신
@@ -548,15 +476,10 @@ GET /api/v1/search?q=아티스트&limit=10
 - 타임존: **UTC** (클라이언트에서 로컬 변환)
 - 예: `2025-01-15T14:00:00Z`
 
-### 7.2 JWT 토큰 구조 (참고)
-```json
-{
-  "sub": "user-uuid",
-  "email": "user@example.com",
-  "iat": 1705312800,
-  "exp": 1705316400
-}
-```
+### 7.2 인증 방식 (참고)
+- httpOnly 쿠키 기반 세션 인증
+- `withCredentials: true`로 쿠키 자동 전송
+- 401 응답 시 클라이언트에서 `/login`으로 리다이렉트
 
 ### 7.3 API 버전 관리
 - URL Path 방식: `/api/v1/...`
@@ -570,3 +493,4 @@ GET /api/v1/search?q=아티스트&limit=10
 | 버전  | 날짜       | 변경 내용                     |
 | ----- | ---------- | ----------------------------- |
 | 1.0.0 | 2026-01-03 | 최초 작성 (작성자: 정지원) |
+| 1.1.0 | 2026-04-13 | 이메일 회원가입/로그인 API MVP 제외, 인증을 쿠키 기반으로 변경, 에러 응답 RFC 7807 형식 반영, 검색 API 응답 래퍼 제거, 뉴스 목록 Spring Data Page 형식 반영 |
