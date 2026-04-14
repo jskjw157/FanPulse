@@ -4,7 +4,7 @@ import com.aos.fanpulse.data.remote.apiservice.NewsDetail
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventItem
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventSimpleItem
 
-class HomeContract {
+object HomeContract {
     data class HomeState(
         val isLoading: Boolean = false,
         val errorMessage: String? = null,

@@ -1,6 +1,7 @@
 package com.aos.fanpulse.presentation.news
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,13 +30,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.aos.fanpulse.R
+import com.aos.fanpulse.data.remote.apiservice.NewsItem
 import com.aos.fanpulse.presentation.common.CommonTopAppBar
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
@@ -44,7 +48,8 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 fun NewsDetailScreen(
     viewModel: NewsDetailViewModel = hiltViewModel(),
     newsId: String? = null,
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    //  공유 기능
 ) {
 
     val state by viewModel.collectAsState()
@@ -61,88 +66,11 @@ fun NewsDetailScreen(
         }
     }
 
-    NewsDetailContent(
-        state = state,
-        viewModel,
-        onBackClick = onBackClick
-    )
-}
-
-//@Composable
-//fun RelatedNewsItem(news: RelatedNews) {
-//    Surface(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(horizontal = 16.dp)
-//            .clickable { /* 뉴스 클릭 */ },
-//        shape = RoundedCornerShape(12.dp),
-//        color = Color(0xFFF8F8F8)
-//    ) {
-//        Row(
-//            modifier = Modifier.padding(12.dp),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//
-//            Box(
-//                modifier = Modifier
-//                    .size(80.dp)
-//                    .clip(RoundedCornerShape(8.dp))
-//                    .background(Color(0xFF3A3A5A))
-//            ) {
-//                // AsyncImage 사용
-//            }
-//
-//            Spacer(modifier = Modifier.width(12.dp))
-//
-//            Column(
-//                modifier = Modifier.weight(1f)
-//            ) {
-//                Text(
-//                    text = news.category,
-//                    fontSize = 12.sp,
-//                    color = Color(0xFFB794F6),
-//                    fontWeight = FontWeight.Medium
-//                )
-//                Spacer(modifier = Modifier.height(4.dp))
-//                Text(
-//                    text = news.title,
-//                    fontSize = 15.sp,
-//                    fontWeight = FontWeight.Medium,
-//                    color = Color(0xFF1A1A1A),
-//                    maxLines = 2
-//                )
-//            }
-//        }
-//    }
-//}
-
-@Composable
-fun NewsDetailContent(
-    state: NewsDetailContract.NewsDetailState,
-    viewModel: NewsDetailViewModel,
-    onBackClick: () -> Unit
-){
-
     var isLiked by remember { mutableStateOf(false) }
     var isBookmarked by remember { mutableStateOf(false) }
     var likeCount by remember { mutableStateOf(1200) }
 
-//    val relatedNewsList = remember {
-//        listOf(
-//            RelatedNews(
-//                category = "차트",
-//                title = "SEVENTEEN 새 앨범 차트 1위",
-//                imageUrl = ""
-//            ),
-//            RelatedNews(
-//                category = "뉴스",
-//                title = "NewJeans 글로벌 인기 급상승",
-//                imageUrl = ""
-//            )
-//        )
-//    }
-
-    if (state.newsDetail == null){
+    if (state.isLoading){
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -172,13 +100,16 @@ fun NewsDetailContent(
                             .height(280.dp)
                             .background(Color(0xFF1A1A2E))
                     ) {
-                        // 이미지 placeholder - 실제로는 AsyncImage 사용
-                        // AsyncImage(
-                        //     model = "your_image_url",
-                        //     contentDescription = null,
-                        //     modifier = Modifier.fillMaxSize(),
-                        //     contentScale = ContentScale.Crop
-                        // )
+//                         이미지 placeholder - 실제로는 AsyncImage 사용
+                         AsyncImage(
+                             model = state.newsDetail!!.thumbnailUrl,
+                             contentDescription = null,
+                             modifier = Modifier.fillMaxSize(),
+                             contentScale = ContentScale.Crop,
+                             // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
+                             placeholder = painterResource(id = R.drawable.home_ex1),
+                             error = painterResource(id = R.drawable.home_ex1)
+                         )
                     }
                 }
 
@@ -197,7 +128,7 @@ fun NewsDetailContent(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "2024.12.10",
+                            text = state.newsDetail!!.publishedAt,
                             fontSize = 13.sp,
                             color = Color(0xFF999999)
                         )
@@ -206,7 +137,7 @@ fun NewsDetailContent(
 
                 item {
                     Text(
-                        text = state.newsDetail.title,
+                        text = state.newsDetail!!.title,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1A1A1A),
@@ -264,7 +195,7 @@ fun NewsDetailContent(
                             .padding(horizontal = 16.dp)
                     ) {
                         Text(
-                            text = state.newsDetail.content,
+                            text = state.newsDetail!!.content,
                             fontSize = 15.sp,
                             lineHeight = 24.sp,
                             color = Color(0xFF333333)
@@ -353,16 +284,72 @@ fun NewsDetailContent(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-//                items(relatedNewsList.size) { index ->
-//                    RelatedNewsItem(news = relatedNewsList[index])
-//                    if (index < relatedNewsList.size - 1) {
-//                        Spacer(modifier = Modifier.height(12.dp))
-//                    }
-//                }
+                items(state.relatedNewsItem.size) { index ->
+                    RelatedNewsItem(newsItem = state.relatedNewsItem[index])
+                    if (index < state.relatedNewsItem.size - 1) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
 
                 item {
                     Spacer(modifier = Modifier.height(32.dp))
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun RelatedNewsItem(newsItem: NewsItem) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clickable { /* 뉴스 클릭 */ },
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFF8F8F8)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF3A3A5A))
+            ) {
+                AsyncImage(
+                    model = newsItem.thumbnailUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
+                    placeholder = painterResource(id = R.drawable.home_ex1),
+                    error = painterResource(id = R.drawable.home_ex1)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = newsItem.category,
+                    fontSize = 12.sp,
+                    color = Color(0xFFB794F6),
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = newsItem.title,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF1A1A1A),
+                    maxLines = 2
+                )
             }
         }
     }

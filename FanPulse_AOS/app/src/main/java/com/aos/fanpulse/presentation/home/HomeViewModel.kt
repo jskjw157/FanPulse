@@ -1,10 +1,14 @@
 package com.aos.fanpulse.presentation.home
 
 import android.util.Log
+import androidx.annotation.DrawableRes
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.R
 import com.aos.fanpulse.domain.repository.NewsRepository
 import com.aos.fanpulse.domain.repository.StreamingEventsRepository
+import com.aos.fanpulse.presentation.common.DummyData.newsDetailDummyList
+import com.aos.fanpulse.presentation.common.DummyData.streamingEventDummyList
+import com.aos.fanpulse.presentation.common.DummyData.streamingEventSimpleDummyList
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
@@ -16,6 +20,12 @@ class HomeViewModel@Inject constructor(
     private val streamingEventsRepository: StreamingEventsRepository,
     private val newsRepository: NewsRepository,
 ): ContainerHost<HomeContract.HomeState, HomeContract.SideEffect>, ViewModel() {
+
+    data class MenuItem(
+        val id: String,
+        val text: String,
+        @DrawableRes val iconRes: Int
+    )
 
     fun setDrawerMenuItems() = listOf(
         MenuItem("artist", "아티스트", R.drawable.icon_menu_item_artist),
@@ -57,16 +67,22 @@ class HomeViewModel@Inject constructor(
             reduce {
                 state.copy(
                     isLoading = false,
-                    streamingEventItem = getStreamEvents.body()?.data?.items ?: emptyList(),
-                    scheduledItem = getScheduledEvents.body()?.content ?: emptyList(),
-                    newsItem = getLatestNews.body()?.data ?: emptyList(),
+                    streamingEventItem = (getStreamEvents.body()?.data?.items ?: emptyList())
+                        .ifEmpty { streamingEventDummyList },
+                    scheduledItem = (getScheduledEvents.body()?.content ?: emptyList())
+                        .ifEmpty { streamingEventSimpleDummyList },
+                    newsItem = (getLatestNews.body()?.data ?: emptyList())
+                        .ifEmpty { newsDetailDummyList },
                 )
             }
         } else {
             reduce {
                 state.copy(
                     isLoading = false,
-                    errorMessage = "데이터를 불러오는데 실패했습니다."
+                    errorMessage = "데이터를 불러오는데 실패했습니다.",
+                    streamingEventItem = streamingEventDummyList,
+                    scheduledItem = streamingEventSimpleDummyList,
+                    newsItem = newsDetailDummyList
                 )
             }
         }

@@ -64,13 +64,13 @@ import com.aos.fanpulse.presentation.common.CommonTopAppBar
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArtistScreen(
     viewModel: ArtistViewModel = hiltViewModel(),
     goSearchScreen: () -> Unit = {},
     goNotificationScreen: () -> Unit = {},
-    goArtistDetail: (String) -> Unit = {}
+    goArtistDetail: (String) -> Unit = {},
+    onBackClick: () -> Unit = {},
 ) {
     val filterRadioButton = viewModel.setFilterRadioButtonItems()
     var selectedFilterRadioButton by remember { mutableStateOf(filterRadioButton[0]) }
@@ -98,6 +98,8 @@ fun ArtistScreen(
             .background(colorResource(id = R.color.color_12))
     ) {
         CommonTopAppBar(
+            isActiveLeftBack = true,
+            onLeftBack = { onBackClick() },
             isActiveLeftImage = true,
             isActiveRightSearch = true,
             onRightSearch = { goSearchScreen() },
@@ -162,7 +164,7 @@ fun ArtistScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(//getArtistList()
+                items(
                     state.artists
                 ) { artist ->
                     ArtistItem(artist = artist){
@@ -250,6 +252,7 @@ fun ArtistItem(
                     ),
                 contentAlignment = Alignment.Center
             ) {
+                //  이상함
                 Text(
                     text = "#${artist.name//ranking
                     }",
@@ -274,7 +277,7 @@ fun ArtistItem(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Artist Description
+        // Artist Description   이상함
         Text(
             text = artist.name//description
             ,
@@ -286,7 +289,7 @@ fun ArtistItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Followers and Like
+        // Followers and Like    이상함
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -324,24 +327,6 @@ fun ArtistItem(
         }
     }
 }
-
-// Sample Data
-//fun getArtistList(): List<Artist> {
-//    return listOf(
-//        Artist("", "BTS", "글로벌 K-POP 아이콘", 2500000, R.drawable.person_ex1, 1),
-//        Artist("", "BLACKPINK", "세계를 사로잡은 걸그룹", 2300000, R.drawable.person_ex1, 2),
-//        Artist("", "NewJeans", "신선한 매력의 신인 그룹", 1800000, R.drawable.person_ex1, 3),
-//        Artist("", "IU", "국민 여동생", 1600000, R.drawable.person_ex1, 4),
-//        Artist("", "SEVENTEEN", "자체 제작 아이돌", 1500000, R.drawable.person_ex1, 5),
-//        Artist("", "aespa", "미래형 걸그룹", 1400000, R.drawable.person_ex1, 6),
-//        Artist("", "Stray Kids", "자작곡 강자", 1300000, R.drawable.person_ex1, 7),
-//        Artist("", "IVE", "자신감 넘치는 신예", 1200000, R.drawable.person_ex1, 8),
-//        Artist("", "Jungkook", "BTS 황금막내", 1100000, R.drawable.person_ex1, 9),
-//        Artist("", "LE SSERAFIM", "두려움 없는 걸그룹", 1000000, R.drawable.person_ex1, 10),
-//        Artist("", "TWICE", "사랑스러운 매력", 950000, R.drawable.person_ex1, 11),
-//        Artist("", "TXT", "젊은이의 이야기", 900000, R.drawable.person_ex1, 12)
-//    )
-//}
 
 fun formatFollowers(followers: Int): String {
     return when {

@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.R
 import com.aos.fanpulse.domain.repository.ArtistsRepository
 import com.aos.fanpulse.domain.usecase.SearchArtistsUseCase
+import com.aos.fanpulse.presentation.common.DummyData.artistDummyList
+import com.aos.fanpulse.presentation.common.DummyData.streamingEventDummyList
 import com.aos.fanpulse.presentation.common.FilterRadioButtonItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.Container
@@ -18,7 +20,7 @@ class ArtistViewModel @Inject constructor(
     private val searchArtistsUseCase: SearchArtistsUseCase,
 ): ContainerHost<ArtistContract.ArtistState, ArtistContract.SideEffect>, ViewModel() {
     override val container: Container<ArtistContract.ArtistState, ArtistContract.SideEffect> =
-        container(initialState = ArtistContract.ArtistState(emptyList())){
+        container(initialState = ArtistContract.ArtistState(artistDummyList)){
             getArtists()
         }
 
@@ -50,7 +52,7 @@ class ArtistViewModel @Inject constructor(
                 sortDir = "asc"
             )
             if (response.isSuccessful) {
-                val artists = response.body()?.content ?: emptyList()
+                val artists = (response.body()?.content ?: emptyList()).ifEmpty { artistDummyList }
                 Log.d("ArtistsViewModel", "API 호출 성공: 아티스트 ${artists}명 로드 완료")
                 reduce {
                     state.copy(
@@ -64,7 +66,8 @@ class ArtistViewModel @Inject constructor(
                 reduce {
                     state.copy(
                         isLoading = false,
-                        errorMessage = "데이터를 불러오는데 실패했습니다."
+                        errorMessage = "데이터를 불러오는데 실패했습니다.",
+                        artists = artistDummyList
                     )
                 }
             }
@@ -74,7 +77,8 @@ class ArtistViewModel @Inject constructor(
             reduce {
                 state.copy(
                     isLoading = false,
-                    errorMessage = "네트워크 연결에 문제가 발생했습니다."
+                    errorMessage = "네트워크 연결에 문제가 발생했습니다.",
+                    artists = artistDummyList
                 )
             }
         }

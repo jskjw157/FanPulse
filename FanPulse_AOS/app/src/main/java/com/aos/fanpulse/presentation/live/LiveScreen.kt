@@ -2,6 +2,7 @@ package com.aos.fanpulse.presentation.live
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,15 +45,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil.compose.AsyncImage
+import com.aos.fanpulse.R
+import com.aos.fanpulse.data.remote.apiservice.StreamingEventItem
+import com.aos.fanpulse.data.remote.apiservice.StreamingEventSimpleItem
 import com.aos.fanpulse.presentation.common.CommonTopAppBar
 import com.aos.fanpulse.presentation.tickets.InfoRow
 import org.orbitmvi.orbit.compose.collectAsState
-
-private val LightGrayBackground = Color(0xFFF7F8FA)
-private val PrimaryPurple = Color(0xFF8B5CF6)
-private val LiveRed = Color(0xFFEC4899)
-private val OnSaleGreen = Color(0xFF22C55E)
-private val SoldOutGray = Color(0xFF6B7280)
+import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
 fun LiveScreen(
@@ -62,6 +63,16 @@ fun LiveScreen(
 ) {
 
     val state by viewModel.collectAsState()
+
+    viewModel.collectSideEffect { sideEffect ->
+        when (sideEffect) {
+            LiveContract.SideEffect.NavigateHome -> {}
+            is LiveContract.SideEffect.NavigateLiveDetail -> {
+                goLiveDetailScreen(sideEffect.liveId)
+            }
+            is LiveContract.SideEffect.ShowToast -> {}
+        }
+    }
 
     Column {
         CommonTopAppBar(
@@ -79,31 +90,71 @@ fun LiveScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
 
-            // 1. 메인 라이브 배너
-            MainLiveBanner()
+            //  이상함 //  메인 라이브 배너
+            MainLiveBanner(streamingEventSimpleItem = state.liveItem[0]){
+                viewModel.goLiveDetailScreen(it)
+            }
 
-            // 2. More Live Streams 섹션
-            LiveStreamsSection()
+            //  More Live Streams
+            Column {
+                Text(
+                    text = "More Live Streams",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. Upcoming Concerts 섹션
-            UpcomingConcertsSection()
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    state.streamingEventItem.drop(1).forEach { item ->
+                        LiveStreamListItem(streamingEventItem = item){
+                            viewModel.goLiveDetailScreen(it)
+                        }
+                    }
+                }
+            }
+
+            //  이상함 //  Upcoming Concerts
+            Column {
+                Text(
+                    text = "Upcoming Concerts",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(end = 16.dp)
+                ) {
+                    items(state.scheduledItem) { item ->
+                        UpcomingConcertItem(streamingEventSimpleItem = item){
+                            viewModel.goLiveDetailScreen(it)
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
-// 1. 메인 라이브 배너
 @Composable
-fun MainLiveBanner() {
+fun MainLiveBanner(
+    streamingEventSimpleItem: StreamingEventSimpleItem,
+    goLiveDetail: (String) -> Unit,
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp),
+            .height(220.dp)
+            .clickable{
+                goLiveDetail(streamingEventSimpleItem.id)
+            },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Box {
-            // 배경 이미지 (실제 앱에서는 Coil 같은 라이브러리 사용)
-            // 여기서는 플레이스홀더 색상으로 대체
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -114,14 +165,14 @@ fun MainLiveBanner() {
                     )
             )
 
-            // 이미지 소스 매핑 (실제 이미지가 있다면 painterResource 사용)
-            Image(
-                painter = painterResource(id = android.R.drawable.ic_menu_gallery), // 플레이스홀더
-                contentDescription = "NewJeans Live",
+            AsyncImage(
+                model = streamingEventSimpleItem.thumbnailUrl,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(0.3f) // 그라데이션 위에 겹침
+                // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
+                placeholder = painterResource(id = R.drawable.home_ex1),
+                error = painterResource(id = R.drawable.home_ex1)
             )
 
             // 상단 뱃지들 (Live, View Count)
@@ -133,7 +184,7 @@ fun MainLiveBanner() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Live Badge
-                Badge(backgroundColor = LiveRed, text = "LIVE", showDot = true)
+                Badge(backgroundColor = colorResource(R.color.color_6), text = "LIVE", showDot = true)
                 // View Count
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -149,7 +200,7 @@ fun MainLiveBanner() {
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("24.5K", color = Color.White, fontSize = 12.sp)
+                    Text(streamingEventSimpleItem.viewerCount.toString(), color = Color.White, fontSize = 12.sp)
                 }
             }
 
@@ -160,14 +211,15 @@ fun MainLiveBanner() {
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "NewJeans 컴백 쇼케이스",
+                    text = streamingEventSimpleItem.title,
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
+                //  이상함 내용이 들어있어야함
                 Text(
-                    text = "NewJeans Official",
+                    text = streamingEventSimpleItem.platform,
                     color = Color.White.copy(alpha = 0.8f),
                     fontSize = 14.sp
                 )
@@ -176,54 +228,20 @@ fun MainLiveBanner() {
     }
 }
 
-// 2. More Live Streams 섹션
 @Composable
-fun LiveStreamsSection() {
-    Column {
-        SectionTitle("More Live Streams")
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 더미 데이터
-        val liveItems = listOf(
-            LiveStreamItemData(
-                title = "BTS Fan Meeting Special",
-                artist = "BTS",
-                views = "89.2K",
-                duration = "1:45:20",
-                bgColor = Color(0xFFE0BBE4) // 보라색 톤
-            ),
-            LiveStreamItemData(
-                title = "BLACKPINK Behind The...",
-                artist = "BLACKPINK",
-                views = "67.8K",
-                duration = "0:58:12",
-                bgColor = Color(0xFFFFC0CB) // 분홍색 톤
-            )
-        )
-
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            liveItems.forEach { item ->
-                LiveStreamListItem(data = item)
-            }
-        }
-    }
-}
-
-data class LiveStreamItemData(
-    val title: String,
-    val artist: String,
-    val views: String,
-    val duration: String,
-    val bgColor: Color
-)
-
-@Composable
-fun LiveStreamListItem(data: LiveStreamItemData) {
+fun LiveStreamListItem(
+    streamingEventItem: StreamingEventItem,
+    goLiveDetail: (String) -> Unit,
+    )
+{
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier.fillMaxWidth()
+            .clickable{
+                goLiveDetail(streamingEventItem.id)
+            }
     ) {
         Row(
             modifier = Modifier
@@ -236,7 +254,6 @@ fun LiveStreamListItem(data: LiveStreamItemData) {
                 modifier = Modifier
                     .size(width = 110.dp, height = 70.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(data.bgColor)
             ) {
                 Image(
                     painter = painterResource(id = android.R.drawable.ic_menu_gallery),
@@ -248,7 +265,7 @@ fun LiveStreamListItem(data: LiveStreamItemData) {
                 )
                 // LIVE 뱃지
                 Box(modifier = Modifier.padding(6.dp)) {
-                    Badge(backgroundColor = LiveRed, text = "LIVE", showDot = true, scale = 0.7f)
+                    Badge(backgroundColor = colorResource(R.color.color_6), text = "LIVE", showDot = true, scale = 0.7f)
                 }
             }
 
@@ -257,7 +274,7 @@ fun LiveStreamListItem(data: LiveStreamItemData) {
             // 텍스트 정보 영역
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = data.title,
+                    text = streamingEventItem.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     maxLines = 1,
@@ -265,7 +282,7 @@ fun LiveStreamListItem(data: LiveStreamItemData) {
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = data.artist,
+                    text = streamingEventItem.artistName,
                     color = Color.Gray,
                     fontSize = 13.sp
                 )
@@ -279,16 +296,16 @@ fun LiveStreamListItem(data: LiveStreamItemData) {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = data.views,
+                        text = streamingEventItem.viewerCount.toString(),
                         color = Color.Gray,
                         fontSize = 12.sp
                     )
                 }
             }
 
-            // 재생 시간
+            // 이상함  //   재생 시간
             Text(
-                text = data.duration,
+                text = streamingEventItem.scheduledAt,
                 color = Color.Gray,
                 fontSize = 12.sp,
                 modifier = Modifier.align(Alignment.Bottom)
@@ -297,59 +314,19 @@ fun LiveStreamListItem(data: LiveStreamItemData) {
     }
 }
 
-// 3. Upcoming Concerts 섹션
 @Composable
-fun UpcomingConcertsSection() {
-    Column {
-        SectionTitle("Upcoming Concerts")
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 더미 데이터
-        val concertItems = listOf(
-            ConcertItemData(
-                title = "NewJeans 1st World Tour",
-                date = "Jan 10, 2025",
-                location = "Gocheok Sky Dome",
-                status = ConcertStatus.ON_SALE,
-                bgColor = Color(0xFFC084FC) // 연보라 그라데이션 느낌
-            ),
-            ConcertItemData(
-                title = "TWICE Encore Concert",
-                date = "Jan 18, 2025",
-                location = "KSPO Dome",
-                status = ConcertStatus.SOLD_OUT,
-                bgColor = Color(0xFF60A5FA) // 파란색 그라데이션 느낌
-            )
-        )
-
-        // 가로 스크롤 (LazyRow)
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(end = 16.dp) // 마지막 아이템 여백
-        ) {
-            items(concertItems) { item ->
-                ConcertCard(data = item)
-            }
-        }
-    }
-}
-
-enum class ConcertStatus { ON_SALE, SOLD_OUT }
-data class ConcertItemData(
-    val title: String,
-    val date: String,
-    val location: String,
-    val status: ConcertStatus,
-    val bgColor: Color
-)
-
-@Composable
-fun ConcertCard(data: ConcertItemData) {
+fun UpcomingConcertItem(
+    streamingEventSimpleItem: StreamingEventSimpleItem,
+    goLiveDetail: (String) -> Unit,
+    ) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier.width(200.dp)
+            .clickable{
+                goLiveDetail(streamingEventSimpleItem.id)
+            }
     ) {
         Column {
             // 포스터 이미지 영역 (그라데이션 플레이스홀더)
@@ -357,11 +334,6 @@ fun ConcertCard(data: ConcertItemData) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(130.dp)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(data.bgColor, data.bgColor.copy(alpha = 0.6f))
-                        )
-                    )
             ) {
                 Image(
                     painter = painterResource(id = android.R.drawable.ic_menu_gallery),
@@ -377,9 +349,10 @@ fun ConcertCard(data: ConcertItemData) {
                         .align(Alignment.TopEnd)
                         .padding(10.dp)
                 ) {
-                    when (data.status) {
-                        ConcertStatus.ON_SALE -> Badge(backgroundColor = OnSaleGreen, text = "On Sale")
-                        ConcertStatus.SOLD_OUT -> Badge(backgroundColor = SoldOutGray, text = "Sold Out")
+                    //  이상함
+                    when (streamingEventSimpleItem.status) {
+                        "" -> Badge(backgroundColor = colorResource(R.color.color_13), text = "On Sale")
+                        "" -> Badge(backgroundColor = colorResource(R.color.color_text_3), text = "Sold Out")
                     }
                 }
             }
@@ -387,7 +360,7 @@ fun ConcertCard(data: ConcertItemData) {
             // 공연 정보 영역
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = data.title,
+                    text = streamingEventSimpleItem.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     maxLines = 2,
@@ -397,23 +370,13 @@ fun ConcertCard(data: ConcertItemData) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // 날짜
-                InfoRow(icon = Icons.Default.DateRange, text = data.date)
+                InfoRow(icon = Icons.Default.DateRange, text = streamingEventSimpleItem.scheduledAt)
                 Spacer(modifier = Modifier.height(4.dp))
-                // 장소
-                InfoRow(icon = Icons.Default.LocationOn, text = data.location)
+                // 이상함 // 장소
+                InfoRow(icon = Icons.Default.LocationOn, text = streamingEventSimpleItem.platform)
             }
         }
     }
-}
-
-@Composable
-fun SectionTitle(title: String) {
-    Text(
-        text = title,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Bold,
-        color = Color.Black
-    )
 }
 
 // 작은 뱃지 (Live, On Sale 등)

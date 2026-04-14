@@ -144,7 +144,7 @@ fun NewsCard(
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFFFFFFF)
+            containerColor = Color(0xFFFFFFFF),
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -166,7 +166,7 @@ fun NewsCard(
                 ){
                     AsyncImage(
                         model = newsItem.thumbnailUrl,
-                        contentDescription = "뉴스 썸네일",
+                        contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop, // 영역에 꽉 차게 잘라서 보여줌 (중요)
                         // placeholder = painterResource(R.drawable.img_placeholder), // 로딩 중에 보여줄 이미지 (선택)
@@ -177,7 +177,7 @@ fun NewsCard(
                     modifier = Modifier
                         .padding(8.dp)
                         .align(Alignment.TopStart),
-//                    color = newsItem.categoryColor,
+                    color = colorResource(R.color.color_1),
                     shape = RoundedCornerShape(100.dp)
                 ) {
                     Text(
@@ -197,6 +197,7 @@ fun NewsCard(
                 Text(
                     text = newsItem.title,
                     color = Color.Black,
+                    maxLines = 1,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     lineHeight = 20.sp
@@ -223,7 +224,7 @@ fun NewsCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.icon_myscreen_ex1),
+                            painter = painterResource(R.drawable.icon_viewer),
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
                             tint = Color.Gray
@@ -237,18 +238,18 @@ fun NewsCard(
 
                         Spacer(modifier = Modifier.width(12.dp))
 
-//                        Icon(
-//                            painter = painterResource(R.drawable.icon_chat),
-//                            contentDescription = null,
-//                            modifier = Modifier.size(14.dp),
-//                            tint = Color.Gray
-//                        )
-//                        Spacer(modifier = Modifier.width(4.dp))
-//                        Text(
-//                            text = newsItem.commentCount,
-//                            color = Color.Gray,
-//                            fontSize = 12.sp
-//                        )
+                        Icon(
+                            painter = painterResource(R.drawable.icon_like),
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = newsItem.viewCount.toString(),
+                            color = Color.Gray,
+                            fontSize = 12.sp
+                        )
                     }
 
                     Text(

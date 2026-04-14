@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.data.repository.NewsRepositoryImpl
 import com.aos.fanpulse.domain.repository.NewsRepository
+import com.aos.fanpulse.presentation.common.DummyData.newsDetailDummyList
 import com.aos.fanpulse.presentation.common.FilterRadioButtonItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.Container
@@ -48,14 +49,16 @@ class NewsViewModel@Inject constructor(
             reduce {
                 state.copy(
                     isLoading = false,
-                    newsItem = getLatestNews.body()?.data ?: emptyList(),
+                    newsItem = (getLatestNews.body()?.data ?: emptyList())
+                        .ifEmpty { newsDetailDummyList },
                 )
             }
         } else {
             reduce {
                 state.copy(
                     isLoading = false,
-                    errorMessage = "데이터를 불러오는데 실패했습니다."
+                    errorMessage = "데이터를 불러오는데 실패했습니다.",
+                    newsItem = newsDetailDummyList
                 )
             }
         }

@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +39,7 @@ import com.aos.fanpulse.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommonTopAppBar(
+    setTransparentBackground: Boolean = false,
     isActiveLeftTextTitle: Boolean = false,     //  왼쪽 제목
     leftTextTitle: String? = null,
     onLeftTextTile:() -> Unit = {},
@@ -70,21 +72,18 @@ fun CommonTopAppBar(
     Box(
         modifier = Modifier.fillMaxWidth()
             .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFF9333EA), // 왼쪽 시작 색상
-                        Color(0xFFDB2777)  // 오른쪽 끝 색상
+                brush = if (setTransparentBackground) {
+                    SolidColor(Color.Transparent)
+                } else {
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFF9333EA), // 왼쪽 시작 색상
+                            Color(0xFFDB2777)  // 오른쪽 끝 색상
+                        )
                     )
-                )
+                }
             )
-//            .height(60.dp)
     ) {
-//        Image(
-//            painter = painterResource(id = R.drawable.loginscreen_bg),
-//            contentDescription = null,
-//            modifier = Modifier.matchParentSize(),
-//            contentScale = ContentScale.Crop
-//        )
 
         TopAppBar(
             modifier = Modifier.fillMaxWidth(),

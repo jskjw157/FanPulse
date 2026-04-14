@@ -15,12 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.aos.fanpulse.R
 import com.aos.fanpulse.data.remote.apiservice.NewsItem
 import com.aos.fanpulse.presentation.common.CommonTopAppBar
 import org.orbitmvi.orbit.compose.collectAsState
@@ -92,14 +94,22 @@ fun ArtistDetailContent(
                     .fillMaxSize()
                     .background(Color.White)
             ) {
-                // Artist Header Image
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(280.dp)
                     ) {
-                        // Artist silhouette would go here
+                        AsyncImage(
+                            model = state.artistDetail.profileImageUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
+                            placeholder = painterResource(id = R.drawable.home_ex1),
+                            error = painterResource(id = R.drawable.home_ex1)
+                        )
+
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -113,6 +123,8 @@ fun ArtistDetailContent(
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(8.dp))
+                            //  이상함
+                            //  팔로우랑 랭킹 필요
                         }
                     }
                 }
@@ -187,16 +199,15 @@ fun ArtistDetailContent(
                             Spacer(modifier = Modifier.height(80.dp))
                         }
 
-                        //  성과 관련해서 설정이 필요
+                        //  이상함 성과 관련해서 설정이 필요
                     }
                     ArtistTab.NEWS -> {
                         item {
                             Spacer(modifier = Modifier.height(16.dp))
                         }
 
-
                         items(
-                            items = state.newsItems.content,
+                            items = state.newsItems,
                             key = { it.id } // UUID 사용
                         ) { newsItem ->
                             NewsItemCard(newsItem = newsItem, onNewsClick = {

@@ -3,6 +3,9 @@ package com.aos.fanpulse.presentation.live
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.repository.StreamingEventsRepository
+import com.aos.fanpulse.presentation.common.DummyData.streamingEventDummyList
+import com.aos.fanpulse.presentation.common.DummyData.streamingEventSimpleDummyList
+import com.aos.fanpulse.presentation.home.HomeContract
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
@@ -14,7 +17,7 @@ class LiveViewModel@Inject constructor(
     private val streamingEventsRepository: StreamingEventsRepository
 ): ContainerHost<LiveContract.LiveState, LiveContract.SideEffect>, ViewModel() {
     override val container: Container<LiveContract.LiveState, LiveContract.SideEffect> =
-        container(initialState = LiveContract.LiveState()){
+        container(initialState = LiveContract.LiveState( streamingEventItem = streamingEventDummyList, scheduledItem = streamingEventSimpleDummyList, liveItem = streamingEventSimpleDummyList)) {
             getEvents()
         }
 
@@ -37,18 +40,28 @@ class LiveViewModel@Inject constructor(
             reduce {
                 state.copy(
                     isLoading = false,
-                    streamingEventItem = getStreamEvents.body()?.data?.items ?: emptyList(),
-                    scheduledItem = getScheduledEvents.body()?.content ?: emptyList(),
-                    liveItem = getLiveEvents.body()?.content ?: emptyList(),
+                    streamingEventItem = (getStreamEvents.body()?.data?.items ?: emptyList())
+                        .ifEmpty { streamingEventDummyList },
+                    scheduledItem = (getScheduledEvents.body()?.content ?: emptyList())
+                        .ifEmpty { streamingEventSimpleDummyList },
+                    liveItem = (getLiveEvents.body()?.content ?: emptyList())
+                        .ifEmpty { streamingEventSimpleDummyList },
                 )
             }
         } else {
             reduce {
                 state.copy(
                     isLoading = false,
-                    errorMessage = "데이터를 불러오는데 실패했습니다."
+                    errorMessage = "데이터를 불러오는데 실패했습니다.",
+                    streamingEventItem = streamingEventDummyList,
+                    scheduledItem = streamingEventSimpleDummyList,
+                    liveItem = streamingEventSimpleDummyList
                 )
             }
         }
+    }
+
+    fun goLiveDetailScreen(liveId: String) = intent {
+        postSideEffect(LiveContract.SideEffect.NavigateLiveDetail(liveId))
     }
 }

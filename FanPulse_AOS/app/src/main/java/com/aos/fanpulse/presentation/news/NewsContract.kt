@@ -2,7 +2,7 @@ package com.aos.fanpulse.presentation.news
 
 import com.aos.fanpulse.data.remote.apiservice.NewsDetail
 
-class NewsContract {
+object NewsContract {
     data class NewsState(
         val isLoading: Boolean = false,
         val errorMessage: String? = null,

@@ -23,6 +23,7 @@ import com.aos.fanpulse.presentation.concert.ConcertScreen
 import com.aos.fanpulse.presentation.error.ErrorScreen
 import com.aos.fanpulse.presentation.favorites.FavoritesScreen
 import com.aos.fanpulse.presentation.home.HomeScreen
+import com.aos.fanpulse.presentation.live.LiveDetailScreen
 import com.aos.fanpulse.presentation.live.LiveScreen
 import com.aos.fanpulse.presentation.login.LoginScreen
 import com.aos.fanpulse.presentation.membership.MembershipScreen
@@ -88,7 +89,18 @@ fun NavGraph(
             composable(MainTabScreen.Live.route) { LiveScreen(
                 goSearchScreen = { NavigationActions(navController).navigateSearch() },
                 goNotificationScreen = { NavigationActions(navController).navigateNotifications() },
+                goLiveDetailScreen = { NavigationActions(navController).navigateLiveDetail(it)}
             ) }
+        }
+        composable(
+            route = SubScreen.LiveDetail.route,
+            arguments = listOf(navArgument("liveId") { type = NavType.StringType })
+        ){ backStackEntry ->
+            val liveId = backStackEntry.arguments?.getString("liveId") ?: ""
+            LiveDetailScreen(
+                liveId = liveId,
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         composable(SubScreen.CommunityPost.route) {
@@ -138,7 +150,10 @@ fun NavGraph(
             arguments = listOf(navArgument("newsId") { type = NavType.StringType })
         ){ backStackEntry ->
             val newsId = backStackEntry.arguments?.getString("newsId") ?: ""
-            NewsDetailScreen(newsId = newsId)
+            NewsDetailScreen(
+                newsId = newsId,
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         composable(SubScreen.Voting.route) {
@@ -202,7 +217,8 @@ fun NavGraph(
             ArtistScreen(
                 goSearchScreen = { NavigationActions(navController).navigateSearch() },
                 goNotificationScreen = { NavigationActions(navController).navigateNotifications() },
-                goArtistDetail = { NavigationActions(navController).navigateArtistDetail(it) }
+                goArtistDetail = { NavigationActions(navController).navigateArtistDetail(it) },
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -213,7 +229,10 @@ fun NavGraph(
             // 전달받은 id 꺼내기
             val artistId = backStackEntry.arguments?.getString("artistId") ?: ""
 
-            ArtistDetailScreen(artistId = artistId)
+            ArtistDetailScreen(
+                artistId = artistId,
+                onBackClick = { navController.popBackStack() }
+            )
         }
     }
 }

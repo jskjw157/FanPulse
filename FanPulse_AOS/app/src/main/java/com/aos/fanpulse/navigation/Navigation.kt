@@ -35,7 +35,7 @@ sealed class SubScreen(route: String) : Screen(route) {
     object News : SubScreen("news")
     object NewsDetail : SubScreen("news_detail/{newsId}"){
         fun createRoute(newsId: String): String {
-            return "artist_detail/$newsId"
+            return "news_detail/$newsId"
         }
     }
     object Membership : SubScreen("membership")

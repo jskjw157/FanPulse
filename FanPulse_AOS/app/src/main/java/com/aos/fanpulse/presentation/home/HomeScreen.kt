@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.home
 
-import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -27,21 +26,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,7 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -64,8 +57,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.aos.fanpulse.R
-import com.aos.fanpulse.presentation.artist.ArtistContract
+import com.aos.fanpulse.data.remote.apiservice.NewsDetail
+import com.aos.fanpulse.data.remote.apiservice.StreamingEventItem
+import com.aos.fanpulse.data.remote.apiservice.StreamingEventSimpleItem
 import com.aos.fanpulse.presentation.common.CommonTopAppBar
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
@@ -145,7 +141,7 @@ fun HomeScreen(
                     .fillMaxSize()
                     .background(colorResource(id = R.color.color_12))
             ) {
-                // 1. 메인 썸네일
+                //  메인 썸네일  state.newsItem[0]
                 item {
                     Box(
                         modifier = Modifier
@@ -154,42 +150,49 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp)),
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.home_ex1),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(20.dp)
-                        ) {
-                            Text(
-                                modifier = Modifier,
-                                text = "Welcome to FanPulse",
-                                textAlign = TextAlign.Center,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.SansSerif,
-                                color = Color.White,
+                        if (state.newsItem.isNotEmpty()) {
+                            AsyncImage(
+                                model = state.newsItem[0].thumbnailUrl,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                                // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
+                                placeholder = painterResource(id = R.drawable.home_ex1),
+                                error = painterResource(id = R.drawable.home_ex1)
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                modifier = Modifier,
-                                text = "글로벌 K-POP 팬들의 인터랙티브 플랫폼",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = Color.White,
-                            )
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(20.dp)
+                            ) {
+                                Text(
+                                    modifier = Modifier,
+                                    text = state.newsItem[0].title,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = Color.White,
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    modifier = Modifier,
+                                    text = state.newsItem[0].content,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = Color.White,
+                                )
+                            }
                         }
                     }
                 }
 
+                //  최신 뉴스
                 item {
-                    //                //  최신 뉴스
                     Column(
                         modifier = Modifier
                             .padding(
@@ -206,13 +209,13 @@ fun HomeScreen(
                         Row(
                             modifier = Modifier
                                 .padding(16.dp)
-                                .clickable{
+                                .clickable {
                                     viewModel.goNewsScreen()
                                 }
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.icon_news),
-                                contentDescription = "검색",
+                                contentDescription = "",
                                 tint = Color.Unspecified
                             )
                             Spacer(Modifier.width(8.dp))
@@ -226,78 +229,16 @@ fun HomeScreen(
                                 color = Color.Black,
                             )
                         }
-                        Row(
-                            modifier = Modifier
-                                .padding(16.dp)
-                        ) {
-                            Text(
-                                modifier = Modifier,
-                                text = "뉴스",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = colorResource(id = R.color.color_1),
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                modifier = Modifier,
-                                text = "BTS 새 앨범 발매 예정",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = Color.Black,
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(
-                                modifier = Modifier,
-                                text = "1 시간 전",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = colorResource(id = R.color.color_text_4),
-                            )
-                        }
-                        Row(
-                            modifier = Modifier
-                                .padding(16.dp)
-                        ) {
-                            Text(
-                                modifier = Modifier,
-                                text = "공연",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = colorResource(id = R.color.color_1),
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                modifier = Modifier,
-                                text = "BLACKPINK 월드투어 추가 공연",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = Color.Black,
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(
-                                modifier = Modifier,
-                                text = "1 시간 전",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = colorResource(id = R.color.color_text_4),
-                            )
+                        state.newsItem.drop(1).forEach { item ->
+                            LatestNewsItem(item){
+                                viewModel.goNewsDetailScreen(it)
+                            }
                         }
                     }
                 }
+
+                //  라이브 스크린
                 item {
-//                //  Live Now
                     Column(
                         modifier = Modifier.padding(
                             start = 16.dp,
@@ -334,14 +275,17 @@ fun HomeScreen(
                         }
                         Spacer(Modifier.height(12.dp))
                         LazyRow {
-                            items(10) { index ->
-                                SetLiveNowItem()
+                            items(state.streamingEventItem) { item ->
+                                LiveNowItem(item){
+                                    viewModel.goLiveDetailScreen(it)
+                                }
                             }
                         }
                     }
                 }
+
+                //  인기 게시글
                 item {
-                    //  인기 게시글
                     Column(
                         modifier = Modifier
                             .padding(
@@ -377,15 +321,11 @@ fun HomeScreen(
                             )
                         }
                         SetPopularPostItem()
-//                    LazyColumn {
-//                        items(3) { index ->
-//                            SetPopularPostItem()
-//                        }
-//                    }
                     }
                 }
+
+                //  실시간 차트
                 item {
-                    //  실시간 차트
                     Column(
                         modifier = Modifier
                             .padding(
@@ -434,19 +374,13 @@ fun HomeScreen(
                                 modifier = Modifier.padding(16.dp)
                             ) {
                                 SetRealTimeChartItem(1)
-//                            LazyColumn(
-//                                verticalArrangement = Arrangement.spacedBy(12.dp)
-//                            ) {
-//                                items(5) { index ->
-//                                    SetRealTimeChartItem(index)
-//                                }
-//                            }
                             }
                         }
                     }
                 }
+
+                //  Best Male Group
                 item {
-                    //  Best Male Group
                     Column(
                         modifier = Modifier
                             .padding(
@@ -483,20 +417,11 @@ fun HomeScreen(
                         }
                         Spacer((Modifier.height(12.dp)))
                         SetBestGroupItem()
-//                    LazyVerticalGrid(
-//                        columns = GridCells.Fixed(2), // 2열
-//                        modifier = Modifier.fillMaxSize(),
-//                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-//                        verticalArrangement = Arrangement.spacedBy(12.dp)
-//                    ) {
-//                        items(4) { index ->
-//                            SetBestGroupItem()
-//                        }
-//                    }
                     }
                 }
+
+                //  Upcoming Events
                 item {
-                    //  Upcoming Events
                     Column(
                         modifier = Modifier
                             .padding(
@@ -522,7 +447,9 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.weight(1f))
                             Text(
-                                modifier = Modifier,
+                                modifier = Modifier.clickable{
+                                    viewModel.goLiveScreen()
+                                },
                                 text = "See All",
                                 textAlign = TextAlign.Center,
                                 fontSize = 14.sp,
@@ -533,20 +460,14 @@ fun HomeScreen(
                         }
                         Spacer((Modifier.height(12.dp)))
 
-                        Column {
-                            SetUpcomingEventsItem()
-//                        LazyColumn(
-//                            verticalArrangement = Arrangement.spacedBy(12.dp)
-//                        ) {
-//                            items(2) { index ->
-//                                SetUpcomingEventsItem()
-//                            }
-//                        }
+                        state.scheduledItem.forEach { item ->
+                            UpcomingEventsItem(item)
                         }
                     }
                 }
+
+                //  기타 항목
                 item {
-                    //
                     Row(
                         modifier = Modifier
                             .padding(
@@ -602,6 +523,8 @@ fun HomeScreen(
                 }
             }
         }
+
+        //  메뉴
         RightDrawer(
             isOpen = isDrawerOpen,
             onDismiss = { isDrawerOpen = false },
@@ -646,12 +569,6 @@ fun HomeScreen(
         )
     }
 }
-
-data class MenuItem(
-    val id: String,
-    val text: String,
-    @DrawableRes val iconRes: Int
-)
 
 @Composable
 fun RightDrawer(
@@ -772,9 +689,67 @@ fun DrawerMenuItem(
         }
     }
 }
+
 @Composable
-fun SetLiveNowItem(){
-    Column {
+fun LatestNewsItem(
+    newsDetail :NewsDetail,
+    goNewsDetail : (String) -> Unit
+){
+    Row(
+        modifier = Modifier
+            .padding(16.dp)
+            .clickable{
+                goNewsDetail(newsDetail.id)
+            }
+    ) {
+        Text(
+            modifier = Modifier,
+            text = newsDetail.category,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Normal,
+            fontFamily = FontFamily.SansSerif,
+            color = colorResource(id = R.color.color_1),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            modifier = Modifier,
+            text = newsDetail.title,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Normal,
+            fontFamily = FontFamily.SansSerif,
+            color = Color.Black,
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            modifier = Modifier,
+            text = newsDetail.publishedAt,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Normal,
+            fontFamily = FontFamily.SansSerif,
+            color = colorResource(id = R.color.color_text_4),
+        )
+    }
+}
+
+@Composable
+fun LiveNowItem(
+    streamingEventItem: StreamingEventItem,
+    goLiveDetail: (String) -> Unit
+){
+    Column (
+        // 팁: Column 자체에도 Box와 동일한 수준의 너비 제한을 걸어두면,
+        // 텍스트가 엄청 길어져도 이미지 너비를 뚫고 나가지 않습니다.
+        modifier = Modifier.width(268.dp) // Box 너비(256) + 양옆 패딩(6+6)
+            .clickable{
+                goLiveDetail(streamingEventItem.id)
+            }
+    ){
         Box(
             modifier = Modifier
                 .padding(6.dp)
@@ -782,11 +757,14 @@ fun SetLiveNowItem(){
                 .width(256.dp)
                 .clip(RoundedCornerShape(12.dp)),
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.home_ex1),
+            AsyncImage(
+                model = streamingEventItem.thumbnailUrl,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
+                placeholder = painterResource(id = R.drawable.home_ex1),
+                error = painterResource(id = R.drawable.home_ex1)
             )
             Column (
                 modifier = Modifier
@@ -838,7 +816,7 @@ fun SetLiveNowItem(){
                     Spacer(Modifier.width(4.dp))
                     Text(
                         modifier = Modifier,
-                        text ="125K",
+                        text = streamingEventItem.viewerCount.toString(),
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Normal,
@@ -851,8 +829,9 @@ fun SetLiveNowItem(){
         }
         Text(
             modifier = Modifier,
-            text ="Music Bank Live",
+            text = streamingEventItem.title,
             textAlign = TextAlign.Center,
+            maxLines = 1,
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
             fontFamily = FontFamily.SansSerif,
@@ -862,29 +841,33 @@ fun SetLiveNowItem(){
 }
 
 @Composable
-fun SetUpcomingEventsItem(){
+fun UpcomingEventsItem(
+    streamingEventSimpleItem : StreamingEventSimpleItem
+){
     Column (
         modifier = Modifier.background(
             color = colorResource(R.color.white),
             shape = RoundedCornerShape(12.dp)
         )
     ){
-        Image(
-            painter = painterResource(id = R.drawable.home_group_ex2),
+        AsyncImage(
+            model = streamingEventSimpleItem.thumbnailUrl,
             contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
                 .height(176.dp)
-                .clip(
-                    RoundedCornerShape(
+                .clip(RoundedCornerShape(
                         topStart = 12.dp,
                         topEnd = 12.dp,
                         bottomStart = 0.dp,
                         bottomEnd = 0.dp
                     )
                 ),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
+            placeholder = painterResource(id = R.drawable.home_ex1),
+            error = painterResource(id = R.drawable.home_ex1)
         )
+
         Column(
             modifier = Modifier
                 .padding(16.dp)
@@ -894,13 +877,13 @@ fun SetUpcomingEventsItem(){
             ){
                 Column (
                     modifier = Modifier.background(
-                            color = colorResource(id = R.color.color_7),
-                    shape = RoundedCornerShape(100.dp)
-                )
+                        color = colorResource(id = R.color.color_7),
+                        shape = RoundedCornerShape(100.dp)
+                    )
                 ) {
                     Text(
                         color = colorResource(id = R.color.color_8),
-                        text = "Award Show",
+                        text = streamingEventSimpleItem.platform,
                         modifier = Modifier
                             .padding(
                                 top = 4.dp,
@@ -913,7 +896,7 @@ fun SetUpcomingEventsItem(){
                 Spacer(Modifier.width(8.dp))
                 Text(
                     color = colorResource(id = R.color.color_text_3),
-                    text = "2024.12.15"
+                    text = streamingEventSimpleItem.scheduledAt
                 )
             }
 
@@ -922,7 +905,7 @@ fun SetUpcomingEventsItem(){
             Text(
                 modifier = Modifier
                     .fillMaxWidth(),
-                text = "MAMA Awards 2024"
+                text = streamingEventSimpleItem.title
             )
 
             Spacer(Modifier.height(12.dp))
