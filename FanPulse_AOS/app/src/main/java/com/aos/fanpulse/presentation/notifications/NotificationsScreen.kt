@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aos.fanpulse.presentation.common.CommonTopAppBar
 
 // Data Classes
 data class Notification(
@@ -37,8 +38,6 @@ sealed class NotificationIcon {
 enum class NotificationTab {
     ALL, UNREAD
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
     onBackClick: () -> Unit
@@ -109,74 +108,49 @@ fun NotificationsScreen(
         NotificationTab.UNREAD -> notifications.filter { !it.isRead }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "알림",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFFAFAFA))
+    ) {
+
+        CommonTopAppBar(
+            isActiveLeftBack = true,
+            onLeftBack = { onBackClick() },
+            isActiveLeftTextTitle = true,
+            leftTextTitle = "알림",
+//            isActiveRightSetting = true,
+//            onRightSetting = { goSettingScreen() }
+        )
+
+        // Tab Row
+        NotificationTabRow(
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it }
+        )
+
+        // Section Header
+        if (filteredNotifications.isNotEmpty()) {
+            Text(
+                text = "모두 읽을 처리",
+                fontSize = 13.sp,
+                color = Color(0xFF9C27B0),
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color(0xFFFAFAFA))
-        ) {
-            // Tab Row
-            NotificationTabRow(
-                selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it }
-            )
 
-            // Section Header
-            if (filteredNotifications.isNotEmpty()) {
-                Text(
-                    text = "모두 읽을 처리",
-                    fontSize = 13.sp,
-                    color = Color(0xFF9C27B0),
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                )
+        // Notifications List
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(filteredNotifications) { notification ->
+                NotificationItem(notification)
             }
 
-            // Notifications List
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(filteredNotifications) { notification ->
-                    NotificationItem(notification)
-                }
-
-                // Bottom spacing
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
-                }
+            // Bottom spacing
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }

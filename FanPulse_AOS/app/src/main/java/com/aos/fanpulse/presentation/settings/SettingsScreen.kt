@@ -3,6 +3,7 @@ package com.aos.fanpulse.presentation.settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,11 +52,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aos.fanpulse.R
+import com.aos.fanpulse.presentation.common.CommonTopAppBar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen (
-    onBackClick: () -> Unit,
+    onBackClick: () -> Unit = {},
+    goSupportScreen: () -> Unit = {},
 ){
 
     var pushNotificationsEnabled by remember { mutableStateOf(true) }
@@ -79,24 +81,12 @@ fun SettingsScreen (
         .background(color = colorResource(R.color.white))
         .verticalScroll(rememberScrollState())
     ){
-        TopAppBar(
-            navigationIcon = {
-                IconButton(onClick = {
-                    onBackClick()
-                }) {
-                    Icon(painter = painterResource(id = R.drawable.icon_left_arrow), contentDescription = null, tint = Color.Black)
-                }
-            },
-            title = {
-                Text(
-                    "설정",
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    style = robotoBold16,
-                    color = Color.Black
-                )
-            },
-            actions = {}
+        CommonTopAppBar(
+            isActiveLeftBack = true,
+            onLeftBack = { onBackClick() },
+            isActiveCenterTextTitle = true,
+            centerTextTitle = "설정"
+
         )
         Column (
             modifier = Modifier
@@ -139,28 +129,28 @@ fun SettingsScreen (
                         contentDescription = null,
                         contentScale = ContentScale.Crop)
                 }
-                Row (
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ){
-                    Image(modifier = Modifier
-                        .width(36.dp)
-                        .height(36.dp)
-                        .clip(RoundedCornerShape(100.dp)),
-                        painter = painterResource(id = R.drawable.icon_setting_2),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop)
-                    Spacer(Modifier.width(12.dp))
-                    Text("비밀번호 변경")
-                    Spacer(Modifier.weight(1f))
-                    Image(modifier = Modifier
-                        .width(14.dp)
-                        .height(14.dp),
-                        painter = painterResource(id = R.drawable.icon_right_arrow),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop)
-                }
+//                Row (
+//                    modifier = Modifier.padding(16.dp),
+//                    verticalAlignment = Alignment.CenterVertically,
+//                    horizontalArrangement = Arrangement.Center
+//                ){
+//                    Image(modifier = Modifier
+//                        .width(36.dp)
+//                        .height(36.dp)
+//                        .clip(RoundedCornerShape(100.dp)),
+//                        painter = painterResource(id = R.drawable.icon_setting_2),
+//                        contentDescription = null,
+//                        contentScale = ContentScale.Crop)
+//                    Spacer(Modifier.width(12.dp))
+//                    Text("비밀번호 변경")
+//                    Spacer(Modifier.weight(1f))
+//                    Image(modifier = Modifier
+//                        .width(14.dp)
+//                        .height(14.dp),
+//                        painter = painterResource(id = R.drawable.icon_right_arrow),
+//                        contentDescription = null,
+//                        contentScale = ContentScale.Crop)
+//                }
                 Row (
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -206,6 +196,12 @@ fun SettingsScreen (
                         shape = RoundedCornerShape(12.dp)
                     )
             ){
+                SettingsItemWithSwitch(
+                    image = R.drawable.icon_setting_4,
+                    title = "푸시 알림",
+                    checked = pushNotificationsEnabled,
+                    onCheckedChange = { pushNotificationsEnabled = it }
+                )
                 Row (
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -228,14 +224,6 @@ fun SettingsScreen (
                         contentDescription = null,
                         contentScale = ContentScale.Crop)
                 }
-                SettingsItemWithSwitch(
-                    icon = painterResource(id = R.drawable.icon_setting_6),
-                    iconBackgroundColor = Color(0xFFF5D5E8),
-                    iconTint = Color(0xFFE91E63),
-                    title = "푸시 알림",
-                    checked = pushNotificationsEnabled,
-                    onCheckedChange = { pushNotificationsEnabled = it }
-                )
             }
         }
         Column (
@@ -257,6 +245,12 @@ fun SettingsScreen (
                         shape = RoundedCornerShape(12.dp)
                     )
             ){
+                SettingsItemWithSwitch(
+                    image = R.drawable.icon_setting_6,
+                    title = "다크 모드",
+                    checked = darkModeEnabled,
+                    onCheckedChange = { darkModeEnabled = it }
+                )
                 Row (
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -279,14 +273,6 @@ fun SettingsScreen (
                         contentDescription = null,
                         contentScale = ContentScale.Crop)
                 }
-                SettingsItemWithSwitch(
-                    icon = painterResource(id = R.drawable.icon_setting_6),
-                    iconBackgroundColor = Color(0xFFD5D5F5),
-                    iconTint = Color(0xFF5C6BC0),
-                    title = "다크 모드",
-                    checked = darkModeEnabled,
-                    onCheckedChange = { darkModeEnabled = it }
-                )
             }
         }
         Column (
@@ -308,30 +294,31 @@ fun SettingsScreen (
                         shape = RoundedCornerShape(12.dp)
                     )
             ){
+//                Row (
+//                    modifier = Modifier.padding(16.dp),
+//                    verticalAlignment = Alignment.CenterVertically,
+//                    horizontalArrangement = Arrangement.Center
+//                ){
+//                    Image(modifier = Modifier
+//                        .width(36.dp)
+//                        .height(36.dp)
+//                        .clip(RoundedCornerShape(100.dp)),
+//                        painter = painterResource(id = R.drawable.icon_setting_8),
+//                        contentDescription = null,
+//                        contentScale = ContentScale.Crop)
+//                    Spacer(Modifier.width(12.dp))
+//                    Text("도움말")
+//                    Spacer(Modifier.weight(1f))
+//                    Image(modifier = Modifier
+//                        .width(14.dp)
+//                        .height(14.dp),
+//                        painter = painterResource(id = R.drawable.icon_right_arrow),
+//                        contentDescription = null,
+//                        contentScale = ContentScale.Crop)
+//                }
                 Row (
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ){
-                    Image(modifier = Modifier
-                        .width(36.dp)
-                        .height(36.dp)
-                        .clip(RoundedCornerShape(100.dp)),
-                        painter = painterResource(id = R.drawable.icon_setting_8),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop)
-                    Spacer(Modifier.width(12.dp))
-                    Text("도움말")
-                    Spacer(Modifier.weight(1f))
-                    Image(modifier = Modifier
-                        .width(14.dp)
-                        .height(14.dp),
-                        painter = painterResource(id = R.drawable.icon_right_arrow),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop)
-                }
-                Row (
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(16.dp)
+                        .clickable{ goSupportScreen() },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ){
@@ -404,9 +391,7 @@ fun SettingsScreen (
 
 @Composable
 fun SettingsItemWithSwitch(
-    icon: Painter,
-    iconBackgroundColor: Color,
-    iconTint: Color,
+    image: Int,
     title: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
@@ -417,20 +402,11 @@ fun SettingsItemWithSwitch(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(iconBackgroundColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = icon,
-                contentDescription = title,
-                tint = iconTint,
-                modifier = Modifier.size(24.dp)
-            )
-        }
+        Image(
+            painter = painterResource(id = image),
+            contentDescription = null,
+            modifier = Modifier.size(40.dp), // 배경보다 작게 설정해서 여백 확보
+        )
 
         Text(
             text = title,

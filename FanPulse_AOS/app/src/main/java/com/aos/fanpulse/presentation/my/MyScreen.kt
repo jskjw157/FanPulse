@@ -17,24 +17,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.paint
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
@@ -47,13 +41,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aos.fanpulse.R
-import com.aos.fanpulse.presentation.membership.RecentActivityItem
+import com.aos.fanpulse.presentation.common.CommonTopAppBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyScreen (
-    goSettingScreen: () -> Unit
+    viewModel: MyViewModel = hiltViewModel(),
+    goSettingScreen: () -> Unit = {},
+    goSupportScreen: () -> Unit = {},
 ){
     Column(
         modifier = Modifier
@@ -63,18 +60,11 @@ fun MyScreen (
                 contentScale = ContentScale.Crop
             )
     ) {
-        TopAppBar(
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent
-            ),
-            title = {
-                Text(text = "My Profile")
-            },
-            actions = {
-                IconButton(onClick = { goSettingScreen }) {
-                    Icon(painter = painterResource(id = R.drawable.icon_settings), contentDescription = null, tint = Color.Black)
-                }
-            }
+        CommonTopAppBar(
+            isActiveLeftTextTitle = true,
+            leftTextTitle = "My Profile",
+            isActiveRightSetting = true,
+            onRightSetting = { goSettingScreen() }
         )
         Row(
             modifier = Modifier
@@ -148,45 +138,45 @@ fun MyScreen (
                 end = 16.dp
             )
         ) {
+//            Column(
+//                modifier = Modifier
+//                    .weight(1f)
+//                    .height(130.dp)
+//                    .background(
+//                        color = colorResource(R.color.white).copy(alpha = 0.1f),
+//                        shape = RoundedCornerShape(12.dp)
+//                    ),
+//                verticalArrangement = Arrangement.Center,
+//                horizontalAlignment = Alignment.CenterHorizontally
+//
+//            ) {
+//                Column(
+//                    verticalArrangement = Arrangement.Center,
+//                    horizontalAlignment = Alignment.CenterHorizontally,
+//                ) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.icon_vote),
+//                        contentDescription = null,
+//                        tint = Color.Unspecified
+//                    )
+//                    Text(
+//                        text = "1,247",
+//                        color = Color.White,
+//                        textAlign = TextAlign.Center,
+//                    )
+//                    Text(
+//                        text = "투표 참여",
+//                        color = Color.White,
+//                        textAlign = TextAlign.Center,
+//                    )
+//                }
+//            }
+
+//            Spacer(Modifier.width(8.dp))
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .height(130.dp)
-                    .background(
-                        color = colorResource(R.color.white).copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(12.dp)
-                    ),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.icon_vote),
-                        contentDescription = null,
-                        tint = Color.Unspecified
-                    )
-                    Text(
-                        text = "1,247",
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        text = "투표 참여",
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-
-            Spacer(Modifier.width(8.dp))
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(130.dp)
+                    .height(100.dp)
                     .background(
                         color = colorResource(R.color.white).copy(alpha = 0.1f),
                         shape = RoundedCornerShape(12.dp)
@@ -217,39 +207,39 @@ fun MyScreen (
                 }
             }
 
-            Spacer(Modifier.width(8.dp))
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(130.dp)
-                    .background(
-                        color = colorResource(R.color.white).copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(16.dp)
-                    ),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.icon_follower),
-                        contentDescription = null,
-                        tint = Color.Unspecified
-                    )
-                    Text(
-                        text = "12",
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        "팔로워",
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
+//            Spacer(Modifier.width(8.dp))
+//            Column(
+//                modifier = Modifier
+//                    .weight(1f)
+//                    .height(130.dp)
+//                    .background(
+//                        color = colorResource(R.color.white).copy(alpha = 0.1f),
+//                        shape = RoundedCornerShape(16.dp)
+//                    ),
+//                verticalArrangement = Arrangement.Center,
+//                horizontalAlignment = Alignment.CenterHorizontally
+//            ) {
+//                Column(
+//                    verticalArrangement = Arrangement.Center,
+//                    horizontalAlignment = Alignment.CenterHorizontally,
+//                ) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.icon_follower),
+//                        contentDescription = null,
+//                        tint = Color.Unspecified
+//                    )
+//                    Text(
+//                        text = "12",
+//                        color = Color.White,
+//                        textAlign = TextAlign.Center,
+//                    )
+//                    Text(
+//                        "팔로워",
+//                        color = Color.White,
+//                        textAlign = TextAlign.Center,
+//                    )
+//                }
+//            }
         }
         Column (
             Modifier
@@ -265,102 +255,102 @@ fun MyScreen (
             Column(
                 modifier = Modifier
             ) {
-                Surface (
-                    shadowElevation = 10.dp,
-                    shape = RoundedCornerShape(16.dp)
-                ){
-                    Column(
-                        modifier = Modifier
-                            .background(
-                                color = colorResource(R.color.white),
-                            )
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                    ) {
-                        Row {
-                            Column (
-                                modifier = Modifier.weight(1f)
-                            ){
-                                Text(
-                                    "보유 포인트",
-                                    style = TextStyle(
-                                        fontFamily = FontFamily.Default,
-                                        fontWeight = FontWeight.Normal,
-                                        fontSize = 14.sp,
-                                        lineHeight = 20.sp,
-                                        letterSpacing = 0.sp,
-                                        platformStyle = PlatformTextStyle(
-                                            includeFontPadding = false
-                                        )
-                                    )
-                                )
-                                Text(
-                                    "12,450P",
-                                    style = TextStyle(
-                                        fontFamily = FontFamily.Default,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 24.sp,
-                                        lineHeight = 32.sp,
-                                        letterSpacing = 0.sp,
-                                        platformStyle = PlatformTextStyle(
-                                            includeFontPadding = false
-                                        )
-                                    ),
-                                    color = colorResource(R.color.color_1)
-                                )
-                            }
-                            Button(
-                                onClick = {},
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = colorResource(R.color.color_1),
-                                    contentColor = Color.White
-                                ),
-                                shape = RoundedCornerShape(100.dp)) {
-                                Text("포인트 적립")
-                            }
-                        }
-                        Spacer(Modifier.height(25.dp))
-                        Text(
-                            "최근 포인트 내역",
-                            style = TextStyle(
-                                fontFamily = FontFamily.Default,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 12.sp,
-                                lineHeight = 16.sp,
-                                letterSpacing = 0.sp,
-                                platformStyle = PlatformTextStyle(
-                                    includeFontPadding = false
-                                )
-                            )
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        SetRecentList("광고 시청", true, 500)
-                        SetRecentList("굿즈 구매", false, 2000)
-                        SetRecentList("투표 참여", true, 1000)
-                        Spacer(Modifier.height(12.dp))
-                        Row (
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ){
-                            Text(
-                                modifier = Modifier.fillMaxWidth(),
-                                text = "전체 내역 보기 >",
-                                style = TextStyle(
-                                    fontFamily = FontFamily.Default,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 14.sp,
-                                    lineHeight = 20.sp,
-                                    letterSpacing = 0.sp,
-                                    textAlign = TextAlign.Center,
-                                    platformStyle = PlatformTextStyle(
-                                        includeFontPadding = false
-                                    )
-                                ),
-                                color = colorResource(R.color.color_1)
-                            )
-                        }
-                    }
-                }
+//                Surface (
+//                    shadowElevation = 10.dp,
+//                    shape = RoundedCornerShape(16.dp)
+//                ){
+//                    Column(
+//                        modifier = Modifier
+//                            .background(
+//                                color = colorResource(R.color.white),
+//                            )
+//                            .fillMaxWidth()
+//                            .padding(20.dp),
+//                    ) {
+//                        Row {
+//                            Column (
+//                                modifier = Modifier.weight(1f)
+//                            ){
+//                                Text(
+//                                    "보유 포인트",
+//                                    style = TextStyle(
+//                                        fontFamily = FontFamily.Default,
+//                                        fontWeight = FontWeight.Normal,
+//                                        fontSize = 14.sp,
+//                                        lineHeight = 20.sp,
+//                                        letterSpacing = 0.sp,
+//                                        platformStyle = PlatformTextStyle(
+//                                            includeFontPadding = false
+//                                        )
+//                                    )
+//                                )
+//                                Text(
+//                                    "12,450P",
+//                                    style = TextStyle(
+//                                        fontFamily = FontFamily.Default,
+//                                        fontWeight = FontWeight.Bold,
+//                                        fontSize = 24.sp,
+//                                        lineHeight = 32.sp,
+//                                        letterSpacing = 0.sp,
+//                                        platformStyle = PlatformTextStyle(
+//                                            includeFontPadding = false
+//                                        )
+//                                    ),
+//                                    color = colorResource(R.color.color_1)
+//                                )
+//                            }
+//                            Button(
+//                                onClick = {},
+//                                colors = ButtonDefaults.buttonColors(
+//                                    containerColor = colorResource(R.color.color_1),
+//                                    contentColor = Color.White
+//                                ),
+//                                shape = RoundedCornerShape(100.dp)) {
+//                                Text("포인트 적립")
+//                            }
+//                        }
+//                        Spacer(Modifier.height(25.dp))
+//                        Text(
+//                            "최근 포인트 내역",
+//                            style = TextStyle(
+//                                fontFamily = FontFamily.Default,
+//                                fontWeight = FontWeight.Medium,
+//                                fontSize = 12.sp,
+//                                lineHeight = 16.sp,
+//                                letterSpacing = 0.sp,
+//                                platformStyle = PlatformTextStyle(
+//                                    includeFontPadding = false
+//                                )
+//                            )
+//                        )
+//                        Spacer(Modifier.height(8.dp))
+//                        SetRecentList("광고 시청", true, 500)
+//                        SetRecentList("굿즈 구매", false, 2000)
+//                        SetRecentList("투표 참여", true, 1000)
+//                        Spacer(Modifier.height(12.dp))
+//                        Row (
+//                            horizontalArrangement = Arrangement.Center,
+//                            verticalAlignment = Alignment.CenterVertically
+//                        ){
+//                            Text(
+//                                modifier = Modifier.fillMaxWidth(),
+//                                text = "전체 내역 보기 >",
+//                                style = TextStyle(
+//                                    fontFamily = FontFamily.Default,
+//                                    fontWeight = FontWeight.Medium,
+//                                    fontSize = 14.sp,
+//                                    lineHeight = 20.sp,
+//                                    letterSpacing = 0.sp,
+//                                    textAlign = TextAlign.Center,
+//                                    platformStyle = PlatformTextStyle(
+//                                        includeFontPadding = false
+//                                    )
+//                                ),
+//                                color = colorResource(R.color.color_1)
+//                            )
+//                        }
+//                    }
+//                }
 
             }
 
@@ -374,10 +364,19 @@ fun MyScreen (
                     .border(1.dp, Color(0xFFEEEEEE), RoundedCornerShape(16.dp))
             ){
                 LazyColumn {
-                    items(1) { index ->
-                        MyScreenItem(R.drawable.icon_settings, "설정", onClick = {
-                            goSettingScreen()
-                        })
+                    items(viewModel.setMyItems()) {
+                        MyScreenItem(
+                            it, onClick = { comment ->
+                                when(comment){
+                                    "likedartist" -> {}
+                                    "bookmark" -> {}
+//                                  "reservation" -> {}
+                                    "settings" -> { goSettingScreen() }
+                                    "supporting" -> { goSupportScreen() }
+                                    else ->{ }
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -386,10 +385,10 @@ fun MyScreen (
 }
 
 @Composable
-fun MyScreenItem(resource: Int, title: String, onClick: () -> Unit){
+fun MyScreenItem(item: MyViewModel.MyItem, onClick: (String) -> Unit){
     Column (
         modifier = Modifier.clickable(
-            onClick = {onClick()}
+            onClick = {onClick(item.comment)}
         )
     ){
         Row (
@@ -398,22 +397,15 @@ fun MyScreenItem(resource: Int, title: String, onClick: () -> Unit){
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ){
-            Column (
-                modifier = Modifier
-                    .clip(RoundedCornerShape(100.dp))
-                    .background(color = colorResource(R.color.color_7))
-                    .padding(6.dp)
-            ){
-                Icon(
-                    painter = painterResource(id = resource),
-                    contentDescription = null,
-                    tint = colorResource(R.color.color_1)
-                )
-            }
+            Image(
+                painter = painterResource(id = item.iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp), // 배경보다 작게 설정해서 여백 확보
+            )
             Spacer(Modifier.width(12.dp))
             Text(
                 modifier = Modifier.weight(1f),
-                text = title,
+                text = item.title,
                 style = TextStyle(
                     fontFamily = FontFamily.Default,
                     fontWeight = FontWeight.Medium,

@@ -379,148 +379,148 @@ fun HomeScreen(
                     }
                 }
 
-                //  Best Male Group
-                item {
-                    Column(
-                        modifier = Modifier
-                            .padding(
-                                start = 16.dp,
-                                top = 24.dp,
-                                end = 16.dp
-                            )
-                            .fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(
-                                end = 16.dp
-                            )
-                        ) {
-                            Text(
-                                modifier = Modifier,
-                                text = "Best Male Group 2024",
-                                textAlign = TextAlign.Center,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = Color.Black,
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(
-                                modifier = Modifier,
-                                text = "Vote Now",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = colorResource(id = R.color.color_1),
-                            )
-                        }
-                        Spacer((Modifier.height(12.dp)))
-                        SetBestGroupItem()
-                    }
-                }
-
-                //  Upcoming Events
-                item {
-                    Column(
-                        modifier = Modifier
-                            .padding(
-                                start = 16.dp,
-                                top = 24.dp,
-                                end = 16.dp
-                            )
-                            .fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(
-                                end = 16.dp
-                            )
-                        ) {
-                            Text(
-                                modifier = Modifier,
-                                text = "\uD83D\uDCC5 Upcoming Events",
-                                textAlign = TextAlign.Center,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = Color.Black,
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(
-                                modifier = Modifier.clickable{
-                                    viewModel.goLiveScreen()
-                                },
-                                text = "See All",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = colorResource(id = R.color.color_1),
-                            )
-                        }
-                        Spacer((Modifier.height(12.dp)))
-
-                        state.scheduledItem.forEach { item ->
-                            UpcomingEventsItem(item)
-                        }
-                    }
-                }
+//                //  Best Male Group
+//                item {
+//                    Column(
+//                        modifier = Modifier
+//                            .padding(
+//                                start = 16.dp,
+//                                top = 24.dp,
+//                                end = 16.dp
+//                            )
+//                            .fillMaxWidth()
+//                    ) {
+//                        Row(
+//                            modifier = Modifier.padding(
+//                                end = 16.dp
+//                            )
+//                        ) {
+//                            Text(
+//                                modifier = Modifier,
+//                                text = "Best Male Group 2024",
+//                                textAlign = TextAlign.Center,
+//                                fontSize = 18.sp,
+//                                fontWeight = FontWeight.Normal,
+//                                fontFamily = FontFamily.SansSerif,
+//                                color = Color.Black,
+//                            )
+//                            Spacer(modifier = Modifier.weight(1f))
+//                            Text(
+//                                modifier = Modifier,
+//                                text = "Vote Now",
+//                                textAlign = TextAlign.Center,
+//                                fontSize = 14.sp,
+//                                fontWeight = FontWeight.Normal,
+//                                fontFamily = FontFamily.SansSerif,
+//                                color = colorResource(id = R.color.color_1),
+//                            )
+//                        }
+//                        Spacer((Modifier.height(12.dp)))
+//                        SetBestGroupItem()
+//                    }
+//                }
+//
+//                //  Upcoming Events
+//                item {
+//                    Column(
+//                        modifier = Modifier
+//                            .padding(
+//                                start = 16.dp,
+//                                top = 24.dp,
+//                                end = 16.dp
+//                            )
+//                            .fillMaxWidth()
+//                    ) {
+//                        Row(
+//                            modifier = Modifier.padding(
+//                                end = 16.dp
+//                            )
+//                        ) {
+//                            Text(
+//                                modifier = Modifier,
+//                                text = "\uD83D\uDCC5 Upcoming Events",
+//                                textAlign = TextAlign.Center,
+//                                fontSize = 18.sp,
+//                                fontWeight = FontWeight.Normal,
+//                                fontFamily = FontFamily.SansSerif,
+//                                color = Color.Black,
+//                            )
+//                            Spacer(modifier = Modifier.weight(1f))
+//                            Text(
+//                                modifier = Modifier.clickable{
+//                                    viewModel.goLiveScreen()
+//                                },
+//                                text = "See All",
+//                                textAlign = TextAlign.Center,
+//                                fontSize = 14.sp,
+//                                fontWeight = FontWeight.Normal,
+//                                fontFamily = FontFamily.SansSerif,
+//                                color = colorResource(id = R.color.color_1),
+//                            )
+//                        }
+//                        Spacer((Modifier.height(12.dp)))
+//
+//                        state.scheduledItem.forEach { item ->
+//                            UpcomingEventsItem(item)
+//                        }
+//                    }
+//                }
 
                 //  기타 항목
-                item {
-                    Row(
-                        modifier = Modifier
-                            .padding(
-                                start = 16.dp,
-                                top = 24.dp,
-                                end = 16.dp,
-                                bottom = 24.dp
-                            )
-                            .fillMaxWidth()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .clickable { }
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.btn_earn_rewards),
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                        Spacer((Modifier.width(12.dp)))
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .clickable { }
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.btn_vip_club),
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                        Spacer((Modifier.width(12.dp)))
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .clickable { }
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.btn_community),
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                    }
-                }
+//                item {
+//                    Row(
+//                        modifier = Modifier
+//                            .padding(
+//                                start = 16.dp,
+//                                top = 24.dp,
+//                                end = 16.dp,
+//                                bottom = 24.dp
+//                            )
+//                            .fillMaxWidth()
+//                    ) {
+//                        Box(
+//                            modifier = Modifier
+//                                .weight(1f)
+//                                .aspectRatio(1f)
+//                                .clickable { }
+//                        ) {
+//                            Image(
+//                                painter = painterResource(id = R.drawable.btn_earn_rewards),
+//                                contentDescription = null,
+//                                modifier = Modifier.fillMaxSize(),
+//                                contentScale = ContentScale.Crop
+//                            )
+//                        }
+//                        Spacer((Modifier.width(12.dp)))
+//                        Box(
+//                            modifier = Modifier
+//                                .weight(1f)
+//                                .aspectRatio(1f)
+//                                .clickable { }
+//                        ) {
+//                            Image(
+//                                painter = painterResource(id = R.drawable.btn_vip_club),
+//                                contentDescription = null,
+//                                modifier = Modifier.fillMaxSize(),
+//                                contentScale = ContentScale.Crop
+//                            )
+//                        }
+//                        Spacer((Modifier.width(12.dp)))
+//                        Box(
+//                            modifier = Modifier
+//                                .weight(1f)
+//                                .aspectRatio(1f)
+//                                .clickable { }
+//                        ) {
+//                            Image(
+//                                painter = painterResource(id = R.drawable.btn_community),
+//                                contentDescription = null,
+//                                modifier = Modifier.fillMaxSize(),
+//                                contentScale = ContentScale.Crop
+//                            )
+//                        }
+//                    }
+//                }
             }
         }
 

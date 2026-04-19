@@ -63,10 +63,10 @@ fun NavGraph(
                 goChartScreen = { NavigationActions(navController).navigateChart() },
                 goNewsScreen = { NavigationActions(navController).navigateNews() },
                 goNewsDetailScreen = {NavigationActions(navController).navigateNewsDetail(it)},
-                goConcertScreen = { NavigationActions(navController).navigateConcert() },
-                goTicketsScreen = { NavigationActions(navController).navigateTickets()},
-                goMembershipScreen = {NavigationActions(navController).navigateMembership()},
-                goAdsScreen = {NavigationActions(navController).navigateAds()},
+//                goConcertScreen = { NavigationActions(navController).navigateConcert() },
+//                goTicketsScreen = { NavigationActions(navController).navigateTickets()},
+//                goMembershipScreen = {NavigationActions(navController).navigateMembership()},
+//                goAdsScreen = {NavigationActions(navController).navigateAds()},
                 goFavoritesScreen = {NavigationActions(navController).navigateFavorites()},
                 goSavedScreen = {NavigationActions(navController).navigateSaved()},
                 goSettingsScreen = {NavigationActions(navController).navigateSettings()},
@@ -82,9 +82,10 @@ fun NavGraph(
                     { NavigationActions(navController).navigateNotifications() }
                 )
             }
-            composable(MainTabScreen.Voting.route) { VotingScreen() }
+//            composable(MainTabScreen.Voting.route) { VotingScreen() }
             composable(MainTabScreen.My.route) { MyScreen(
-                { NavigationActions(navController).navigateSettings() }
+                goSettingScreen = { NavigationActions(navController).navigateSettings() },
+                goSupportScreen = { NavigationActions(navController).navigateSupport() }
             )}
             composable(MainTabScreen.Live.route) { LiveScreen(
                 goSearchScreen = { NavigationActions(navController).navigateSearch() },
@@ -118,9 +119,10 @@ fun NavGraph(
         }
 
         composable (SubScreen.Settings.route){
-            SettingsScreen({
-                navController.popBackStack()
-            })
+            SettingsScreen(
+                onBackClick = { navController.popBackStack() },
+                goSupportScreen = { NavigationActions(navController).navigateSupport()}
+            )
         }
 
         composable (SubScreen.Error.route){
@@ -133,9 +135,9 @@ fun NavGraph(
             })
         }
 
-        composable (SubScreen.Membership.route){
-            MembershipScreen()
-        }
+//        composable (SubScreen.Membership.route){
+//            MembershipScreen()
+//        }
 
         composable (SubScreen.News.route){
             NewsScreen(
@@ -156,15 +158,15 @@ fun NavGraph(
             )
         }
 
-        composable(SubScreen.Voting.route) {
-            VotingScreen()
-        }
+//        composable(SubScreen.Voting.route) {
+//            VotingScreen()
+//        }
 
-        composable(SubScreen.Tickets.route) {
-            TicketsScreen(
-                {navController.popBackStack()},
-                {NavigationActions(navController).navigateSearch()})
-        }
+//        composable(SubScreen.Tickets.route) {
+//            TicketsScreen(
+//                {navController.popBackStack()},
+//                {NavigationActions(navController).navigateSearch()})
+//        }
 
 //        composable(SubScreen.TicketsDetail.route) {
 //            TicketsDetailScreen()
@@ -195,23 +197,23 @@ fun NavGraph(
                 )
         }
 
-        composable(SubScreen.Concert.route) {
-            ConcertScreen({
-                NavigationActions(navController).navigateNotifications()
-            })
-        }
+//        composable(SubScreen.Concert.route) {
+//            ConcertScreen({
+//                NavigationActions(navController).navigateNotifications()
+//            })
+//        }
 
-        composable(SubScreen.ConcertDetail.route) {
-            ConcertDetailScreen()
-        }
+//        composable(SubScreen.ConcertDetail.route) {
+//            ConcertDetailScreen()
+//        }
 
         composable(SubScreen.Chart.route) {
             ChartScreen()
         }
 
-        composable(SubScreen.Ads.route) {
-            AdsScreen()
-        }
+//        composable(SubScreen.Ads.route) {
+//            AdsScreen()
+//        }
 
         composable(SubScreen.Artist.route) {
             ArtistScreen(

@@ -13,9 +13,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aos.fanpulse.R
+import com.aos.fanpulse.presentation.common.CommonTopAppBar
 
 // Data Classes
 data class ChartSong(
@@ -125,51 +128,33 @@ fun ChartScreen() {
             albumColor = Color(0xFF00695C)
         )
     )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFFAFAFA))
+    ) {
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "차트 순위",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                )
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color(0xFFFAFAFA))
+        CommonTopAppBar(
+            isActiveLeftBack = true,
+            onLeftBack = {},
+            isActiveLeftTextTitle = true,
+            leftTextTitle = "차트 순위",
+            isActiveRightRefresh = true,
+            onRightRefresh = {}
+        )
+
+        // Chart Type Tabs
+        ChartTypeTabs(
+            selectedChart = selectedChart,
+            onChartSelected = { selectedChart = it }
+        )
+
+        // Songs List
+        LazyColumn(
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            // Chart Type Tabs
-            ChartTypeTabs(
-                selectedChart = selectedChart,
-                onChartSelected = { selectedChart = it }
-            )
-
-            // Songs List
-            LazyColumn(
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                itemsIndexed(songs) { index, song ->
-                    ChartSongItem(song)
-                }
+            itemsIndexed(songs) { index, song ->
+                ChartSongItem(song)
             }
         }
     }

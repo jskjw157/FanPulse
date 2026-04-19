@@ -76,7 +76,8 @@ fun LiveScreen(
 
     Column {
         CommonTopAppBar(
-            isActiveLeftImage = true,
+            isActiveLeftTextTitle = true,
+            leftTextTitle = "Live",
             isActiveRightSearch = true,
             onRightSearch = { goSearchScreen() },
             isActiveRightNotification = true,

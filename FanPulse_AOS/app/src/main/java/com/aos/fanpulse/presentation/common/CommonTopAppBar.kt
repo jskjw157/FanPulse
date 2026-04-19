@@ -1,10 +1,8 @@
 package com.aos.fanpulse.presentation.common
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,9 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,7 +38,7 @@ fun CommonTopAppBar(
     setTransparentBackground: Boolean = false,
     isActiveLeftTextTitle: Boolean = false,     //  왼쪽 제목
     leftTextTitle: String? = null,
-    onLeftTextTile:() -> Unit = {},
+    onLeftTextTitle:() -> Unit = {},
     isActiveLeftImage: Boolean = false,         //  왼쪽 제목 이미지
     leftImage: Int? = null,
     isActiveLeftBack: Boolean = false,          //  왼쪽 뒤로가기
@@ -94,21 +90,6 @@ fun CommonTopAppBar(
             //  왼쪽
             navigationIcon = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (isActiveLeftImage){
-                        Spacer(Modifier.width(16.dp))
-                        IconButton(
-                            onClick = { onLeftTextTile() },
-                            modifier = Modifier
-                                .height(28.dp)
-                                .width(81.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.home_title),
-                                contentDescription = null,
-                                tint = Color.Unspecified
-                            )
-                        }
-                    }
                     if (isActiveLeftBack){
                         IconButton(
                             onClick = { onLeftBack() },
@@ -123,9 +104,24 @@ fun CommonTopAppBar(
                             )
                         }
                     }
+                    if (isActiveLeftImage){
+                        Spacer(Modifier.width(16.dp))
+                        IconButton(
+                            onClick = { onLeftTextTitle() },
+                            modifier = Modifier
+                                .height(28.dp)
+                                .width(81.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.home_title),
+                                contentDescription = null,
+                                tint = Color.Unspecified
+                            )
+                        }
+                    }
                     if (isActiveLeftTextTitle){
                         TextButton(
-                            onClick = { onLeftTextTile() },
+                            onClick = { onLeftTextTitle() },
                             modifier = Modifier
                                 .wrapContentHeight()
                                 .wrapContentWidth()
