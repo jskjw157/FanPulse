@@ -39,10 +39,10 @@ graph TB
     end
 
     subgraph AI["Django AI Sidecar"]
-        MOD["콘텐츠 모더레이션"]
-        FILTER["댓글 필터링"]
-        SUMMARY["뉴스 요약"]
-        CRAWL["뉴스 크롤링"]
+        MOD["콘텐츠 모더레이션<br/>(KcBERT, RoBERTa)"]
+        FILTER["댓글 필터링<br/>(Mistral-7B / Qwen2.5)"]
+        SUMMARY["뉴스 요약<br/>(T5, BART)"]
+        CRAWL["뉴스 크롤링<br/>(네이버 API)"]
     end
 
     DB[(PostgreSQL 14)]
@@ -150,6 +150,82 @@ sequenceDiagram
 - **CircuitBreaker 설정**: 실패율 60% 이상 -> 회로 개방, 30초 대기 후 Half-Open
 - **Retry**: 최대 2회, 500ms 간격, 지수 백오프
 - **TimeLimiter**: AI 응답 5초 제한 (요약은 30초)
+
+---
+
+## AI 서비스 상세
+
+Django AI Sidecar가 담당하는 AI 기능은 **3가지**입니다. 각 서비스는 독립적으로 동작하며, Spring Boot에서 HTTP로 호출합니다.
+
+### 1. 뉴스 요약 (News Summarizer)
+
+K-POP 뉴스 기사를 AI가 읽고 핵심 내용을 자동 요약합니다.
+
+- **방식**: 생성형 요약 (Abstractive Summarization) — 원문을 이해하고 새로운 문장으로 재구성
+- **사용 모델**
+  - 한국어: `eenzeenee/t5-base-korean-summarization`
+  - 영어: `facebook/bart-large-cnn`
+- **API 엔드포인트**
+  - `POST /api/ai/summarize` — 단건 요약
+  - `POST /api/news/batch-summarize` — 배치 요약 (다수 기사 한 번에 처리)
+  - `GET /api/news/summarized` — 요약 결과 조회
+- **장애 전략**: Fail-Open — AI 실패 시 원문 그대로 노출 (가용성 우선)
+- **Spring 어댑터**: `AiNewsSummarizerAdapter` / `NoOpNewsSummarizerAdapter` (fallback)
+
+### 2. 댓글 필터링 (Comment Filter)
+
+사용자 댓글을 LLM이 분석하여 맥락과 의도를 파악하고, 허용/차단 여부를 판단합니다.
+
+- **방식**: LLM 기반 추론 — 단순 키워드 매칭이 아니라 문맥을 이해하여 판단
+- **사용 모델**
+  - 우선: `mistralai/Mistral-7B-Instruct-v0.3`
+  - Fallback: `Qwen/Qwen2.5-3B-Instruct` (GPU VRAM 부족 시)
+- **API 엔드포인트**
+  - `POST /api/ai/filter` — 단건 필터링
+  - `POST /api/ai/filter/batch` — 배치 필터링
+- **장애 전략**: Fail-Pending — AI 실패 시 PENDING 상태로 저장, 관리자 검토 대기 (안전성 우선)
+- **댓글 상태 흐름**: `DRAFT` → AI 필터링 → `PUBLISHED` (허용) 또는 `FILTERED_BY_AI` (차단) 또는 `PENDING` (AI 장애)
+- **Spring 어댑터**: `AiCommentFilterAdapter` / `NoOpCommentFilterAdapter` (fallback)
+
+### 3. 콘텐츠 모더레이션 (Content Moderation)
+
+게시글/댓글에서 유해 콘텐츠를 카테고리별로 분류하고 점수를 매겨 자동 판정합니다.
+
+- **방식**: 분류 모델 기반 — 텍스트를 유해 카테고리별 확률 점수로 변환
+- **사용 모델**
+  - 한국어: `beomi/KcBERT-base` (한국어 악성 댓글 분류 특화)
+  - 다국어: `facebook/roberta-hate-speech-dynabench-r4-target`
+- **감지 카테고리** (6종)
+  - `profanity` — 욕설/비속어
+  - `spam` — 스팸 콘텐츠
+  - `adult` — 성인 콘텐츠
+  - `violence` — 폭력적 콘텐츠
+  - `hate` — 혐오 발언
+  - `harassment` — 괴롭힘/악성 댓글
+- **판정 수준** (4단계)
+  - `allow` — 허용
+  - `warning` — 경고 (사용자에게 경고 메시지 표시)
+  - `review` — 관리자 검토 대기
+  - `block` — 차단
+- **API 엔드포인트**
+  - `POST /api/ai/moderate` — 단건 모더레이션
+  - `POST /api/ai/moderate/batch` — 배치 모더레이션
+  - `GET /api/ai/moderate/status` — 모더레이션 서비스 상태 확인
+- **장애 전략**: Fail-Open — AI 실패 시 콘텐츠 허용 (가용성 우선)
+- **Spring 어댑터**: `AiModerationAdapter` / `NoOpContentModerationAdapter` (fallback)
+
+### 댓글 필터링 vs 콘텐츠 모더레이션
+
+두 서비스 모두 유해 콘텐츠를 감지하지만 접근 방식이 다르며, 이중 체크 구조로 운영됩니다.
+
+- **댓글 필터링**: LLM이 문맥과 의도를 추론 — "이 그룹 진짜 끝났다"가 팬 의견인지, 악의적 비하인지 판단
+- **콘텐츠 모더레이션**: 분류 모델이 카테고리별 확률 점수 산출 — "ㅅㅂ 꺼져" → profanity 0.95 → block
+
+```
+댓글 작성 → [댓글 필터링 (LLM)] → 허용/차단 판단
+              ↓
+         [콘텐츠 모더레이션 (분류)] → 카테고리별 점수 기록
+```
 
 ---
 

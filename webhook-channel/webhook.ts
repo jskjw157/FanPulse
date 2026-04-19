@@ -10,7 +10,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 
 const PORT = Number(process.env.WEBHOOK_PORT) || 8788;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "";
-const CLAUDE_BIN = process.env.CLAUDE_BIN || "/opt/homebrew/bin/claude";
+const CLAUDE_BIN = process.env.CLAUDE_BIN || "/Users/ohchaeeun/.local/bin/claude";
 const PROJECT_DIR = process.env.PROJECT_DIR || "/Users/ohchaeeun/source/FanPulse";
 
 // HMAC 서명 검증
@@ -39,6 +39,15 @@ function buildReviewPrompt(data: Record<string, unknown>): string {
     `sha: ${data.sha}`,
     `event: ${data.event}`,
     `url: ${data.url}`,
+    "",
+    "## 리뷰 지시사항",
+    "1. gh pr diff로 diff만 리뷰해. diff에 없는 파일은 절대 리뷰하지 마.",
+    "2. 리뷰 결과를 PR 코멘트로 남겨. 접두어 '🤖 Claude Code 리뷰' 필수.",
+    "3. 이슈 심각도는 반드시 [Critical], [Important], [Suggestion] 3단계만 사용.",
+    "4. [Critical] 이슈가 있으면: gh api로 커밋 상태를 failure로 설정.",
+    "5. [Critical] 이슈가 없으면: gh api로 커밋 상태를 success로 설정.",
+    `6. 커밋 상태 설정 명령: gh api repos/${data.repo}/statuses/${data.sha} -f state=<success|failure> -f context=claude-code-review -f description=<설명>`,
+    "7. bkit Feature Usage 블록 포함 금지.",
   ].join("\n");
 }
 
@@ -55,7 +64,7 @@ async function runReview(prompt: string, prNum: number): Promise<void> {
       env: {
         ...process.env,
         HOME: "/Users/ohchaeeun",
-        PATH: "/Users/ohchaeeun/.bun/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+        PATH: "/Users/ohchaeeun/.local/bin:/Users/ohchaeeun/.bun/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
       },
       stdin: new Response(prompt).body!,
       stdout: "pipe",
