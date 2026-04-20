@@ -14,7 +14,15 @@ sealed class MainTabScreen(
 ) : Screen(route) {
     object Home : MainTabScreen("home", "Home", R.drawable.icon_home)
     object Community : MainTabScreen("community", "Community", R.drawable.icon_community)
-    object Live : MainTabScreen("live", "Live", R.drawable.icon_live)
+    object Live : MainTabScreen("live", "Live", R.drawable.icon_live){
+        fun createRoute(liveId: String? = null): String {
+            return if (liveId != null) {
+                "live_detail/$liveId"
+            } else {
+                route
+            }
+        }
+    }
 //    object Voting : MainTabScreen("voting", "Voting", R.drawable.icon_voting)
     object My : MainTabScreen("my", "My", R.drawable.icon_my)
 
@@ -33,7 +41,15 @@ sealed class SubScreen(route: String) : Screen(route) {
     object Search : SubScreen("search")
 //    object Voting : SubScreen("voting")
 //    object Tickets : SubScreen("tickets")
-    object News : SubScreen("news")
+    object News : SubScreen("news"){
+        fun createRoute(newsId: String? = null): String {
+            return if (newsId != null) {
+                "news_detail/$newsId"
+            } else {
+                route
+            }
+        }
+    }
     object NewsDetail : SubScreen("news_detail/{newsId}"){
         fun createRoute(newsId: String): String {
             return "news_detail/$newsId"
@@ -68,8 +84,13 @@ class NavigationActions(private val navController: NavHostController){
             launchSingleTop = true
         }
     }
-    fun navigateLive() {
-        navController.navigate(MainTabScreen.Live.route) {
+    fun navigateLive(liveId: String? = null) {
+        val destination = if (liveId == null) {
+            MainTabScreen.Live.route
+        } else {
+            MainTabScreen.Live.createRoute(liveId)
+        }
+        navController.navigate(destination) {
             popUpTo(navController.graph.findStartDestination().id) {
                 saveState = true
             }
@@ -174,8 +195,13 @@ class NavigationActions(private val navController: NavHostController){
             launchSingleTop = true
         }
     }
-    fun navigateNews() {
-        navController.navigate(SubScreen.News.route) {
+    fun navigateNews(newsId: String? = null) {
+        val destination = if (newsId == null) {
+            SubScreen.News.route
+        } else {
+            SubScreen.News.createRoute(newsId)
+        }
+        navController.navigate(destination) {
             launchSingleTop = true
         }
     }

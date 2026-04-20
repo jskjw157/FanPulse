@@ -131,7 +131,15 @@ fun NavGraph(
 
         composable (SubScreen.Search.route){
             SearchScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                goLiveScreen = {
+                    navController.popBackStack()
+                    NavigationActions(navController).navigateLive(it)
+                               },
+                goNewsScreen = {
+                    navController.popBackStack()
+                    NavigationActions(navController).navigateNews(it)
+                }
             )
         }
 
