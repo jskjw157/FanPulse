@@ -11,6 +11,10 @@
   - **MVP 제외(Next)**: 차트/콘서트/광고 크롤링은 다음 릴리즈에서 진행
   - **2차(다음 릴리즈)**: YouTube/News API 등으로 자동 갱신 확장
 
+> 📎 **v2 후속 기획**
+> - [콘텐츠 수집 파이프라인](../v2/content-pipeline.md) — 차트(Melon/Bugs/Spotify) 및 콘서트(인터파크/예스24/티켓링크) 크롤러 추가와 공통 스케줄러 설계 v2 스코프
+> - [2차 로드맵](../v2/roadmap.md) — 콘텐츠 파이프라인 확장 우선순위(P0 차트 → P1 콘서트) 및 의존성 그래프
+
 ---
 
 ## 1.1 용어 정리: `streaming_events`가 뭐야?
@@ -54,6 +58,8 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
 ### MVP 권장(고정): YouTube만 지원
 - MVP의 `stream_url`은 **YouTube embed URL**(예: `https://www.youtube.com/embed/VIDEO_ID`)을 사용합니다.
 - Weverse Live 등은 임베드/재생 제약이 자주 있어서 **MVP에서는 제외(Next)** 로 두는 게 안전합니다.
+
+> 📎 **v2 후속 기획**: [콘텐츠 수집 파이프라인](../v2/content-pipeline.md) — Weverse Live 임베드 재조사 및 YouTube Data API를 통한 스트림 상태·썸네일 자동 보강 v2 스코프
 
 ### 수집 방법(가장 단순한 운영 플로우)
 1. `seed_artists.json`으로 아티스트를 먼저 등록한다
@@ -158,6 +164,10 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
 ### Stretch B: YouTube 메타데이터 “보강”만 자동화
 - 범위: seed로 받은 `streamUrl(=VIDEO_ID)`에 대해 썸네일/제목을 보강하거나 상태를 갱신
 - 주의: YouTube Data API 키/쿼터/에러처리까지 포함되면 일정 리스크가 커서, **Week 4에서 Stretch A 완료 후** 착수 권장
+
+> 📎 **v2 후속 기획**
+> - [콘텐츠 수집 파이프라인](../v2/content-pipeline.md) — Google News RSS 이후 해외 소스(Billboard 등) 확장, YouTube Data API 쿼터 관리 전략, NLP/정제 파이프라인 v2 스코프
+> - [운영 & 관측성](../v2/ops.md) — news_sync 배치 성공률 등 Grafana 대시보드·알림 룰 연동 v2 스코프
 
 ---
 
