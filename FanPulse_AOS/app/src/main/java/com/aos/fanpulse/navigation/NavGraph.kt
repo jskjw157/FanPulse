@@ -130,9 +130,9 @@ fun NavGraph(
         }
 
         composable (SubScreen.Search.route){
-            SearchScreen({
-                navController.popBackStack()
-            })
+            SearchScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
 //        composable (SubScreen.Membership.route){

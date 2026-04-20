@@ -5,6 +5,8 @@ import com.aos.fanpulse.data.remote.apiservice.ArtistDetail
 import com.aos.fanpulse.data.remote.apiservice.NewsDetail
 import com.aos.fanpulse.data.remote.apiservice.NewsItem
 import com.aos.fanpulse.data.remote.apiservice.NewsListResponse
+import com.aos.fanpulse.data.remote.apiservice.SearchLiveItem
+import com.aos.fanpulse.data.remote.apiservice.SearchNewsItem
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventDetail
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventItem
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventSimpleItem
@@ -433,6 +435,62 @@ object DummyData {
             agency = "SM Entertainment",
             profileImageUrl = "https://dummyimage.com/400x400/000/fff&text=aespa",
             isGroup = true
+        )
+    )
+
+    // 라이브 검색 더미 데이터
+    val liveItems = listOf(
+        SearchLiveItem(
+            id = "live_001",
+            title = "[LIVE] 2024 월드 투어 콘서트 - 서울 스테이지",
+            artistId = "artist_bts",
+            artistName = "방탄소년단(BTS)",
+            thumbnailUrl = "https://picsum.photos/seed/live1/400/225",
+            status = "LIVE",
+            scheduledAt = null
+        ),
+        SearchLiveItem(
+            id = "live_002",
+            title = "신곡 발매 기념 카운트다운 라이브",
+            artistId = "artist_iu",
+            artistName = "아이유(IU)",
+            thumbnailUrl = "https://picsum.photos/seed/live2/400/225",
+            status = "SCHEDULED",
+            scheduledAt = "2024-05-01T18:00:00Z"
+        ),
+        SearchLiveItem(
+            id = "live_003",
+            title = "Weekend Chill Out: 어쿠스틱 세션",
+            artistId = "artist_new",
+            artistName = "NewJeans",
+            thumbnailUrl = "https://picsum.photos/seed/live3/400/225",
+            status = "LIVE",
+            scheduledAt = null
+        )
+    )
+
+    // 뉴스 검색 더미 데이터
+    val newsItems = listOf(
+        SearchNewsItem(
+            id = "news_001",
+            title = "올해의 아티스트 수상 영예, '팬들의 사랑 덕분'",
+            summary = "지난 밤 열린 시상식에서 압도적인 성적으로 대상을 수상한 그들의 소감과 현장 분위기를 전합니다.",
+            sourceName = "K-Pop Daily",
+            publishedAt = "2024-04-20T10:30:00Z"
+        ),
+        SearchNewsItem(
+            id = "news_002",
+            title = "새로운 월드 투어 일정 전격 공개: 전 세계 20개 도시",
+            summary = "드디어 베일을 벗은 이번 투어는 북미를 시작으로 유럽과 아시아를 아우르는 대규모 프로젝트입니다.",
+            sourceName = "Global Music News",
+            publishedAt = "2024-04-19T15:45:00Z"
+        ),
+        SearchNewsItem(
+            id = "news_003",
+            title = "차트 역주행의 신화, 다시 한번 1위 탈환",
+            summary = "발매한 지 3개월이 지난 곡이 다시 음원 차트 정상에 오르며 기염을 토하고 있습니다.",
+            sourceName = "Music Insider",
+            publishedAt = "2024-04-18T09:00:00Z"
         )
     )
 }

@@ -1,6 +1,5 @@
 package com.aos.fanpulse.domain.repository
 
-import com.aos.fanpulse.data.remote.apiservice.BaseResponse
 import com.aos.fanpulse.data.remote.apiservice.NewsDetail
 import com.aos.fanpulse.data.remote.apiservice.NewsListResponse
 import retrofit2.Response
@@ -41,5 +40,5 @@ interface NewsRepository {
      */
     suspend fun getLatestNews(
         limit: Int = 10
-    ): Response<BaseResponse<List<NewsDetail>>>
+    ): Response<List<NewsDetail>>
 }

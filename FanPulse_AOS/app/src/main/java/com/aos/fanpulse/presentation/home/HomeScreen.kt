@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -141,7 +140,6 @@ fun HomeScreen(
                     .fillMaxSize()
                     .background(colorResource(id = R.color.color_12))
             ) {
-                //  메인 썸네일  state.newsItem[0]
                 item {
                     Box(
                         modifier = Modifier
@@ -156,7 +154,6 @@ fun HomeScreen(
                                 contentDescription = null,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
-                                // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
                                 placeholder = painterResource(id = R.drawable.home_ex1),
                                 error = painterResource(id = R.drawable.home_ex1)
                             )
@@ -526,6 +523,7 @@ fun HomeScreen(
 
         //  메뉴
         RightDrawer(
+            viewModel = viewModel,
             isOpen = isDrawerOpen,
             onDismiss = { isDrawerOpen = false },
             onMenuItemClick = { menuItem ->
@@ -572,7 +570,7 @@ fun HomeScreen(
 
 @Composable
 fun RightDrawer(
-    viewModel: HomeViewModel = hiltViewModel(),
+    viewModel: HomeViewModel,
     isOpen: Boolean,
     onDismiss: () -> Unit,
     onMenuItemClick: (String) -> Unit
@@ -587,9 +585,6 @@ fun RightDrawer(
         label = "drawerOffset"
     )
 
-    val state by viewModel.collectAsState()
-
-    // 스크림 (배경 어둡게)
     AnimatedVisibility(
         visible = isOpen,
         enter = fadeIn(animationSpec = tween(300)),
@@ -743,9 +738,7 @@ fun LiveNowItem(
     goLiveDetail: (String) -> Unit
 ){
     Column (
-        // 팁: Column 자체에도 Box와 동일한 수준의 너비 제한을 걸어두면,
-        // 텍스트가 엄청 길어져도 이미지 너비를 뚫고 나가지 않습니다.
-        modifier = Modifier.width(268.dp) // Box 너비(256) + 양옆 패딩(6+6)
+        modifier = Modifier.width(268.dp)
             .clickable{
                 goLiveDetail(streamingEventItem.id)
             }
@@ -835,7 +828,7 @@ fun LiveNowItem(
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
             fontFamily = FontFamily.SansSerif,
-            color = Color.White,
+            color = colorResource(R.color.color_new_1),
         )
     }
 }

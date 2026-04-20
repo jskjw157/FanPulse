@@ -71,7 +71,7 @@ class HomeViewModel@Inject constructor(
                         .ifEmpty { streamingEventDummyList },
                     scheduledItem = (getScheduledEvents.body()?.content ?: emptyList())
                         .ifEmpty { streamingEventSimpleDummyList },
-                    newsItem = (getLatestNews.body()?.data ?: emptyList())
+                    newsItem = (getLatestNews.body() ?: emptyList())
                         .ifEmpty { newsDetailDummyList },
                 )
             }

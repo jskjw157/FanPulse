@@ -49,7 +49,7 @@ class NewsViewModel@Inject constructor(
             reduce {
                 state.copy(
                     isLoading = false,
-                    newsItem = (getLatestNews.body()?.data ?: emptyList())
+                    newsItem = (getLatestNews.body() ?: emptyList())
                         .ifEmpty { newsDetailDummyList },
                 )
             }
