@@ -32,13 +32,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,9 +67,12 @@ import com.aos.fanpulse.data.remote.apiservice.NewsDetail
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventItem
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventSimpleItem
 import com.aos.fanpulse.presentation.common.CommonTopAppBar
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -122,6 +130,19 @@ fun HomeScreen(
 
     var isDrawerOpen by remember { mutableStateOf(false) }
 
+    //  Pull-to-refresh
+    var isRefreshing by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val pullToRefreshState = rememberPullToRefreshState()
+    val onRefresh: () -> Unit = {
+        isRefreshing = true
+        coroutineScope.launch {
+            viewModel.getHomeItems()
+            delay(1500)
+            isRefreshing = false
+        }
+    }
+
     Box (modifier = Modifier.fillMaxSize()){
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -135,246 +156,253 @@ fun HomeScreen(
                 isActiveRightMenu = true,
                 onRightMenu = { isDrawerOpen = true }
             )
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(colorResource(id = R.color.color_12))
-            ) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .height(192.dp)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp)),
-                    ) {
-                        if (state.newsItem.isNotEmpty()) {
-                            AsyncImage(
-                                model = state.newsItem[0].thumbnailUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
-                                placeholder = painterResource(id = R.drawable.home_ex1),
-                                error = painterResource(id = R.drawable.home_ex1)
-                            )
-                            Column(
-                                modifier = Modifier
-                                    .align(Alignment.BottomStart)
-                                    .padding(20.dp)
-                            ) {
-                                Text(
-                                    modifier = Modifier,
-                                    text = state.newsItem[0].title,
-                                    textAlign = TextAlign.Center,
-                                    maxLines = 1,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = FontFamily.SansSerif,
-                                    color = Color.White,
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    modifier = Modifier,
-                                    text = state.newsItem[0].content,
-                                    textAlign = TextAlign.Center,
-                                    maxLines = 1,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = FontFamily.SansSerif,
-                                    color = Color.White,
-                                )
-                            }
-                        }
-                    }
-                }
 
-                //  최신 뉴스
-                item {
-                    Column(
-                        modifier = Modifier
-                            .padding(
-                                start = 16.dp,
-                                end = 16.dp,
-                                bottom = 16.dp
-                            )
-                            .background(
-                                color = colorResource(R.color.white),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .fillMaxWidth()
-                    ) {
-                        Row(
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                state = pullToRefreshState,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(colorResource(id = R.color.color_12))
+                ) {
+                    item {
+                        Box(
                             modifier = Modifier
                                 .padding(16.dp)
-                                .clickable {
-                                    viewModel.goNewsScreen()
-                                }
+                                .height(192.dp)
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp)),
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_news),
-                                contentDescription = "",
-                                tint = Color.Unspecified
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                modifier = Modifier,
-                                text = "최신 뉴스",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = Color.Black,
-                            )
-                        }
-                        state.newsItem.drop(1).forEach { item ->
-                            LatestNewsItem(item){
-                                viewModel.goNewsDetailScreen(it)
-                            }
-                        }
-                    }
-                }
-
-                //  라이브 스크린
-                item {
-                    Column(
-                        modifier = Modifier.padding(
-                            start = 16.dp,
-                            top = 8.dp,
-                            bottom = 16.dp
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(
-                                end = 16.dp
-                            )
-                        ) {
-                            Text(
-                                modifier = Modifier,
-                                text = "\uD83D\uDD34 Live Now",
-                                textAlign = TextAlign.Center,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = Color.Black,
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(
-                                modifier = Modifier.clickable{
-                                    viewModel.goLiveScreen()
-                                },
-                                text = "View All",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = colorResource(id = R.color.color_1),
-                            )
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        LazyRow {
-                            items(state.streamingEventItem) { item ->
-                                LiveNowItem(item){
-                                    viewModel.goLiveDetailScreen(it)
+                            if (state.newsItem.isNotEmpty()) {
+                                AsyncImage(
+                                    model = state.newsItem[0].thumbnailUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop,
+                                    placeholder = painterResource(id = R.drawable.home_ex1),
+                                    error = painterResource(id = R.drawable.home_ex1)
+                                )
+                                Column(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .padding(20.dp)
+                                ) {
+                                    Text(
+                                        modifier = Modifier,
+                                        text = state.newsItem[0].title,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.SansSerif,
+                                        color = Color.White,
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        modifier = Modifier,
+                                        text = state.newsItem[0].content,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        fontFamily = FontFamily.SansSerif,
+                                        color = Color.White,
+                                    )
                                 }
                             }
                         }
                     }
-                }
 
-                //  인기 게시글
-                item {
-                    Column(
-                        modifier = Modifier
-                            .padding(
-                                start = 16.dp,
-                                top = 24.dp,
-                                end = 16.dp
-                            )
-                            .fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(
-                                end = 16.dp
-                            )
-                        ) {
-                            Text(
-                                modifier = Modifier,
-                                text = "\uD83D\uDD25 인기 게시글",
-                                textAlign = TextAlign.Center,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = Color.Black,
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(
-                                modifier = Modifier,
-                                text = "더보기",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = colorResource(id = R.color.color_1),
-                            )
-                        }
-                        SetPopularPostItem()
-                    }
-                }
-
-                //  실시간 차트
-                item {
-                    Column(
-                        modifier = Modifier
-                            .padding(
-                                start = 16.dp,
-                                top = 24.dp,
-                                end = 16.dp
-                            )
-                            .fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(
-                                end = 16.dp
-                            )
-                        ) {
-                            Text(
-                                modifier = Modifier,
-                                text = "\uD83D\uDCCA 실시간 차트",
-                                textAlign = TextAlign.Center,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = Color.Black,
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(
-                                modifier = Modifier,
-                                text = "전체보기",
-                                textAlign = TextAlign.Center,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = FontFamily.SansSerif,
-                                color = colorResource(id = R.color.color_1),
-                            )
-                        }
-
-                        Spacer((Modifier.height(12.dp)))
-
+                    //  최신 뉴스
+                    item {
                         Column(
                             modifier = Modifier
+                                .padding(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    bottom = 16.dp
+                                )
                                 .background(
                                     color = colorResource(R.color.white),
                                     shape = RoundedCornerShape(12.dp)
                                 )
+                                .fillMaxWidth()
                         ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp)
+                            Row(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .clickable {
+                                        viewModel.goNewsScreen()
+                                    }
                             ) {
-                                SetRealTimeChartItem(1)
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_news),
+                                    contentDescription = "",
+                                    tint = Color.Unspecified
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    modifier = Modifier,
+                                    text = "최신 뉴스",
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = Color.Black,
+                                )
+                            }
+                            state.newsItem.drop(1).forEach { item ->
+                                LatestNewsItem(item){
+                                    viewModel.goNewsDetailScreen(it)
+                                }
                             }
                         }
                     }
-                }
+
+                    //  라이브 스크린
+                    item {
+                        Column(
+                            modifier = Modifier.padding(
+                                start = 16.dp,
+                                top = 8.dp,
+                                bottom = 16.dp
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(
+                                    end = 16.dp
+                                )
+                            ) {
+                                Text(
+                                    modifier = Modifier,
+                                    text = "\uD83D\uDD34 Live Now",
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = Color.Black,
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                Text(
+                                    modifier = Modifier.clickable{
+                                        viewModel.goLiveScreen()
+                                    },
+                                    text = "View All",
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = colorResource(id = R.color.color_1),
+                                )
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            LazyRow {
+                                items(state.streamingEventItem) { item ->
+                                    LiveNowItem(item){
+                                        viewModel.goLiveDetailScreen(it)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    //  인기 게시글
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .padding(
+                                    start = 16.dp,
+                                    top = 24.dp,
+                                    end = 16.dp
+                                )
+                                .fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(
+                                    end = 16.dp
+                                )
+                            ) {
+                                Text(
+                                    modifier = Modifier,
+                                    text = "\uD83D\uDD25 인기 게시글",
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = Color.Black,
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                Text(
+                                    modifier = Modifier,
+                                    text = "더보기",
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = colorResource(id = R.color.color_1),
+                                )
+                            }
+                            SetPopularPostItem()
+                        }
+                    }
+
+                    //  실시간 차트
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .padding(
+                                    start = 16.dp,
+                                    top = 24.dp,
+                                    end = 16.dp
+                                )
+                                .fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(
+                                    end = 16.dp
+                                )
+                            ) {
+                                Text(
+                                    modifier = Modifier,
+                                    text = "\uD83D\uDCCA 실시간 차트",
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = Color.Black,
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                Text(
+                                    modifier = Modifier,
+                                    text = "전체보기",
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = colorResource(id = R.color.color_1),
+                                )
+                            }
+
+                            Spacer((Modifier.height(12.dp)))
+
+                            Column(
+                                modifier = Modifier
+                                    .background(
+                                        color = colorResource(R.color.white),
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    SetRealTimeChartItem(1)
+                                }
+                            }
+                        }
+                    }
 
 //                //  Best Male Group
 //                item {
@@ -518,6 +546,7 @@ fun HomeScreen(
 //                        }
 //                    }
 //                }
+                }
             }
         }
 
