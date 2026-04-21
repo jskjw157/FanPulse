@@ -2,6 +2,8 @@ package com.aos.fanpulse.presentation.artist
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.aos.fanpulse.data.remote.apiservice.ArtistDetail
+import com.aos.fanpulse.data.remote.apiservice.StreamingEventDetail
 import com.aos.fanpulse.domain.repository.ArtistsRepository
 import com.aos.fanpulse.domain.usecase.GetNewsListUseCase
 import com.aos.fanpulse.presentation.common.DummyData.artistDetailDummyList
@@ -18,7 +20,7 @@ class ArtistDetailViewModel @Inject constructor(
     private val getNewsListUseCase: GetNewsListUseCase,
 ): ContainerHost<ArtistDetailContract.ArtistDetailState, ArtistDetailContract.SideEffect>, ViewModel(){
     override val container: Container<ArtistDetailContract.ArtistDetailState, ArtistDetailContract.SideEffect> =
-        container(initialState = ArtistDetailContract.ArtistDetailState(artistDetailDummyList[0], newsItemDummyList, newsItemDummyList))
+        container(initialState = ArtistDetailContract.ArtistDetailState(artistDetailDummyList.firstOrNull() ?: ArtistDetail.EMPTY, newsItemDummyList, newsItemDummyList))
 
     fun goNewsDetailScreen(newsId: String) = intent {
         postSideEffect(ArtistDetailContract.SideEffect.NavigateNewsDetail(newsId))

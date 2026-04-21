@@ -2,6 +2,7 @@ package com.aos.fanpulse.presentation.live
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.aos.fanpulse.data.remote.apiservice.StreamingEventDetail
 import com.aos.fanpulse.domain.usecase.GetStreamingEventDetailUseCase
 import com.aos.fanpulse.presentation.common.DummyData.streamingEventDetailDummyList
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +16,8 @@ class LiveDetailViewModel@Inject constructor(
     private val getStreamingEventDetailUseCase: GetStreamingEventDetailUseCase
 ): ContainerHost<LiveDetailContract.LiveDetailState, LiveDetailContract.SideEffect>, ViewModel()  {
     override val container: Container<LiveDetailContract.LiveDetailState, LiveDetailContract.SideEffect> =
-        container(initialState = LiveDetailContract.LiveDetailState( streamingEventDetailItem = streamingEventDetailDummyList[0])){}
+        container(initialState = LiveDetailContract.LiveDetailState(streamingEventDetailItem = streamingEventDetailDummyList.firstOrNull()
+            ?: StreamingEventDetail.EMPTY))
 
     fun getLiveDetail (
         liveId: String,

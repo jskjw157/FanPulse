@@ -79,4 +79,20 @@ data class ArtistDetail(
     val active: Boolean,            // 활성 상태 여부
     val debutDate: String?,         // "2026-04-01" 형태의 날짜
     val createdAt: String?          // "2026-04-01T05:08..." 형태의 ISO 8601 일시
-)
+){
+    companion object {
+        val EMPTY = ArtistDetail(
+            id = "",
+            name = "알 수 없는 아티스트",
+            englishName = null,
+            agency = null,
+            description = null,
+            profileImageUrl = null,
+            isGroup = false,
+            members = emptyList(), // 리스트는 null보다 빈 리스트가 안전합니다.
+            active = false,
+            debutDate = null,
+            createdAt = null
+        )
+    }
+}
