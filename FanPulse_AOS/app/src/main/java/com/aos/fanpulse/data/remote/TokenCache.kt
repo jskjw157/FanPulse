@@ -3,6 +3,9 @@ package com.aos.fanpulse.data.remote
 import com.aos.fanpulse.ApplicationScope
 import com.aos.fanpulse.domain.repository.AuthenticationRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -10,12 +13,12 @@ class TokenCache @Inject constructor(
     private val authRepository: AuthenticationRepository,
     @ApplicationScope private val scope: CoroutineScope
 ) {
-    var accessToken: String? = null
-        private set
+    private val accessTokenFlow: StateFlow<String?> = authRepository.accessToken.stateIn(
+        scope = scope,
+        started = SharingStarted.Eagerly,
+        initialValue = null
+    )
 
-    init {
-        scope.launch {
-            authRepository.accessToken.collect { accessToken = it }
-        }
-    }
+    val accessToken: String?
+        get() = accessTokenFlow.value
 }
