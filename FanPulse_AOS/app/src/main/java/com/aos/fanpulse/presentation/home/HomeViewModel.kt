@@ -46,6 +46,66 @@ class HomeViewModel@Inject constructor(
             getHomeItems()
         }
 
+    fun getStreamEvents() = intent{
+        val getStreamEvents = streamingEventsRepository.getStreamingEvents()
+        Log.d("HomeViewModel", "API 호출 성공:${getStreamEvents}")
+        if (getStreamEvents.isSuccessful){
+            reduce {
+                state.copy(
+                    streamingEventItem = (getStreamEvents.body()?.data?.items ?: emptyList())
+                        .ifEmpty { streamingEventDummyList }
+                )
+            }
+        }else {
+            reduce {
+                state.copy(
+                    errorMessage = "데이터를 불러오는데 실패했습니다.",
+                    streamingEventItem = streamingEventDummyList,
+                )
+            }
+        }
+    }
+
+    fun getScheduledEvents() = intent{
+        val getScheduledEvents = streamingEventsRepository.getScheduledEvents()
+        Log.d("HomeViewModel", "API 호출 성공:${getScheduledEvents}")
+        if (getScheduledEvents.isSuccessful){
+            reduce {
+                state.copy(
+                    scheduledItem = (getScheduledEvents.body()?.content ?: emptyList())
+                        .ifEmpty { streamingEventSimpleDummyList },
+                )
+            }
+        }else {
+            reduce {
+                state.copy(
+                    errorMessage = "데이터를 불러오는데 실패했습니다.",
+                    scheduledItem = streamingEventSimpleDummyList,
+                )
+            }
+        }
+    }
+
+    fun getLatestNews(limit: Int) = intent{
+        val getLatestNews = newsRepository.getLatestNews(limit)
+        Log.d("HomeViewModel", "API 호출 성공:${getLatestNews}")
+        if (getLatestNews.isSuccessful){
+            reduce {
+                state.copy(
+                    newsItem = (getLatestNews.body() ?: emptyList())
+                        .ifEmpty { newsDetailDummyList },
+                )
+            }
+        }else {
+            reduce {
+                state.copy(
+                    errorMessage = "데이터를 불러오는데 실패했습니다.",
+                    newsItem = newsDetailDummyList
+                )
+            }
+        }
+    }
+
     fun getHomeItems(
 
     ) = intent{

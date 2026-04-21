@@ -67,6 +67,7 @@ import com.aos.fanpulse.data.remote.apiservice.NewsDetail
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventItem
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventSimpleItem
 import com.aos.fanpulse.presentation.common.CommonTopAppBar
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
@@ -137,7 +138,9 @@ fun HomeScreen(
     val onRefresh: () -> Unit = {
         isRefreshing = true
         coroutineScope.launch {
-            viewModel.getHomeItems()
+            async { viewModel.getStreamEvents() }
+            async { viewModel.getScheduledEvents() }
+            async { viewModel.getLatestNews(3) }
             delay(1500)
             isRefreshing = false
         }
