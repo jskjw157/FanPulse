@@ -2,6 +2,7 @@ package com.aos.fanpulse.presentation.news
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.aos.fanpulse.BuildConfig
 import com.aos.fanpulse.domain.usecase.GetNewsDetailUseCase
 import com.aos.fanpulse.domain.usecase.GetNewsListUseCase
 import com.aos.fanpulse.presentation.common.DummyData.newsDetailDummyList
@@ -18,47 +19,72 @@ class NewsDetailViewModel @Inject constructor(
     private val getNewsListUseCase: GetNewsListUseCase
 ): ContainerHost<NewsDetailContract.NewsDetailState, NewsDetailContract.SideEffect>, ViewModel(){
     override val container: Container<NewsDetailContract.NewsDetailState, NewsDetailContract.SideEffect> =
-        container(initialState = NewsDetailContract.NewsDetailState(newsDetailDummyList[0]))
+        container(
+            initialState = NewsDetailContract.NewsDetailState()
+        )
 
-    fun getNewsDetail(
-        newsId: String,
-    ) = intent {
-        //  API 호출 전
+    fun getNewsDetail(newsId: String) = intent {
+
         reduce {
             state.copy(
-                isLoading = false,
+                isLoading = true,
                 errorMessage = null
             )
         }
 
-        val getNewsDetail = getNewsDetailUseCase.invoke(newsId)
-        Log.d("ArtistsViewModel", "API 호출 성공: 아티스트 ${getNewsDetail}명 로드 완료")
+        try {
+            val detailResponse = getNewsDetailUseCase.invoke(newsId)
+            Log.d("NewsDetailViewModel", "API 호출 결과 (Detail): ${detailResponse.isSuccessful}")
 
-        if (getNewsDetail.isSuccessful) {
-            val newsDetail = getNewsDetail.body()
-            val getRelatedNews = getNewsListUseCase.invoke(
-                newsDetail?.artistId
-            )
-            Log.d("NewsViewModel", "API 호출 성공:${getRelatedNews}")
-            if (getRelatedNews.isSuccessful){
-                reduce {
-                    state.copy(
-                        isLoading = false,
-                        newsDetail = newsDetail?: newsDetailDummyList[0],
-                        relatedNewsItem = (getRelatedNews.body()?.content?: emptyList()).ifEmpty {
-                            newsItemDummyList
-                        }
-                    )
+            if (detailResponse.isSuccessful) {
+                val newsDetailData = detailResponse.body()
+
+                if (newsDetailData != null) {
+                    val relatedResponse = getNewsListUseCase.invoke(newsDetailData.artistId)
+                    Log.d("NewsDetailViewModel", "API 호출 결과 (Related): ${relatedResponse.isSuccessful}")
+
+                    val relatedNewsData = if (relatedResponse.isSuccessful) {
+                        relatedResponse.body()?.content ?: emptyList()
+                    } else {
+                        emptyList()
+                    }
+
+                    reduce {
+                        state.copy(
+                            isLoading = false,
+                            newsDetail = newsDetailData,
+                            relatedNewsItem = relatedNewsData
+                        )
+                    }
+                } else {
+                    handleErrorState("뉴스 상세 정보가 비어있습니다.")
                 }
+            } else {
+                handleErrorState("뉴스 상세 정보를 불러오지 못했습니다. (${detailResponse.code()})")
             }
-        } else {
-            // 실패 시
+        } catch (e: Exception) {
+            Log.e("NewsDetailViewModel", "API Exception", e)
+            handleErrorState("네트워크 연결 상태를 확인해주세요.")
+        }
+    }
+
+    private fun handleErrorState(message: String) = intent {
+        if (BuildConfig.DEBUG) {
             reduce {
                 state.copy(
                     isLoading = false,
-                    errorMessage = "데이터를 불러오는데 실패했습니다.",
-                    newsDetail = newsDetailDummyList[0],
-                    relatedNewsItem = newsItemDummyList,
+                    errorMessage = "[Debug] $message",
+                    newsDetail = newsDetailDummyList.firstOrNull(),
+                    relatedNewsItem = newsItemDummyList
+                )
+            }
+        } else {
+            reduce {
+                state.copy(
+                    isLoading = false,
+                    errorMessage = message,
+                    newsDetail = null,
+                    relatedNewsItem = emptyList()
                 )
             }
         }

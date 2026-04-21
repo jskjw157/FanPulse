@@ -123,7 +123,7 @@ fun ArtistDetailContent(
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            //  이상함
+                            // TODO:
                             //  팔로우랑 랭킹 필요
                         }
                     }
@@ -199,7 +199,7 @@ fun ArtistDetailContent(
                             Spacer(modifier = Modifier.height(80.dp))
                         }
 
-                        //  이상함 성과 관련해서 설정이 필요
+                        // TODO: 성과 관련해서 설정이 필요
                     }
                     ArtistTab.NEWS -> {
                         item {

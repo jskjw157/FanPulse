@@ -7,7 +7,7 @@ object NewsContract {
         val isLoading: Boolean = false,
         val errorMessage: String? = null,
 
-        val newsItem: List<NewsDetail> = emptyList(),                       //  뉴스 목록
+        val newsItem: List<NewsDetail> = emptyList(),
     )
 
     sealed interface SideEffect {

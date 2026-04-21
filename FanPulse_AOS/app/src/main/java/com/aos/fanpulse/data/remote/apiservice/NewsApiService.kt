@@ -55,7 +55,7 @@ interface NewsApiService {
     @GET("news/latest")
     suspend fun getLatestNews(
         @Query("limit") limit: Int = 10
-    ): Response<List<NewsDetail>>
+    ): Response<BaseResponse<List<NewsDetail>>>
 }
 
 // 뉴스 목록 응답 (페이징 포함)
@@ -65,6 +65,11 @@ data class NewsListResponse(
     val page: Int,
     val size: Int,
     val totalPages: Int
+)
+
+data class BaseResponse<T>(
+    val success: Boolean,
+    val data: T
 )
 
 // 개별 뉴스 아이템

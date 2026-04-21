@@ -188,7 +188,7 @@ fun LiveDetailScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 채널 아바타   //  이상함 사용자 이미지 필요
+                // TODO: 채널 아바타   사용자 이미지 필요
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -227,7 +227,7 @@ fun LiveDetailScreen(
             }
         }
 
-        // 2. 액션 바 (좋아요 / 댓글 / 선물 / 공유) 이상함 // 공유는 상단바에 있고 좋아요는 따로 해놓는게 좋을꺼 같음 나머지는 필요 없음
+        // TODO: 2. 액션 바 (좋아요 / 댓글 / 선물 / 공유) // 공유는 상단바에 있고 좋아요는 따로 해놓는게 좋을꺼 같음 나머지는 필요 없음
         ActionBar()
 
         HorizontalDivider(color = colorResource(R.color.color_17), thickness = 1.dp)
@@ -291,8 +291,17 @@ fun YouTubeWebPlayer(
     videoUrl: String,
     modifier: Modifier = Modifier
 ) {
-    // 이렇게 하면 이상한 악성 URL이 들어와도 iframe src가 망가지지 않습니다.
-    val videoId = extractYouTubeVideoId(videoUrl)
+    val videoId = remember(videoUrl) { extractYouTubeVideoId(videoUrl) }
+
+    if (videoId == null) {
+        Box(
+            modifier = modifier.background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("유효하지 않은 비디오 경로입니다.", color = Color.White)
+        }
+        return
+    }
 
     AndroidView(
         factory = { context ->
@@ -302,9 +311,13 @@ fun YouTubeWebPlayer(
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT
                 )
 
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                settings.mediaPlaybackRequiresUserGesture = false
+                settings.apply {
+                    javaScriptEnabled = true
+                    domStorageEnabled = true
+                    allowFileAccess = false
+                    allowContentAccess = false
+                    mediaPlaybackRequiresUserGesture = false
+                }
 
                 webViewClient = object : WebViewClient() {
                     override fun onReceivedError(
@@ -326,10 +339,6 @@ fun YouTubeWebPlayer(
             }
         },
         update = { webView ->
-            if (videoId.isNullOrEmpty()) {
-                Log.e("SecurityLog", "유효하지 않거나 위험한 유튜브 URL이 감지되었습니다.")
-                return@AndroidView
-            }
             val htmlData = """
                 <html>
                     <body style="margin:0;padding:0;background-color:#000000;">
@@ -337,14 +346,19 @@ fun YouTubeWebPlayer(
                                 src="https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1" 
                                 frameborder="0" 
                                 allow="autoplay; encrypted-media; picture-in-picture" 
-                                allowfullscreen
-                                referrerpolicy="strict-origin-when-cross-origin"> 
+                                allowfullscreen> 
                         </iframe>
                     </body>
                 </html>
             """.trimIndent()
 
-            webView.loadDataWithBaseURL("https://localhost/", htmlData, "text/html", "utf-8", null)
+            webView.loadDataWithBaseURL(
+                "https://www.youtube.com",
+                htmlData,
+                "text/html",
+                "utf-8",
+                null
+            )
         },
         modifier = modifier
     )

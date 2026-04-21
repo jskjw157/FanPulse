@@ -5,7 +5,7 @@ import com.aos.fanpulse.data.remote.apiservice.ArtistDetail
 
 object ArtistContract {
     data class ArtistState(
-        val artists: List<Artist>,
+        val artists: List<Artist> = emptyList(),
         val isLoading: Boolean = false,
         val errorMessage: String? = null
     )

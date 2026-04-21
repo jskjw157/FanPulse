@@ -132,19 +132,7 @@ fun HomeScreen(
     var isDrawerOpen by remember { mutableStateOf(false) }
 
     //  Pull-to-refresh
-    var isRefreshing by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-    val pullToRefreshState = rememberPullToRefreshState()
-    val onRefresh: () -> Unit = {
-        isRefreshing = true
-        coroutineScope.launch {
-            async { viewModel.getStreamEvents() }
-            async { viewModel.getScheduledEvents() }
-            async { viewModel.getLatestNews(3) }
-            delay(1500)
-            isRefreshing = false
-        }
-    }
+//    val pullToRefreshState = rememberPullToRefreshState()   //  특별한 커스텀 애니메이션이 필요할때
 
     Box (modifier = Modifier.fillMaxSize()){
         Column(
@@ -161,9 +149,9 @@ fun HomeScreen(
             )
 
             PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh,
-                state = pullToRefreshState,
+                isRefreshing = state.isLoading,
+                onRefresh = { viewModel.getHomeItems() },
+//                state = pullToRefreshState,   //  특별한 커스텀 애니메이션이 필요할때
                 modifier = Modifier.fillMaxSize()
             ) {
                 LazyColumn(
@@ -181,7 +169,7 @@ fun HomeScreen(
                         ) {
                             if (state.newsItem.isNotEmpty()) {
                                 AsyncImage(
-                                    model = state.newsItem[0].thumbnailUrl,
+                                    model = state.newsItem.firstOrNull()?.thumbnailUrl,
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop,
@@ -195,7 +183,7 @@ fun HomeScreen(
                                 ) {
                                     Text(
                                         modifier = Modifier,
-                                        text = state.newsItem[0].title,
+                                        text = state.newsItem.firstOrNull()?.title ?: "",
                                         textAlign = TextAlign.Center,
                                         maxLines = 1,
                                         fontSize = 24.sp,
@@ -206,7 +194,7 @@ fun HomeScreen(
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         modifier = Modifier,
-                                        text = state.newsItem[0].content,
+                                        text = state.newsItem.firstOrNull()?.content ?: "",
                                         textAlign = TextAlign.Center,
                                         maxLines = 1,
                                         fontSize = 14.sp,

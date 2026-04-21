@@ -113,26 +113,7 @@ data class StreamingEventDetail(
     val endedAt: String?,
     val viewerCount: Int,
     val createdAt: String
-){
-    companion object {
-        val EMPTY = StreamingEventDetail(
-            id = "",
-            title = "알 수 없는 이벤트", // UI에 노출될 경우를 대비한 기본 텍스트
-            description = null,
-            artistId = "",
-            artistName = "",
-            thumbnailUrl = "",
-            streamUrl = null,
-            status = "UNKNOWN",
-            scheduledAt = "",
-            startedAt = null,
-            endedAt = null,
-            viewerCount = 0,
-            createdAt = ""
-        )
-    }
-}
-
+)
 /*   페이지 기반 응답 (Scheduled, Live, Legacy, Artist 전용)   */
 data class StreamingPageResponse<T>(
     val content: List<T>,

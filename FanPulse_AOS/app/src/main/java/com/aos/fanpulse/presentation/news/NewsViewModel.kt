@@ -2,6 +2,7 @@ package com.aos.fanpulse.presentation.news
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.aos.fanpulse.BuildConfig
 import com.aos.fanpulse.data.repository.NewsRepositoryImpl
 import com.aos.fanpulse.domain.repository.NewsRepository
 import com.aos.fanpulse.presentation.common.DummyData.newsDetailDummyList
@@ -34,33 +35,43 @@ class NewsViewModel@Inject constructor(
         postSideEffect(NewsContract.SideEffect.NavigateNewsDetail(newsId))
     }
 
-    fun getNewsItems(
-
-    ) = intent {
+    fun getNewsItems() = intent {
         reduce {
             state.copy(
                 isLoading = true,
                 errorMessage = null
             )
         }
-        val getLatestNews = newsRepository.getLatestNews(3)
-        Log.d("NewsViewModel", "API 호출 성공:${getLatestNews}")
-        if ( getLatestNews.isSuccessful ){
-            reduce {
-                state.copy(
-                    isLoading = false,
-                    newsItem = (getLatestNews.body() ?: emptyList())
-                        .ifEmpty { newsDetailDummyList },
-                )
+
+        try {
+            val response = newsRepository.getLatestNews(3)
+            Log.d("NewsViewModel", "API 호출 결과: ${response.isSuccessful}")
+
+            if (response.isSuccessful) {
+                val data = response.body()?.data ?: emptyList()
+                reduce {
+                    state.copy(
+                        isLoading = false,
+                        newsItem = data,
+                        errorMessage = if (data.isEmpty()) "최신 뉴스 소식이 없습니다." else null
+                    )
+                }
+            } else {
+                handleErrorState("뉴스 데이터를 불러오지 못했습니다. (${response.code()})")
             }
-        } else {
-            reduce {
-                state.copy(
-                    isLoading = false,
-                    errorMessage = "데이터를 불러오는데 실패했습니다.",
-                    newsItem = newsDetailDummyList
-                )
-            }
+        } catch (e: Exception) {
+            Log.e("NewsViewModel", "API Exception", e)
+            handleErrorState("네트워크 연결 상태를 확인해주세요.")
+        }
+    }
+
+    private fun handleErrorState(message: String) = intent {
+        reduce {
+            state.copy(
+                isLoading = false,
+                errorMessage = if (BuildConfig.DEBUG) "[Debug] $message" else message,
+                newsItem = if (BuildConfig.DEBUG) newsDetailDummyList else emptyList()
+            )
         }
     }
 }

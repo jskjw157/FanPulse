@@ -10,7 +10,6 @@ import com.aos.fanpulse.data.remote.apiservice.SearchNewsItem
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventDetail
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventItem
 import com.aos.fanpulse.data.remote.apiservice.StreamingEventSimpleItem
-import com.aos.fanpulse.presentation.common.DummyData.newsItemDummyList
 
 object DummyData {
     val streamingEventDummyList = listOf(

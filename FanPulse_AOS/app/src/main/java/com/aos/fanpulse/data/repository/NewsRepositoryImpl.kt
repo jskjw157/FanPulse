@@ -1,5 +1,6 @@
 package com.aos.fanpulse.data.repository
 
+import com.aos.fanpulse.data.remote.apiservice.BaseResponse
 import com.aos.fanpulse.data.remote.apiservice.NewsApiService
 import com.aos.fanpulse.data.remote.apiservice.NewsDetail
 import com.aos.fanpulse.data.remote.apiservice.NewsListResponse
@@ -61,7 +62,7 @@ class NewsRepositoryImpl @Inject constructor(
      */
     override suspend fun getLatestNews(
         limit: Int
-    ): Response<List<NewsDetail>> {
+    ): Response<BaseResponse<List<NewsDetail>>> {
         return apiService.getLatestNews(limit)
     }
 }

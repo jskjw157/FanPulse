@@ -7,9 +7,9 @@ import com.aos.fanpulse.data.remote.apiservice.NewsListResponse
 object ArtistDetailContract {
 
     data class ArtistDetailState(
-        val artistDetail: ArtistDetail?,
-        val newsItems: List<NewsItem>,
-        val scheduledItems: List<NewsItem>,
+        val artistDetail: ArtistDetail? = null,
+        val newsItems: List<NewsItem> = emptyList(),
+        val scheduledItems: List<NewsItem> = emptyList(),
         val isLoading: Boolean = false,
         val errorMessage: String? = null
     )

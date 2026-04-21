@@ -2,11 +2,11 @@ package com.aos.fanpulse.presentation.artist
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.aos.fanpulse.BuildConfig
 import com.aos.fanpulse.R
 import com.aos.fanpulse.domain.repository.ArtistsRepository
 import com.aos.fanpulse.domain.usecase.SearchArtistsUseCase
 import com.aos.fanpulse.presentation.common.DummyData.artistDummyList
-import com.aos.fanpulse.presentation.common.DummyData.streamingEventDummyList
 import com.aos.fanpulse.presentation.common.FilterRadioButtonItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.Container
@@ -20,7 +20,7 @@ class ArtistViewModel @Inject constructor(
     private val searchArtistsUseCase: SearchArtistsUseCase,
 ): ContainerHost<ArtistContract.ArtistState, ArtistContract.SideEffect>, ViewModel() {
     override val container: Container<ArtistContract.ArtistState, ArtistContract.SideEffect> =
-        container(initialState = ArtistContract.ArtistState(artistDummyList)){
+        container(initialState = ArtistContract.ArtistState()){
             getArtists()
         }
 
@@ -36,13 +36,13 @@ class ArtistViewModel @Inject constructor(
     )
 
     fun getArtists() = intent {
-        //  API 호출 전
         reduce {
             state.copy(
                 isLoading = true,
                 errorMessage = null
             )
         }
+
         try {
             val response = artistsRepository.getArtists(
                 activeOnly = true,
@@ -51,36 +51,24 @@ class ArtistViewModel @Inject constructor(
                 sortBy = "name",
                 sortDir = "asc"
             )
+
             if (response.isSuccessful) {
-                val artists = (response.body()?.content ?: emptyList()).ifEmpty { artistDummyList }
-                Log.d("ArtistsViewModel", "API 호출 성공: 아티스트 ${artists}명 로드 완료")
+                val artistsData = response.body()?.content ?: emptyList()
+                Log.d("ArtistsViewModel", "API 호출 성공: 아티스트 ${artistsData.size}명 로드 완료")
+
                 reduce {
                     state.copy(
                         isLoading = false,
-                        artists = artists
+                        artists = artistsData
                     )
                 }
             } else {
-                Log.e("ArtistsViewModel", "API 호출 실패: HTTP ${response.code()} - ${response.errorBody()?.string()}")
-                // 실패 시
-                reduce {
-                    state.copy(
-                        isLoading = false,
-                        errorMessage = "데이터를 불러오는데 실패했습니다.",
-                        artists = artistDummyList
-                    )
-                }
+                Log.e("ArtistsViewModel", "API 호출 실패: HTTP ${response.code()}")
+                handleErrorState("데이터를 불러오지 못했습니다. (${response.code()})")
             }
-        }catch (e: Exception) {
-            Log.e("ArtistsViewModel", "네트워크 예외 발생: ${e.message}", e)
-
-            reduce {
-                state.copy(
-                    isLoading = false,
-                    errorMessage = "네트워크 연결에 문제가 발생했습니다.",
-                    artists = artistDummyList
-                )
-            }
+        } catch (e: Exception) {
+            Log.e("ArtistsViewModel", "네트워크 예외 발생", e)
+            handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }
 
@@ -88,29 +76,62 @@ class ArtistViewModel @Inject constructor(
         query: String,
         page: Int,
         size: Int
-    ) = intent{
-        //  API 호출 전
+    ) = intent {
         reduce {
             state.copy(
                 isLoading = true,
                 errorMessage = null
             )
         }
-        val response = searchArtistsUseCase(query = query, page = page, size = size)
-        if (response.isSuccessful) {
-            val artists = response.body()?.content ?: emptyList()
+
+        try {
+            val response = searchArtistsUseCase(query = query, page = page, size = size)
+
+            if (response.isSuccessful) {
+                val searchResults = response.body()?.content ?: emptyList()
+                reduce {
+                    state.copy(
+                        isLoading = false,
+                        artists = searchResults
+
+                    )
+                }
+            } else {
+                reduce {
+                    state.copy(
+                        isLoading = false,
+                        errorMessage = "검색 결과를 불러오지 못했습니다.",
+                        artists = emptyList()
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ArtistsViewModel", "검색 중 네트워크 예외 발생", e)
             reduce {
                 state.copy(
                     isLoading = false,
-                    artists = artists
+                    errorMessage = "네트워크 연결 상태를 확인해주세요.",
+                    artists = emptyList()
+                )
+            }
+        }
+    }
+
+    private fun handleErrorState(message: String) = intent {
+        if (BuildConfig.DEBUG) {
+            reduce {
+                state.copy(
+                    isLoading = false,
+                    errorMessage = "[Debug] $message",
+                    artists = artistDummyList
                 )
             }
         } else {
-            // 실패 시
             reduce {
                 state.copy(
                     isLoading = false,
-                    errorMessage = "데이터를 불러오는데 실패했습니다."
+                    errorMessage = message,
+                    artists = emptyList()
                 )
             }
         }

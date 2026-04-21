@@ -6,8 +6,8 @@ import com.aos.fanpulse.data.remote.apiservice.NewsItem
 object NewsDetailContract {
 
     data class NewsDetailState(
-        val newsDetail: NewsDetail?,
-        val relatedNewsItem: List<NewsItem> = emptyList(),           //  연관된 목록
+        val newsDetail: NewsDetail? = null,
+        val relatedNewsItem: List<NewsItem> = emptyList(),
                                                                     //  기자에 대한 정보 필요
 
         val isLoading: Boolean = false,

@@ -7,7 +7,7 @@ object LiveDetailContract {
         val isLoading: Boolean = false,
         val errorMessage: String? = null,
 
-        val streamingEventDetailItem: StreamingEventDetail?,
+        val streamingEventDetailItem: StreamingEventDetail? = null,
     )
 
     sealed interface SideEffect {

@@ -91,7 +91,7 @@ fun LiveScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
 
-            //  이상함 //  메인 라이브 배너
+            // TODO: //  메인 라이브 배너
             state.liveItem.firstOrNull()?.let { item ->
                 MainLiveBanner(streamingEventSimpleItem = item) {
                     viewModel.goLiveDetailScreen(it)
@@ -117,7 +117,7 @@ fun LiveScreen(
                 }
             }
 
-            //  이상함 //  Upcoming Concerts
+            // TODO: //  Upcoming Concerts
             Column {
                 Text(
                     text = "Upcoming Concerts",
@@ -220,7 +220,7 @@ fun MainLiveBanner(
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                //  이상함 내용이 들어있어야함
+                // TODO: 내용이 들어있어야함
                 Text(
                     text = streamingEventSimpleItem.platform,
                     color = Color.White.copy(alpha = 0.8f),
@@ -306,7 +306,7 @@ fun LiveStreamListItem(
                 }
             }
 
-            // 이상함  //   재생 시간
+            // TODO:  //   재생 시간
             Text(
                 text = streamingEventItem.scheduledAt,
                 color = Color.Gray,
@@ -352,11 +352,11 @@ fun UpcomingConcertItem(
                         .align(Alignment.TopEnd)
                         .padding(10.dp)
                 ) {
-                    //  이상함
-                    when (streamingEventSimpleItem.status) {
-                        "" -> Badge(backgroundColor = colorResource(R.color.color_13), text = "On Sale")
-                        "" -> Badge(backgroundColor = colorResource(R.color.color_text_3), text = "Sold Out")
-                    }
+                    // TODO:
+//                    when (streamingEventSimpleItem.status) {
+//                        "" -> Badge(backgroundColor = colorResource(R.color.color_13), text = "On Sale")
+//                        "" -> Badge(backgroundColor = colorResource(R.color.color_text_3), text = "Sold Out")
+//                    }
                 }
             }
 
@@ -375,7 +375,7 @@ fun UpcomingConcertItem(
                 // 날짜
                 InfoRow(icon = Icons.Default.DateRange, text = streamingEventSimpleItem.scheduledAt)
                 Spacer(modifier = Modifier.height(4.dp))
-                // 이상함 // 장소
+                // TODO: // 장소
                 InfoRow(icon = Icons.Default.LocationOn, text = streamingEventSimpleItem.platform)
             }
         }

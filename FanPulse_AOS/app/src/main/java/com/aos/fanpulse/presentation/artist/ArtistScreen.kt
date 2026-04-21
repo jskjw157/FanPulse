@@ -243,7 +243,7 @@ fun ArtistItem(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                //  이상함
+                // TODO:
                 Text(
                     text = "#${artist.name//ranking
                     }",
@@ -268,7 +268,7 @@ fun ArtistItem(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Artist Description   이상함
+        // TODO: Artist Description
         Text(
             text = artist.name//description
             ,
@@ -280,7 +280,7 @@ fun ArtistItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Followers and Like    이상함
+        // TODO: Followers and Like
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
