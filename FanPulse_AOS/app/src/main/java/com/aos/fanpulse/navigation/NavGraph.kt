@@ -194,7 +194,7 @@ fun NavGraph(
 
             LaunchedEffect(newsId) {
                 if (!newsId.isNullOrEmpty() && newsId != consumedNewsId) {
-                    NavigationActions(navController).navigateLiveDetail(newsId)
+                    NavigationActions(navController).navigateNewsDetail(newsId)
                     consumedNewsId = newsId
                 }
             }
