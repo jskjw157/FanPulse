@@ -92,8 +92,10 @@ fun LiveScreen(
         ) {
 
             //  이상함 //  메인 라이브 배너
-            MainLiveBanner(streamingEventSimpleItem = state.liveItem[0]){
-                viewModel.goLiveDetailScreen(it)
+            state.liveItem.firstOrNull()?.let { item ->
+                MainLiveBanner(streamingEventSimpleItem = item) {
+                    viewModel.goLiveDetailScreen(it)
+                }
             }
 
             //  More Live Streams
