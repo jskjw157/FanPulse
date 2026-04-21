@@ -3,6 +3,11 @@ package com.aos.fanpulse.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -87,15 +92,42 @@ fun NavGraph(
                 goSettingScreen = { NavigationActions(navController).navigateSettings() },
                 goSupportScreen = { NavigationActions(navController).navigateSupport() }
             )}
-            composable(MainTabScreen.Live.route) { LiveScreen(
-                goSearchScreen = { NavigationActions(navController).navigateSearch() },
-                goNotificationScreen = { NavigationActions(navController).navigateNotifications() },
-                goLiveDetailScreen = { NavigationActions(navController).navigateLiveDetail(it)}
-            ) }
+
+            composable(
+                route = "live?liveId={liveId}",
+                arguments = listOf(
+                    navArgument("liveId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val liveId = backStackEntry.arguments?.getString("liveId")
+                var consumedLiveId by rememberSaveable { mutableStateOf<String?>(null) }
+
+                LaunchedEffect(liveId) {
+                    if (!liveId.isNullOrEmpty() && liveId != consumedLiveId) {
+                        NavigationActions(navController).navigateLiveDetail(liveId)
+                        consumedLiveId = liveId
+                    }
+                }
+
+                LiveScreen(
+                    goSearchScreen = { NavigationActions(navController).navigateSearch() },
+                    goNotificationScreen = { NavigationActions(navController).navigateNotifications() },
+                    goLiveDetailScreen = { NavigationActions(navController).navigateLiveDetail(it) }
+                )
+            }
         }
+
         composable(
             route = SubScreen.LiveDetail.route,
-            arguments = listOf(navArgument("liveId") { type = NavType.StringType })
+            arguments = listOf(navArgument("liveId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
         ){ backStackEntry ->
             val liveId = backStackEntry.arguments?.getString("liveId") ?: ""
             LiveDetailScreen(
@@ -135,7 +167,7 @@ fun NavGraph(
                 goLiveScreen = {
                     navController.popBackStack()
                     NavigationActions(navController).navigateLive(it)
-                               },
+                },
                 goNewsScreen = {
                     navController.popBackStack()
                     NavigationActions(navController).navigateNews(it)
@@ -147,7 +179,26 @@ fun NavGraph(
 //            MembershipScreen()
 //        }
 
-        composable (SubScreen.News.route){
+        composable (
+            route = "news?newsId={newsId}",
+            arguments = listOf(
+                navArgument("newsId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ){  backStackEntry ->
+            val newsId = backStackEntry.arguments?.getString("newsId")
+            var consumedNewsId by rememberSaveable { mutableStateOf<String?>(null) }
+
+            LaunchedEffect(newsId) {
+                if (!newsId.isNullOrEmpty() && newsId != consumedNewsId) {
+                    NavigationActions(navController).navigateLiveDetail(newsId)
+                    consumedNewsId = newsId
+                }
+            }
+
             NewsScreen(
                 goSearchScreen = {NavigationActions(navController).navigateSearch()},
                 onBackClick = { navController.popBackStack() },
@@ -236,7 +287,7 @@ fun NavGraph(
             route = SubScreen.ArtistDetail.route,
             arguments = listOf(navArgument("artistId") { type = NavType.StringType })
         ) { backStackEntry ->
-            // 전달받은 id 꺼내기
+
             val artistId = backStackEntry.arguments?.getString("artistId") ?: ""
 
             ArtistDetailScreen(

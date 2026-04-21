@@ -17,7 +17,7 @@ sealed class MainTabScreen(
     object Live : MainTabScreen("live", "Live", R.drawable.icon_live){
         fun createRoute(liveId: String? = null): String {
             return if (liveId != null) {
-                "live_detail/$liveId"
+                "live?liveId=$liveId"
             } else {
                 route
             }
@@ -44,7 +44,7 @@ sealed class SubScreen(route: String) : Screen(route) {
     object News : SubScreen("news"){
         fun createRoute(newsId: String? = null): String {
             return if (newsId != null) {
-                "news_detail/$newsId"
+                "news?newsId=$newsId"
             } else {
                 route
             }
@@ -85,11 +85,10 @@ class NavigationActions(private val navController: NavHostController){
         }
     }
     fun navigateLive(liveId: String? = null) {
-        val destination = if (liveId == null) {
+        val destination = if (liveId == null)
             MainTabScreen.Live.route
-        } else {
+        else
             MainTabScreen.Live.createRoute(liveId)
-        }
         navController.navigate(destination) {
             popUpTo(navController.graph.findStartDestination().id) {
                 saveState = true
@@ -202,7 +201,11 @@ class NavigationActions(private val navController: NavHostController){
             SubScreen.News.createRoute(newsId)
         }
         navController.navigate(destination) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
             launchSingleTop = true
+            restoreState = true
         }
     }
 

@@ -46,7 +46,8 @@ fun MainScreen() {
         Scaffold(
             contentWindowInsets = WindowInsets(0, 0, 0, 0), //  edge to edge
             bottomBar = {
-                val isMainTab = MainTabScreen.tabItems.any { it.route == currentRoute }
+                val baseRoute = currentRoute?.substringBefore("?")
+                val isMainTab = MainTabScreen.tabItems.any { it.route == baseRoute }
                 if (isMainTab) {
                     MyBottomNavigation(navController = navController)
                 }
@@ -70,7 +71,9 @@ fun MyBottomNavigation(navController: NavHostController) {
         contentColor = Color.White
     ) {
         MainTabScreen.tabItems.forEach { screen ->
-            val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+            val isSelected = currentDestination?.hierarchy?.any {
+                it.route?.substringBefore("?") == screen.route
+            } == true
 
             NavigationBarItem(
                 selected = isSelected,
