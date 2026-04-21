@@ -1,6 +1,5 @@
 package com.aos.fanpulse.navigation
 
-import android.net.http.SslCertificate.saveState
 import androidx.annotation.DrawableRes
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
