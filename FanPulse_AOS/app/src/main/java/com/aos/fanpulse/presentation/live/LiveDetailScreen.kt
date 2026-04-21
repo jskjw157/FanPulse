@@ -291,11 +291,12 @@ fun YouTubeWebPlayer(
     videoUrl: String,
     modifier: Modifier = Modifier
 ) {
-//    val safeUrl = videoUrl.replace("youtube.com", "youtube-nocookie.com")
+    // 이렇게 하면 이상한 악성 URL이 들어와도 iframe src가 망가지지 않습니다.
+    val videoId = extractYouTubeVideoId(videoUrl) ?: ""
+
     AndroidView(
         factory = { context ->
             WebView(context).apply {
-
                 layoutParams = android.view.ViewGroup.LayoutParams(
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -315,38 +316,42 @@ fun YouTubeWebPlayer(
                         Log.e("WebViewTest", "접속 에러 발생: ${error?.description}")
                     }
                 }
+
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                         Log.e("WebViewLog", "유튜브 에러: ${consoleMessage?.message()}")
                         return super.onConsoleMessage(consoleMessage)
                     }
                 }
-
-                // 전달받은 유튜브 주소 로드
-                loadUrl(videoUrl)
             }
         },
         update = { webView ->
-
+            //  보안 해결: src를 통째로 넣지 않고, embed URL 틀에 비디오 ID만 안전하게 삽입
             val htmlData = """
-    <html>
-        <body style="margin:0;padding:0;background-color:#000000;">
-            <iframe width="100%" height="100%" 
-                    src="$videoUrl" 
-                    frameborder="0" 
-                    allow="autoplay; encrypted-media; picture-in-picture" 
-                    allowfullscreen
-                    referrerpolicy="strict-origin-when-cross-origin"> </iframe>
-        </body>
-    </html>
-""".trimIndent()
+                <html>
+                    <body style="margin:0;padding:0;background-color:#000000;">
+                        <iframe width="100%" height="100%" 
+                                src="https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1" 
+                                frameborder="0" 
+                                allow="autoplay; encrypted-media; picture-in-picture" 
+                                allowfullscreen
+                                referrerpolicy="strict-origin-when-cross-origin"> 
+                        </iframe>
+                    </body>
+                </html>
+            """.trimIndent()
 
-// 🔥 2. baseUrl을 "https://www.youtube.com" 에서 "http://localhost/" 로 변경하세요.
-// (유튜브 주소를 그대로 쓰면 유튜브 서버가 '사칭'으로 오해해서 153 에러를 뱉습니다.)
+            // 작성하셨던 localhost 설정 유지 (153 에러 방지용)
             webView.loadDataWithBaseURL("http://localhost/", htmlData, "text/html", "utf-8", null)
         },
         modifier = modifier
     )
+}
+
+fun extractYouTubeVideoId(url: String): String? {
+    val regex = Regex("(?<=watch\\?v=|/videos/|embed\\/|youtu.be\\/|\\/v\\/|\\/e\\/|watch\\?v%3D|watch\\?feature=player_embedded&v=|%2Fvideos%2F|embed%\u200C\u200B2F|youtu.be%2F|%2Fv%2F)[^#\\&\\?\\n]*")
+    val match = regex.find(url)
+    return match?.value
 }
 
 // ── LIVE 배지 ──────────────────────────────────────────────────────────────────
