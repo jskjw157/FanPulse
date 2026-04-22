@@ -82,8 +82,8 @@ class TokenAuthenticator @Inject constructor(
     // 재시도 횟수를 체크하기 위한 확장 함수
     private fun Response.count(): Int {
         var count = 1
-        var res = this
-        while (res.priorResponse != null) { count++; res = res.priorResponse!! }
+        var res: Response? = this
+        while (res?.priorResponse != null) { count++; res = res.priorResponse }
         return count
     }
 

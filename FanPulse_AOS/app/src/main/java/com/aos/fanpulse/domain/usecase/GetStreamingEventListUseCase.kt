@@ -27,7 +27,7 @@ class GetStreamingEventListUseCase @Inject constructor(
         return when (type) {
             FetchType.CURSOR -> repository.getStreamingEvents(status, cursor = cursor)
             FetchType.LIVE -> repository.getLiveEvents(page)
-            FetchType.ARTIST -> repository.getArtistEvents(artistId!!, page)
+            FetchType.ARTIST -> repository.getArtistEvents(artistId.toString(), page)
             FetchType.LEGACY -> repository.getLegacyEvents(status, platform, artistId, scheduledAfter, scheduledBefore, page, size, sortBy, sortDir)
             FetchType.SCHEDULED -> repository.getScheduledEvents(page, size)
         }

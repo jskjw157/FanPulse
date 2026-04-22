@@ -100,16 +100,14 @@ fun NewsDetailScreen(
                             .height(280.dp)
                             .background(Color(0xFF1A1A2E))
                     ) {
-//                         이미지 placeholder - 실제로는 AsyncImage 사용
-                         AsyncImage(
-                             model = state.newsDetail!!.thumbnailUrl,
-                             contentDescription = null,
-                             modifier = Modifier.fillMaxSize(),
-                             contentScale = ContentScale.Crop,
-                             // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
-                             placeholder = painterResource(id = R.drawable.home_ex1),
-                             error = painterResource(id = R.drawable.home_ex1)
-                         )
+                        AsyncImage(
+                            model = state.newsDetail?.thumbnailUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            placeholder = painterResource(id = R.drawable.home_ex1),
+                            error = painterResource(id = R.drawable.home_ex1)
+                        )
                     }
                 }
 
@@ -127,17 +125,19 @@ fun NewsDetailScreen(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = state.newsDetail!!.publishedAt,
-                            fontSize = 13.sp,
-                            color = Color(0xFF999999)
-                        )
+                        if (state.newsDetail != null){
+                            Text(
+                                text = state.newsDetail?.publishedAt.toString(),
+                                fontSize = 13.sp,
+                                color = Color(0xFF999999)
+                            )
+                        }
                     }
                 }
 
                 item {
                     Text(
-                        text = state.newsDetail!!.title,
+                        text = state.newsDetail?.title?: "",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1A1A1A),
@@ -170,7 +170,6 @@ fun NewsDetailScreen(
 
                         Spacer(modifier = Modifier.width(12.dp))
 
-                        //  기자에 대한 정보
                         Column {
                             Text(
                                 text = "FanPulse 편집부",
@@ -195,7 +194,7 @@ fun NewsDetailScreen(
                             .padding(horizontal = 16.dp)
                     ) {
                         Text(
-                            text = state.newsDetail!!.content,
+                            text = state.newsDetail?.content?: "",
                             fontSize = 15.sp,
                             lineHeight = 24.sp,
                             color = Color(0xFF333333)
@@ -325,7 +324,6 @@ fun RelatedNewsItem(newsItem: NewsItem) {
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
-                    // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
                     placeholder = painterResource(id = R.drawable.home_ex1),
                     error = painterResource(id = R.drawable.home_ex1)
                 )

@@ -138,7 +138,7 @@ fun LiveDetailScreen(
 //                            videoUrl = m3u8Url!!,
 //                            modifier = Modifier.fillMaxSize()
 //                        )
-                        val streamUrl = state.streamingEventDetailItem!!.streamUrl.toString()
+                        val streamUrl = state.streamingEventDetailItem?.streamUrl.toString()
                         YouTubeWebPlayer(
                             videoUrl = streamUrl,
                             modifier = Modifier.fillMaxSize()

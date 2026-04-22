@@ -70,9 +70,9 @@ sealed class SubScreen(route: String) : Screen(route) {
             return "artist_detail/$artistId"
         }
     }
-    object LiveDetail : SubScreen("live/{liveId}"){
+    object LiveDetail : SubScreen("live_detail/{liveId}"){
         fun createRoute(liveId: String): String {
-            return "live/$liveId"
+            return "live_detail/$liveId"
         }
     }
 }
