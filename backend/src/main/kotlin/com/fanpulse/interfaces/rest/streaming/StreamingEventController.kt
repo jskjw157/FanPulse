@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponse as SwaggerApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.PageRequest
@@ -67,12 +67,12 @@ class StreamingEventController(
         tags = ["Streaming Events"]
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Events retrieved successfully",
             content = [Content(schema = Schema(implementation = ApiResponse::class))]
         ),
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "400",
             description = "Invalid request parameters (e.g., malformed cursor, invalid limit)"
         )
@@ -120,12 +120,12 @@ class StreamingEventController(
         tags = ["Streaming Events"]
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Event retrieved successfully",
             content = [Content(schema = Schema(implementation = ApiResponse::class))]
         ),
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "404",
             description = "Event with given ID not found"
         )
@@ -146,7 +146,7 @@ class StreamingEventController(
         description = "Returns a paginated list of streaming events with optional filtering"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Events retrieved successfully",
             content = [Content(schema = Schema(implementation = StreamingEventListResponse::class))]
@@ -204,7 +204,7 @@ class StreamingEventController(
         description = "Returns currently live streaming events, ordered by viewer count (highest first)"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Live events retrieved successfully",
             content = [Content(schema = Schema(implementation = StreamingEventListResponse::class))]
@@ -228,7 +228,7 @@ class StreamingEventController(
         description = "Returns upcoming scheduled streaming events, ordered by scheduled time (soonest first)"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Scheduled events retrieved successfully",
             content = [Content(schema = Schema(implementation = StreamingEventListResponse::class))]
@@ -252,7 +252,7 @@ class StreamingEventController(
         description = "Returns streaming events for a specific artist"
     )
     @ApiResponses(
-        ApiResponse(
+        SwaggerApiResponse(
             responseCode = "200",
             description = "Events retrieved successfully",
             content = [Content(schema = Schema(implementation = StreamingEventListResponse::class))]
