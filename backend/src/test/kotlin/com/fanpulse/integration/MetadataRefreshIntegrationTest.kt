@@ -178,6 +178,59 @@ class MetadataRefreshIntegrationTest {
             .withQueryParam("url", containing(endedVideoId)))
     }
 
+    @Test
+    @DisplayName("should isolate transactions between events (REQUIRES_NEW): success commits independently when others fail")
+    fun shouldIsolateTransactionsBetweenEvents() {
+        // given: 두 이벤트 — 하나는 oEmbed 성공, 하나는 5xx 실패
+        val successVideoId = "successVid1"
+        val failureVideoId = "failureVid1"
+
+        val successEvent = createEvent(successVideoId, StreamingStatus.LIVE)
+        val failureEvent = createEvent(failureVideoId, StreamingStatus.LIVE)
+        repository.saveAll(listOf(successEvent, failureEvent))
+
+        // 첫 번째 이벤트: 정상 응답 → updateEventMetadata 성공 → REQUIRES_NEW 트랜잭션 commit
+        stubOEmbedSuccess(successVideoId, "Successfully Updated")
+
+        // 두 번째 이벤트: 500 에러 → updateEventMetadata 실패 → REQUIRES_NEW 트랜잭션 rollback
+        wireMockServer.stubFor(
+            get(urlPathEqualTo("/oembed"))
+                .withQueryParam("url", containing(failureVideoId))
+                .willReturn(aResponse().withStatus(500))
+        )
+
+        // when: 배치 갱신 실행 (refreshEvents 내부에서 각 이벤트가 독립 트랜잭션으로 처리됨)
+        val result = runBlocking { metadataRefreshService.refreshLiveEvents() }
+
+        // then: REQUIRES_NEW 격리 효과 검증
+
+        // 1) 통계 카운터 — 부분 실패가 전체 배치를 중단시키지 않음을 증명
+        assertEquals(2, result.total, "두 이벤트 모두 처리 시도되어야 함")
+        assertEquals(1, result.updated, "성공한 이벤트는 1건이어야 함")
+        assertEquals(1, result.failed, "실패한 이벤트는 1건이어야 함")
+        assertEquals(1, result.errors.size, "실패 이벤트의 errors 항목이 누적되어야 함")
+        assertEquals(failureEvent.id, result.errors[0].eventId, "errors의 eventId는 실패한 이벤트여야 함")
+
+        // 2) 성공 이벤트는 DB에 실제로 commit됨 (REQUIRES_NEW의 핵심)
+        //    — 만약 외부 트랜잭션이 모든 이벤트를 감싸고 있다면, 한 이벤트의 실패가
+        //    전체 트랜잭션을 rollback 시켜 이 어서션이 깨질 수 있음.
+        //    따라서 이 어서션은 REQUIRES_NEW 격리의 회귀 가드 역할.
+        val updatedSuccess = repository.findById(successEvent.id).orElseThrow()
+        assertEquals(
+            "Successfully Updated",
+            updatedSuccess.title,
+            "성공 이벤트는 다른 이벤트 실패와 무관하게 DB에 commit되어야 함 (REQUIRES_NEW)"
+        )
+
+        // 3) 실패 이벤트는 원본 상태 유지 — REQUIRES_NEW 트랜잭션 rollback 검증
+        val unchangedFailure = repository.findById(failureEvent.id).orElseThrow()
+        assertEquals(
+            "Old Title",
+            unchangedFailure.title,
+            "실패한 이벤트는 변경되지 않아야 함 (트랜잭션 rollback)"
+        )
+    }
+
     private fun createEvent(videoId: String, status: StreamingStatus): StreamingEvent {
         return StreamingEvent(
             id = UUID.randomUUID(),
