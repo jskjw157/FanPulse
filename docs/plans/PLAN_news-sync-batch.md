@@ -4,7 +4,7 @@
 **Issue**: [#272](https://github.com/jskjw157/FanPulse/issues/272)
 **Branch**: `feature/272-news-sync-batch`
 **Ready Date**: 2026-04-27
-**Last Updated**: 2026-04-27
+**Last Updated**: 2026-04-27 (Phase 1 완료)
 **Estimated Completion**: 2026-05-02 (약 10-14h)
 **Scope Size**: Medium (5 phases)
 **Related Learning**: PR #238 / PR #271 / Issue #166, #224 — 코루틴·트랜잭션 경계 분리 패턴(REQUIRES_NEW + 동기 위임)을 본 플랜에도 동일 적용
@@ -155,12 +155,12 @@ class NewsMatcherTest {
 ### Phase 1: 매칭/분류 도메인 로직
 **Goal**: 순수 Kotlin 도메인 클래스 2종 (`NewsMatcher`, `NewsCategoryClassifier`). DB 의존 없이 완전 단위 테스트 가능.
 **Estimated Time**: 2h
-**Status**: ⏳ Pending
+**Status**: ✅ Completed (2026-04-27)
 
 #### Tasks
 
 **🔴 RED: Write Failing Tests First**
-- [ ] **Test 1.1**: `NewsMatcherTest.kt` 작성
+- [x] **Test 1.1**: `NewsMatcherTest.kt` 작성
   - File: `backend/src/test/kotlin/com/fanpulse/domain/content/NewsMatcherTest.kt`
   - Expected: 컴파일 실패 (NewsMatcher 클래스 없음)
   - Test cases:
@@ -174,7 +174,7 @@ class NewsMatcherTest {
     - `부분 문자열이 단어 경계에 걸치면 매칭 (주의: "aespa의" 는 매칭, "kespace" 는 매칭 안 됨 — tokenization 정책 문서화)`
     - `비활성(active=false) 아티스트는 매칭에서 제외`
 
-- [ ] **Test 1.2**: `NewsCategoryClassifierTest.kt` 작성
+- [x] **Test 1.2**: `NewsCategoryClassifierTest.kt` 작성
   - File: `backend/src/test/kotlin/com/fanpulse/domain/content/NewsCategoryClassifierTest.kt`
   - Expected: 컴파일 실패 (NewsCategoryClassifier 없음)
   - Test cases:
@@ -192,7 +192,7 @@ class NewsMatcherTest {
     - `title 우선, content 보조`
 
 **🟢 GREEN: Implement to Make Tests Pass**
-- [ ] **Task 1.3**: `NewsMatcher` 구현
+- [x] **Task 1.3**: `NewsMatcher` 구현
   - File: `backend/src/main/kotlin/com/fanpulse/domain/content/NewsMatcher.kt`
   - Interface:
     ```kotlin
@@ -202,7 +202,7 @@ class NewsMatcherTest {
     ```
   - Logic: normalize(소문자, 공백 제거) → 각 artist의 name/englishName/members 각각 동일 normalize → `contains` 체크
 
-- [ ] **Task 1.4**: `NewsCategoryClassifier` 구현
+- [x] **Task 1.4**: `NewsCategoryClassifier` 구현
   - File: `backend/src/main/kotlin/com/fanpulse/domain/content/NewsCategoryClassifier.kt`
   - Interface:
     ```kotlin
@@ -213,7 +213,7 @@ class NewsMatcherTest {
   - Logic: 우선순위 순서대로 키워드 맵 순회 → 첫 매칭 반환 → 없으면 `GENERAL`
 
 **🔵 REFACTOR: Clean Up Code**
-- [ ] **Task 1.5**: Refactor
+- [x] **Task 1.5**: Refactor
   - normalize 함수를 `private fun` 추출
   - 키워드 맵을 `companion object`의 `val` 상수로
   - KDoc 한국어로 작성 (MEMORY.md 원칙)
