@@ -1,0 +1,20 @@
+package com.aos.fanpulse.presentation.news
+
+import com.aos.fanpulse.domain.model.NewsDetail
+import com.aos.fanpulse.domain.model.NewsItem
+
+object NewsDetailContract {
+
+    data class NewsDetailState(
+        val newsDetail: NewsDetail? = null,
+        val relatedNewsItem: List<NewsItem> = emptyList(),
+                                                                    //  기자에 대한 정보 필요
+
+        val isLoading: Boolean = false,
+        val errorMessage: String? = null
+    )
+
+    sealed interface SideEffect {
+        data class ShowToast(val message: String) : SideEffect
+    }
+}
