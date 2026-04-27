@@ -407,7 +407,7 @@ grep -rn "crawledNewsRepository.save\|crawledNewsRepository.delete\|crawledNewsR
   - MockK `spyk` 또는 LogCaptor 사용
 
 **🟢 GREEN: Implement to Make Tests Pass**
-- [ ] **Task 3.3**: `NewsSyncService` 인터페이스
+- [ ] **Task 3.4**: `NewsSyncService` 인터페이스
   - File: `backend/src/main/kotlin/com/fanpulse/application/service/content/NewsSyncService.kt`
   - Interface:
     ```kotlin
@@ -423,7 +423,7 @@ grep -rn "crawledNewsRepository.save\|crawledNewsRepository.delete\|crawledNewsR
     )
     ```
 
-- [ ] **Task 3.4**: `TransactionalNewsUpserter` 🆕 (PR #238/#224 패턴 동일 적용)
+- [ ] **Task 3.5**: `TransactionalNewsUpserter` 🆕 (PR #238/#224 패턴 동일 적용)
   - File: `backend/src/main/kotlin/com/fanpulse/application/service/content/TransactionalNewsUpserter.kt`
   - 1건 단위 upsert를 **별도 트랜잭션**으로 격리하는 동기 컴포넌트.
     ```kotlin
@@ -450,7 +450,7 @@ grep -rn "crawledNewsRepository.save\|crawledNewsRepository.delete\|crawledNewsR
     enum class UpsertOutcome { INSERTED, SKIPPED_DUPLICATE }
     ```
 
-- [ ] **Task 3.5**: `NewsSyncServiceImpl` (오케스트레이션, 트랜잭션 없음)
+- [ ] **Task 3.6**: `NewsSyncServiceImpl` (오케스트레이션, 트랜잭션 없음)
   - File: `backend/src/main/kotlin/com/fanpulse/application/service/content/NewsSyncServiceImpl.kt`
   - ⚠️ **`@Transactional` 붙이지 않는다** — 1건 실패가 전체 롤백 되지 않도록.
   - Dependencies: `CrawledNewsReader`, `ArtistPort`, `NewsPort`, `NewsMatcher`, `NewsCategoryClassifier`, `TransactionalNewsUpserter`
@@ -468,15 +468,15 @@ grep -rn "crawledNewsRepository.save\|crawledNewsRepository.delete\|crawledNewsR
          - catch DataIntegrityViolationException (race condition) → skipped++
          - catch other → log + failed++
     5. return `NewsSyncReport`
-  - ⚠️ 복수 아티스트 매칭 시 **동일 source_url이 아티스트마다 1건씩 저장**되는 현상 → 유니크 제약을 `(source_url, artist_id)` 복합으로 해야 함. Flyway 마이그레이션 Task 3.7 에 포함.
+  - ⚠️ 복수 아티스트 매칭 시 **동일 source_url이 아티스트마다 1건씩 저장**되는 현상 → 유니크 제약을 `(source_url, artist_id)` 복합으로 해야 함. Flyway 마이그레이션 Task 3.9 에 포함.
 
-- [ ] **Task 3.6**: `NewsPort.findBySourceUrlIn` 메소드 추가 🆕
+- [ ] **Task 3.7**: `NewsPort.findBySourceUrlIn` 메소드 추가 🆕
   - File: `backend/src/main/kotlin/com/fanpulse/domain/content/port/NewsPort.kt` (interface)
   - 시그니처: `fun findBySourceUrlIn(sourceUrls: Collection<String>): List<News>`
   - 기존 `findBySourceUrl(url)` 은 유지 (다른 호출자 영향 X)
   - Adapter 구현: JPA Query Method `findAllBySourceUrlIn` 추가
 
-- [ ] **Task 3.7**: Flyway 마이그레이션 사전 체크 (Pre-flight) 🆕 — V119 작성 전 필수
+- [ ] **Task 3.8**: Flyway 마이그레이션 사전 체크 (Pre-flight) 🆕 — V119 작성 전 필수
   - **체크 1: 기존 유니크 제약/인덱스 이름 확인**
     ```sql
     SELECT conname, pg_get_constraintdef(oid)
@@ -503,11 +503,11 @@ grep -rn "crawledNewsRepository.save\|crawledNewsRepository.delete\|crawledNewsR
   - 모든 체크 PASS 한 환경(로컬/dev/prod 각각)을 본문에 표로 기록 후 V119 작성 진행
   - 만약 이미 `(source_url, artist_id)` 복합 유니크가 존재하면 V119 skip (마이그레이션 파일 자체를 만들지 않음)
 
-- [ ] **Task 3.8**: Flyway 마이그레이션 — 유니크 제약 변경
+- [ ] **Task 3.9**: Flyway 마이그레이션 — 유니크 제약 변경
   - File: `backend/src/main/resources/db/migration/V119__news_source_url_artist_unique.sql`
-  - 내용 (Task 3.7 결과 반영):
+  - 내용 (Task 3.8 결과 반영):
     ```sql
-    -- 기존 source_url 단독 유니크가 있으면 DROP (제약명은 Task 3.7 결과로 치환)
+    -- 기존 source_url 단독 유니크가 있으면 DROP (제약명은 Task 3.8 결과로 치환)
     ALTER TABLE news DROP CONSTRAINT IF EXISTS news_source_url_key;
     ALTER TABLE news DROP CONSTRAINT IF EXISTS news_source_url_uniq;
     ALTER TABLE news DROP CONSTRAINT IF EXISTS uk_news_source_url;
@@ -518,13 +518,13 @@ grep -rn "crawledNewsRepository.save\|crawledNewsRepository.delete\|crawledNewsR
     ALTER TABLE news
       ADD CONSTRAINT news_source_url_artist_id_unique UNIQUE (source_url, artist_id);
     ```
-  - ⚠️ Task 3.7 로 확인한 정확한 제약명을 우선 DROP 하되, 방어적으로 `IF EXISTS` 로 여러 후보를 나열한다.
+  - ⚠️ Task 3.8 로 확인한 정확한 제약명을 우선 DROP 하되, 방어적으로 `IF EXISTS` 로 여러 후보를 나열한다.
 
 **🔵 REFACTOR: Clean Up Code**
-- [ ] **Task 3.6**: Refactor
+- [ ] **Task 3.10**: Refactor
   - 복잡한 for loop를 `snapshots.flatMap { snapshot -> matcher.match(...).map { snapshot to it } }` 형태로 재구성 검토
   - 로깅 레벨 검토: info (성공 개수), warn (실패 개수), debug (개별 스킵)
-  - Transactional 경계: **per-snapshot** Transactional 권장 (1건 실패가 전체 롤백 안 되게)
+  - Transactional 경계: **per-snapshot** REQUIRES_NEW (Task 3.5 의 `TransactionalNewsUpserter`) 만 사용 — 1건 실패가 전체 롤백 안 되게
 
 #### Quality Gate ✋
 
@@ -819,13 +819,13 @@ grep "News sync completed" logs/application.log
 | **매칭 오탐 ("New Jeans"가 일반 표현 매칭)** | Medium | Medium | Phase 1에서 tokenization 정책 (단어 경계) 문서화. 1주 운영 후 오탐 로그 분석 → 블랙리스트 키워드 추가 |
 | **매칭 누락 (별명/애칭 미매칭)** | High | Low | MVP 범위 초과. 2차에서 임베딩 기반 검토. 운영 로그로 skip된 title 샘플링 |
 | **스케줄러 동시 실행 (다중 인스턴스)** | Low | Medium | ShedLock `lockAtLeastFor="1m"` 적용. LiveDiscovery와 동일 패턴 검증됨 |
-| **Flyway V119 유니크 제약 변경 시 기존 데이터 충돌** | Low | High | 실행 전 `SELECT source_url, artist_id, COUNT(*) FROM news GROUP BY 1,2 HAVING COUNT(*) > 1;` = 0 확인. 기존 15건은 아티스트 매칭이 다 붙어있을 가능성 낮음 |
+| **Flyway V119 유니크 제약 변경 시 기존 데이터 충돌** | Low | High | Task 3.8 사전 체크로 `SELECT source_url, artist_id, COUNT(*) FROM news GROUP BY 1,2 HAVING COUNT(*) > 1;` = 0 확인. 기존 15건은 아티스트 매칭이 다 붙어있을 가능성 낮음 |
 | **Naver API rate limit (Django 측)** | Low | Medium | Django 책임. Spring은 read only. 로그 모니터링만 |
 | **Fail-Open으로 조용히 실패** | Medium | High | Phase 4 refactor 단계에서 Micrometer counter + Grafana alert 설정 (별도 PR 가능) |
 | **`news` 테이블 볼륨 폭증 (1만 건/일 이상)** | Low | Medium | 현재 Naver API 일일 소화량 ~1000건 수준. 10만 건 도달 시 파티셔닝 검토. MVP 단계에서는 무시 |
-| **@Transactional self-invocation 으로 트랜잭션 미적용** | Medium | High | PR #238 학습 적용: `TransactionalNewsUpserter` 를 별도 `@Component` 로 분리하여 Spring AOP proxy 경유. `NewsSyncServiceImpl` 자체에는 `@Transactional` 사용 금지. 단위 테스트로 호출 경로 검증 |
-| **N+1 쿼리로 배치 시간 폭증** | Medium | Medium | `NewsPort.findBySourceUrlIn(urls)` bulk 조회로 1회 검증. 호출 횟수를 검증하는 테스트 추가 (`verify(exactly = 1)`) |
-| **V120 fake URL regex false positive** | Medium | High | regex 사용 금지. Task 5.2.1 에서 사람이 검토한 id 리스트를 `WHERE id IN (...)` 로 명시. Quality Gate 에 false positive 방지 SELECT 포함 |
+| **@Transactional self-invocation 으로 트랜잭션 미적용** | Medium | High | Task 3.5: `TransactionalNewsUpserter` 를 별도 `@Component` 로 분리하여 Spring AOP proxy 경유. Task 3.6 의 `NewsSyncServiceImpl` 자체에는 `@Transactional` 사용 금지. Test 3.2 로 호출 경로 검증 (PR #238 학습) |
+| **N+1 쿼리로 배치 시간 폭증** | Medium | Medium | Task 3.7: `NewsPort.findBySourceUrlIn(urls)` bulk 조회로 1쿼리 보장. Test 3.1 의 `verify(exactly = 1)` 로 회귀 방지 |
+| **V120 fake URL regex false positive** | Medium | High | regex 사용 금지. Task 5.2.1 에서 사람이 검토한 id 리스트를 Task 5.2.2 의 `WHERE id IN (...)` 로 명시. Phase 5 Quality Gate 에 false positive 방지 SELECT 포함 |
 
 ---
 
@@ -844,7 +844,8 @@ grep "News sync completed" logs/application.log
 
 ### If Phase 3 Fails
 **Steps to revert**:
-- `NewsSyncService*.kt` 삭제
+- `NewsSyncService*.kt`, `TransactionalNewsUpserter.kt` 및 테스트 파일 삭제 (Task 3.4-3.6)
+- `NewsPort.findBySourceUrlIn` 메서드 제거 (Task 3.7)
 - **Flyway V119 롤백 필수** (유니크 제약 복원):
   ```sql
   ALTER TABLE news DROP CONSTRAINT news_source_url_artist_id_unique;
@@ -886,7 +887,7 @@ grep "News sync completed" logs/application.log
 | Phase 3 | 3h | - | - |
 | Phase 4 | 2h | - | - |
 | Phase 5 | 1h | - | - |
-| **Total** | 10h | - | - |
+| **Total** | 10h (best) ~ 14h (with V119/V120 마이그레이션 환경별 조율, Pre-flight 재실행, fail-open 메트릭 알람 튜닝 시간 포함) | - | - |
 
 ---
 
@@ -900,12 +901,12 @@ PR #271 (코루틴·트랜잭션 가이드 문서화) 작업 직후, 동일한 �
 |---|------|------|------|
 | 1 | 메타데이터 | Status/Issue/Branch 필드 부재 | 헤더에 Issue #272, Branch, Ready Date, Related Learning 추가 |
 | 2 | 메타데이터 | Estimated Completion 부재 | 2026-05-02, 10-14h 명시 |
-| 3 | 데이터 안전 | V119 사전 점검 1건뿐 | artist_id NULL count + (source_url, artist_id) 중복 체크 추가 (Task 3.7) |
-| 4 | 트랜잭션 | Service 직접 @Transactional 사용 → self-invocation 위험 | PR #238 패턴 도입: `TransactionalNewsUpserter` 별도 컴포넌트 + REQUIRES_NEW (Task 3.4) |
+| 3 | 데이터 안전 | V119 사전 점검 1건뿐 | artist_id NULL count + (source_url, artist_id) 중복 체크 추가 (Task 3.8) |
+| 4 | 트랜잭션 | Service 직접 @Transactional 사용 → self-invocation 위험 | PR #238 패턴 도입: `TransactionalNewsUpserter` 별도 컴포넌트 + REQUIRES_NEW (Task 3.5) |
 | 5 | 데이터 안전 | V120 regex `LIKE '%aespa-%'` false positive 위험 | id 리스트 기반 `WHERE id IN (...)` 로 변경, Task 5.2.1 dry-run 절차 강화 |
 | 6 | 정책 | Snapshot publishedAt 의 timezone 정책 미명시 | `CrawledNewsSnapshot` KDoc 에 USE_TZ=True UTC 직접 매핑 정책 명시 |
 | 7 | 성능 | Artist cache 갱신 주기 모호 | 10분 staleness 명시 (배치 주기와 동일하므로 stale 가능성 1주기 이내) |
-| 8 | 성능 | Repository 호출이 source_url 단건씩 N+1 위험 | `NewsPort.findBySourceUrlIn(urls)` bulk 메서드 + `verify(exactly = 1)` 테스트 (Task 3.6) |
+| 8 | 성능 | Repository 호출이 source_url 단건씩 N+1 위험 | `NewsPort.findBySourceUrlIn(urls)` bulk 메서드 (Task 3.7) + `verify(exactly = 1)` 테스트 (Test 3.1) |
 
 **핵심 학습**: PR #238 의 self-invocation 회피 패턴은 코루틴뿐만 아니라 **동기 배치 컨텍스트에서도 동일하게 필요**. AOP proxy 가 우회되는 조건은 호출 방식(코루틴/동기)이 아니라 **같은 클래스 내부 호출**이기 때문.
 
@@ -970,8 +971,8 @@ PR #271 (코루틴·트랜잭션 가이드 문서화) 작업 직후, 동일한 �
 - [ ] 전체 integration test: Django crawler 실행 → 10분 대기 → `news` 테이블 증가 확인
 - [ ] 프로덕션 `GET /api/v1/news` 응답에 클릭 가능한 Naver URL 노출
 - [ ] 기존 fake 15건 hidden 처리 완료 (id 리스트 기반, regex 사용 X)
-- [ ] **PR #238 학습 적용 검증**: `TransactionalNewsUpserter` 가 별도 컴포넌트, `REQUIRES_NEW` 적용, Service 자체 `@Transactional` 없음
-- [ ] **N+1 회피 검증**: 100건 배치에서 Repository 호출 횟수 = 1 (테스트로 자동 검증)
+- [ ] **PR #238 학습 적용 검증** (Task 3.5/3.6): `TransactionalNewsUpserter` 가 별도 컴포넌트, `REQUIRES_NEW` 적용, Service 자체 `@Transactional` 없음
+- [ ] **N+1 회피 검증** (Task 3.7 + Test 3.1): 100건 배치에서 `findBySourceUrlIn` 호출 횟수 = 1 (테스트로 자동 검증)
 - [ ] `docs/mvp/mvp_크롤링.md` 갱신 완료
 - [ ] JaCoCo 전체 커버리지 저하 없음 (기존 대비 ±2% 이내)
 - [ ] ktlint 전체 통과
