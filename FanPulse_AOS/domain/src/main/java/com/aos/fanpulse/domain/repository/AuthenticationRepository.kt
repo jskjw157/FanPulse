@@ -10,5 +10,5 @@ interface AuthenticationRepository {
     val authTokens: Flow<AuthToken>
     suspend fun updateTokens(access: String, refresh: String)
     suspend fun clearAll()
-    suspend fun loginWithGoogle(googleIdToken: String): Result<Unit>
+    suspend fun loginWithGoogle(googleIdToken: String): Result<AuthToken>
 }

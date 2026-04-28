@@ -4,12 +4,16 @@ import com.aos.fanpulse.domain.repository.AuthenticationRepository
 import com.aos.fanpulse.domain.repository.GoogleSignInRepository
 import javax.inject.Inject
 
-class GoogleSignInUseCase @Inject constructor(
+class LoginWithGoogleUseCase @Inject constructor(
     private val googleSignInRepository: GoogleSignInRepository,
     private val authRepository: AuthenticationRepository
 ) {
     suspend operator fun invoke(): Result<Unit> = runCatching {
         val googleIdToken = googleSignInRepository.signIn().getOrThrow()
-        authRepository.loginWithGoogle(googleIdToken).getOrThrow()
+        val authToken = authRepository.loginWithGoogle(googleIdToken).getOrThrow()
+        authRepository.updateTokens(
+            access = authToken.accessToken ?: "",
+            refresh = authToken.refreshToken ?: ""
+        )
     }
 }

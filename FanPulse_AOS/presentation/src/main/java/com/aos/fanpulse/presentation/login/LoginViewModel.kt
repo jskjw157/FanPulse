@@ -3,7 +3,7 @@ package com.aos.fanpulse.presentation.login
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.aos.fanpulse.domain.usecase.GoogleSignInUseCase
+import com.aos.fanpulse.domain.usecase.LoginWithGoogleUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val googleLoginUseCase: GoogleSignInUseCase,
+    private val googleLoginUseCase: LoginWithGoogleUseCase,
 ) : ContainerHost<LoginContract.SignInState, LoginContract.SideEffect>, ViewModel() {
 
     override val container: Container<LoginContract.SignInState, LoginContract.SideEffect> =
@@ -28,7 +28,7 @@ class LoginViewModel @Inject constructor(
             )
         }
 
-        googleLoginUseCase()    //context
+        googleLoginUseCase()
             .onSuccess { credential ->
                 reduce {
                     state.copy(
