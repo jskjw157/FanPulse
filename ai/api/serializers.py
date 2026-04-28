@@ -551,3 +551,10 @@ class AIModerationStatusSerializer(serializers.Serializer):
                 "error": None
             }
         }
+
+
+class FAQBotRequestSerializer(serializers.Serializer):
+    query = serializers.CharField(
+        max_length=100,
+        help_text="사용자 질문"
+    )

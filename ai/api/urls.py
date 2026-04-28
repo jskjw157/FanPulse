@@ -24,6 +24,7 @@ from .views import (
     AIModerationCheckView,
     AIModerationBatchView,
     AIModerationStatusView,
+    FAQbotView
 )
 
 urlpatterns = [
@@ -47,4 +48,7 @@ urlpatterns = [
     path('ai/moderate', AIModerationCheckView.as_view(), name='ai-moderation-check'),
     path('ai/moderate/batch', AIModerationBatchView.as_view(), name='ai-moderation-batch'),
     path('ai/moderate/status', AIModerationStatusView.as_view(), name='ai-moderation-status'),
+
+    # FAQ 봇
+    path('ai/faq', FAQbotView.as_view(), name='faq'),
 ]

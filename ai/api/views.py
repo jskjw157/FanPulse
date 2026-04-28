@@ -1436,3 +1436,32 @@ AI 모더레이션 기능의 사용 가능 여부와 시스템 상태를 확인�
 
         status_info = check_ai_moderation_available()
         return Response(status_info, status=status.HTTP_200_OK)
+
+
+from .serializers import FAQBotRequestSerializer
+class FAQbotView(APIView):
+    """
+    챗봇
+
+    경로: POST /api/ai/faq
+    """
+    permission_classes = [ApiKeyPermission]
+
+    @swagger_auto_schema(request_body=FAQBotRequestSerializer)
+    def post(self, request):
+        # from .services.faq import faq_service
+
+        serializer = FAQBotRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {'error': 'Validation failed', 'details': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        query = serializer.validated_data['query']
+
+        response_data = {
+            'answer': query
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
