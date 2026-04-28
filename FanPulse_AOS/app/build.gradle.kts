@@ -4,15 +4,10 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
     id("dagger.hilt.android.plugin")
     id("com.google.gms.google-services")
-}
-
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(FileInputStream(localPropertiesFile))
 }
 
 android {
@@ -27,17 +22,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        val webClientId = localProperties.getProperty("GOOGLE_WEB_CLIENT_ID") ?: ""
-        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$webClientId\"")
     }
 
     buildTypes {
-        debug {
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
-        }
         release {
-            buildConfigField("String", "BASE_URL", "\"https://api.fanpulse.com/api/v1/\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -53,6 +41,7 @@ android {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
     buildFeatures {
+        compose = true
         buildConfig = true
     }
 }
@@ -81,4 +70,6 @@ dependencies {
     androidTestImplementation("io.mockk:mockk-android:1.13.10")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+
+    implementation(libs.androidx.activity.compose)
 }

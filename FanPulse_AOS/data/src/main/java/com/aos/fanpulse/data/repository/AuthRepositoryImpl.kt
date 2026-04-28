@@ -1,0 +1,75 @@
+package com.aos.fanpulse.data.repository
+
+import androidx.datastore.core.DataStore
+import com.aos.fanpulse.data.remote.apiservice.AuthenticationApiService
+import com.aos.fanpulse.data.remote.dto.GoogleLoginRequest
+import com.aos.fanpulse.datastore.UserData
+import com.aos.fanpulse.domain.model.AuthToken
+import com.aos.fanpulse.domain.repository.AuthenticationRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+
+/**
+ * 데이터의 입구와 출구 역할
+ * 데이터를 어떻게 가져오고 보낼 것인가?
+ * */
+class AuthRepositoryImpl @Inject constructor(
+    private val authApiService: AuthenticationApiService,
+    private val userDataStore: DataStore<UserData>, // DataStore를 직접 주입받아야 합니다.
+) : AuthenticationRepository {
+
+    override val authTokens: Flow<AuthToken> = userDataStore.data
+        .map { userData ->
+            AuthToken(
+                accessToken = userData.accessToken.ifEmpty { null },
+                refreshToken = userData.refreshToken.ifEmpty { null }
+            )
+        }
+
+    override suspend fun updateTokens(access: String, refresh: String) {
+        userDataStore.updateData { currentData ->
+            currentData.toBuilder()
+                .setAccessToken(access)
+                .setRefreshToken(refresh)
+                .build()
+        }
+    }
+
+    override suspend fun clearAll() {
+        userDataStore.updateData { currentData ->
+            currentData.toBuilder()
+                .clearAccessToken()
+                .clearRefreshToken()
+                // 만약 유저 정보(id, nickname 등)가 있다면 함께 clear 하세요.
+                .build()
+        }
+    }
+
+    override suspend fun loginWithGoogle(googleIdToken: String): Result<Unit> = runCatching {
+        // 1. 서버에 로그인 요청
+        val response = authApiService.loginWithGoogle(GoogleLoginRequest(googleIdToken))
+
+        if (response.isSuccessful) {
+            // 2. 헤더에서 쿠키(토큰) 추출
+            val cookies = response.headers().values("Set-Cookie")
+            val access = extractToken(cookies, "fanpulse_access_token")
+            val refresh = extractToken(cookies, "fanpulse_refresh_token")
+
+            if (access != null && refresh != null) {
+                // 3. 토큰 저장
+                updateTokens(access, refresh)
+            } else {
+                throw Exception("토큰 정보가 응답 헤더에 없습니다.")
+            }
+        } else {
+            throw Exception("서버 로그인 실패: ${response.code()}")
+        }
+    }
+    private fun extractToken(cookies: List<String>, key: String): String? {
+        return cookies.find { it.contains(key) }
+            ?.substringAfter("$key=")
+            ?.substringBefore(";")
+            ?.trim()
+    }
+}

@@ -1,5 +1,4 @@
-package com.aos.fanpulse.domain.model
-
+package com.aos.fanpulse.data.remote.dto
 
 // 뉴스 목록 응답 (페이징 포함)
 data class NewsListResponse(
@@ -8,6 +7,11 @@ data class NewsListResponse(
     val page: Int,
     val size: Int,
     val totalPages: Int
+)
+
+data class BaseResponse<T>(
+    val success: Boolean,
+    val data: T
 )
 
 // 개별 뉴스 아이템
