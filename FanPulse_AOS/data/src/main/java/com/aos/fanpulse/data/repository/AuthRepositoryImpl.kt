@@ -16,7 +16,7 @@ import javax.inject.Inject
  * */
 class AuthRepositoryImpl @Inject constructor(
     private val authApiService: AuthenticationApiService,
-    private val userDataStore: DataStore<UserData>, // DataStore를 직접 주입받아야 합니다.
+    private val userDataStore: DataStore<UserData>,
 ) : AuthenticationRepository {
 
     override val authTokens: Flow<AuthToken> = userDataStore.data
@@ -41,7 +41,6 @@ class AuthRepositoryImpl @Inject constructor(
             currentData.toBuilder()
                 .clearAccessToken()
                 .clearRefreshToken()
-                // 만약 유저 정보(id, nickname 등)가 있다면 함께 clear 하세요.
                 .build()
         }
     }

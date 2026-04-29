@@ -5,7 +5,6 @@ import com.aos.fanpulse.data.repository.ArtistsRepositoryImpl
 import com.aos.fanpulse.data.repository.AuthRepositoryImpl
 import com.aos.fanpulse.data.repository.ChartsRepositoryImpl
 import com.aos.fanpulse.data.repository.CommentsRepositoryImpl
-import com.aos.fanpulse.data.repository.GoogleSignInRepositoryImpl
 import com.aos.fanpulse.data.repository.NewsRepositoryImpl
 import com.aos.fanpulse.data.repository.SearchRepositoryImpl
 import com.aos.fanpulse.data.repository.StreamingEventsRepositoryImpl
@@ -15,7 +14,6 @@ import com.aos.fanpulse.domain.repository.ArtistsRepository
 import com.aos.fanpulse.domain.repository.AuthenticationRepository
 import com.aos.fanpulse.domain.repository.ChartsRepository
 import com.aos.fanpulse.domain.repository.CommentsRepository
-import com.aos.fanpulse.domain.repository.GoogleSignInRepository
 import com.aos.fanpulse.domain.repository.NewsRepository
 import com.aos.fanpulse.domain.repository.SearchRepository
 import com.aos.fanpulse.domain.repository.StreamingEventsRepository
@@ -29,12 +27,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
-    // GoogleSignInRepository 추가
-    @Binds
-    @Singleton
-    abstract fun bindsGoogleSignInRepository(
-        googleSignInRepositoryImpl: GoogleSignInRepositoryImpl
-    ): GoogleSignInRepository
 
     // "AuthRepository(인터페이스)를 요청하면, AuthRepositoryImpl(진짜 구현체)을 줘라!" 라고 Hilt에게 규칙을 알려줍니다.
     @Binds

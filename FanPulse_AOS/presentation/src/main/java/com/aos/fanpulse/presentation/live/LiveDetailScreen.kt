@@ -5,6 +5,7 @@ import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
@@ -306,6 +307,16 @@ fun YouTubeWebPlayer(
     AndroidView(
         factory = { context ->
             WebView(context).apply {
+                webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView?,
+                        request: WebResourceRequest?
+                    ): Boolean {
+                        val url = request?.url?.toString() ?: return false
+
+                        return !(url.contains("youtube.com") || url.contains("youtu.be"))
+                    }
+                }
                 layoutParams = android.view.ViewGroup.LayoutParams(
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -317,6 +328,8 @@ fun YouTubeWebPlayer(
                     allowFileAccess = false
                     allowContentAccess = false
                     mediaPlaybackRequiresUserGesture = false
+
+                    mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                 }
 
                 webViewClient = object : WebViewClient() {

@@ -20,7 +20,7 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.10")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
 
     // Hilt가 아니라, @Inject 어노테이션만 쓸 수 있게 해주는 가벼운 라이브러리입니다.
     implementation("javax.inject:javax.inject:1")
