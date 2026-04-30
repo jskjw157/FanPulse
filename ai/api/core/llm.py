@@ -1,13 +1,12 @@
+# ---------------------------
+# LLM 로딩
+# ---------------------------
+from threading import Lock
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from api.core.gpu import get_gpu_vram_gb
 
-_model = {}
-
-# ---------------------------
-# LLM 로딩
-# ---------------------------
 def _get_llm_model(model_name: str):
     from transformers import BitsAndBytesConfig
 
@@ -47,18 +46,46 @@ def _get_llm_model_cpu(model_name: str):
     return tokenizer, model
 
 
-def get_model():
-    global _model
-    if _model:
-        return _model
-
+def load_model():
     if get_gpu_vram_gb():
         try:
-            tokenizer, model = _get_llm_model("mistralai/Mistral-7B-Instruct-v0.3")
+            return _get_llm_model("mistralai/Mistral-7B-Instruct-v0.3")
         except Exception:
-            tokenizer, model = _get_llm_model("Qwen/Qwen2.5-3B-Instruct")
-    else:
-        tokenizer, model = _get_llm_model_cpu("Qwen/Qwen3.5-0.8B")
+            return _get_llm_model("Qwen/Qwen2.5-3B-Instruct")
+    return _get_llm_model_cpu("Qwen/Qwen3.5-0.8B")
 
-    _model = {"tokenizer": tokenizer, "model": model}
-    return _model
+
+class LLM:
+    def __init__(self):
+        self.tokenizer, self.model = load_model()
+
+    def generate(self, prompt, max_new_tokens=64, do_sample=False):
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                do_sample=do_sample,
+                pad_token_id=self.tokenizer.eos_token_id,
+            )
+        return self.tokenizer.decode(
+            outputs[0][inputs["input_ids"].shape[-1]:],
+            skip_special_tokens=True,
+        ).strip()
+
+
+_llm = None
+_lock = Lock()
+
+def get_llm():
+    global _llm
+
+    if _llm is not None:
+        return _llm
+
+    with _lock:
+        if _llm is not None:
+            return _llm
+
+        _llm = LLM()
+        return _llm

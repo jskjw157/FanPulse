@@ -1,9 +1,8 @@
 """FAQ (LLM)"""
 from dataclasses import dataclass
-import torch
 import logging
 
-from api.core.llm import get_model
+from api.core.llm import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -75,38 +74,15 @@ class FAQResult:
 # 서비스
 # ---------------------------
 class FaqService:
-    def __init__(self):
-        self._bundle = None
-
-    def _ensure_model(self):
-        if self._bundle is None:
-            self._bundle = get_model()  # LLM bundle(dict) 반환
-        return self._bundle
-    
-    def rag_search():
+    def rag_search(self):
         pass
 
     def filter_comment(self, text: str) -> FAQResult:
-        bundle = self._ensure_model()
-        tokenizer = bundle["tokenizer"]
-        model = bundle["model"]
+        llm = get_llm()
 
         # prompt = build_faq_rag_prompt(text)
         prompt = faq_prompt_mockup(text)
-        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=256,
-                do_sample=True,
-                pad_token_id=tokenizer.eos_token_id,
-            )
-
-        answer = tokenizer.decode(
-            outputs[0][inputs["input_ids"].shape[-1]:],
-            skip_special_tokens=True,
-        ).strip()
+        answer = llm.generate(prompt, max_new_tokens=256, do_sample=True)
 
         return FAQResult(answer=answer)
 
