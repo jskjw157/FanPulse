@@ -5,7 +5,7 @@ from threading import Lock
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from api.core.gpu import get_gpu_vram_gb
+from api.core.runtime import env_check, get_gpu_vram_gb
 
 def _get_llm_model(model_name: str):
     from transformers import BitsAndBytesConfig
@@ -26,7 +26,7 @@ def _get_llm_model(model_name: str):
         model_name,
         quantization_config=bnb_config,
         device_map="auto",
-        max_memory=max_memory,
+        max_memory=max_memory
     )
 
     model.eval()
@@ -59,14 +59,14 @@ class LLM:
     def __init__(self):
         self.tokenizer, self.model = load_model()
 
-    def generate(self, prompt, max_new_tokens=64, do_sample=False):
+    def generate(self, prompt, max_new_tokens=64, do_sample=False, repetition_penalty=1.0):
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
                 max_new_tokens=max_new_tokens,
                 do_sample=do_sample,
-                pad_token_id=self.tokenizer.eos_token_id,
+                pad_token_id=self.tokenizer.eos_token_id, repetition_penalty=repetition_penalty
             )
         return self.tokenizer.decode(
             outputs[0][inputs["input_ids"].shape[-1]:],
@@ -82,6 +82,8 @@ def get_llm():
 
     if _llm is not None:
         return _llm
+    
+    env_check()
 
     with _lock:
         if _llm is not None:

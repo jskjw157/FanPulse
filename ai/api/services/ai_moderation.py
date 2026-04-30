@@ -32,8 +32,10 @@ import logging
 import hashlib
 import json
 from typing import Optional, Dict, List, Any
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+
+from api.core.runtime import get_pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -114,28 +116,6 @@ _cache_ttl = 300  # 캐시 유효시간 (5분)
 
 
 #######################
-# Pipeline 지연 로딩
-#######################
-def _get_pipeline():
-    """transformers의 pipeline 함수를 지연 로딩"""
-    global _pipeline
-
-    if _pipeline is None:
-        try:
-            from transformers import pipeline
-            _pipeline = pipeline
-            logger.info("Transformers pipeline loaded for moderation")
-        except ImportError as e:
-            logger.error(f"Failed to import transformers: {e}")
-            raise ImportError(
-                "transformers library is not installed. "
-                "Please run: pip install transformers torch"
-            )
-
-    return _pipeline
-
-
-#######################
 # 캐시 관리
 #######################
 def _get_cache_key(text: str, settings: dict) -> str:
@@ -187,7 +167,7 @@ def _get_korean_model():
 
     try:
         import torch
-        pipeline_fn = _get_pipeline()
+        pipeline_fn = get_pipeline()
 
         # 한국어 악성 댓글 분류 모델
         # beomi/KcBERT는 한국어 BERT 모델
@@ -216,7 +196,7 @@ def _get_multilingual_model():
 
     try:
         import torch
-        pipeline_fn = _get_pipeline()
+        pipeline_fn = get_pipeline()
 
         # 다국어 혐오 발언 분류 모델
         model = pipeline_fn(
