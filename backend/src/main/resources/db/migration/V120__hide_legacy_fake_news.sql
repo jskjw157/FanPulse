@@ -12,12 +12,21 @@
 --   이유: 롤백 가능성 보존 + audit trail + view_count 히스토리 유지
 --   롤백 방법: UPDATE news SET visible=true WHERE ... (동일 조건)
 --
--- 대상 URL 패턴 (PLAN_news-sync-batch.md Task 5.1 + integration-lead 정적 분석):
---   1. n.news.naver.com/아티스트명-숫자 형태 (예: n.news.naver.com/aespa-1)
---   2. source_url에 /aespa-숫자 포함
---   3. source_url에 /nj-숫자 포함
---   4. example.com 도메인 — seed_news.json에서 SeedLoaderRunner로 삽입된 BTS 더미 2건
---      (https://example.com/news/bts-album-1, https://example.com/news/bts-tour-2)
+-- 대상 URL 패턴 (정적 분석 확정 2건 + 방어적 패턴 포함):
+--
+--   [확정] seed_news.json → SeedLoaderRunner로 삽입된 BTS 더미 2건:
+--     - https://example.com/news/bts-album-1  (BTS announces a new album)
+--     - https://example.com/news/bts-tour-2   (HYBE shares BTS tour plans)
+--   → example.com LIKE 패턴으로 커버.
+--
+--   [방어적] PLAN Task 5.1에 명시된 추가 패턴 (운영 환경 수동 insert 가능성 대비):
+--     - n.news.naver.com/아티스트명-숫자 형태 (예: n.news.naver.com/aespa-1)
+--     - source_url에 /aespa-숫자 포함
+--     - source_url에 /nj-숫자 포함
+--   → 코드/마이그레이션 기록에 이 패턴의 수동 insert 흔적은 없으나,
+--     운영 환경 직접 insert 가능성을 배제할 수 없어 방어적으로 포함.
+--
+--   테스트 코드의 example.com URL은 테스트 DB에만 적재되므로 V120 대상 아님.
 --
 -- 사전 점검 (적용 전 운영자가 직접 수행):
 --   1) 대상 건수 확인:
