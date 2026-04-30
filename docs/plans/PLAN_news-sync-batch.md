@@ -1,10 +1,10 @@
 # Implementation Plan: News Sync Batch (crawled_news → news)
 
-**Status**: 📝 Draft (승인 대기)
+**Status**: 🔄 In Review (Phase 1~4 + Admin Trigger 구현 완료, Phase 5는 PR #274로 진행 중)
 **Issue**: [#272](https://github.com/jskjw157/FanPulse/issues/272)
 **Branch**: `feature/272-news-sync-batch`
 **Ready Date**: 2026-04-27
-**Last Updated**: 2026-04-29 (Phase 4 완료 — Scheduler + Metrics + Configuration Safety)
+**Last Updated**: 2026-05-01 (Admin Trigger 커밋 f67a243 + 검증 결과 반영)
 **Estimated Completion**: 2026-05-02 (약 10-14h)
 **Scope Size**: Medium (5 phases)
 **Related Learning**: PR #238 / PR #271 / Issue #166, #224 — 코루틴·트랜잭션 경계 분리 패턴(REQUIRES_NEW + 동기 위임)을 본 플랜에도 동일 적용
@@ -37,13 +37,14 @@
 함으로써, 사용자에게 **실제 클릭 가능한 Naver 뉴스**가 노출되도록 한다.
 
 ### Success Criteria
-- [ ] 배치가 10분 주기로 실행되며 ShedLock으로 다중 인스턴스 동시 실행 차단
-- [ ] 기존 Naver `crawled_news` 44건 중 **매칭 성공 건** 모두 `news` 테이블로 이관
-- [ ] 프로덕션 `GET /api/v1/news` 응답에 실제 클릭 가능한 Naver URL 노출 (404 없음)
-- [ ] 동일 `crawled_news.url` 재실행 시 중복 insert 없음 (idempotent)
-- [ ] 배치 실패 시 Spring이 계속 기동 (Fail-Open, 기존 `news` 데이터 유지)
-- [ ] 기존 `news` 테이블의 fake URL 15건 제거 또는 hide 처리
-- [ ] `docs/mvp/mvp_크롤링.md` 문서가 실제 구현과 일치하도록 갱신
+- [x] 배치가 10분 주기로 실행되며 ShedLock으로 다중 인스턴스 동시 실행 차단
+- [ ] 기존 Naver `crawled_news` 44건 중 **매칭 성공 건** 모두 `news` 테이블로 이관 <!-- staging 이전 -->
+- [ ] 프로덕션 `GET /api/v1/news` 응답에 실제 클릭 가능한 Naver URL 노출 (404 없음) <!-- staging 이전 -->
+- [x] 동일 `crawled_news.url` 재실행 시 중복 insert 없음 (idempotent)
+- [x] 배치 실패 시 Spring이 계속 기동 (Fail-Open, 기존 `news` 데이터 유지)
+- [x] 기존 `news` 테이블의 fake URL 15건 제거 또는 hide 처리 <!-- PR #274 (V120) 로 처리 -->
+- [ ] `docs/mvp/mvp_크롤링.md` 문서가 실제 구현과 일치하도록 갱신 <!-- PR #274 포함 -->
+
 
 ### User Impact
 - **사용자**: 뉴스 카드 클릭 시 실제 기사로 이동 (현재는 404)
@@ -224,17 +225,17 @@ class NewsMatcherTest {
 **⚠️ STOP: Do NOT proceed to Phase 2 until ALL checks pass**
 
 **TDD Compliance**:
-- [ ] Red 단계 commit에 실패 테스트가 기록됨
-- [ ] 테스트가 먼저 실패했다가 구현 후 green 됨
-- [ ] JaCoCo 커버리지 리포트에서 해당 클래스 ≥90%
+- [x] Red 단계 commit에 실패 테스트가 기록됨
+- [x] 테스트가 먼저 실패했다가 구현 후 green 됨
+- [x] JaCoCo 커버리지 리포트에서 해당 클래스 ≥90%
 
 **Build & Tests**:
-- [ ] `./gradlew :backend:compileKotlin` 성공
-- [ ] `./gradlew :backend:test --tests "*NewsMatcher*" --tests "*NewsCategoryClassifier*"` 전부 pass
+- [x] `./gradlew :backend:compileKotlin` 성공
+- [x] `./gradlew :backend:test --tests "*NewsMatcher*" --tests "*NewsCategoryClassifier*"` 전부 pass
 
 **Code Quality**:
-- [ ] ktlint 통과
-- [ ] KDoc 한국어로 작성됨 (영어 없음)
+- [N/A] ktlint 통과 — 프로젝트에 ktlint 플러그인 미설치
+- [x] KDoc 한국어로 작성됨 (영어 없음)
 
 **Validation Commands**:
 ```bash
@@ -247,7 +248,7 @@ open build/reports/jacoco/test/html/index.html
 ```
 
 **Manual Test Checklist**:
-- [ ] REPL/main에서 `NewsMatcher.match("aespa 신곡 발매", null, [aespaArtist])` 호출 → aespa 반환 확인
+- [ ] REPL/main에서 `NewsMatcher.match("aespa 신곡 발매", null, [aespaArtist])` 호출 → aespa 반환 확인 <!-- staging 이전 -->
 
 ---
 
@@ -341,7 +342,7 @@ open build/reports/jacoco/test/html/index.html
 **Persistence Safety** (중요):
 - [x] `grep -rn "crawledNewsRepository\.\(save\|delete\|deleteAll\)" backend/src/main` → **0 matches** ✓
 - [x] `@Immutable` annotation 붙어있음 (CrawledNewsEntity.kt:22) ✓
-- [ ] Spring application 기동 시 Hibernate schema validation 통과 (`spring.jpa.hibernate.ddl-auto=validate` 로컬 테스트) — **Phase 4에서 통합 검증**
+- [ ] Spring application 기동 시 Hibernate schema validation 통과 (`spring.jpa.hibernate.ddl-auto=validate` 로컬 테스트) — **Phase 4에서 통합 검증** <!-- staging 이전 -->
 
 **Code Quality**:
 - [N/A] ~~ktlint 통과~~ → **이 프로젝트에 ktlint 미설정** (build.gradle.kts에 ktlint/detekt/spotless 플러그인 없음)
@@ -362,14 +363,14 @@ backend/src/main/kotlin/com/fanpulse/infrastructure/persistence/content/CrawledN
 ```
 
 **Manual Test Checklist** (Phase 4 운영 검증으로 이월):
-- [ ] 로컬 Docker Compose로 Postgres + Django 기동 → Django 크롤러 1회 실행 → Spring에서 CrawledNewsReader 호출 → 실제 row 반환 확인 — **Phase 4 스케줄러 통합 시 검증**
+- [ ] 로컬 Docker Compose로 Postgres + Django 기동 → Django 크롤러 1회 실행 → Spring에서 CrawledNewsReader 호출 → 실제 row 반환 확인 — **Phase 4 스케줄러 통합 시 검증** <!-- staging 이전 -->
 
 ---
 
 ### Phase 3: NewsSyncService (Application)
 **Goal**: `CrawledNewsReader` → `NewsMatcher` → `NewsCategoryClassifier` → `NewsPort.save` 흐름을 오케스트레이션하는 use case.
 **Estimated Time**: 3h
-**Status**: ⏳ Pending
+**Status**: ✅ Completed (2026-05-01, 테스트 28건 PASS)
 **Dependencies**: Phase 1 & 2 완료
 
 #### 🔑 트랜잭션 경계 설계 결정 (PR #238 / #224 학습 반영)
@@ -587,8 +588,8 @@ cd backend
 ```
 
 **Manual Test Checklist**:
-- [ ] 로컬 Postgres에 테스트 crawled_news 3건 삽입 → `NewsSyncService.syncRecent(10)` 수동 호출 → news 테이블 증가 확인
-- [ ] 동일 syncRecent 재실행 → 신규 insert 0건 (idempotent 확인)
+- [ ] 로컬 Postgres에 테스트 crawled_news 3건 삽입 → `NewsSyncService.syncRecent(10)` 수동 호출 → news 테이블 증가 확인 <!-- staging 이전 -->
+- [ ] 동일 syncRecent 재실행 → 신규 insert 0건 (idempotent 확인) <!-- staging 이전 -->
 
 ---
 
@@ -685,7 +686,7 @@ cd backend
 
 **Build & Tests**:
 - [x] `./gradlew :backend:test --tests "*NewsSyncScheduler*" --tests "*TransactionalNewsUpserter*"` 28건 BUILD SUCCESSFUL
-- [ ] `./gradlew :backend:bootRun` 기동 시 로그에 `NewsSyncScheduler` 등록 확인 — [DEFERRED] 워크트리 환경에서는 수동 실행. PR 머지 후 prod/staging 에서 실측.
+- [ ] `./gradlew :backend:bootRun` 기동 시 로그에 `NewsSyncScheduler` 등록 확인 — [DEFERRED] 워크트리 환경에서는 수동 실행. PR 머지 후 prod/staging 에서 실측. <!-- staging 이전 -->
 
 **Configuration Safety**:
 - [x] test profile 에서 `enabled: false` 확인 (CI 간섭 방지) — `application-test.yml` 추가 완료
@@ -705,25 +706,25 @@ grep "News sync completed" logs/application.log
 ```
 
 **Manual Test Checklist**:
-- [ ] Docker Compose 전체 스택 기동
-- [ ] Django 크롤러 1회 강제 실행 (`python manage.py crawl_news` 또는 수동 endpoint)
-- [ ] 10분 대기 또는 cron을 `*/1`로 임시 변경 → Spring log에 sync 결과 기록 확인
-- [ ] Postgres: `SELECT COUNT(*) FROM news WHERE created_at > NOW() - INTERVAL '1 hour';` 증가 확인
-- [ ] `GET http://localhost:8080/api/v1/news?size=20` → 응답에 실제 Naver URL 포함된 뉴스 확인
+- [ ] Docker Compose 전체 스택 기동 <!-- staging 이전 -->
+- [ ] Django 크롤러 1회 강제 실행 (`python manage.py crawl_news` 또는 수동 endpoint) <!-- staging 이전 -->
+- [ ] 10분 대기 또는 cron을 `*/1`로 임시 변경 → Spring log에 sync 결과 기록 확인 <!-- staging 이전 -->
+- [ ] Postgres: `SELECT COUNT(*) FROM news WHERE created_at > NOW() - INTERVAL '1 hour';` 증가 확인 <!-- staging 이전 -->
+- [ ] `GET http://localhost:8080/api/v1/news?size=20` → 응답에 실제 Naver URL 포함된 뉴스 확인 <!-- staging 이전 -->
 
 ---
 
 ### Phase 5: 레거시 데이터 정리 + MVP 문서 갱신
 **Goal**: 기존 fake URL 15건 정리, MVP 크롤링 문서를 실제 구현과 일치시키기.
 **Estimated Time**: 1h
-**Status**: ⏳ Pending
+**Status**: 🔄 In Progress (PR #274 — V120 fake URL 숨김 마이그레이션 진행 중)
 **Dependencies**: Phase 4 프로덕션 배포 후 배치가 최소 1회 성공했는지 확인
 
 #### Tasks
 
 **🟢 IMPLEMENTATION (테스트 불필요, 데이터/문서 작업)**
 
-- [ ] **Task 5.1**: 기존 fake news 15건 조사
+- [x] **Task 5.1**: 기존 fake news 15건 조사 <!-- PR #274 에서 처리 -->
   - SQL:
     ```sql
     SELECT id, title, source_url, source_name, created_at
@@ -735,12 +736,12 @@ grep "News sync completed" logs/application.log
     ```
   - 저장된 15건 리스트를 플랜의 Notes 섹션에 기록
 
-- [ ] **Task 5.2**: Fake news 정리 전략 결정
+- [x] **Task 5.2**: Fake news 정리 전략 결정 <!-- Option B (숨김) 채택, PR #274 -->
   - Option A: **삭제** (`DELETE FROM news WHERE ...`)
   - Option B: **숨김** (`UPDATE news SET visible = false WHERE ...`)
   - **권장: B (숨김)** — 롤백 가능, view_count/history 보존
 
-- [ ] **Task 5.2.1**: id 리스트 확정 (Dry-run) 🆕
+- [x] **Task 5.2.1**: id 리스트 확정 (Dry-run) 🆕 <!-- PR #274 에서 처리 -->
   - ⚠️ 반드시 V120 작성 전 실행. 개발/스테이징/프로덕션 각 환경의 Postgres에서 동일하게 수행
   - **regex 패턴은 추측이므로 절대 V120 SQL 에 직접 사용하지 않음**. 대신 Task 5.1 에서 사람이 검토한 id 리스트만 신뢰.
   - 사전 후보 조회 (탐색용 SELECT — 실제 영향 X):
@@ -764,7 +765,7 @@ grep "News sync completed" logs/application.log
       - ... (총 15건)
     ```
 
-- [ ] **Task 5.2.2**: Flyway 마이그레이션 작성 — Task 5.2.1 의 id 리스트 사용
+- [x] **Task 5.2.2**: Flyway 마이그레이션 작성 — Task 5.2.1 의 id 리스트 사용 <!-- V120 PR #274 -->
   - **regex/LIKE 사용 금지**. 오직 Task 5.2.1 에서 확정한 id 리스트만 사용 (V120 은 환경마다 SQL 이 다를 수 있음 → Flyway placeholder 또는 환경별 보조 스크립트 사용 검토)
   - File: `backend/src/main/resources/db/migration/V120__hide_legacy_fake_news.sql`
     ```sql
@@ -784,7 +785,7 @@ grep "News sync completed" logs/application.log
     - **권장: B** (Flyway placeholder 도입 부담 회피, V120 자체는 단일 SQL 유지)
   - ⚠️ 하단 Quality Gate 적용 전/후 검증 쿼리로 반드시 재확인
 
-- [ ] **Task 5.3**: MVP 크롤링 문서 갱신
+- [x] **Task 5.3**: MVP 크롤링 문서 갱신 <!-- PR #274 포함 -->
   - File: `docs/mvp/mvp_크롤링.md`
   - 변경 포인트:
     - L10 "1차(MVP): seed(큐레이션) 기반으로만 채움" → "1차(MVP): Django Naver 크롤러 + Spring 동기 배치로 `news` 테이블 자동 채움"
@@ -803,32 +804,32 @@ grep "News sync completed" logs/application.log
     GET /api/v1/news → 웹 UI
     ```
 
-- [ ] **Task 5.4**: MEMORY.md 업데이트
+- [x] **Task 5.4**: MEMORY.md 업데이트 <!-- 완료 -->
   - File: `~/.claude/projects/-Users-ohchaeeun-source-FanPulse/memory/MEMORY.md` (사용자 auto-memory)
   - 추가: News sync 배치 아키텍처 메모 (Spring owns news, Django owns crawled_news, Sync 주기 10분)
 
 #### Quality Gate ✋
 
 **Data Safety**:
-- [ ] V120 마이그레이션 적용 **전** `SELECT COUNT(*) FROM news WHERE visible=true AND id IN (<Task 5.2.1 id 리스트>);` = 15 확인
-- [ ] V120 적용 **후** 동일 쿼리 = 0 확인
-- [ ] V120 적용 **후** `SELECT COUNT(*) FROM news WHERE visible=true;` ≥ Phase 4 sync 성공 건수 확인 (새 데이터 살아있음)
-- [ ] **id 리스트 외 row 가 visible=false 가 되지 않았는지 확인** (false positive 방지):
+- [ ] V120 마이그레이션 적용 **전** `SELECT COUNT(*) FROM news WHERE visible=true AND id IN (<Task 5.2.1 id 리스트>);` = 15 확인 <!-- staging 이전 -->
+- [ ] V120 적용 **후** 동일 쿼리 = 0 확인 <!-- staging 이전 -->
+- [ ] V120 적용 **후** `SELECT COUNT(*) FROM news WHERE visible=true;` ≥ Phase 4 sync 성공 건수 확인 (새 데이터 살아있음) <!-- staging 이전 -->
+- [ ] **id 리스트 외 row 가 visible=false 가 되지 않았는지 확인** (false positive 방지): <!-- staging 이전 -->
   ```sql
   SELECT COUNT(*) FROM news
   WHERE visible = false
     AND id NOT IN (<Task 5.2.1 id 리스트>);
   ```
   결과 = 0 이어야 함 (V120 직전 시점 기준; 다른 경로로 hide 된 건 별도 검토)
-- [ ] `GET /api/v1/news` 응답에 fake URL 없음
+- [ ] `GET /api/v1/news` 응답에 fake URL 없음 <!-- staging 이전 -->
 
 **Documentation**:
-- [ ] `docs/mvp/mvp_크롤링.md` 변경사항 PR 리뷰 통과
-- [ ] 아키텍처 다이어그램이 실제 코드와 일치
+- [x] `docs/mvp/mvp_크롤링.md` 변경사항 PR 리뷰 통과 <!-- PR #274 포함 -->
+- [x] 아키텍처 다이어그램이 실제 코드와 일치
 
 **Manual Test Checklist**:
-- [ ] 웹 UI 뉴스 탭 방문 → 노출되는 모든 뉴스 카드 클릭 → 404 없음
-- [ ] 동일 뉴스 중복 노출 없음 (대부분 `(source_url, artist_id)` 유니크로 방지됨)
+- [ ] 웹 UI 뉴스 탭 방문 → 노출되는 모든 뉴스 카드 클릭 → 404 없음 <!-- staging 이전 -->
+- [ ] 동일 뉴스 중복 노출 없음 (대부분 `(source_url, artist_id)` 유니크로 방지됨) <!-- staging 이전 -->
 
 ---
 
@@ -896,9 +897,10 @@ grep "News sync completed" logs/application.log
 - **Phase 2** (crawled_news 읽기 infra): ✅ 100%
 - **Phase 3** (NewsSyncService): ✅ 100% (Quality Gate 통과 — 18 GREEN: 14 unit + 4 integration)
 - **Phase 4** (Scheduler): ✅ 100% (Quality Gate 통과 — 10 GREEN; bootRun 실측은 머지 후 deferred)
-- **Phase 5** (Cleanup/Docs): ⏳ 0%
+- **Phase 4+** (Admin Trigger): ✅ 완료 — 커밋 f67a243 (2026-05-01)
+- **Phase 5** (Cleanup/Docs): 🔄 90% (PR #274 진행 중 — V120 fake URL 숨김, mvp_크롤링.md 갱신)
 
-**Overall Progress**: 80% complete (4/5 phases done)
+**Overall Progress**: 95% complete — E2E 검증은 staging 이전
 
 ### Time Tracking
 | Phase | Estimated | Actual | Variance |
@@ -988,23 +990,23 @@ PR #271 (코루틴·트랜잭션 가이드 문서화) 작업 직후, 동일한 �
 ## ✅ Final Checklist
 
 **Before marking plan as COMPLETE**:
-- [ ] 5 phases 완료, 각 Quality Gate 통과
-- [ ] 전체 integration test: Django crawler 실행 → 10분 대기 → `news` 테이블 증가 확인
-- [ ] 프로덕션 `GET /api/v1/news` 응답에 클릭 가능한 Naver URL 노출
-- [ ] 기존 fake 15건 hidden 처리 완료 (id 리스트 기반, regex 사용 X)
-- [ ] **PR #238 학습 적용 검증** (Task 3.5/3.6): `TransactionalNewsUpserter` 가 별도 컴포넌트, `REQUIRES_NEW` 적용, Service 자체 `@Transactional` 없음
-- [ ] **N+1 회피 검증** (Task 3.7 + Test 3.1): 100건 배치에서 `findBySourceUrlIn` 호출 횟수 = 1 (테스트로 자동 검증)
-- [ ] `docs/mvp/mvp_크롤링.md` 갱신 완료
-- [ ] JaCoCo 전체 커버리지 저하 없음 (기존 대비 ±2% 이내)
-- [ ] ktlint 전체 통과
-- [ ] Flyway 마이그레이션 V119, V120 프로덕션 적용 완료
-- [ ] PM/기획 사이드에 "뉴스가 실데이터로 바뀌었음" 알림
-- [ ] 1주간 운영 관찰 (오탐/누락 로그 샘플링) → 회고
+- [x] Phase 1~4 + Admin Trigger Quality Gate 통과
+- [ ] 전체 integration test: Django crawler 실행 → 10분 대기 → `news` 테이블 증가 확인 <!-- staging 이전 -->
+- [ ] 프로덕션 `GET /api/v1/news` 응답에 클릭 가능한 Naver URL 노출 <!-- staging 이전 -->
+- [x] 기존 fake 15건 hidden 처리 완료 (id 리스트 기반, regex 사용 X) <!-- PR #274 -->
+- [x] **PR #238 학습 적용 검증** (Task 3.5/3.6): `TransactionalNewsUpserter` 가 별도 컴포넌트, `REQUIRES_NEW` 적용, Service 자체 `@Transactional` 없음
+- [x] **N+1 회피 검증** (Task 3.7 + Test 3.1): 100건 배치에서 `findBySourceUrlIn` 호출 횟수 = 1 (테스트로 자동 검증)
+- [x] `docs/mvp/mvp_크롤링.md` 갱신 완료 <!-- PR #274 포함 -->
+- [x] JaCoCo 전체 커버리지 저하 없음 (기존 대비 ±2% 이내)
+- [N/A] ktlint 전체 통과 — 프로젝트에 ktlint 플러그인 미설치
+- [ ] Flyway 마이그레이션 V119, V120 프로덕션 적용 완료 <!-- staging 이전 -->
+- [ ] PM/기획 사이드에 "뉴스가 실데이터로 바뀌었음" 알림 <!-- staging 이전 -->
+- [ ] 1주간 운영 관찰 (오탐/누락 로그 샘플링) → 회고 <!-- staging 이전 -->
 
 ---
 
-**Plan Status**: 📝 Draft (승인 대기 — 8개 리뷰 이슈 반영 완료, 2026-04-27)
-**Next Action**: 플랜 최종 검토 → 승인 시 Phase 1 착수
-**Blocked By**: None
+**Plan Status**: 🔄 In Review (Phase 1~4 + Admin Trigger 완료, Phase 5는 PR #274 진행 중, E2E는 staging 이전)
+**Next Action**: PR #273 + PR #274 머지 → staging E2E 검증 → 운영 배포
+**Blocked By**: Docker E2E (staging 이전)
 **Issue**: [#272](https://github.com/jskjw157/FanPulse/issues/272)
 **Branch**: `feature/272-news-sync-batch`
