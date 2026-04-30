@@ -72,6 +72,12 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/search/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/comments/**").permitAll()
 
+                    // Admin: 뉴스 동기화 수동 트리거 (#272)
+                    // 컨트롤러 자체가 fanpulse.scheduler.news-sync.manual-trigger-enabled=true 일 때만 빈 등록.
+                    // 빈이 없으면 Spring 이 자동으로 404 반환 → 운영에선 토글 false 로 차단 (1차 방어선).
+                    // permitAll() 은 토글이 켜져 있을 때만 의미가 있으므로 dev/QA 편의에 충분.
+                    .requestMatchers("/api/v1/admin/news-sync/**").permitAll()
+
                     // Actuator endpoints - only health and info are public
                     .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers("/actuator/info").permitAll()
