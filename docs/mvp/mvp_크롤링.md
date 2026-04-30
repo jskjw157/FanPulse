@@ -7,9 +7,9 @@
 
 ## 1. MVP 원칙
 - 4주 MVP에서 가장 큰 리스크는 “외부 API/크롤링 불안정”이므로,
-  - **1차(MVP)**: seed(큐레이션) 기반으로 `streaming_events`, `crawled_news`만 채움
+  - **1차(MVP)**: Django Naver 크롤러(`crawled_news`) + Spring 동기 배치(`NewsSyncScheduler`)로 `news` 테이블 자동 채움
   - **MVP 제외(Next)**: 차트/콘서트/광고 크롤링은 다음 릴리즈에서 진행
-  - **2차(다음 릴리즈)**: YouTube/News API 등으로 자동 갱신 확장
+  - **2차(다음 릴리즈)**: YouTube/추가 News 소스 확장
 
 ---
 
@@ -146,18 +146,43 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
 
 ---
 
-## 2.4 MVP “확장(Stretch)” (Week 4 포함): 자동 수집을 조금만 더 넣는다
+## 2.4 뉴스 자동 동기화 파이프라인 (구현 완료 — Issue #272)
 
-아래는 MVP 범위를 크게 넓히지 않으면서(= 화면/기능 추가 없음) 데이터 운영 부담을 줄이는 범위이며, **Week 4에 MVP 포함**으로 진행합니다.
+Issue #272에서 Django 크롤러 → Spring 배치 동기화 파이프라인이 구현되었습니다.
 
-### Stretch A: Google News RSS → `crawled_news` upsert
-- 장점: 구현이 단순하고, “완전 수동 seed”보다 운영 부담이 낮음
-- 범위: RSS 파싱 + 중복 제거(url 기준) + 최신 N개 유지
-- 주의: 요약/NLP/정제 파이프라인(코어NLP/KoNLPy 등)은 MVP 제외
+### 아키텍처 다이어그램
+
+```
+Naver Open API
+     ↓ (Django crawler, 주기 실행)
+crawled_news (Postgres, Django 소유)
+     ↓ (Spring NewsSyncScheduler, 10분 주기)
+     ↓ NewsMatcher (아티스트 한/영/멤버명 매칭)
+     ↓ NewsCategoryClassifier (키워드 룰 분류)
+news (Postgres, Spring 소유)
+     ↓ (REST API)
+GET /api/v1/news → 웹 UI
+```
+
+### 소유권 경계
+
+| 컴포넌트 | 소유자 | 역할 |
+|---------|--------|------|
+| `crawled_news` 테이블 | Django | Naver Open API 크롤링 결과 저장 |
+| `news` 테이블 | Spring | 비즈니스 로직 적용 후 노출용 뉴스 |
+| `NewsSyncScheduler` | Spring | 10분 주기 crawled_news → news 동기화 |
+| `NewsMatcher` | Spring | 아티스트명(한/영/멤버) 기반 매칭 |
+| `NewsCategoryClassifier` | Spring | 키워드 룰 기반 카테고리 분류 |
+
+### 주요 특성
+- **멱등성(idempotency)**: `(source_url, artist_id)` 복합 유니크 제약으로 중복 insert 방지
+- **Fail-Open**: 배치 실패 시 Spring 기동 유지, 기존 `news` 데이터 보존
+- **ShedLock**: 다중 인스턴스 환경에서 동시 실행 방지 (`lockAtMostFor=9m`)
+- **Feature flag**: `fanpulse.scheduler.news-sync.enabled` 로 즉시 on/off 가능
 
 ### Stretch B: YouTube 메타데이터 “보강”만 자동화
 - 범위: seed로 받은 `streamUrl(=VIDEO_ID)`에 대해 썸네일/제목을 보강하거나 상태를 갱신
-- 주의: YouTube Data API 키/쿼터/에러처리까지 포함되면 일정 리스크가 커서, **Week 4에서 Stretch A 완료 후** 착수 권장
+- 주의: YouTube Data API 키/쿼터/에러처리까지 포함되면 일정 리스크가 커서, 별도 릴리즈에서 착수 권장
 
 ---
 
@@ -168,7 +193,9 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
 ---
 
 ## 4. MVP 완료 기준(적재 관점)
-- seed로 `streaming_events` / `crawled_news`가 채워지고, `GET /api/v1/streaming-events`, `GET /api/v1/news`에 **항상 0개 이상** 내려올 수 있다
+- 10분 주기 `NewsSyncScheduler`가 성공적으로 실행되고 Spring 로그에 sync 결과가 기록된다
+- `GET /api/v1/news` 응답에 실제 클릭 가능한 Naver URL이 포함된 뉴스가 반환된다 (404 없음)
+- 기존 fake URL 뉴스 15건이 `visible=false`로 숨김 처리되어 API 응답에서 제외된다 (V120 마이그레이션)
 - 운영 플로우(누가/어디서/어떤 포맷으로/얼마나 자주 업데이트하는지)가 문서화되어 있다
 
 ---
@@ -178,3 +205,4 @@ MVP는 자동 크롤링/YouTube API 연동을 하지 않고, 운영/기획이 **
 | 버전  | 날짜       | 변경 내용                     |
 | ----- | ---------- | ----------------------------- |
 | 1.0.0 | 2026-01-03 | 최초 작성 (작성자: 정지원) |
+| 2.0.0 | 2026-05-01 | #272 Phase 5 — Django 크롤러 + Spring NewsSyncScheduler 파이프라인 반영, 아키텍처 다이어그램 추가, MVP 완료 기준 갱신 |
