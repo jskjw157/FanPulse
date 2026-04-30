@@ -1438,7 +1438,7 @@ AI 모더레이션 기능의 사용 가능 여부와 시스템 상태를 확인�
         return Response(status_info, status=status.HTTP_200_OK)
 
 
-from .serializers import FAQBotRequestSerializer
+from .serializers import FAQBotRequestSerializer, FAQBotResponseSerializer
 class FAQbotView(APIView):
     """
     챗봇
@@ -1447,21 +1447,20 @@ class FAQbotView(APIView):
     """
     permission_classes = [ApiKeyPermission]
 
-    @swagger_auto_schema(request_body=FAQBotRequestSerializer)
+    @swagger_auto_schema(request_body=FAQBotRequestSerializer, responses={200: FAQBotResponseSerializer})
     def post(self, request):
-        # from .services.faq import faq_service
+        from .services.faq import faq_service
 
-        serializer = FAQBotRequestSerializer(data=request.data)
-        if not serializer.is_valid():
+        req_serializer = FAQBotRequestSerializer(data=request.data)
+        if not req_serializer.is_valid():
             return Response(
-                {'error': 'Validation failed', 'details': serializer.errors},
+                {'error': 'Validation failed', 'details': req_serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        query = serializer.validated_data['query']
+        query = req_serializer.validated_data['query']
 
-        response_data = {
-            'answer': query
-        }
+        result = faq_service.filter_comment(query)
 
-        return Response(response_data, status=status.HTTP_200_OK)
+        res_serializer = FAQBotResponseSerializer(result)
+        return Response(res_serializer.data, status=status.HTTP_200_OK)

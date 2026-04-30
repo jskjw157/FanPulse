@@ -558,3 +558,7 @@ class FAQBotRequestSerializer(serializers.Serializer):
         max_length=100,
         help_text="사용자 질문"
     )
+
+
+class FAQBotResponseSerializer(serializers.Serializer):
+    answer = serializers.CharField(max_length=512)
