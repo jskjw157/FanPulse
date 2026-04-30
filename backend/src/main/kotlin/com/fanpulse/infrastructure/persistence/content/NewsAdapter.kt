@@ -36,6 +36,12 @@ class NewsAdapter(
     }
 
     @Transactional(readOnly = true)
+    override fun findBySourceUrlIn(sourceUrls: Collection<String>): List<News> {
+        if (sourceUrls.isEmpty()) return emptyList()
+        return repository.findBySourceUrlIn(sourceUrls)
+    }
+
+    @Transactional(readOnly = true)
     override fun findByArtistId(artistId: UUID, pageRequest: PageRequest): PageResult<News> {
         val pageable = PaginationConverter.toSpringPageable(pageRequest)
         val page = repository.findByArtistId(artistId, pageable)

@@ -80,6 +80,9 @@ fanpulse:
       cron: "0 0 * * * *"  # 매시간 실행
       channel-delay-ms: 500
       max-concurrency: 5
+    news-sync:
+      enabled: true
+      cron: "0 */10 * * * *"  # 10분마다 (Django crawled_news → Spring news 동기화)
 
 # Resilience4j Circuit Breaker
 resilience4j:
