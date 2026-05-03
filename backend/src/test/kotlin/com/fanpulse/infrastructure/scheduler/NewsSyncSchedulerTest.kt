@@ -2,7 +2,6 @@ package com.fanpulse.infrastructure.scheduler
 
 import com.fanpulse.application.service.content.NewsSyncReport
 import com.fanpulse.application.service.content.NewsSyncService
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
@@ -22,15 +21,8 @@ import org.junit.jupiter.api.extension.ExtendWith
 /**
  * [NewsSyncScheduler] 단위 테스트.
  *
- * **검증 범위**:
- * - `syncNews()` 호출 시 [NewsSyncService.syncRecent] 위임
- * - Fail-Open: 서비스 예외를 흡수해 스케줄러는 throw 하지 않음
- * - 어노테이션 메타데이터: `@Scheduled`, `@SchedulerLock`, `@ConditionalOnProperty`
- * - Micrometer 메트릭 계측: inserted/skipped/failed 카운터 + last_run 게이지
- *
- * **검증 외**:
- * - 실제 cron 트리거 (Spring `@EnableScheduling` 통합 테스트는 plan 범위 밖)
- * - ShedLock 분산 잠금 동작 (운영 환경에서 검증)
+ * 메트릭 계측은 [NewsSyncMetrics] 로 분리됐으므로 본 테스트는
+ * 스케줄러의 위임·Fail-Open·어노테이션 메타데이터만 검증한다.
  */
 @ExtendWith(MockKExtension::class)
 @DisplayName("NewsSyncScheduler 단위 테스트")
@@ -39,14 +31,11 @@ class NewsSyncSchedulerTest {
     @MockK
     private lateinit var newsSyncService: NewsSyncService
 
-    private lateinit var meterRegistry: SimpleMeterRegistry
-
     private lateinit var scheduler: NewsSyncScheduler
 
     @BeforeEach
     fun setUp() {
-        meterRegistry = SimpleMeterRegistry()
-        scheduler = NewsSyncScheduler(newsSyncService, meterRegistry)
+        scheduler = NewsSyncScheduler(newsSyncService)
     }
 
     @Nested
@@ -147,58 +136,6 @@ class NewsSyncSchedulerTest {
             )
             assertEquals("true", annotation.havingValue)
             assertFalse(annotation.matchIfMissing, "matchIfMissing=false 여야 기본 비활성")
-        }
-    }
-
-    @Nested
-    @DisplayName("Micrometer 메트릭 계측")
-    inner class Metrics {
-
-        @Test
-        @DisplayName("성공 시 inserted/skipped/failed 카운터가 리포트 값만큼 증가한다")
-        fun shouldIncrementCountersFromReport() {
-            every { newsSyncService.syncRecent(any()) } returns NewsSyncReport(
-                total = 10,
-                inserted = 7,
-                skipped = 2,
-                failed = 1,
-                errors = listOf("snapshot-1: classify failed"),
-            )
-
-            scheduler.syncNews()
-
-            assertEquals(7.0, meterRegistry.counter("fanpulse.news_sync.inserted_total").count())
-            assertEquals(2.0, meterRegistry.counter("fanpulse.news_sync.skipped_total").count())
-            assertEquals(1.0, meterRegistry.counter("fanpulse.news_sync.failed_total").count())
-        }
-
-        @Test
-        @DisplayName("성공 시 last_run_epoch_seconds 게이지가 0 보다 큰 값으로 갱신된다")
-        fun shouldRecordLastRunGauge() {
-            every { newsSyncService.syncRecent(any()) } returns NewsSyncReport(
-                total = 1,
-                inserted = 1,
-                skipped = 0,
-                failed = 0,
-                errors = emptyList(),
-            )
-
-            scheduler.syncNews()
-
-            val gaugeValue = meterRegistry.get("fanpulse.news_sync.last_run_epoch_seconds")
-                .gauge()
-                .value()
-            assertTrue(gaugeValue > 0.0, "last_run_epoch_seconds 게이지는 양수여야 함 (실측: $gaugeValue)")
-        }
-
-        @Test
-        @DisplayName("서비스 예외 발생 시에도 last_run 게이지는 갱신되지 않으며 inserted 카운터도 증가하지 않는다")
-        fun shouldNotUpdateMetricsOnException() {
-            every { newsSyncService.syncRecent(any()) } throws RuntimeException("crash")
-
-            scheduler.syncNews()
-
-            assertEquals(0.0, meterRegistry.counter("fanpulse.news_sync.inserted_total").count())
         }
     }
 }

@@ -10,6 +10,7 @@ import com.fanpulse.domain.content.NewsMatcher
 import com.fanpulse.domain.content.port.ArtistPort
 import com.fanpulse.domain.content.port.CrawledNewsReader
 import com.fanpulse.domain.content.port.NewsPort
+import com.fanpulse.infrastructure.metrics.NewsSyncMetrics
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -59,6 +60,9 @@ class NewsSyncServiceImplTest {
     @MockK
     private lateinit var transactionalNewsUpserter: TransactionalNewsUpserter
 
+    @MockK
+    private lateinit var newsSyncMetrics: NewsSyncMetrics
+
     private val newsMatcher = NewsMatcher()
 
     private lateinit var service: NewsSyncServiceImpl
@@ -66,12 +70,14 @@ class NewsSyncServiceImplTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { newsSyncMetrics.record(any()) } just Runs
         service = NewsSyncServiceImpl(
             crawledNewsReader = crawledNewsReader,
             artistPort = artistPort,
             newsPort = newsPort,
             newsMatcher = newsMatcher,
             transactionalNewsUpserter = transactionalNewsUpserter,
+            newsSyncMetrics = newsSyncMetrics,
         )
     }
 

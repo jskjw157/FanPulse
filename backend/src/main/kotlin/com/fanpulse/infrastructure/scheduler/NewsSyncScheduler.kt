@@ -1,8 +1,6 @@
 package com.fanpulse.infrastructure.scheduler
 
 import com.fanpulse.application.service.content.NewsSyncService
-import io.micrometer.core.instrument.Gauge
-import io.micrometer.core.instrument.MeterRegistry
 import mu.KotlinLogging
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -10,7 +8,6 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.atomic.AtomicLong
 
 private val logger = KotlinLogging.logger {}
 
@@ -43,19 +40,7 @@ private val logger = KotlinLogging.logger {}
 )
 class NewsSyncScheduler(
     private val newsSyncService: NewsSyncService,
-    meterRegistry: MeterRegistry,
 ) {
-
-    private val insertedCounter = meterRegistry.counter("fanpulse.news_sync.inserted_total")
-    private val skippedCounter = meterRegistry.counter("fanpulse.news_sync.skipped_total")
-    private val failedCounter = meterRegistry.counter("fanpulse.news_sync.failed_total")
-    private val lastRunEpochSeconds = AtomicLong(0)
-
-    init {
-        Gauge.builder("fanpulse.news_sync.last_run_epoch_seconds") { lastRunEpochSeconds.get().toDouble() }
-            .description("뉴스 동기화 스케줄러 마지막 성공 종료 시각 (epoch seconds)")
-            .register(meterRegistry)
-    }
 
     @Scheduled(cron = "\${fanpulse.scheduler.news-sync.cron:0 */10 * * * *}")
     @SchedulerLock(
@@ -70,11 +55,6 @@ class NewsSyncScheduler(
         try {
             val report = newsSyncService.syncRecent(limit = SYNC_BATCH_LIMIT)
             val duration = Duration.between(startTime, Instant.now())
-
-            insertedCounter.increment(report.inserted.toDouble())
-            skippedCounter.increment(report.skipped.toDouble())
-            failedCounter.increment(report.failed.toDouble())
-            lastRunEpochSeconds.set(Instant.now().epochSecond)
 
             logger.info {
                 "News sync completed in ${duration.toMillis()}ms: " +

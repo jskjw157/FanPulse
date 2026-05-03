@@ -8,6 +8,7 @@ import com.fanpulse.domain.content.NewsMatcher
 import com.fanpulse.domain.content.port.ArtistPort
 import com.fanpulse.domain.content.port.CrawledNewsReader
 import com.fanpulse.domain.content.port.NewsPort
+import com.fanpulse.infrastructure.metrics.NewsSyncMetrics
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
@@ -41,6 +42,7 @@ class NewsSyncServiceImpl(
     private val newsPort: NewsPort,
     private val newsMatcher: NewsMatcher,
     private val transactionalNewsUpserter: TransactionalNewsUpserter,
+    private val newsSyncMetrics: NewsSyncMetrics,
 ) : NewsSyncService {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -119,13 +121,15 @@ class NewsSyncServiceImpl(
             snapshots.size, inserted, skipped, failed,
         )
 
-        return NewsSyncReport(
+        val report = NewsSyncReport(
             total = snapshots.size,
             inserted = inserted,
             skipped = skipped,
             failed = failed,
             errors = errors.toList(),
         )
+        newsSyncMetrics.record(report)
+        return report
     }
 
     /**
