@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.news
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.usecase.GetNewsLatestUseCase
 import com.aos.fanpulse.presentation.BuildConfig
@@ -47,7 +46,7 @@ class NewsViewModel@Inject constructor(
             coroutineScope {
                 val response = async { getNewsLatestUseCase.invoke(3) }
                 val responseResult = response.await()
-                Log.d("NewsViewModel", "API 호출 결과: ${responseResult.isSuccess}")
+//                Log.d("NewsViewModel", "API 호출 결과: ${responseResult.isSuccess}")
 
                 if (responseResult.isSuccess) {
                     val data = responseResult.getOrNull()?.data ?: emptyList()
@@ -63,7 +62,7 @@ class NewsViewModel@Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e("NewsViewModel", "API Exception", e)
+//            Log.e("NewsViewModel", "API Exception", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }

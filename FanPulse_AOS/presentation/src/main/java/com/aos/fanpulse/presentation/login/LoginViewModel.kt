@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.login
 
-import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.usecase.LoginWithGoogleUseCase
@@ -47,7 +46,7 @@ class LoginViewModel @Inject constructor(
                 }
             }
             .onFailure { exception ->
-                Log.e("GoogleLoginDebug", "로그인 실패 상세 원인:", exception)
+//                Log.e("GoogleLoginDebug", "로그인 실패 상세 원인:", exception)
                 reduce {
                     state.copy(
                         loginStatus = LoginState.Error(exception.message ?: "알 수 없는 오류")

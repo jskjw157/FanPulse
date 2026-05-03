@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.home
 
-import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.usecase.GetNewsLatestUseCase
@@ -82,7 +81,7 @@ class HomeViewModel@Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e("HomeViewModel", "API Exception", e)
+//            Log.e("HomeViewModel", "API Exception", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }

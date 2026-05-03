@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.news
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.usecase.GetNewsDetailUseCase
 import com.aos.fanpulse.domain.usecase.GetNewsListUseCase
@@ -32,14 +31,14 @@ class NewsDetailViewModel @Inject constructor(
 
         try {
             val detailResponse = getNewsDetailUseCase.invoke(newsId)
-            Log.d("NewsDetailViewModel", "API 호출 결과 (Detail): ${detailResponse.isSuccess}")
+//            Log.d("NewsDetailViewModel", "API 호출 결과 (Detail): ${detailResponse.isSuccess}")
 
             if (detailResponse.isSuccess) {
                 val newsDetailData = detailResponse.getOrNull()
 
                 if (newsDetailData != null) {
                     val relatedResponse = getNewsListUseCase.invoke(newsDetailData.artistId)
-                    Log.d("NewsDetailViewModel", "API 호출 결과 (Related): ${relatedResponse.isSuccess}")
+//                    Log.d("NewsDetailViewModel", "API 호출 결과 (Related): ${relatedResponse.isSuccess}")
 
                     val relatedNewsData = if (relatedResponse.isSuccess) {
                         relatedResponse.getOrNull()?.content ?: emptyList()
@@ -61,7 +60,7 @@ class NewsDetailViewModel @Inject constructor(
                 handleErrorState("뉴스 상세 정보를 불러오지 못했습니다.")    //${detailResponse.code()}
             }
         } catch (e: Exception) {
-            Log.e("NewsDetailViewModel", "API Exception", e)
+//            Log.e("NewsDetailViewModel", "API Exception", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }

@@ -28,7 +28,7 @@ class TokenAuthenticator @Inject constructor(
     override fun authenticate(route: Route?, response: Response): Request? {
         if (response.count() >= 2) return null
 
-        return runBlocking(Dispatchers.IO) {
+        return runBlocking {
             mutex.withLock {
                 val failedToken = extractTokenFromRequest(response.request, "fanpulse_access_token")
 

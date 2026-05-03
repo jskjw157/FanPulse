@@ -1,6 +1,7 @@
 package com.aos.fanpulse.presentation.live
 
-import android.util.Log
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.usecase.GetStreamingEventDetailUseCase
 import com.aos.fanpulse.presentation.BuildConfig
@@ -14,6 +15,27 @@ import javax.inject.Inject
 class LiveDetailViewModel@Inject constructor(
     private val getStreamingEventDetailUseCase: GetStreamingEventDetailUseCase
 ): ContainerHost<LiveDetailContract.LiveDetailState, LiveDetailContract.SideEffect>, ViewModel()  {
+
+    data class ChatMessage(
+        val userName: String,
+        val message: String,
+        val timeAgo: String,
+        val avatarInitial: String,
+        val avatarColor: Color
+    )
+
+    data class ActionItem(
+        val icon: @Composable () -> Unit,
+        val count: String?,
+        val label: String
+    )
+
+    val sampleChats = listOf(
+        ChatMessage("민지팬123", "오늘 무대 최고에요! 🔥", "2분 전", "민", Color(0xFFAB47BC)),
+        ChatMessage("하니러버",  "라이브 음색 미쳤다 ㅠㅠ",   "1분 전", "하", Color(0xFF42A5F5)),
+        ChatMessage("뉴진스사랑","다들 너무 예뻐요 💕",       "방금",   "뉴", Color(0xFFEF5350))
+    )
+
     override val container: Container<LiveDetailContract.LiveDetailState, LiveDetailContract.SideEffect> =
         container(
             initialState = LiveDetailContract.LiveDetailState()
@@ -29,7 +51,7 @@ class LiveDetailViewModel@Inject constructor(
 
         try {
             val streamingEventDetail = getStreamingEventDetailUseCase(liveId)
-            Log.d("LiveDetailViewModel", "API 호출 성공:${streamingEventDetail}")
+//            Log.d("LiveDetailViewModel", "API 호출 성공:${streamingEventDetail}")
             if (streamingEventDetail.isSuccess) {
                 val data = streamingEventDetail.getOrNull()?.data
                 reduce {
@@ -59,7 +81,7 @@ class LiveDetailViewModel@Inject constructor(
                     )
                 }
             } else {
-                Log.e("LiveDetailViewModel", "API Exception", e)
+//                Log.e("LiveDetailViewModel", "API Exception", e)
                 reduce {
                     state.copy(
                         isLoading = false,

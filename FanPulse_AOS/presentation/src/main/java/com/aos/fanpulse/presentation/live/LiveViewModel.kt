@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.live
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.usecase.GetLiveEventsUseCase
 import com.aos.fanpulse.domain.usecase.GetScheduledEventsUseCase
@@ -45,7 +44,7 @@ class LiveViewModel@Inject constructor(
                 val scheduledResult = scheduledEventsDeferred.await()
                 val liveResult = liveEventsDeferred.await()
 
-                Log.d("LiveViewModel", "API 호출 완료 - Stream:${streamResult.isSuccess}, Scheduled:${scheduledResult.isSuccess}, Live:${liveResult.isSuccess}")
+//                Log.d("LiveViewModel", "API 호출 완료 - Stream:${streamResult.isSuccess}, Scheduled:${scheduledResult.isSuccess}, Live:${liveResult.isSuccess}")
                 if (streamResult.isSuccess && scheduledResult.isSuccess && liveResult.isSuccess) {
                     reduce {
                         state.copy(
@@ -60,7 +59,7 @@ class LiveViewModel@Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e("LiveViewModel", "API Exception", e)
+//            Log.e("LiveViewModel", "API Exception", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }

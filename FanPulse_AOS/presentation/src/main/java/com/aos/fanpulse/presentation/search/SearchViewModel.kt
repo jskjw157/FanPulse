@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.search
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.usecase.SearchAllUseCase
 import com.aos.fanpulse.presentation.BuildConfig
@@ -74,7 +73,7 @@ class SearchViewModel @Inject constructor(
 
         try {
             val searchResult = runCatching { searchAllUseCase(query = query, limit = limit) }
-            Log.d("SearchViewModel", "API 호출 결과: ${searchResult.isSuccess}")
+//            Log.d("SearchViewModel", "API 호출 결과: ${searchResult.isSuccess}")
 
             if (searchResult.isSuccess) {
                 val body = searchResult.getOrNull()?.getOrNull()
@@ -89,11 +88,11 @@ class SearchViewModel @Inject constructor(
                     )
                 }
             } else {
-                Log.e("SearchViewModel", "검색 API 실패: HTTP ")    //${searchResult.code()}
+//                Log.e("SearchViewModel", "검색 API 실패: HTTP ")    //${searchResult.code()}
                 handleErrorState("검색 결과를 불러오지 못했습니다.")   //${searchResult.code()}
             }
         } catch (e: Exception) {
-            Log.e("SearchViewModel", "검색 중 네트워크 예외 발생", e)
+//            Log.e("SearchViewModel", "검색 중 네트워크 예외 발생", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }

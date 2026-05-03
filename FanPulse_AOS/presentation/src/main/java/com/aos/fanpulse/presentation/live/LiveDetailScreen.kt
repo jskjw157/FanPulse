@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.live
 
-import android.util.Log
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -69,31 +68,6 @@ import com.aos.fanpulse.presentation.common.CommonTopAppBar
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
-// ── 데이터 모델 ─────────────────────────────────────────────────────────────────
-data class ChatMessage(
-    val userName: String,
-    val message: String,
-    val timeAgo: String,
-    val avatarInitial: String,
-    val avatarColor: Color
-)
-
-data class ActionItem(
-    val icon: @Composable () -> Unit,
-    val count: String?,
-    val label: String
-)
-
-// ── 샘플 데이터 ─────────────────────────────────────────────────────────────────
-private val sampleChats = listOf(
-    ChatMessage("민지팬123", "오늘 무대 최고에요! 🔥", "2분 전", "민", Color(0xFFAB47BC)),
-    ChatMessage("하니러버",  "라이브 음색 미쳤다 ㅠㅠ",   "1분 전", "하", Color(0xFF42A5F5)),
-    ChatMessage("뉴진스사랑","다들 너무 예뻐요 💕",       "방금",   "뉴", Color(0xFFEF5350))
-)
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  메인 화면
-// ══════════════════════════════════════════════════════════════════════════════
 @Composable
 fun LiveDetailScreen(
     viewModel: LiveDetailViewModel = hiltViewModel(),
@@ -236,7 +210,7 @@ fun LiveDetailScreen(
         // 3. 실시간 채팅
         ChatSection(
             modifier = Modifier.weight(1f),
-            messages = sampleChats
+            messages = viewModel.sampleChats
         )
 
         HorizontalDivider(color = colorResource(R.color.color_17), thickness = 1.dp)
@@ -313,10 +287,19 @@ fun YouTubeWebPlayer(
                         request: WebResourceRequest?
                     ): Boolean {
                         val url = request?.url?.toString() ?: return false
-
                         return !(url.contains("youtube.com") || url.contains("youtu.be"))
                     }
+
+                    override fun onReceivedError(
+                        view: WebView?,
+                        request: WebResourceRequest?,
+                        error: WebResourceError?
+                    ) {
+                        super.onReceivedError(view, request, error)
+//                        Log.e("WebViewTest", "접속 에러 발생: ${error?.description}")
+                    }
                 }
+
                 layoutParams = android.view.ViewGroup.LayoutParams(
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -332,20 +315,9 @@ fun YouTubeWebPlayer(
                     mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                 }
 
-                webViewClient = object : WebViewClient() {
-                    override fun onReceivedError(
-                        view: WebView?,
-                        request: WebResourceRequest?,
-                        error: WebResourceError?
-                    ) {
-                        super.onReceivedError(view, request, error)
-                        Log.e("WebViewTest", "접속 에러 발생: ${error?.description}")
-                    }
-                }
-
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                        Log.e("WebViewLog", "유튜브 에러: ${consoleMessage?.message()}")
+//                        Log.e("WebViewLog", "유튜브 에러: ${consoleMessage?.message()}")
                         return super.onConsoleMessage(consoleMessage)
                     }
                 }
@@ -476,7 +448,7 @@ fun ActionBarItem(
 @Composable
 fun ChatSection(
     modifier: Modifier = Modifier,
-    messages: List<ChatMessage>
+    messages: List<LiveDetailViewModel.ChatMessage>
 ) {
     Column(modifier = modifier.background(Color.White)) {
         // 헤더
@@ -516,7 +488,7 @@ fun ChatSection(
 }
 
 @Composable
-fun ChatMessageItem(message: ChatMessage) {
+fun ChatMessageItem(message: LiveDetailViewModel.ChatMessage) {
     Row(verticalAlignment = Alignment.Top) {
         // 아바타
         Box(

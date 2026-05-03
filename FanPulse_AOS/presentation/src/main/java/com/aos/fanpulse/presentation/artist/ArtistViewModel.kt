@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.artist
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.usecase.GetArtistUseCase
 import com.aos.fanpulse.domain.usecase.SearchArtistsUseCase
@@ -46,7 +45,7 @@ class ArtistViewModel @Inject constructor(
             val response = getArtistUseCase.invoke()
             if (response.isSuccess) {
                 val artistsData = response.getOrNull()?.content ?: emptyList()
-                Log.d("ArtistsViewModel", "API 호출 성공: 아티스트 ${artistsData.size}명 로드 완료")
+//                Log.d("ArtistsViewModel", "API 호출 성공: 아티스트 ${artistsData.size}명 로드 완료")
 
                 reduce {
                     state.copy(
@@ -59,7 +58,7 @@ class ArtistViewModel @Inject constructor(
 //                handleErrorState("데이터를 불러오지 못했습니다. (${response.code()})")
             }
         } catch (e: Exception) {
-            Log.e("ArtistsViewModel", "네트워크 예외 발생", e)
+//            Log.e("ArtistsViewModel", "네트워크 예외 발생", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }
@@ -98,7 +97,7 @@ class ArtistViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e("ArtistsViewModel", "검색 중 네트워크 예외 발생", e)
+//            Log.e("ArtistsViewModel", "검색 중 네트워크 예외 발생", e)
             reduce {
                 state.copy(
                     isLoading = false,

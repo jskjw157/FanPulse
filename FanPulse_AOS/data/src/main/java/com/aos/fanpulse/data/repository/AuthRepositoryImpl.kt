@@ -46,17 +46,14 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun loginWithGoogle(googleIdToken: String): Result<AuthToken> = runCatching {
-        // 1. 서버에 로그인 요청
         val response = authApiService.loginWithGoogle(GoogleLoginRequest(googleIdToken))
-
         if (response.isSuccessful) {
-            // 2. 헤더에서 쿠키(토큰) 추출
             val cookies = response.headers().values("Set-Cookie")
             val access = extractToken(cookies, "fanpulse_access_token")
             val refresh = extractToken(cookies, "fanpulse_refresh_token")
 
             if (access != null && refresh != null) {
-                // 3. 토큰 저장
+                updateTokens(access, refresh)
                 AuthToken(accessToken = access, refreshToken = refresh)
             } else {
                 throw Exception("토큰 정보가 응답 헤더에 없습니다.")

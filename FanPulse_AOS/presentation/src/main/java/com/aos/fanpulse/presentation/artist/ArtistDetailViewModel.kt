@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.artist
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.model.ArtistDetail
 import com.aos.fanpulse.domain.usecase.GetArtistDetailUseCase
@@ -64,7 +63,7 @@ class ArtistDetailViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e("ArtistsViewModel", "API Exception", e)
+//            Log.e("ArtistsViewModel", "API Exception", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }
