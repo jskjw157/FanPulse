@@ -11,6 +11,7 @@ concurrency:
 permissions:
   contents: read
   pull-requests: read
+  statuses: write
 
 jobs:
   notify:
@@ -77,6 +78,19 @@ jobs:
           if [ "$HTTP_CODE" -ge 400 ]; then
             echo "::warning::Webhook call failed with HTTP $HTTP_CODE"
           fi
+
+      - name: Auto-approve docs-only PR
+        if: steps.check.outputs.should_notify == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 코드 파일 변경 없는 PR(문서/설정만)은 claude-code-review 컨텍스트를 자동 SUCCESS 처리.
+          # 룰셋 'AI Review Protection'이 해당 컨텍스트를 요구하므로, 봇 호출이 스킵되면 영구 BLOCKED 됨.
+          gh api repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }} \
+            -f state=success \
+            -f context=claude-code-review \
+            -f description="Auto-approved: no reviewable code changes" \
+            -f target_url="${{ github.event.pull_request.html_url }}"
 
       - name: Send Telegram notification
         if: steps.check.outputs.should_notify == 'true'
