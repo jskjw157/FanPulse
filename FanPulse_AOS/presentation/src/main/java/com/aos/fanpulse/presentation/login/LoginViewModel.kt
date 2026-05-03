@@ -1,10 +1,10 @@
 package com.aos.fanpulse.presentation.login
 
-import android.content.Context
 import android.util.Log
+import androidx.credentials.CredentialManager
 import androidx.lifecycle.ViewModel
-import com.aos.fanpulse.data.remote.GoogleSignInDataSource
 import com.aos.fanpulse.domain.usecase.LoginWithGoogleUseCase
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,13 +15,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    val googleSignInDataSource: GoogleSignInDataSource,
+    val credentialManager: CredentialManager,
+    val googleIdOption: GetGoogleIdOption,
     private val googleLoginUseCase: LoginWithGoogleUseCase,
 ) : ContainerHost<LoginContract.SignInState, LoginContract.SideEffect>, ViewModel() {
 
     override val container: Container<LoginContract.SignInState, LoginContract.SideEffect> =
         container(initialState = LoginContract.SignInState())
-
+    
     fun googleLogin(token: String, onResult: (Boolean) -> Unit) = intent {
         // 로딩 상태(Loading)로 변경하여 UI에 스피너를 띄움 (O)
         reduce {

@@ -11,7 +11,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -45,7 +45,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(project(":data"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -71,6 +70,11 @@ dependencies {
 
     // 이미지 로딩 (Coil)
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // 구글 로그인 & 인증 (Credential Manager)
+    implementation(libs.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
     // 미디어 플레이어 (ExoPlayer)
     implementation("androidx.media3:media3-exoplayer:1.2.1")
