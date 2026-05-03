@@ -2,7 +2,8 @@ package com.aos.fanpulse.presentation.artist
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.aos.fanpulse.domain.repository.ArtistsRepository
+import com.aos.fanpulse.domain.model.ArtistDetail
+import com.aos.fanpulse.domain.usecase.GetArtistDetailUseCase
 import com.aos.fanpulse.domain.usecase.GetNewsListUseCase
 import com.aos.fanpulse.presentation.BuildConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,11 +13,10 @@ import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
 import javax.inject.Inject
-import kotlin.Result
 
 @HiltViewModel
 class ArtistDetailViewModel @Inject constructor(
-    private val artistsRepository: ArtistsRepository,
+    private val getArtistDetailUseCase: GetArtistDetailUseCase,
     private val getNewsListUseCase: GetNewsListUseCase,
 ): ContainerHost<ArtistDetailContract.ArtistDetailState, ArtistDetailContract.SideEffect>, ViewModel(){
     override val container: Container<ArtistDetailContract.ArtistDetailState, ArtistDetailContract.SideEffect> =
@@ -37,7 +37,7 @@ class ArtistDetailViewModel @Inject constructor(
 
         try {
             coroutineScope {
-                val artistDeferred = async { artistsRepository.getArtistDetail(artistId) }
+                val artistDeferred = async { getArtistDetailUseCase.invoke(artistId) }
                 val newsDeferred = async { getNewsListUseCase.invoke(artistId, "news", 20) }
                 val scheduledDeferred = async { getNewsListUseCase.invoke(artistId, "scheduled events", 20) }
 
@@ -53,7 +53,7 @@ class ArtistDetailViewModel @Inject constructor(
                     reduce {
                         state.copy(
                             isLoading = false,
-                            artistDetail = artistData ?: state.artistDetail,
+                            artistDetail = (artistData ?: state.artistDetail) as ArtistDetail?,
                             newsItems = newsData?.getOrNull()?.content ?: emptyList(),
                             scheduledItems = scheduledData?.getOrNull()?.content ?: emptyList(),
                             errorMessage = null

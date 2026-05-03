@@ -34,6 +34,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
@@ -69,7 +70,7 @@ dependencies {
     testImplementation(libs.orbit.test)
 
     // 이미지 로딩 (Coil)
-    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation(libs.coil.compose)
 
     // 구글 로그인 & 인증 (Credential Manager)
     implementation(libs.credentials)
@@ -77,9 +78,9 @@ dependencies {
     implementation(libs.googleid)
 
     // 미디어 플레이어 (ExoPlayer)
-    implementation("androidx.media3:media3-exoplayer:1.2.1")
-    implementation("androidx.media3:media3-ui:1.2.1")
-    implementation("androidx.media3:media3-exoplayer-hls:1.2.1")
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.exoplayer.hls)
 
     //  hilt 공통 사항
     implementation(libs.hilt.android)
@@ -90,13 +91,13 @@ dependencies {
 
     //  일반적인 단위 테스트용 (도메인, 데이터, 프레젠테이션 모두 사용 가능) -   필요한 경우 사용
     testImplementation(libs.junit)
-    testImplementation("io.mockk:mockk:1.13.10")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     //  안드로이드 환경/UI 테스트용 (주로 :presentation, :app 모듈에서 사용)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation("io.mockk:mockk-android:1.13.10")
+    androidTestImplementation(libs.mockk.android)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 }

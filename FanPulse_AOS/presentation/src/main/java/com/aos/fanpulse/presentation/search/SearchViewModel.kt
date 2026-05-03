@@ -15,7 +15,9 @@ class SearchViewModel @Inject constructor(
     private val searchAllUseCase : SearchAllUseCase
 ): ContainerHost<SearchContract.SearchState, SearchContract.SideEffect>, ViewModel(){
     override val container: Container<SearchContract.SearchState, SearchContract.SideEffect> =
-        container(initialState = SearchContract.SearchState())
+        container(initialState = SearchContract.SearchState()){
+            loadInitialData()
+        }
 
     data class RecentSearchTag(
         val text: String,
@@ -25,7 +27,24 @@ class SearchViewModel @Inject constructor(
         val rank: Int,
         val text: String
     )
-
+    private fun loadInitialData() = intent {
+        reduce {
+            state.copy(
+                recentSearchTags = listOf(
+                    RecentSearchTag("BTS"),
+                    RecentSearchTag("BLACKPINK"),
+                    RecentSearchTag("콘서트"),
+                    RecentSearchTag("NewJeans")
+                ),
+                popularSearches = listOf(
+                    PopularSearch(1, "BTS 새 앨범"),
+                    PopularSearch(2, "BLACKPINK 투어"),
+                    PopularSearch(3, "SEVENTEEN"),
+                    PopularSearch(4, "NewJeans 뮤비")
+                )
+            )
+        }
+    }
     fun deleteAllRecentSearch() = intent {
         reduce {
             state.copy(
@@ -71,7 +90,7 @@ class SearchViewModel @Inject constructor(
                 }
             } else {
                 Log.e("SearchViewModel", "검색 API 실패: HTTP ")    //${searchResult.code()}
-                handleErrorState("검색 결과를 불러오지 못했습니다. ()")   //${searchResult.code()}
+                handleErrorState("검색 결과를 불러오지 못했습니다.")   //${searchResult.code()}
             }
         } catch (e: Exception) {
             Log.e("SearchViewModel", "검색 중 네트워크 예외 발생", e)

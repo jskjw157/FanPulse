@@ -2,7 +2,9 @@ package com.aos.fanpulse.presentation.live
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.aos.fanpulse.domain.repository.StreamingEventsRepository
+import com.aos.fanpulse.domain.usecase.GetLiveEventsUseCase
+import com.aos.fanpulse.domain.usecase.GetScheduledEventsUseCase
+import com.aos.fanpulse.domain.usecase.GetStreamingEventsUseCase
 import com.aos.fanpulse.presentation.BuildConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -14,7 +16,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LiveViewModel@Inject constructor(
-    private val streamingEventsRepository: StreamingEventsRepository
+    private val getScheduledEventsUseCase: GetScheduledEventsUseCase,
+    private val getStreamingEventsUseCase: GetStreamingEventsUseCase,
+    private val getLiveEventsUseCase: GetLiveEventsUseCase,
 ): ContainerHost<LiveContract.LiveState, LiveContract.SideEffect>, ViewModel() {
     override val container: Container<LiveContract.LiveState, LiveContract.SideEffect> =
         container(
@@ -33,27 +37,26 @@ class LiveViewModel@Inject constructor(
 
         try {
             coroutineScope {
-                val streamEventsDeferred = async { streamingEventsRepository.getStreamingEvents() }
-                val scheduledEventsDeferred = async { streamingEventsRepository.getScheduledEvents() }
-                val liveEventsDeferred = async { streamingEventsRepository.getLiveEvents() }
+                val streamEventsDeferred = async { getStreamingEventsUseCase.invoke() }
+                val scheduledEventsDeferred = async { getScheduledEventsUseCase.invoke() }
+                val liveEventsDeferred = async { getLiveEventsUseCase.invoke() }
 
-                val getStreamEvents = runCatching { streamEventsDeferred.await()}
-                val getScheduledEvents = runCatching {scheduledEventsDeferred.await()}
-                val getLiveEvents = runCatching {liveEventsDeferred.await()}
+                val streamResult = streamEventsDeferred.await()
+                val scheduledResult = scheduledEventsDeferred.await()
+                val liveResult = liveEventsDeferred.await()
 
-                Log.d("LiveViewModel", "API 호출 완료 - Stream:${getStreamEvents.isSuccess}, Scheduled:${getScheduledEvents.isSuccess}, Live:${getLiveEvents.isSuccess}")
-
-                if (getStreamEvents.isSuccess && getScheduledEvents.isSuccess && getLiveEvents.isSuccess) {
+                Log.d("LiveViewModel", "API 호출 완료 - Stream:${streamResult.isSuccess}, Scheduled:${scheduledResult.isSuccess}, Live:${liveResult.isSuccess}")
+                if (streamResult.isSuccess && scheduledResult.isSuccess && liveResult.isSuccess) {
                     reduce {
                         state.copy(
                             isLoading = false,
-                            streamingEventItem = getStreamEvents.getOrNull()?.data?.items ?: emptyList(),
-                            scheduledItem = getScheduledEvents.getOrNull()?.content ?: emptyList(),
-                            liveItem = getLiveEvents.getOrNull()?.content ?: emptyList()
+                            streamingEventItem = streamResult.getOrNull()?.data?.items ?: emptyList(),
+                            scheduledItem = scheduledResult.getOrNull()?.content ?: emptyList(),
+                            liveItem = liveResult.getOrNull()?.content ?: emptyList()
                         )
                     }
-                } else {
-                    handleErrorState("일부 데이터를 불러오지 못했습니다. ()")  //${getStreamEvents.code()}
+                }else {
+                    handleErrorState("일부 데이터를 불러오지 못했습니다.")
                 }
             }
         } catch (e: Exception) {

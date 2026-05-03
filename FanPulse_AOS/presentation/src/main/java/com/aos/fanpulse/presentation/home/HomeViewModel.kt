@@ -3,8 +3,9 @@ package com.aos.fanpulse.presentation.home
 import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.lifecycle.ViewModel
-import com.aos.fanpulse.domain.repository.NewsRepository
-import com.aos.fanpulse.domain.repository.StreamingEventsRepository
+import com.aos.fanpulse.domain.usecase.GetNewsLatestUseCase
+import com.aos.fanpulse.domain.usecase.GetScheduledEventsUseCase
+import com.aos.fanpulse.domain.usecase.GetStreamingEventsUseCase
 import com.aos.fanpulse.presentation.BuildConfig
 import com.aos.fanpulse.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,8 +18,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel@Inject constructor(
-    private val streamingEventsRepository: StreamingEventsRepository,
-    private val newsRepository: NewsRepository,
+    private val getScheduledEventsUseCase: GetScheduledEventsUseCase,
+    private val getStreamingEventsUseCase: GetStreamingEventsUseCase,
+    private val getNewsLatestUseCase: GetNewsLatestUseCase,
 ): ContainerHost<HomeContract.HomeState, HomeContract.SideEffect>, ViewModel() {
 
     data class MenuItem(
@@ -58,23 +60,21 @@ class HomeViewModel@Inject constructor(
 
         try {
             coroutineScope {
-                val streamEventsDeferred = async { streamingEventsRepository.getStreamingEvents() }
-                val scheduledEventsDeferred = async { streamingEventsRepository.getScheduledEvents() }
-                val latestNewsDeferred = async { newsRepository.getLatestNews(3) }
+                val streamEventsDeferred = async { getStreamingEventsUseCase.invoke() }
+                val scheduledEventsDeferred = async { getScheduledEventsUseCase.invoke() }
+                val latestNewsDeferred = async { getNewsLatestUseCase.invoke(3) }
 
-                val getStreamEvents = runCatching { streamEventsDeferred.await() }
-                val getScheduledEvents = runCatching { scheduledEventsDeferred.await() }
-                val getLatestNews = runCatching {  latestNewsDeferred.await() }
+                val streamResult = streamEventsDeferred.await()
+                val scheduledResult = scheduledEventsDeferred.await()
+                val newsResult = latestNewsDeferred.await()
 
-                Log.d("HomeViewModel", "API 호출 완료 - Stream:${getStreamEvents.isSuccess}, Scheduled:${getScheduledEvents.isSuccess}, News:${getLatestNews.isSuccess}")
-
-                if (getStreamEvents.isSuccess && getScheduledEvents.isSuccess && getLatestNews.isSuccess) {
+                if (streamResult.isSuccess && scheduledResult.isSuccess && newsResult.isSuccess) {
                     reduce {
                         state.copy(
                             isLoading = false,
-                            streamingEventItem = getStreamEvents.getOrNull()?.data?.items ?: emptyList(),
-                            scheduledItem = getScheduledEvents.getOrNull()?.content ?: emptyList(),
-                            newsItem = getLatestNews.getOrNull()?.data ?: emptyList()
+                            streamingEventItem = streamResult.getOrNull()?.data?.items ?: emptyList(),
+                            scheduledItem = scheduledResult.getOrNull()?.content ?: emptyList(),
+                            newsItem = newsResult.getOrNull()?.data ?: emptyList()
                         )
                     }
                 } else {

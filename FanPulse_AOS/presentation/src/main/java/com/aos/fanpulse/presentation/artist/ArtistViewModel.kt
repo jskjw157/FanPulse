@@ -2,7 +2,7 @@ package com.aos.fanpulse.presentation.artist
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.aos.fanpulse.domain.repository.ArtistsRepository
+import com.aos.fanpulse.domain.usecase.GetArtistUseCase
 import com.aos.fanpulse.domain.usecase.SearchArtistsUseCase
 import com.aos.fanpulse.presentation.BuildConfig
 import com.aos.fanpulse.presentation.R
@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ArtistViewModel @Inject constructor(
-    private val artistsRepository: ArtistsRepository,
+    private val getArtistUseCase: GetArtistUseCase,
     private val searchArtistsUseCase: SearchArtistsUseCase,
 ): ContainerHost<ArtistContract.ArtistState, ArtistContract.SideEffect>, ViewModel() {
     override val container: Container<ArtistContract.ArtistState, ArtistContract.SideEffect> =
@@ -43,15 +43,7 @@ class ArtistViewModel @Inject constructor(
         }
 
         try {
-            val response = runCatching {
-                artistsRepository.getArtists(
-                    activeOnly = true,
-                    page = 0,
-                    size = 20,
-                    sortBy = "name",
-                    sortDir = "asc"
-                )
-            }
+            val response = getArtistUseCase.invoke()
             if (response.isSuccess) {
                 val artistsData = response.getOrNull()?.content ?: emptyList()
                 Log.d("ArtistsViewModel", "API 호출 성공: 아티스트 ${artistsData.size}명 로드 완료")

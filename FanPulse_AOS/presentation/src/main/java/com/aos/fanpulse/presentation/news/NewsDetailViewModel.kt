@@ -31,11 +31,11 @@ class NewsDetailViewModel @Inject constructor(
         }
 
         try {
-            val detailResponse = runCatching {  getNewsDetailUseCase.invoke(newsId) }
+            val detailResponse = getNewsDetailUseCase.invoke(newsId)
             Log.d("NewsDetailViewModel", "API 호출 결과 (Detail): ${detailResponse.isSuccess}")
 
             if (detailResponse.isSuccess) {
-                val newsDetailData = detailResponse.getOrNull()?.getOrNull()
+                val newsDetailData = detailResponse.getOrNull()
 
                 if (newsDetailData != null) {
                     val relatedResponse = getNewsListUseCase.invoke(newsDetailData.artistId)
@@ -58,7 +58,7 @@ class NewsDetailViewModel @Inject constructor(
                     handleErrorState("뉴스 상세 정보가 비어있습니다.")
                 }
             } else {
-                handleErrorState("뉴스 상세 정보를 불러오지 못했습니다. ()")    //${detailResponse.code()}
+                handleErrorState("뉴스 상세 정보를 불러오지 못했습니다.")    //${detailResponse.code()}
             }
         } catch (e: Exception) {
             Log.e("NewsDetailViewModel", "API Exception", e)

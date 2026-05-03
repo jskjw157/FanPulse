@@ -28,10 +28,10 @@ class LiveDetailViewModel@Inject constructor(
         }
 
         try {
-            val streamingEventDetail = runCatching { getStreamingEventDetailUseCase(liveId) }
+            val streamingEventDetail = getStreamingEventDetailUseCase(liveId)
             Log.d("LiveDetailViewModel", "API 호출 성공:${streamingEventDetail}")
             if (streamingEventDetail.isSuccess) {
-                val data = streamingEventDetail.getOrNull()?.getOrNull()?.data
+                val data = streamingEventDetail.getOrNull()?.data
                 reduce {
                     state.copy(
                         isLoading = false,

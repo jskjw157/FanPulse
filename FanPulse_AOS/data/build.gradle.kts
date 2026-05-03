@@ -49,6 +49,9 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -67,8 +70,8 @@ dependencies {
     implementation(libs.androidx.datastore.core)
     implementation(libs.protobuf.kotlin.lite)
     implementation(libs.protobuf.javalite)
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("androidx.datastore:datastore-preferences-core:1.1.1")
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore.preferences.core)
 
     // 구글 로그인 & 인증 (Credential Manager)
     implementation(libs.credentials)
@@ -80,9 +83,9 @@ dependencies {
     implementation(libs.okhttp.urlconnection)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation(libs.logging.interceptor)
     //  서버 통신 테스트용 (주로 :data 모듈에서 사용)
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation(libs.mockwebserver)
 
     // Firebase (데이터 수집/분석 로직을 Data 모듈에서 처리할 경우)
     implementation(platform(libs.firebase.bom))
@@ -97,8 +100,8 @@ dependencies {
 
     //  일반적인 단위 테스트용 (도메인, 데이터, 프레젠테이션 모두 사용 가능) -   필요한 경우 사용
     testImplementation(libs.junit)
-    testImplementation("io.mockk:mockk:1.13.10")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 protobuf {

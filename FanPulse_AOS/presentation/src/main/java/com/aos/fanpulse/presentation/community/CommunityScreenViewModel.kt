@@ -2,7 +2,7 @@ package com.aos.fanpulse.presentation.community
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aos.fanpulse.domain.repository.ArtistsRepository
+import com.aos.fanpulse.domain.usecase.GetArtistUseCase
 import com.aos.fanpulse.presentation.R
 import com.aos.fanpulse.presentation.common.FilterRadioButtonItem
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CommunityScreenViewModel@Inject constructor(
-    private val artistsRepository: ArtistsRepository,
+    private val getArtistUseCase: GetArtistUseCase,
 ): ViewModel() {
 
     private val _artists = MutableStateFlow<List<Artist>>(emptyList())
@@ -40,13 +40,13 @@ class CommunityScreenViewModel@Inject constructor(
 
     fun fetchArtists() {
         viewModelScope.launch {
-            val response = runCatching {artistsRepository.getArtists(
+            val response = getArtistUseCase.invoke(
                 activeOnly = true,
                 page = 0,
                 size = 20,
                 sortBy = "name",
                 sortDir = "asc"
-            )}
+            )
 
             if (response.isSuccess) {
                 val originalList = response.getOrNull()?.content ?: emptyList()
