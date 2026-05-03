@@ -1,0 +1,18 @@
+package com.aos.fanpulse.presentation.news
+
+import com.aos.fanpulse.domain.model.NewsDetail
+
+object NewsContract {
+    data class NewsState(
+        val isLoading: Boolean = false,
+        val errorMessage: String? = null,
+
+        val newsItem: List<NewsDetail> = emptyList(),
+    )
+
+    sealed interface SideEffect {
+        data class ShowToast(val message: String) : SideEffect
+        data class NavigateNewsDetail(val newsId: String) : SideEffect
+        object NavigateHome : SideEffect
+    }
+}

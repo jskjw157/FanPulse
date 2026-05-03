@@ -12,7 +12,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()  //  edge to edge 설정
+        enableEdgeToEdge()
         setContent {
             FanPulseTheme {
                 MainScreen()

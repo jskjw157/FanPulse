@@ -4,7 +4,7 @@
 
 ---
 
-## Sprint 1 (Week 1) — Skeleton + Contract
+## Sprint 1 (Week 1) — Skeleton + Contract ✅ 완료
 
 ### 공통
 - [PM/기획] MVP 포함/제외 확정, 수용기준/테스트케이스 초안
@@ -22,25 +22,24 @@
 
 ---
 
-## Sprint 2 (Week 2) — Auth E2E (Email + Google)
+## Sprint 2 (Week 2) — Auth E2E (Google OAuth) ✅ 완료
 
 ### 백엔드(정지원)
-- 회원가입/로그인 API + 토큰 발급
+- Google OAuth 로그인 API + 쿠키 기반 세션
 - 인증 미들웨어(인증 필요 엔드포인트 가드)
 - Google 로그인 API(`/auth/google`) + ID Token 검증 + 계정 연동(oauth_accounts)
 - `/me` (프로필 요약)
 
 ### 클라이언트
-- 로그인/회원가입 연동 + 토큰 저장/세션 유지
-- Google 로그인(1종) 연동(iOS/Android SDK, Web GIS) + 토큰 교환(`/auth/google`)  ※ Kakao/Naver/Apple 제외
+- Google 로그인(1종) 연동(Web GIS) + 쿠키 세션 유지  ※ 이메일 가입/Kakao/Naver/Apple 제외
 - 실패/만료 처리 → `/error` 또는 로그인 리다이렉트
 - 마이/설정 화면 최소 구현(프로필 요약 + 로그아웃)
 
-**데모**: 이메일/비번 + Google 로그인으로 홈 진입 + 로그아웃
+**데모**: Google 로그인으로 홈 진입 + 로그아웃
 
 ---
 
-## Sprint 3 (Week 3) — Live/News E2E + Seed 적재
+## Sprint 3 (Week 3) — Live/News E2E + Seed 적재 ✅ 완료
 
 ### 백엔드(정지원)
 - 라이브 목록/상세 API + `streaming_events` 스키마 적용
@@ -60,7 +59,7 @@
 
 ---
 
-## Sprint 4 (Week 4) — 로컬 즐겨찾기/최근검색 + QA + Release
+## Sprint 4 (Week 4) — 최근검색 + QA + Release ✅ 완료
 
 ### 공통
 - 크래시/에러 로깅 최소 세팅, 성능 점검
@@ -89,3 +88,4 @@
 | 버전  | 날짜       | 변경 내용                     |
 | ----- | ---------- | ----------------------------- |
 | 1.0.0 | 2026-01-03 | 최초 작성 (작성자: 정지원) |
+| 1.1.0 | 2026-04-13 | 전 스프린트 완료 표시, 이메일 회원가입 제외 반영, 인증 방식 변경 |
