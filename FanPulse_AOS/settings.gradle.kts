@@ -21,3 +21,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "FanPulse"
 include(":app")
+include(":domain")
+include(":presentation")
+include(":data")
