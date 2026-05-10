@@ -32,18 +32,41 @@ http://localhost:8000/swagger/
 
 
 # FAQ AI
+## Getting Started
 ### 프로그램
 PostgreSQL 설치
+
 pgvector 설치 : https://github.com/pgvector/pgvector.git README 참고
 
 ### .env
 `USE_POSTGRES = true`
+
 `GOOGLE_API_KEY` : https://aistudio.google.com/api-keys 에서 발급
 
 ### 라이브러리
 google-genai>=1.74.0
+
 pgvector>=0.4.2
 
 ### 코드
 postgres에서 sql/001_create_database.sql의 `-- FAQ 테이블`과 sql/002_more_faq.sql 실행
+
 first_embeddings.py 실행
+
+## 사용 예시
+#### Request
+POST /api/ai/faq  
+Content-Type: application/json
+```json
+{"query": "포인트 사용 기한"}
+```
+#### Response
+```json
+{
+  "faq": "Q. 포인트 유효기간이 있나요?\nA.포인트 유효기간은 적립일로부터 1년입니다. 1년 이내에 사용하지 않은 포인트는 자동 소멸됩니다.",
+  "answer": "포인트 유효기간은 적립일로부터 1년입니다. 1년 이내에 사용하지 않은 포인트는 자동 소멸됩니다."
+}
+```
+faq: FAQ 테이블에서 검색된 Q&A 결과
+
+answer: faq를 바탕으로 LLM이 정제한 답변
