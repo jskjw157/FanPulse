@@ -18,8 +18,10 @@
 # - transformers, torch, sentencepiece 패키지 필요
 #######################
 """
-import contextlib
 import logging
+
+from api.core.runtime import get_pipeline
+from api.core.llm import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -39,83 +41,6 @@ except ImportError:
 _pipeline = None  # transformers의 pipeline 함수
 _models = {}      # 언어별 모델 캐시 {'ko': model, 'en': model}
 
-
-#######################
-# Pipeline 지연 로딩
-#######################
-def _get_pipeline():
-    """
-    transformers의 pipeline 함수를 지연 로딩
-
-    왜 지연 로딩?
-    - transformers import 자체가 무거움 (수 초 소요)
-    - AI 요약을 사용하지 않는 요청에서는 로드 불필요
-    - 서버 시작 속도 향상
-
-    Returns:
-        pipeline 함수
-
-    Raises:
-        ImportError: transformers가 설치되지 않은 경우
-    """
-    global _pipeline
-
-    if _pipeline is None:
-        try:
-            from transformers import pipeline
-            _pipeline = pipeline
-            logger.info("Transformers pipeline loaded successfully")
-        except ImportError as e:
-            logger.error(f"Failed to import transformers: {e}")
-            raise ImportError(
-                "transformers library is not installed. "
-                "Please run: pip install transformers torch sentencepiece"
-            )
-
-    return _pipeline
-
-#######################
-# 환경 점검 및 LLM 모델 로딩
-#######################
-def _get_llm_model(model_name):
-    if not TORCH_AVAILABLE:
-        raise RuntimeError(
-            "_get_llm_model은 torch 없이 호출할 수 없습니다. "
-            "torch를 설치하거나 LLM 기능을 비활성화하십시오."
-        )
-
-    import sys
-
-    logger.info("===== ENV CHECK =====")
-    logger.info("Python exe : %s", sys.executable)
-    logger.info("Torch ver  : %s", torch.__version__)
-    logger.info("CUDA avail : %s", torch.cuda.is_available())
-    logger.info("CUDA ver   : %s", torch.version.cuda)
-    logger.info("GPU name   : %s", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
-    logger.info("=====================")
-    from transformers import (
-        AutoTokenizer,
-        AutoModelForCausalLM,
-        BitsAndBytesConfig
-    )
-
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.float16,
-    )
-
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        quantization_config=bnb_config,
-        device_map="auto"
-    )
-
-    model.eval()
-    return tokenizer, model
 
 #######################
 # 모델 로딩 및 캐싱
@@ -138,11 +63,6 @@ def _get_model(language='ko'):
     Raises:
         RuntimeError: torch가 없거나 모델 로딩 실패 시
     """
-    if not TORCH_AVAILABLE:
-        raise RuntimeError(
-            "_get_model은 torch 없이 호출할 수 없습니다. "
-            "torch를 설치하거나 AI 요약 기능을 비활성화하십시오."
-        )
 
     global _models
 
@@ -150,26 +70,15 @@ def _get_model(language='ko'):
         return _models[language]
 
     if language == 'ko':
-        model_name = "mistralai/Mistral-7B-Instruct-v0.3"
-
-        tokenizer, model = _get_llm_model(model_name)
-
-        _models[language] = {
-            "type": "llm",
-            "tokenizer": tokenizer,
-            "model": model
-        }
+        _models[language] = get_llm()
 
     else:
-        pipeline_fn = _get_pipeline()
-        _models[language] = {
-            "type": "pipeline",
-            "model": pipeline_fn(
-                task="summarization",
-                model="facebook/bart-large-cnn",
-                device=0 if (TORCH_AVAILABLE and torch.cuda.is_available()) else -1
-            )
-        }
+        pipeline_fn = get_pipeline()
+        _models[language] = pipeline_fn(
+            task="summarization",
+            model="facebook/bart-large-cnn",
+            device=0 if (torch.cuda.is_available()) else -1
+        )
 
     return _models[language]
 
@@ -240,8 +149,19 @@ class AISummarizer:
         Returns:
             로드된 모델
         """
+        if not TORCH_AVAILABLE:
+            raise RuntimeError(
+                "_get_model은 torch 없이 호출할 수 없습니다. "
+                "torch를 설치하거나 AI 요약 기능을 비활성화하십시오."
+            )
+        
         if self._model is None:
             self._model = _get_model(self.language)
+
+        if self.language == 'ko':
+            self.model_type = "llm"
+        else:
+            self.model_type = "pipeline"
         return self._model
 
     #######################
@@ -256,53 +176,25 @@ class AISummarizer:
             # =========================
             # LLM 분기 (Mistral)
             # =========================
-            if model_bundle["type"] == "llm":
-                tokenizer = model_bundle["tokenizer"]
-                model = model_bundle["model"]
-
-                inputs = tokenizer(
-                    prompt,
-                    return_tensors="pt"
-                ).to(model.device)
-
+            if self.language == 'ko':
                 #######################
                 # 종화 모델 변경안
                 #######################
                 # do_sample=False (greedy decoding)일 때는 temperature/top_p 무시됨
-                no_grad = torch.no_grad() if TORCH_AVAILABLE else contextlib.nullcontext()
-                with no_grad:
-                    outputs = model.generate(
-                        **inputs,
-                        max_new_tokens=max_length,
-                        do_sample=False,  # greedy decoding: 항상 최고 확률 토큰 선택
-                        repetition_penalty=1.1,
-                        pad_token_id=tokenizer.eos_token_id
-                    )
-                #######################
-                # 원본 (temperature 경고 발생)
-                #######################
-                # with torch.no_grad():
-                #     outputs = model.generate(
-                #         **inputs,
-                #         max_new_tokens=max_length,
-                #         do_sample=False,
-                #         temperature=0.0,
-                #         top_p=1.0,
-                #         repetition_penalty=1.1,
-                #         pad_token_id=tokenizer.eos_token_id
-                #     )
-
-                summary = tokenizer.decode(
-                    outputs[0][inputs["input_ids"].shape[-1]:],
-                    skip_special_tokens=True
-                ).strip()
+                # 항상 최고 확률 토큰 선택
+                llm_model = model_bundle
+                summary = llm_model.generate(
+                    prompt,
+                    max_new_tokens=max_length,
+                    do_sample=False,
+                    repetition_penalty=1.1
+                )
 
             # =========================
             # Pipeline 분기 (T5 / BART)
             # =========================
             else:
-                pipeline_model = model_bundle["model"]
-
+                pipeline_model = model_bundle
                 result = pipeline_model(
                     text,
                     max_length=max_length,
@@ -319,7 +211,7 @@ class AISummarizer:
                 "summary": summary,
                 "bullets": bullets,
                 "keywords": keywords,
-                "model_type": model_bundle["type"]
+                "model_type": self.model_type
             }
 
         except Exception as e:
@@ -432,7 +324,7 @@ def check_ai_available():
             summarizer = ArticleSummarizer()
     """
     try:
-        _get_pipeline()
+        get_pipeline()
         return True
     except ImportError:
         return False

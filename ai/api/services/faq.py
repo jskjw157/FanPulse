@@ -1,8 +1,7 @@
 """FAQ (LLM)"""
 from dataclasses import dataclass
-import torch
 
-from api.core.llm import get_model
+from api.core.llm import get_llm
 from api.core.embedding import embed_query
 from api.models import FAQDocument
 
@@ -84,39 +83,17 @@ class FAQResult:
 # 서비스
 # ---------------------------
 class FaqService:
-    def __init__(self):
-        self._bundle = None
-
-    def _ensure_model(self):
-        if self._bundle is None:
-            self._bundle = get_model()  # LLM bundle(dict) 반환
-        return self._bundle
-
     def answer_user(self, user_text: str) -> FAQResult:
-        bundle = self._ensure_model()
-        tokenizer = bundle["tokenizer"]
-        model = bundle["model"]
+        llm = get_llm()
 
         if USE_POSTGRES:
             faq = search_faq(user_text)
             prompt = build_faq_rag_prompt(faq, user_text)
         else:   # PostgreSQL, pgvector, GOOGLE_API_KEY 준비 안 돼있고 LLM만 테스트할 때
+            faq = ""
             prompt = faq_prompt_mockup(user_text)
-
-        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=256,
-                do_sample=True,
-                pad_token_id=tokenizer.eos_token_id,
-            )
-
-        answer = tokenizer.decode(
-            outputs[0][inputs["input_ids"].shape[-1]:],
-            skip_special_tokens=True,
-        ).strip()
+        
+        answer = llm.generate(prompt, max_new_tokens=256, do_sample=True)
 
         return FAQResult(faq=faq, answer=answer)
 
