@@ -33,8 +33,8 @@ schema_view = get_schema_view(
     # API 정보 정의
     #######################
     openapi.Info(
-        title="뉴스 요약 API",           # API 제목
-        default_version='v1',            # API 버전
+        title="Fanpulse AI",           # API 제목
+        default_version='v2',            # API 버전
         description="""
 ## 뉴스 요약 API 문서
 

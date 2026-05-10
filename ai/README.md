@@ -31,5 +31,19 @@ http://localhost:8000/swagger/
 - `POSTGRES_*` -- PostgreSQL 접속 정보
 
 
-### FAQ RAG 위해 pgvector 설치
-https://github.com/pgvector/pgvector.git README 참고
+# FAQ AI
+### 프로그램
+PostgreSQL 설치
+pgvector 설치 : https://github.com/pgvector/pgvector.git README 참고
+
+### .env
+`USE_POSTGRES = true`
+`GOOGLE_API_KEY` : https://aistudio.google.com/api-keys 에서 발급
+
+### 라이브러리
+google-genai>=1.74.0
+pgvector>=0.4.2
+
+### 코드
+postgres에서 sql/001_create_database.sql의 `-- FAQ 테이블`과 sql/002_more_faq.sql 실행
+first_embeddings.py 실행

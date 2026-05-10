@@ -12,6 +12,7 @@ Spring 백엔드가 메인 비즈니스 로직(User, Post, Artist 등)을 담당
 """
 import uuid
 from django.db import models
+from pgvector.django import VectorField, CosineDistance
 
 
 class BaseModel(models.Model):
@@ -128,3 +129,34 @@ class FilteredCommentLog(BaseModel):
 
     class Meta:
         db_table = 'filtered_comment_logs'
+
+
+class FAQDocument(BaseModel):
+    class Meta:
+        db_table = "faq"
+        managed = False
+    question = models.CharField(max_length=500)
+    answer = models.TextField()
+    category = models.CharField(max_length=50)
+    display_order = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    embedding = VectorField(dimensions=768, null=True, blank=True)
+
+    def __str__(self):
+        return self.question
+    
+    @classmethod
+    def similarity_search(cls, vector, limit=5):
+        """
+        벡터 유사도 검색
+        Args:
+            model: 검색 대상 Django 모델 클래스
+            query_vector: 비교할 벡터 데이터 (리스트)
+            limit: 반환할 검색 결과 개수
+
+        Returns:
+            QuerySet: 유사도 순으로 정렬된 모델 객체 목록
+        """
+        return cls.objects.exclude(embedding__isnull=True).order_by(
+            CosineDistance("embedding", vector)
+        )[:limit]

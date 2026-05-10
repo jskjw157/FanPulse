@@ -1,12 +1,12 @@
 """FAQ (LLM)"""
 from dataclasses import dataclass
 import torch
-import logging
 
 from api.core.llm import get_model
+from api.core.embedding import embed_query
+from api.models import FAQDocument
 
-logger = logging.getLogger(__name__)
-
+from config.settings import USE_POSTGRES
 
 # ---------------------------
 # 프롬프트
@@ -44,7 +44,7 @@ def build_faq_rag_prompt(context: str, user_input: str) -> str:
 
 ---
 
-[검색 결과]
+[FAQ 검색 결과]
 {context}
 
 ---
@@ -55,7 +55,7 @@ def build_faq_rag_prompt(context: str, user_input: str) -> str:
 ---
 
 규칙:
-- 검색 결과에 없는 내용은 "관련 정보를 찾을 수 없습니다"라고 답해라
+- 검색 결과가 없으면 "관련 정보를 찾을 수 없습니다"라고 답해라
 - 간결하고 친절하게 답변해라
 - 반드시 한국어로 답변해라
 
@@ -63,11 +63,20 @@ def build_faq_rag_prompt(context: str, user_input: str) -> str:
 """
 
 
+def search_faq(user_text: str) -> str:
+    vector = embed_query(user_text)
+    searched = FAQDocument.similarity_search(vector, 1)
+    if not searched:
+        return "없음"
+    return f"Q: {searched[0].question}\nA: {searched[0].answer}"
+
+
 # ---------------------------
 # 결과 객체
 # ---------------------------
 @dataclass
 class FAQResult:
+    faq: str
     answer: str
 
 
@@ -82,17 +91,18 @@ class FaqService:
         if self._bundle is None:
             self._bundle = get_model()  # LLM bundle(dict) 반환
         return self._bundle
-    
-    def rag_search():
-        pass
 
-    def filter_comment(self, text: str) -> FAQResult:
+    def answer_user(self, user_text: str) -> FAQResult:
         bundle = self._ensure_model()
         tokenizer = bundle["tokenizer"]
         model = bundle["model"]
 
-        # prompt = build_faq_rag_prompt(text)
-        prompt = faq_prompt_mockup(text)
+        if USE_POSTGRES:
+            faq = search_faq(user_text)
+            prompt = build_faq_rag_prompt(faq, user_text)
+        else:   # PostgreSQL, pgvector, GOOGLE_API_KEY 준비 안 돼있고 LLM만 테스트할 때
+            prompt = faq_prompt_mockup(user_text)
+
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
         with torch.no_grad():
@@ -108,6 +118,6 @@ class FaqService:
             skip_special_tokens=True,
         ).strip()
 
-        return FAQResult(answer=answer)
+        return FAQResult(faq=faq, answer=answer)
 
 faq_service = FaqService()

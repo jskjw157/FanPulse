@@ -225,6 +225,20 @@ CORS_ALLOWED_ORIGINS = [
 
 # 인증 정보(쿠키 등) 포함 허용
 CORS_ALLOW_CREDENTIALS = True
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'ApiKeyAuth': {
+            'type': 'apiKey',
+            'name': 'X-Api-Key',
+            'in': 'header',
+            'description': 'AI Sidecar authentication using X-Api-Key.'
+        },
+        'Basic': {
+            'type': 'basic'
+        }
+    },
+    'PERSIST_AUTH': True
+}
 
 
 #######################
@@ -275,3 +289,5 @@ LOGGING = {
         },
     },
 }
+
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', None)

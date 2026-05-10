@@ -1,9 +1,16 @@
 import numpy as np
 from google import genai
+from config.settings import GOOGLE_API_KEY
+from google.genai.errors import ClientError
 
-client = genai.Client()
+try:
+    client = genai.Client(api_key=GOOGLE_API_KEY)
+    client.models.list()
+except ClientError:
+    raise RuntimeError('.env 파일에 GOOGLE_API_KEY를 입력하세요.')
 
-def get_embedding(text: str):
+
+def _get_embedding(text: str):
     result = client.models.embed_content(
         model="gemini-embedding-2",
         contents=text,
@@ -14,13 +21,13 @@ def get_embedding(text: str):
 
 
 # 사용자 쿼리
-def prepare_query(query):
-    return f"task: question answering | query: {query}"
+def embed_query(query):
+    return _get_embedding(f"task: question answering | query: {query}")
 
 
 # FAQ 추가
-def prepare_document(q: str, a: str):
-    return f"title: {q} | text: {a}"
+def embed_document(q: str, a: str):
+    return _get_embedding(f"title: {q} | text: {a}")
 
 
 if __name__ == "__main__":
@@ -29,7 +36,7 @@ if __name__ == "__main__":
         faq_dict = json.load(f)
     vectors = []
     for faq in faq_dict:
-        qna = prepare_document(faq["question"], faq["answer"])
-        vectors.append(get_embedding(qna))
+        qna = embed_document(faq["question"], faq["answer"])
+        vectors.append(qna)
 
     np.save("embedding.npy", vectors)

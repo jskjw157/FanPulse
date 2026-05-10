@@ -1460,7 +1460,7 @@ class FAQbotView(APIView):
 
         query = req_serializer.validated_data['query']
 
-        result = faq_service.filter_comment(query)
+        result = faq_service.answer_user(query)
 
         res_serializer = FAQBotResponseSerializer(result)
         return Response(res_serializer.data, status=status.HTTP_200_OK)

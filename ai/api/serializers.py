@@ -561,4 +561,5 @@ class FAQBotRequestSerializer(serializers.Serializer):
 
 
 class FAQBotResponseSerializer(serializers.Serializer):
+    faq = serializers.CharField(max_length=1024)
     answer = serializers.CharField(max_length=512)
