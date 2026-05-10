@@ -50,6 +50,9 @@ fanpulse:
       enabled: false
       cron: "0 0 * * * *"
       channel-delay-ms: 0
+    news-sync:
+      enabled: false
+      cron: "0 */10 * * * *"
 
 # Resilience4j - disabled for tests
 resilience4j:

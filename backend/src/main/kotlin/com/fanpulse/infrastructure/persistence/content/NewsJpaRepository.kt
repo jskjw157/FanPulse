@@ -18,6 +18,11 @@ interface NewsJpaRepository : JpaRepository<News, UUID> {
     fun findBySourceUrl(sourceUrl: String): News?
 
     /**
+     * 주어진 source_url 컬렉션에 매칭되는 News 를 일괄 조회한다 (N+1 방지용).
+     */
+    fun findBySourceUrlIn(sourceUrls: Collection<String>): List<News>
+
+    /**
      * Find news by artist ID with pagination.
      */
     fun findByArtistId(artistId: UUID, pageable: Pageable): Page<News>

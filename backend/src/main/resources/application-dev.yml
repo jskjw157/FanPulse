@@ -5,6 +5,12 @@ spring:
       ddl-auto: update
     show-sql: true
 
+fanpulse:
+  scheduler:
+    news-sync:
+      enabled: false  # 로컬 dev 환경에선 Django sidecar 가 항상 떠 있지 않으므로 기본 비활성
+      manual-trigger-enabled: true  # dev 에선 admin 트리거 노출 (cron 은 꺼져 있어도 수동 실행 가능)
+
 logging:
   level:
     com.fanpulse: DEBUG
