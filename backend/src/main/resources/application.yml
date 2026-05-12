@@ -50,6 +50,13 @@ fanpulse:
     enabled: ${FANPULSE_SEED_ENABLED:false}
     dir: ${FANPULSE_SEED_DIR:seed}
 
+  dev-login:
+    # dev/QA 전용 토큰 발급 엔드포인트 (POST /api/v1/admin/dev-login).
+    # true → 컨트롤러 빈 등록 + 인증 우회. Google ID Token 없이 즉시 access/refresh 토큰 발급.
+    # false → 컨트롤러 자체가 빈 등록되지 않아 404 (production 권장 기본값).
+    # 보안: 토글 OFF 시 SecurityConfig permitAll 매칭과 무관하게 코드 경로 자체가 차단된다.
+    enabled: ${FANPULSE_DEV_LOGIN_ENABLED:false}
+
   google:
     client-id: ${GOOGLE_CLIENT_ID:test-google-client-id.apps.googleusercontent.com}
 
