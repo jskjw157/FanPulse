@@ -87,6 +87,12 @@ fanpulse:
       cron: "0 0 * * * *"  # 매시간 실행
       channel-delay-ms: 500
       max-concurrency: 5
+    news-sync:
+      enabled: true
+      cron: "0 */10 * * * *"  # 10분마다 (Django crawled_news → Spring news 동기화)
+      # 운영/QA 환경에서 클라이언트가 즉시 동기화를 트리거하기 위한 admin 엔드포인트 토글.
+      # true → POST /api/v1/admin/news-sync/run 노출. prod 에선 false 유지 권장.
+      manual-trigger-enabled: ${FANPULSE_NEWS_SYNC_MANUAL_TRIGGER_ENABLED:false}
 
 # Resilience4j Circuit Breaker
 resilience4j:

@@ -59,6 +59,7 @@ class DevLoginController(
         const val REFRESH_TOKEN_COOKIE = "fanpulse_refresh_token"
         const val DEFAULT_TEST_EMAIL = "devlogin@fanpulse.local"
         const val DEFAULT_TEST_USERNAME = "dev_tester"
+        private const val USERNAME_MAX_LENGTH = 50
     }
 
     @PostMapping
@@ -129,13 +130,41 @@ class DevLoginController(
                 ?: throw NoSuchElementException("userId=$userId 사용자 없음")
         }
         if (!email.isNullOrBlank()) {
-            userPort.findByEmail(email)?.let { return it }
-            val newUser = User.registerWithOAuth(Email(email), Username(sanitizeUsername(email)))
+            val normalizedEmail = email.trim().lowercase()
+            userPort.findByEmail(normalizedEmail)?.let { return it }
+            val newUser = User.registerWithOAuth(
+                Email(normalizedEmail),
+                Username(resolveUniqueUsername(normalizedEmail))
+            )
             return userPort.save(newUser)
         }
         userPort.findByEmail(DEFAULT_TEST_EMAIL)?.let { return it }
         val defaultUser = User.registerWithOAuth(Email(DEFAULT_TEST_EMAIL), Username(DEFAULT_TEST_USERNAME))
         return userPort.save(defaultUser)
+    }
+
+    /**
+     * email 의 local-part 기반 username 후보가 이미 존재할 경우 충돌을 회피한다.
+     *
+     * 시나리오: `foo@a.com` 과 `foo@b.com` 은 서로 다른 이메일이지만 sanitizeUsername 결과는 모두 `foo`.
+     * 두 번째 save() 호출은 username UNIQUE 제약을 위반한다.
+     *
+     * dev/QA 환경의 username 충돌 회피 정책 결정:
+     *   (a) UUID 접미사 부여 — `foo` 가 존재하면 `foo_a1b2c3d4` 형태로 충돌 회피
+     *   (b) 카운터 접미사  — `foo`, `foo_2`, `foo_3` 식으로 가독성 우선
+     *   (c) 충돌 시 예외   — dev 환경에서도 명시적 실패로 데이터 청결 유지
+     *
+     * 가용한 도구:
+     *   - userPort.existsByEmail(email) 은 있지만 username 으로 직접 조회하는 포트는 없음
+     *   - UUID.randomUUID().toString().take(8) 로 8자 접미사 생성 가능
+     *   - Username 도메인 규칙: 길이 2-50, 영숫자/언더스코어/하이픈만 허용
+     */
+    private fun resolveUniqueUsername(email: String): String {
+        val base = sanitizeUsername(email)
+        val suffix = "_" + UUID.randomUUID().toString().take(8)
+        // Username 도메인 규칙: 최대 50자 (Username.MAX_LENGTH 와 일치해야 함)
+        val trimmedBase = base.take(USERNAME_MAX_LENGTH - suffix.length)
+        return trimmedBase + suffix
     }
 
     /**
