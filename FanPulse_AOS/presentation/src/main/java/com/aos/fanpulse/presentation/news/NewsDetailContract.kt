@@ -8,7 +8,6 @@ object NewsDetailContract {
     data class NewsDetailState(
         val newsDetail: NewsDetail? = null,
         val relatedNewsItem: List<NewsItem> = emptyList(),
-                                                                    //  기자에 대한 정보 필요
 
         val isLoading: Boolean = false,
         val errorMessage: String? = null

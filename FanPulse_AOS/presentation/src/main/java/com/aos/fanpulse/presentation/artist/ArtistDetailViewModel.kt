@@ -36,9 +36,9 @@ class ArtistDetailViewModel @Inject constructor(
 
         try {
             coroutineScope {
-                val artistDeferred = async { getArtistDetailUseCase.invoke(artistId) }
-                val newsDeferred = async { getNewsListUseCase.invoke(artistId, "news", 20) }
-                val scheduledDeferred = async { getNewsListUseCase.invoke(artistId, "scheduled events", 20) }
+                val artistDeferred = async { getArtistDetailUseCase(artistId) }
+                val newsDeferred = async { getNewsListUseCase(artistId, "news", 20) }
+                val scheduledDeferred = async { getNewsListUseCase(artistId, "scheduled events", 20) }
 
                 val artistResult = runCatching { artistDeferred.await() }
                 val newsResult = runCatching { newsDeferred.await() }

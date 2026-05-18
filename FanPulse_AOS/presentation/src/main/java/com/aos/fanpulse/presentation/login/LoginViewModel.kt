@@ -30,7 +30,7 @@ class LoginViewModel @Inject constructor(
             )
         }
 
-        googleLoginUseCase.invoke(token)
+        googleLoginUseCase(token)
             .onSuccess { credential ->
                 reduce {
                     state.copy(

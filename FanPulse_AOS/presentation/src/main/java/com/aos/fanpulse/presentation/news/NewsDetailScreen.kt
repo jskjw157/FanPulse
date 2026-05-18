@@ -53,7 +53,6 @@ fun NewsDetailScreen(
 ) {
 
     val state by viewModel.collectAsState()
-
     LaunchedEffect(newsId) {
         if (newsId != null) {
             viewModel.getNewsDetail(newsId)
@@ -94,20 +93,22 @@ fun NewsDetailScreen(
                     .background(Color.White)
             ) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(280.dp)
-                            .background(Color(0xFF1A1A2E))
-                    ) {
-                        AsyncImage(
-                            model = state.newsDetail?.thumbnailUrl,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop,
-                            placeholder = painterResource(id = R.drawable.home_ex1),
-                            error = painterResource(id = R.drawable.home_ex1)
-                        )
+                    if (state.newsDetail?.thumbnailUrl != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .background(Color(0xFF1A1A2E))
+                        ) {
+                            AsyncImage(
+                                model = state.newsDetail?.thumbnailUrl,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                                placeholder = painterResource(id = R.drawable.home_ex1),
+                                error = painterResource(id = R.drawable.home_ex1)
+                            )
+                        }
                     }
                 }
 

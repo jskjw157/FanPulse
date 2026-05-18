@@ -59,9 +59,9 @@ class HomeViewModel@Inject constructor(
 
         try {
             coroutineScope {
-                val streamEventsDeferred = async { getStreamingEventsUseCase.invoke() }
-                val scheduledEventsDeferred = async { getScheduledEventsUseCase.invoke() }
-                val latestNewsDeferred = async { getNewsLatestUseCase.invoke(3) }
+                val streamEventsDeferred = async { getStreamingEventsUseCase() }
+                val scheduledEventsDeferred = async { getScheduledEventsUseCase() }
+                val latestNewsDeferred = async { getNewsLatestUseCase(3) }
 
                 val streamResult = streamEventsDeferred.await()
                 val scheduledResult = scheduledEventsDeferred.await()

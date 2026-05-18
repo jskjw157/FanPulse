@@ -1,5 +1,6 @@
 package com.aos.fanpulse.presentation.news
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.aos.fanpulse.domain.usecase.GetNewsDetailUseCase
 import com.aos.fanpulse.domain.usecase.GetNewsListUseCase
@@ -21,24 +22,22 @@ class NewsDetailViewModel @Inject constructor(
         )
 
     fun getNewsDetail(newsId: String) = intent {
-
         reduce {
             state.copy(
                 isLoading = true,
                 errorMessage = null
             )
         }
-
         try {
-            val detailResponse = getNewsDetailUseCase.invoke(newsId)
+            val detailResponse = getNewsDetailUseCase(newsId)
 //            Log.d("NewsDetailViewModel", "API 호출 결과 (Detail): ${detailResponse.isSuccess}")
 
             if (detailResponse.isSuccess) {
                 val newsDetailData = detailResponse.getOrNull()
-
+//                Log.d("NewsDetailViewModel", "API 호출 결과 (Detail): ${newsDetailData}")
                 if (newsDetailData != null) {
-                    val relatedResponse = getNewsListUseCase.invoke(newsDetailData.artistId)
-//                    Log.d("NewsDetailViewModel", "API 호출 결과 (Related): ${relatedResponse.isSuccess}")
+                    val relatedResponse = getNewsListUseCase(newsDetailData.artistId)
+//                    Log.d("NewsDetailViewModel", "API 호출 결과 (Related): ${relatedResponse}")
 
                     val relatedNewsData = if (relatedResponse.isSuccess) {
                         relatedResponse.getOrNull()?.content ?: emptyList()
@@ -57,10 +56,9 @@ class NewsDetailViewModel @Inject constructor(
                     handleErrorState("뉴스 상세 정보가 비어있습니다.")
                 }
             } else {
-                handleErrorState("뉴스 상세 정보를 불러오지 못했습니다.")    //${detailResponse.code()}
+                handleErrorState("뉴스 상세 정보를 불러오지 못했습니다.")
             }
         } catch (e: Exception) {
-//            Log.e("NewsDetailViewModel", "API Exception", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }

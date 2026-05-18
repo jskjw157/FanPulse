@@ -40,7 +40,7 @@ class CommunityScreenViewModel@Inject constructor(
 
     fun fetchArtists() {
         viewModelScope.launch {
-            val response = getArtistUseCase.invoke(
+            val response = getArtistUseCase(
                 activeOnly = true,
                 page = 0,
                 size = 20,

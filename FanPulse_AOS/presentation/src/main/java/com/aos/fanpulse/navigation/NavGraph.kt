@@ -202,7 +202,11 @@ fun NavGraph(
 
         composable (
             route = SubScreen.NewsDetail.route,
-            arguments = listOf(navArgument("newsId") { type = NavType.StringType })
+            arguments = listOf(navArgument("newsId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
         ){ backStackEntry ->
             val newsId = backStackEntry.arguments?.getString("newsId") ?: ""
             NewsDetailScreen(

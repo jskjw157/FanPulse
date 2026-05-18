@@ -42,7 +42,7 @@ class ArtistViewModel @Inject constructor(
         }
 
         try {
-            val response = getArtistUseCase.invoke()
+            val response = getArtistUseCase()
             if (response.isSuccess) {
                 val artistsData = response.getOrNull()?.content ?: emptyList()
 //                Log.d("ArtistsViewModel", "API 호출 성공: 아티스트 ${artistsData.size}명 로드 완료")
