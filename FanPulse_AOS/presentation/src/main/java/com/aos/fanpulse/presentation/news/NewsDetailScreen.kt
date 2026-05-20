@@ -1,7 +1,6 @@
 package com.aos.fanpulse.presentation.news
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,9 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.aos.fanpulse.domain.model.NewsItem
 import com.aos.fanpulse.presentation.R
 import com.aos.fanpulse.presentation.common.CommonTopAppBar
 import org.orbitmvi.orbit.compose.collectAsState
@@ -64,10 +59,6 @@ fun NewsDetailScreen(
             is NewsDetailContract.SideEffect.ShowToast -> {}
         }
     }
-
-    var isLiked by remember { mutableStateOf(false) }
-    var isBookmarked by remember { mutableStateOf(false) }
-    var likeCount by remember { mutableStateOf(1200) }
 
     if (state.isLoading){
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -148,44 +139,21 @@ fun NewsDetailScreen(
                 }
 
                 item {
-                    Row(
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 16.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFB794F6)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.icon_person_ex2),
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column {
-                            Text(
-                                text = "FanPulse 편집부",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF1A1A1A)
-                            )
-                            Text(
-                                text = "공식 기자",
-                                fontSize = 12.sp,
-                                color = Color(0xFF999999)
-                            )
-                        }
+                        Text(
+                            text = state.newsDetail?.sourceName?: "",
+                            fontSize = 15.sp,
+                            lineHeight = 24.sp,
+                            color = Color(0xFF333333)
+                        )
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
 
                 item {
@@ -215,39 +183,6 @@ fun NewsDetailScreen(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
                             color = Color(0xFFF8F8F8),
-                            onClick = {
-                                if (isLiked) {
-                                    likeCount--
-                                } else {
-                                    likeCount++
-                                }
-                                isLiked = !isLiked
-                            }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 16.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    painter = if (isLiked) painterResource(R.drawable.icon_heart) else painterResource(R.drawable.icon_heart),
-                                    contentDescription = "좋아요",
-                                    tint = if (isLiked) Color(0xFFEC4899) else Color(0xFF999999),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "좋아요 ${likeCount / 1000.0}K",
-                                    fontSize = 14.sp,
-                                    color = Color(0xFF666666)
-                                )
-                            }
-                        }
-
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFF8F8F8),
                             onClick = { /* 댓글 */ }
                         ) {
                             Row(
@@ -272,83 +207,6 @@ fun NewsDetailScreen(
                     }
                     Spacer(modifier = Modifier.height(32.dp))
                 }
-
-                item {
-                    Text(
-                        text = "관련 뉴스",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1A1A1A),
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-
-                items(state.relatedNewsItem.size) { index ->
-                    RelatedNewsItem(newsItem = state.relatedNewsItem[index])
-                    if (index < state.relatedNewsItem.size - 1) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun RelatedNewsItem(newsItem: NewsItem) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clickable { /* 뉴스 클릭 */ },
-        shape = RoundedCornerShape(12.dp),
-        color = Color(0xFFF8F8F8)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF3A3A5A))
-            ) {
-                AsyncImage(
-                    model = newsItem.thumbnailUrl,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(id = R.drawable.home_ex1),
-                    error = painterResource(id = R.drawable.home_ex1)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = newsItem.category,
-                    fontSize = 12.sp,
-                    color = Color(0xFFB794F6),
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = newsItem.title,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF1A1A1A),
-                    maxLines = 2
-                )
             }
         }
     }

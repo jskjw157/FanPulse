@@ -36,7 +36,7 @@ interface NewsApiService {
     @GET("news/{id}")
     suspend fun getNewsDetail(
         @Path("id") newsId: String
-    ): Response<NewsDetail>
+    ): BaseResponse<NewsDetail>
 
     /**
      * Search news by title or content

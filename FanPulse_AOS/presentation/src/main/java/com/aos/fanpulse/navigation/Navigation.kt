@@ -13,7 +13,7 @@ sealed class MainTabScreen(
 ) : Screen(route) {
     object Home : MainTabScreen("home", "Home", R.drawable.icon_home)
     object Community : MainTabScreen("community", "Community", R.drawable.icon_community)
-    object Live : MainTabScreen("live", "Live", R.drawable.icon_live){
+    object Live : MainTabScreen("live", "VOD", R.drawable.icon_live){
         fun createRoute(liveId: String? = null): String {
             return if (liveId != null) {
                 "live?liveId=$liveId"

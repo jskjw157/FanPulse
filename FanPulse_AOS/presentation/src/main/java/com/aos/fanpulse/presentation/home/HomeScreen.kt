@@ -263,7 +263,7 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     modifier = Modifier,
-                                    text = "\uD83D\uDD34 Live Now",
+                                    text = "VOD",
                                     textAlign = TextAlign.Center,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Normal,
@@ -312,7 +312,7 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     modifier = Modifier,
-                                    text = "\uD83D\uDD25 인기 게시글",
+                                    text = "인기 게시글",
                                     textAlign = TextAlign.Center,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Normal,
@@ -352,7 +352,7 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     modifier = Modifier,
-                                    text = "\uD83D\uDCCA 실시간 차트",
+                                    text = "실시간 차트",
                                     textAlign = TextAlign.Center,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Normal,
@@ -769,7 +769,6 @@ fun LiveNowItem(
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
-                // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
                 placeholder = painterResource(id = R.drawable.home_ex1),
                 error = painterResource(id = R.drawable.home_ex1)
             )
@@ -870,7 +869,6 @@ fun UpcomingEventsItem(
                     )
                 ),
             contentScale = ContentScale.Crop,
-            // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
             placeholder = painterResource(id = R.drawable.home_ex1),
             error = painterResource(id = R.drawable.home_ex1)
         )

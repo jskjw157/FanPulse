@@ -102,6 +102,12 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    // Firebase BoM (버전 관리용)
+//    implementation(platform(libs.firebase.bom))
+//    implementation(libs.google.firebase.analytics)
+//    implementation(libs.firebase.firestore)
+//    implementation(libs.kotlinx.coroutines.play.services)
 }
 
 protobuf {
