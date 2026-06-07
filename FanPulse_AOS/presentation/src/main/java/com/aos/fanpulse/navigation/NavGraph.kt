@@ -19,7 +19,7 @@ import androidx.navigation.navArgument
 import com.aos.fanpulse.presentation.artist.ArtistDetailScreen
 import com.aos.fanpulse.presentation.artist.ArtistScreen
 import com.aos.fanpulse.presentation.chart.ChartScreen
-import com.aos.fanpulse.presentation.community.CommunityPostDetailScreen
+import com.aos.fanpulse.presentation.community.CommunityDetailScreen
 import com.aos.fanpulse.presentation.community.CommunityPostScreen
 import com.aos.fanpulse.presentation.community.CommunityScreen
 import com.aos.fanpulse.presentation.error.ErrorScreen
@@ -60,12 +60,10 @@ fun NavGraph(
                 goNotificationScreen = { NavigationActions(navController).navigateNotifications() },
                 goArtistScreen = { NavigationActions(navController).navigateArtist() },
                 goChartScreen = { NavigationActions(navController).navigateChart() },
+                goCommunityScreen = {NavigationActions(navController).navigateCommunityPost()},
+                goCommunityDetailScreen = {NavigationActions(navController).navigateCommunityPostDetail(it)},
                 goNewsScreen = { NavigationActions(navController).navigateNews() },
                 goNewsDetailScreen = {NavigationActions(navController).navigateNewsDetail(it)},
-//                goConcertScreen = { NavigationActions(navController).navigateConcert() },
-//                goTicketsScreen = { NavigationActions(navController).navigateTickets()},
-//                goMembershipScreen = {NavigationActions(navController).navigateMembership()},
-//                goAdsScreen = {NavigationActions(navController).navigateAds()},
                 goFavoritesScreen = {NavigationActions(navController).navigateFavorites()},
                 goSavedScreen = {NavigationActions(navController).navigateSaved()},
                 goSettingsScreen = {NavigationActions(navController).navigateSettings()},
@@ -75,16 +73,16 @@ fun NavGraph(
             )}
             composable(MainTabScreen.Community.route) {
                 CommunityScreen(
+                    navController,
                     { NavigationActions(navController).navigateCommunityPost() },
                     { NavigationActions(navController).navigateSearch()},
-                    { NavigationActions(navController).navigateCommunityPostDetail() },
+                    { NavigationActions(navController).navigateCommunityPostDetail(it) },
                     { NavigationActions(navController).navigateNotifications() }
                 )
             }
-//            composable(MainTabScreen.Voting.route) { VotingScreen() }
             composable(MainTabScreen.My.route) { MyScreen(
                 goSettingScreen = { NavigationActions(navController).navigateSettings() },
-                goSupportScreen = { NavigationActions(navController).navigateSupport() }
+                goPostDetailScreen = { NavigationActions(navController).navigateCommunityPostDetail(it) },
             )}
 
             composable(
@@ -132,16 +130,25 @@ fun NavGraph(
 
         composable(SubScreen.CommunityPost.route) {
             CommunityPostScreen({
-                navController.popBackStack()
-            },{
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("post_closed", true)
 
+                navController.popBackStack()
             })
         }
 
-        composable(SubScreen.CommunityPostDetail.route) {
-            CommunityPostDetailScreen({
-                navController.popBackStack()
-            },{})
+        composable(
+            route = SubScreen.CommunityPostDetail.route,
+            arguments = listOf(navArgument("postId") { type = NavType.StringType })
+        ) { backStackEntry ->
+
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+
+            CommunityDetailScreen(
+                postId = postId,
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         composable (SubScreen.Settings.route){
@@ -168,10 +175,6 @@ fun NavGraph(
                 }
             )
         }
-
-//        composable (SubScreen.Membership.route){
-//            MembershipScreen()
-//        }
 
         composable (
             route = "news?newsId={newsId}",
@@ -215,20 +218,6 @@ fun NavGraph(
             )
         }
 
-//        composable(SubScreen.Voting.route) {
-//            VotingScreen()
-//        }
-
-//        composable(SubScreen.Tickets.route) {
-//            TicketsScreen(
-//                {navController.popBackStack()},
-//                {NavigationActions(navController).navigateSearch()})
-//        }
-
-//        composable(SubScreen.TicketsDetail.route) {
-//            TicketsDetailScreen()
-//        }
-
         composable(SubScreen.Support.route) {
             SupportScreen(
                 { navController.popBackStack() }
@@ -254,23 +243,11 @@ fun NavGraph(
                 )
         }
 
-//        composable(SubScreen.Concert.route) {
-//            ConcertScreen({
-//                NavigationActions(navController).navigateNotifications()
-//            })
-//        }
-
-//        composable(SubScreen.ConcertDetail.route) {
-//            ConcertDetailScreen()
-//        }
-
         composable(SubScreen.Chart.route) {
-            ChartScreen()
+            ChartScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
-
-//        composable(SubScreen.Ads.route) {
-//            AdsScreen()
-//        }
 
         composable(SubScreen.Artist.route) {
             ArtistScreen(

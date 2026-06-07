@@ -44,8 +44,7 @@ class ArtistViewModel @Inject constructor(
         try {
             val response = getArtistUseCase()
             if (response.isSuccess) {
-                val artistsData = response.getOrNull()?.content ?: emptyList()
-//                Log.d("ArtistsViewModel", "API 호출 성공: 아티스트 ${artistsData.size}명 로드 완료")
+                val artistsData = response.getOrNull()?.data?.content ?: emptyList()
 
                 reduce {
                     state.copy(
@@ -54,11 +53,16 @@ class ArtistViewModel @Inject constructor(
                     )
                 }
             } else {
-//                Log.e("ArtistsViewModel", "API 호출 실패: HTTP ${response.code()}")
-//                handleErrorState("데이터를 불러오지 못했습니다. (${response.code()})")
+                reduce {
+                    state.copy(
+                        isLoading = false,
+                        errorMessage = "데이터를 불러오지 못했습니다.",
+                        artists = emptyList()
+                    )
+                }
+                handleErrorState("데이터를 불러오지 못했습니다.")
             }
         } catch (e: Exception) {
-//            Log.e("ArtistsViewModel", "네트워크 예외 발생", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }
@@ -79,7 +83,7 @@ class ArtistViewModel @Inject constructor(
             val response = runCatching {searchArtistsUseCase(query = query, page = page, size = size)}
 
             if (response.isSuccess) {
-                val searchResults = response.getOrNull()?.content ?: emptyList()
+                val searchResults = response.getOrNull()?.data?.content ?:emptyList()
                 reduce {
                     state.copy(
                         isLoading = false,
@@ -97,7 +101,6 @@ class ArtistViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-//            Log.e("ArtistsViewModel", "검색 중 네트워크 예외 발생", e)
             reduce {
                 state.copy(
                     isLoading = false,
@@ -114,7 +117,6 @@ class ArtistViewModel @Inject constructor(
                 state.copy(
                     isLoading = false,
                     errorMessage = "[Debug] $message",
-//                    artists = artistDummyList
                 )
             }
         } else {

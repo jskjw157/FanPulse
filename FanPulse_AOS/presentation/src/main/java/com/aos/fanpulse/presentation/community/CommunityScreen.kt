@@ -1,5 +1,6 @@
 package com.aos.fanpulse.presentation.community
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -29,6 +31,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,25 +50,46 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.aos.fanpulse.domain.model.Post
 import com.aos.fanpulse.presentation.R
 import com.aos.fanpulse.presentation.common.CommonTopAppBar
+import com.aos.fanpulse.presentation.common.toRelativeTime
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommunityScreen(
+    navController: NavController? = null,
     goPostScreen: () -> Unit,
     goSearchScreen: () -> Unit,
-    goPostDetailScreen: () -> Unit,
+    goPostDetailScreen: (String) -> Unit,
     goNotificationScreen: () -> Unit,
-    viewModel: CommunityScreenViewModel = hiltViewModel(),
+    viewModel: CommunityViewModel = hiltViewModel(),
 ){
-    val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
 
-    val filterRadioButton = viewModel.setFilterRadioButtonItems()
-    var selectedFilterRadioButton by remember { mutableStateOf(filterRadioButton[0]) }
+    val state by viewModel.collectAsState()
+    val context = LocalContext.current
+    val savedStateHandle = navController?.currentBackStackEntry?.savedStateHandle
+    val isPostClosed = savedStateHandle?.getStateFlow("post_closed", false)?.collectAsState()
 
-    val feedInfoList = viewModel.setFeedInfoItems()
+    viewModel.collectSideEffect { sideEffect ->
+        when (sideEffect) {
+            is CommunityContract.SideEffect.ShowToast -> {
+                Toast.makeText(context, sideEffect.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    LaunchedEffect(isPostClosed?.value) {
+        if (isPostClosed?.value == true) {
+            viewModel.loadPosts(artistCategory = null)
+            savedStateHandle["post_closed"] = false
+        }
+    }
+
+    var selectedFilterRadioButton by remember { mutableStateOf(state.filterItems.firstOrNull()) }
 
     Column {
 
@@ -104,9 +130,9 @@ fun CommunityScreen(
                         contentScale = ContentScale.Crop
                     )
                     Spacer((Modifier.width(8.dp)))
-                    Text("ALL")
+                    Text(state.selectedArtist?.name ?: "ALL")
                     Spacer((Modifier.width(8.dp)))
-                    Text("(1234 posts)")
+                    Text("(${state.posts.size} posts)")
                     Spacer(modifier = Modifier.weight(1f))
                     Icon(
                         modifier = Modifier.clickable{
@@ -119,23 +145,23 @@ fun CommunityScreen(
                     Spacer((Modifier.width(16.dp)))
                 }
                 //   Filter Button
-                LazyRow(
-                    modifier = Modifier
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                            bottom = 8.dp
-                        ),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(filterRadioButton) { item ->
-                        CommunityRadioButtonItem(
-                            text = item.text,
-                            isSelected = (item == selectedFilterRadioButton),
-                            onClick = { selectedFilterRadioButton = item }
-                        )
-                    }
-                }
+//                LazyRow(
+//                    modifier = Modifier
+//                        .padding(
+//                            start = 16.dp,
+//                            end = 16.dp,
+//                            bottom = 8.dp
+//                        ),
+//                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                ) {
+//                    items(state.filterItems) { item ->
+//                        CommunityRadioButtonItem(
+//                            text = item.text,
+//                            isSelected = (item == selectedFilterRadioButton),
+//                            onClick = { selectedFilterRadioButton = item }
+//                        )
+//                    }
+//                }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 0.dp),
@@ -148,12 +174,17 @@ fun CommunityScreen(
                     modifier = Modifier.padding(top = 6.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(feedInfoList) { item ->
+                    items(state.posts) { item ->
                         CommunityItem(
                             item,
                             goPostDetailScreen = {
-                                //  게시물에 대한 정보가 필요
-                                goPostDetailScreen()
+                                goPostDetailScreen(item.id)
+                            },
+                            onLikeClick = {
+                                viewModel.toggleLike(item.id)
+                            },
+                            onBookmarkClick = {
+                                viewModel.toggleBookmark(item.id)
                             }
                         )
                     }
@@ -186,40 +217,11 @@ fun CommunityScreen(
 }
 
 @Composable
-fun CommunityRadioButtonItem(
-    text: String,           // 보여줄 텍스트
-    isSelected: Boolean,    // 선택 여부
-    onClick: () -> Unit     // 클릭 시 실행할 동작
-) {
-
-    Box(
-        modifier = Modifier
-            .background(
-                color = if (isSelected) colorResource(id = R.color.color_1) else colorResource(id = R.color.color_2),
-                shape = RoundedCornerShape(100.dp)
-            )
-            .clickable { onClick() }
-    ) {
-        Text(
-            color = if (isSelected) Color.White else Color.Black,
-            text = text,
-            modifier = Modifier
-                .padding(
-                    top = 4.dp,
-                    bottom = 4.dp,
-                    start = 12.dp,
-                    end = 12.dp
-                ),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-@Composable
 fun CommunityItem(
-    feedInfo: FeedInfo,
-    goPostDetailScreen: () -> Unit
+    post: Post,
+    goPostDetailScreen: () -> Unit,
+    onLikeClick: () -> Unit,
+    onBookmarkClick: () -> Unit,
 ){
     Column (
         modifier = Modifier
@@ -238,55 +240,41 @@ fun CommunityItem(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ){
-            Image(
+
+            AsyncImage(
+                model = post.author.profileImageUrl,
+                contentDescription = "작성자 프로필 이미지",
+                placeholder = painterResource(id = R.drawable.default_user),
+                error = painterResource(id = R.drawable.default_user),
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .width(40.dp)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(100.dp)),
-                painter = painterResource(id = R.drawable.person_ex1),
-                contentDescription = null,
-                contentScale = ContentScale.Crop)
+                    .size(40.dp)
+                    .clip(CircleShape)
+            )
+
             Spacer(Modifier.width(8.dp))
+
             Column {
                 Row {
-                    Text("ARAMY_Forever")
+                    Text(post.author.nickname)
                     Spacer(Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier.background(
-                            color = colorResource(R.color.color_10),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                    ){ Text(
-                        modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 2.dp, bottom = 2.dp),
-                        text = "VIP",
-                        color = colorResource(R.color.white)
-                    ) }
                 }
                 Row (
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ){
                     Text(
-                        text = "BTS",
+                        text = post.author.fandom?: "소속 없음",
                         color = colorResource(R.color.color_1)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "- 2시간 전",
+                        text = post.createdAt.toRelativeTime(),
                         color = colorResource(R.color.color_text_3)
                     )
                 }
             }
             Spacer(Modifier.weight(1f))
-            Image(
-                modifier = Modifier
-                    .width(40.dp)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                painter = painterResource(id = R.drawable.icon_list),
-                contentDescription = null,
-                contentScale = ContentScale.Crop
-            )
         }
         Text(
             modifier = Modifier.padding(
@@ -294,16 +282,22 @@ fun CommunityItem(
                 end = 12.dp,
                 bottom = 12.dp
             ),
-            text = "BTS 새 앨범 티저 영상 보셨나요? 진짜 너무 기대돼요! \uD83D\uDC9C 컴백 준비하는 모습 보니까 벌써부터 설레네요"
+            text = post.content
         )
-        Image(
-            painter = painterResource(id = R.drawable.home_ex1),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(256.dp),
-            contentScale = ContentScale.Crop
-        )
+
+        if (post.imageUrls.isNotEmpty()) {
+            AsyncImage(
+                model = post.imageUrls[0],
+                contentDescription = "썸네일",
+                placeholder = painterResource(id = R.drawable.fanpulse_placeholder),
+                error = painterResource(id = R.drawable.fanpulse_placeholder),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(256.dp),
+            )
+        }
+
         Row (
             modifier = Modifier.padding(12.dp),
             horizontalArrangement = Arrangement.Center,
@@ -314,13 +308,14 @@ fun CommunityItem(
                 verticalAlignment = Alignment.CenterVertically
             ){
                 Icon(
-                    painter = painterResource(id = R.drawable.icon_heart_ena),
-                    contentDescription = "좋아요",
-                    tint = Color.Unspecified
+                    painter = if (post.isLikedByMe) painterResource(id = R.drawable.icon_heart_ena_pre) else painterResource(id = R.drawable.icon_heart_ena_nor),
+                    contentDescription = null,
+                    tint = Color.Unspecified,
+                    modifier = Modifier.clickable { onLikeClick() }
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "2,222"
+                    text = post.likeCount.toString()
                 )
             }
             Spacer(Modifier.weight(1f))
@@ -330,12 +325,12 @@ fun CommunityItem(
             ){
                 Icon(
                     painter = painterResource(id = R.drawable.icon_chat_ena),
-                    contentDescription = "좋아요",
+                    contentDescription = null,
                     tint = Color.Unspecified
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "2,222"
+                    text = post.commentCount.toString()
                 )
             }
             Spacer(Modifier.weight(1f))
@@ -345,19 +340,20 @@ fun CommunityItem(
             ){
                 Icon(
                     painter = painterResource(id = R.drawable.icon_share_ena),
-                    contentDescription = "댓글",
+                    contentDescription = null,
                     tint = Color.Unspecified
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "1,111"
+                    text = post.shareCount.toString()
                 )
             }
             Spacer(Modifier.weight(1f))
             Icon(
-                painter = painterResource(id = R.drawable.icon_bookmark_ena),
-                contentDescription = "좋아요",
-                tint = Color.Unspecified
+                painter = if (post.isBookmarkedByMe) painterResource(id = R.drawable.icon_bookmark_ena_pre) else painterResource(id = R.drawable.icon_bookmark_ena_nor),
+                contentDescription = null,
+                tint = Color.Unspecified,
+                modifier = Modifier.clickable { onBookmarkClick() }
             )
         }
     }
@@ -366,5 +362,5 @@ fun CommunityItem(
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    CommunityScreen({},{},{},{})
+    CommunityScreen(goPostDetailScreen = {}, goSearchScreen = {}, goNotificationScreen = {}, goPostScreen = {})
 }

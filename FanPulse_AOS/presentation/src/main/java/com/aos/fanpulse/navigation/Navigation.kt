@@ -34,7 +34,11 @@ sealed class MainTabScreen(
 sealed class SubScreen(route: String) : Screen(route) {
     object Login : SubScreen("login")
     object CommunityPost : SubScreen("community_post")
-    object CommunityPostDetail : SubScreen("community_post_detail")
+    object CommunityPostDetail : SubScreen("community_post_detail/{postId}"){
+        fun createRoute(postId: String): String {
+            return "community_post_detail/$postId"
+        }
+    }
     object Settings : SubScreen("settings")
     object Error : SubScreen("error")
     object Search : SubScreen("search")
@@ -106,8 +110,8 @@ class NavigationActions(private val navController: NavHostController){
             launchSingleTop = true
         }
     }
-    fun navigateCommunityPostDetail(){
-        navController.navigate(SubScreen.CommunityPostDetail.route){
+    fun navigateCommunityPostDetail(postId: String){
+        navController.navigate(SubScreen.CommunityPostDetail.createRoute(postId)){
             launchSingleTop = true
         }
     }

@@ -21,8 +21,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,7 +30,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,22 +46,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aos.fanpulse.domain.model.Artist
 import com.aos.fanpulse.presentation.R
+import org.orbitmvi.orbit.compose.collectAsState
 
 @Composable
 fun CommunityBottomSheetScreen(
-    viewModel: CommunityScreenViewModel = hiltViewModel(),
+    viewModel: CommunityViewModel = hiltViewModel(),
     setShowModal: (Boolean) -> Unit
 ) {
 
-    val artistList by viewModel.artists.collectAsState()
+    val state by viewModel.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.fetchArtists()
     }
 
     var searchQuery by remember { mutableStateOf("") }
-    var selectedArtist by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = Modifier
@@ -138,14 +136,14 @@ fun CommunityBottomSheetScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(artistList.filter {
+                    items(state.artists.filter {
                         it.name.contains(searchQuery, ignoreCase = true)
                     }) { artist ->
                         ArtistCard(
                             artist = artist,
-                            isSelected = selectedArtist == artist.name,
+                            isSelected = state.selectedArtist?.name == artist.name,
                             onClick = {
-                                selectedArtist = artist.name
+                                viewModel.updateSelectedArtist(it)
                             }
                         )
                     }
@@ -157,15 +155,15 @@ fun CommunityBottomSheetScreen(
 
 @Composable
 fun ArtistCard(
-    artist: CommunityScreenViewModel.Artist,
+    artist: Artist,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: (Artist) -> Unit
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .clickable(onClick = onClick),
+            .clickable(onClick = { onClick(artist) }),
         shape = RoundedCornerShape(12.dp),
         color = if (isSelected) Color(0xFFF3E5F5) else Color.White,
         border = BorderStroke(

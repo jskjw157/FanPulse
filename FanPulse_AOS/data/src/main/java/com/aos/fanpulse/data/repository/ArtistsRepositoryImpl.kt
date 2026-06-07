@@ -4,6 +4,7 @@ import com.aos.fanpulse.data.mapper.toDomain
 import com.aos.fanpulse.domain.model.ArtistDetail
 import com.aos.fanpulse.domain.model.ArtistListResponse
 import com.aos.fanpulse.data.remote.apiservice.ArtistsApiService
+import com.aos.fanpulse.domain.model.BaseResponse
 import com.aos.fanpulse.domain.repository.ArtistsRepository
 import javax.inject.Inject
 
@@ -24,21 +25,18 @@ class ArtistsRepositoryImpl @Inject constructor(
         size: Int,
         sortBy: String,
         sortDir: String
-    ): ArtistListResponse {
-        val response = apiService.getArtists(
+    ): BaseResponse<ArtistListResponse> {
+        val dtoResponse = apiService.getArtists(
             activeOnly = activeOnly,
             page = page,
             size = size,
             sortBy = sortBy,
             sortDir = sortDir
         )
-
-        if (response.isSuccessful) {
-            // Data DTO를 Domain Model로 변환하여 반환
-            return response.body()?.toDomain() ?: throw Exception("Empty Response")
-        } else {
-            throw Exception("Network Error: ${response.code()}")
-        }
+        return BaseResponse(
+            success = dtoResponse.success,
+            data = dtoResponse.data.toDomain()
+        )
     }
 
     /**
@@ -47,14 +45,12 @@ class ArtistsRepositoryImpl @Inject constructor(
      */
     override suspend fun getArtists(
         options: Map<String, String>
-    ): ArtistListResponse {
-        val response = apiService.getArtists(options)
-
-        if (response.isSuccessful) {
-            return response.body()?.toDomain() ?: throw Exception("Empty Response")
-        } else {
-            throw Exception("Network Error: ${response.code()}")
-        }
+    ): BaseResponse<ArtistListResponse> {
+        val dtoResponse = apiService.getArtists(options)
+        return BaseResponse(
+            success = dtoResponse.success,
+            data = dtoResponse.data.toDomain()
+        )
     }
 
     /**
@@ -63,15 +59,13 @@ class ArtistsRepositoryImpl @Inject constructor(
      */
     override suspend fun getArtistDetail(
         artistId: String
-    ): ArtistDetail {
-        val response = apiService.getArtistDetail(artistId)
+    ): BaseResponse<ArtistDetail> {
+        val dtoResponse = apiService.getArtistDetail(artistId)
 
-        if (response.isSuccessful) {
-            // ArtistDetail DTO를 Domain ArtistDetail로 변환
-            return response.body()?.toDomain() ?: throw Exception("Artist Not Found")
-        } else {
-            throw Exception("Network Error: ${response.code()}")
-        }
+        return BaseResponse(
+            success = dtoResponse.success,
+            data = dtoResponse.data.toDomain()
+        )
     }
 
     /**
@@ -84,17 +78,16 @@ class ArtistsRepositoryImpl @Inject constructor(
         query: String,
         page: Int,
         size: Int
-    ): ArtistListResponse {
-        val response = apiService.searchArtists(
+    ): BaseResponse<ArtistListResponse> {
+        val dtoResponse = apiService.searchArtists(
             query = query,
             page = page,
             size = size
         )
 
-        if (response.isSuccessful) {
-            return response.body()?.toDomain() ?: throw Exception("Search Result Empty")
-        } else {
-            throw Exception("Network Error: ${response.code()}")
-        }
+        return BaseResponse(
+            success = dtoResponse.success,
+            data = dtoResponse.data.toDomain()
+        )
     }
 }

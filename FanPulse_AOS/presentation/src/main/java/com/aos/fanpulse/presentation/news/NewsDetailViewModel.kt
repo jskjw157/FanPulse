@@ -2,9 +2,11 @@ package com.aos.fanpulse.presentation.news
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.aos.fanpulse.domain.usecase.CreateCommentUseCase
 import com.aos.fanpulse.domain.usecase.GetNewsDetailUseCase
 import com.aos.fanpulse.domain.usecase.GetNewsListUseCase
 import com.aos.fanpulse.presentation.BuildConfig
+import com.aos.fanpulse.presentation.community.CommunityDetailContract
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
@@ -14,7 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class NewsDetailViewModel @Inject constructor(
     private val getNewsDetailUseCase: GetNewsDetailUseCase,
-    private val getNewsListUseCase: GetNewsListUseCase
+    private val getNewsListUseCase: GetNewsListUseCase,
+    private val createCommentUseCase: CreateCommentUseCase,
 ): ContainerHost<NewsDetailContract.NewsDetailState, NewsDetailContract.SideEffect>, ViewModel(){
     override val container: Container<NewsDetailContract.NewsDetailState, NewsDetailContract.SideEffect> =
         container(
@@ -62,7 +65,27 @@ class NewsDetailViewModel @Inject constructor(
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }
+    fun updateCommentInput(text: String) = intent {
+        reduce { state.copy(commentInput = text) }
+    }
 
+    fun submitComment(postId: String) = intent {
+        if (state.commentInput.isBlank()) return@intent
+
+        reduce { state.copy(isLoading = true) }
+
+
+        createCommentUseCase(
+            postId = postId, content = state.commentInput
+        ).onSuccess {
+            reduce { state.copy(commentInput = "") }
+            postSideEffect(NewsDetailContract.SideEffect.ShowToast("댓글이 등록되었습니다."))
+        }.onFailure { exception ->
+            reduce { state.copy(isLoading = false) }
+            postSideEffect(NewsDetailContract.SideEffect.ShowToast("댓글 등록 실패: ${exception.message}"))
+        }
+        reduce { state.copy(commentInput = "", isLoading = false) }
+    }
     private fun handleErrorState(message: String) = intent {
         if (BuildConfig.DEBUG) {
             reduce {

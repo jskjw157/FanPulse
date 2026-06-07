@@ -2,7 +2,10 @@ package com.aos.fanpulse.presentation.home
 
 import androidx.annotation.DrawableRes
 import androidx.lifecycle.ViewModel
+import com.aos.fanpulse.domain.usecase.GetCurrentUserIdUseCase
+import com.aos.fanpulse.domain.usecase.GetKoreaLastFmTopTracksUseCase
 import com.aos.fanpulse.domain.usecase.GetNewsLatestUseCase
+import com.aos.fanpulse.domain.usecase.GetPostsUseCase
 import com.aos.fanpulse.domain.usecase.GetScheduledEventsUseCase
 import com.aos.fanpulse.domain.usecase.GetStreamingEventsUseCase
 import com.aos.fanpulse.presentation.BuildConfig
@@ -17,9 +20,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel@Inject constructor(
+    private val getUserIdUseCase: GetCurrentUserIdUseCase,
     private val getScheduledEventsUseCase: GetScheduledEventsUseCase,
     private val getStreamingEventsUseCase: GetStreamingEventsUseCase,
     private val getNewsLatestUseCase: GetNewsLatestUseCase,
+    private val getPostsUseCase: GetPostsUseCase,
+    private val getKoreaLastFmTopTracksUseCase: GetKoreaLastFmTopTracksUseCase,
 ): ContainerHost<HomeContract.HomeState, HomeContract.SideEffect>, ViewModel() {
 
     data class MenuItem(
@@ -32,14 +38,8 @@ class HomeViewModel@Inject constructor(
         MenuItem("artist", "아티스트", R.drawable.icon_menu_item_artist),
         MenuItem("chart", "차트", R.drawable.icon_menu_item_chart),
         MenuItem("news", "뉴스", R.drawable.icon_menu_item_news),
-//        MenuItem("concert", "콘서트", R.drawable.icon_menu_item_concert),
-//        MenuItem("tickets", "티켓", R.drawable.icon_menu_item_tickets),
-//        MenuItem("membership", "멤버십", R.drawable.icon_menu_item_membership),
-//        MenuItem("ads", "리워드", R.drawable.icon_menu_item_ads),
         MenuItem("favorites", "즐겨찾기", R.drawable.icon_menu_item_favorites),
         MenuItem("saved", "저장됨", R.drawable.icon_menu_item_saved),
-//        MenuItem("settings", "설정", R.drawable.icon_menu_item_settings),
-//        MenuItem("customer_service", "고객센터", R.drawable.icon_menu_item_customer_service),
     )
 
     override val container: Container<HomeContract.HomeState, HomeContract.SideEffect> =
@@ -59,21 +59,25 @@ class HomeViewModel@Inject constructor(
 
         try {
             coroutineScope {
+                loadPosts(null)
                 val streamEventsDeferred = async { getStreamingEventsUseCase() }
                 val scheduledEventsDeferred = async { getScheduledEventsUseCase() }
                 val latestNewsDeferred = async { getNewsLatestUseCase(3) }
+                val lastFmTopTrackDeferred = async { getKoreaLastFmTopTracksUseCase(1,5) }
 
                 val streamResult = streamEventsDeferred.await()
                 val scheduledResult = scheduledEventsDeferred.await()
                 val newsResult = latestNewsDeferred.await()
+                val topTrackResult = lastFmTopTrackDeferred.await()
 
-                if (streamResult.isSuccess && scheduledResult.isSuccess && newsResult.isSuccess) {
+                if (streamResult.isSuccess && scheduledResult.isSuccess && newsResult.isSuccess && topTrackResult.isSuccess) {
                     reduce {
                         state.copy(
                             isLoading = false,
                             streamingEventItem = streamResult.getOrNull()?.data?.items ?: emptyList(),
                             scheduledItem = scheduledResult.getOrNull()?.content ?: emptyList(),
-                            newsItem = newsResult.getOrNull()?.data ?: emptyList()
+                            newsItem = newsResult.getOrNull()?.data ?: emptyList(),
+                            chartTracks = topTrackResult.getOrNull() ?: emptyList()
                         )
                     }
                 } else {
@@ -81,20 +85,42 @@ class HomeViewModel@Inject constructor(
                 }
             }
         } catch (e: Exception) {
-//            Log.e("HomeViewModel", "API Exception", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }
+    fun loadPosts(artistCategory: String?) = intent {
 
+        val myId = getUserIdUseCase()
+        if (myId == null) {
+            postSideEffect(HomeContract.SideEffect.ShowToast("로그인 정보가 없습니다."))
+            return@intent
+        }
+
+        reduce { state.copy(isLoading = true, errorMessage = null) }
+
+        getPostsUseCase(artistCategory,myId)
+            .onSuccess { posts ->
+                reduce {
+                    state.copy(isLoading = false, posts = posts)
+                }
+            }
+            .onFailure { exception ->
+                reduce {
+                    state.copy(isLoading = false, errorMessage = exception.toString())
+                }
+                postSideEffect(
+                    HomeContract.SideEffect.ShowToast(
+                        message = exception.message ?: "게시글을 불러오는 데 실패했습니다."
+                    )
+                )
+            }
+    }
     private fun handleErrorState(message: String) = intent {
         if (BuildConfig.DEBUG) {
             reduce {
                 state.copy(
                     isLoading = false,
                     errorMessage = "[Debug] $message",
-//                    streamingEventItem = streamingEventDummyList,
-//                    scheduledItem = streamingEventSimpleDummyList,
-//                    newsItem = newsDetailDummyList
                 )
             }
         } else {
@@ -113,7 +139,6 @@ class HomeViewModel@Inject constructor(
     /**
     * 화면 이동
     * */
-    // 1. 단순 화면 이동 (인자 없음)
     fun goSearchScreen() = intent {
         postSideEffect(HomeContract.SideEffect.NavigateSearch)
     }
@@ -124,6 +149,14 @@ class HomeViewModel@Inject constructor(
 
     fun goArtistScreen() = intent {
         postSideEffect(HomeContract.SideEffect.NavigateArtist)
+    }
+
+    fun goCommunityScreen() = intent {
+        postSideEffect(HomeContract.SideEffect.NavigateCommunity)
+    }
+
+    fun goCommunityDetailScreen(postId: String) = intent {
+        postSideEffect(HomeContract.SideEffect.NavigateCommunityDetail(postId))
     }
 
     fun goChartScreen() = intent {

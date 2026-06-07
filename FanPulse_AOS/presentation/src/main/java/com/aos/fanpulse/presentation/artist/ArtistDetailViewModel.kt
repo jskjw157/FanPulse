@@ -16,7 +16,6 @@ import javax.inject.Inject
 @HiltViewModel
 class ArtistDetailViewModel @Inject constructor(
     private val getArtistDetailUseCase: GetArtistDetailUseCase,
-    private val getNewsListUseCase: GetNewsListUseCase,
 ): ContainerHost<ArtistDetailContract.ArtistDetailState, ArtistDetailContract.SideEffect>, ViewModel(){
     override val container: Container<ArtistDetailContract.ArtistDetailState, ArtistDetailContract.SideEffect> =
         container(initialState = ArtistDetailContract.ArtistDetailState())
@@ -37,24 +36,16 @@ class ArtistDetailViewModel @Inject constructor(
         try {
             coroutineScope {
                 val artistDeferred = async { getArtistDetailUseCase(artistId) }
-                val newsDeferred = async { getNewsListUseCase(artistId, "news", 20) }
-                val scheduledDeferred = async { getNewsListUseCase(artistId, "scheduled events", 20) }
 
-                val artistResult = runCatching { artistDeferred.await() }
-                val newsResult = runCatching { newsDeferred.await() }
-                val scheduledResult = runCatching { scheduledDeferred.await() }
+                val artistResult = artistDeferred.await()
 
-                if (artistResult.isSuccess && newsResult.isSuccess && scheduledResult.isSuccess) {
-                    val artistData = artistResult.getOrNull()
-                    val newsData = newsResult.getOrNull()
-                    val scheduledData = scheduledResult.getOrNull()
+                if (artistResult.success) {
+                    val artistData = artistResult.data
 
                     reduce {
                         state.copy(
                             isLoading = false,
-                            artistDetail = (artistData ?: state.artistDetail) as ArtistDetail?,
-                            newsItems = newsData?.getOrNull()?.content ?: emptyList(),
-                            scheduledItems = scheduledData?.getOrNull()?.content ?: emptyList(),
+                            artistDetail = artistData,
                             errorMessage = null
                         )
                     }
@@ -63,7 +54,6 @@ class ArtistDetailViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-//            Log.e("ArtistsViewModel", "API Exception", e)
             handleErrorState("네트워크 연결 상태를 확인해주세요.")
         }
     }
@@ -74,9 +64,6 @@ class ArtistDetailViewModel @Inject constructor(
                 state.copy(
                     isLoading = false,
                     errorMessage = "[Debug] $message",
-//                    artistDetail = artistDetailDummyList.firstOrNull(),
-//                    newsItems = newsItemDummyList,
-//                    scheduledItems = newsItemDummyList
                 )
             }
         } else {

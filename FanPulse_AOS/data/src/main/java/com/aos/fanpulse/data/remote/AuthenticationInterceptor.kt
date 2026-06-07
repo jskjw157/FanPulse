@@ -8,17 +8,22 @@ import dagger.Lazy
 class AuthenticationInterceptor @Inject constructor(
     private val tokenCache: Lazy<TokenCache>
 ) : Interceptor {
-
     override fun intercept(chain: Interceptor.Chain): Response {
-        val token = tokenCache.get().accessToken
+        val request = chain.request()
 
-        val originalRequest = chain.request()
-        val requestBuilder = originalRequest.newBuilder()
-
-        if (!token.isNullOrEmpty()) {
-            requestBuilder.addHeader("Cookie", "fanpulse_access_token=$token")
+        if (request.header("Cookie") != null) {
+            return chain.proceed(request)
         }
 
-        return chain.proceed(requestBuilder.build())
+        val token = tokenCache.get().accessToken
+        val newRequest = if (!token.isNullOrEmpty()) {
+            request.newBuilder()
+                .addHeader("Cookie", "fanpulse_access_token=$token")
+                .build()
+        } else {
+            request
+        }
+
+        return chain.proceed(newRequest)
     }
 }

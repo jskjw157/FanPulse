@@ -1,6 +1,5 @@
 package com.aos.fanpulse.presentation.login
 
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,13 +32,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aos.fanpulse.presentation.R
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.aos.fanpulse.presentation.login.auth.GoogleAuthClient
 import kotlinx.coroutines.launch
 
 @Composable
@@ -49,6 +45,7 @@ fun LoginScreen (
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val googleAuthClient = remember { GoogleAuthClient() }
 
     Box(
         modifier = Modifier
@@ -93,15 +90,14 @@ fun LoginScreen (
             OutlinedButton(
                 onClick = {
                     scope.launch {
-                        setInitGoogleSignIn(
-                            context,
-                            viewModel.credentialManager,
-                            viewModel.googleIdOption
-                        ).onSuccess { idToken ->
-                            viewModel.googleLogin(idToken) {
-                                if (it) onGoHome()
-                                else Toast.makeText(context, "실패했어", Toast.LENGTH_SHORT).show()
+                        val idToken = googleAuthClient.executeGoogleLogin(context)
+                        if (idToken != null) {
+                            viewModel.googleLogin(idToken) { isSuccess ->
+                                if (isSuccess) onGoHome()
+                                else Toast.makeText(context, "로그인 연동 실패", Toast.LENGTH_SHORT).show()
                             }
+                        } else {
+                            Toast.makeText(context, "구글 팝업 띄우기 실패", Toast.LENGTH_SHORT).show()
                         }
                     }
                 },
@@ -125,43 +121,6 @@ fun LoginScreen (
                 Text("Google로 로그인")
             }
         }
-    }
-}
-
-suspend fun setInitGoogleSignIn(
-    context: Context,
-    credentialManager: CredentialManager,
-    googleIdOption: GetGoogleIdOption
-): Result<String>{
-
-    return try {
-        val request = GetCredentialRequest.Builder()
-            .addCredentialOption(googleIdOption)
-            .build()
-
-        // suspend 함수 호출
-        val response = credentialManager.getCredential(
-            request = request,
-            context = context
-        )
-
-        val credential = response.credential
-        //  type	어떤 종류의 인증인지 알려주는 문자열입니다. 구글 로그인의 경우 com.google.android.libraries.identity.googleid.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL 값이 들어옵니다.
-        //  data    가장 중요한 부분입니다. 실제 토큰 정보가 담긴 Bundle 객체입니다. 암호화된 데이터 덩어리라고 보시면 됩니다.
-        //  id      (선택 사항) 사용자의 이메일이나 고유 식별자가 직접 들어오는 경우도 있지만, 보안상 보통은 data를 통해 추출합니다.
-        if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-            val idToken = googleIdTokenCredential.idToken
-
-            Result.success(idToken)
-        } else {
-            Result.failure(Exception("예상치 못한 인증 유형입니다: ${credential.type}"))
-        }
-
-    } catch (e: GetCredentialException) {
-        Result.failure(e)
-    } catch (e: Exception) {
-        Result.failure(e)
     }
 }
 
