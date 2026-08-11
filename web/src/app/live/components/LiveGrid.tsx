@@ -17,7 +17,7 @@ export default function LiveGrid({ lives, state, error, onRetry }: LiveGridProps
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <SkeletonCard key={`skeleton-${i}`} variant="vertical" />
+          <SkeletonCard key={`skeleton-${i}`} layout="vertical" />
         ))}
       </div>
     );
