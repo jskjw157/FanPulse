@@ -65,6 +65,7 @@ class SecurityConfig(
                 auth
                     // Public endpoints
                     .requestMatchers("/api/v1/auth/**").permitAll()
+                    .requestMatchers("/api/v1/admin/dev-login/**").permitAll()
                     .requestMatchers("/api/v1/streaming-events/**").permitAll()
                     .requestMatchers("/api/v1/news/**").permitAll()
                     .requestMatchers("/api/v1/charts/**").permitAll()
