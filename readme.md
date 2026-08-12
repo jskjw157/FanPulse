@@ -3,8 +3,8 @@
 글로벌 K-POP 팬들을 위한 인터랙티브 커뮤니티 플랫폼
 
 - [Notion](https://www.notion.so/oduckprogrammer/FanPulse-1979da8ee78480939281ee7ebf60256e?source=copy_link)
-- [Mockup](https://mpycns.readdy.co/community)
-
+- [Figma](https://www.figma.com/design/43mkUIWgPBMffnE49vvcqo/FanPulse?node-id=0-1&t=DGpQGkRRSLxasd0K-1)
+- [MVP](https://fanpulse-psi.vercel.app/)
 ---
 
 ## 프로젝트 개요
