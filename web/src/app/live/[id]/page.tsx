@@ -31,7 +31,7 @@ export default function LiveDetailPage() {
         </header>
         <div className="w-full aspect-video bg-gray-200 animate-pulse" />
         <div className="p-4 space-y-3">
-          <SkeletonCard variant="horizontal" />
+          <SkeletonCard layout="horizontal" />
         </div>
       </div>
     );
