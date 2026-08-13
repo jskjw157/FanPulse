@@ -1,5 +1,7 @@
 package com.fanpulse.infrastructure.security
 
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -14,6 +16,14 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
+@ConfigurationProperties(prefix = "fanpulse.cors")
+data class CorsProperties(
+    val allowedOrigins: List<String> = listOf(
+        "http://localhost:3000",
+        "http://localhost:5173"
+    )
+)
+
 /**
  * Spring Security Configuration.
  *
@@ -21,8 +31,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
  */
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(CorsProperties::class)
 class SecurityConfig(
-    private val jwtAuthenticationFilter: JwtAuthenticationFilter
+    private val jwtAuthenticationFilter: JwtAuthenticationFilter,
+    private val corsProperties: CorsProperties
 ) {
 
     @Bean
@@ -31,11 +43,7 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        configuration.allowedOrigins = listOf(
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "https://fanpulse.app"
-        )
+        configuration.allowedOrigins = corsProperties.allowedOrigins
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true

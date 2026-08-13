@@ -16,7 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.options
 import org.springframework.test.web.servlet.post
 import java.util.*
 
@@ -27,6 +29,7 @@ import java.util.*
  */
 @WebMvcTest(AuthController::class)
 @Import(SecurityConfig::class, com.fanpulse.interfaces.rest.GlobalExceptionHandler::class)
+@TestPropertySource(properties = ["fanpulse.cors.allowed-origins=https://configured.example.com"])
 @org.springframework.test.context.ActiveProfiles("test")
 @DisplayName("AuthController")
 class AuthControllerTest {
@@ -42,6 +45,25 @@ class AuthControllerTest {
 
     @MockkBean
     private lateinit var jwtTokenProvider: JwtTokenProvider
+
+    @Nested
+    @DisplayName("CORS")
+    inner class Cors {
+
+        @Test
+        @DisplayName("설정으로 주입된 origin의 preflight 요청을 허용해야 한다")
+        fun `should allow preflight from configured origin`() {
+            mockMvc.options("/api/v1/auth/google") {
+                header("Origin", "https://configured.example.com")
+                header("Access-Control-Request-Method", "POST")
+                header("Access-Control-Request-Headers", "content-type")
+            }.andExpect {
+                status { isOk() }
+                header { string("Access-Control-Allow-Origin", "https://configured.example.com") }
+                header { string("Access-Control-Allow-Credentials", "true") }
+            }
+        }
+    }
 
     @Nested
     @DisplayName("POST /api/v1/auth/google")
