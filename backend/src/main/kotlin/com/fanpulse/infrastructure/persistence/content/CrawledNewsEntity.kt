@@ -1,8 +1,12 @@
 package com.fanpulse.infrastructure.persistence.content
 
+import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
 import java.time.LocalDateTime
@@ -57,5 +61,14 @@ class CrawledNewsEntity(
 
     /** 크롤링 생성 시각 (Django BaseModel.created_at) */
     @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
+
+    /** 수집 검색어에서 확정된 Spring artist UUID 관계. */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "crawled_news_artists",
+        joinColumns = [JoinColumn(name = "news_id")]
+    )
+    @Column(name = "artist_id", columnDefinition = "uuid")
+    val artistIds: Set<UUID> = emptySet(),
 )

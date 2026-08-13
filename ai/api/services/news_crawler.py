@@ -7,11 +7,13 @@
 # PostgreSQL 저장 기능 준비 (주석 처리)
 #######################
 """
+import html
 import os
 import re
 import logging
 import urllib.request
 import urllib.parse
+from defusedxml import ElementTree as ET
 import json
 from datetime import datetime
 from pathlib import Path
@@ -43,7 +45,7 @@ def save_news_to_db(items: list, source: str = 'naver') -> dict:
         dict: {'success': bool, 'count': int, 'error': str}
     """
     try:
-        from api.models import CrawledNews
+        from api.models import CrawledNews, CrawledNewsArtist
         from dateutil import parser as date_parser
 
         saved_count = 0
@@ -53,27 +55,36 @@ def save_news_to_db(items: list, source: str = 'naver') -> dict:
             if item.get('pubDate'):
                 try:
                     published_at = date_parser.parse(item['pubDate'])
-                except:
-                    pass
+                except (TypeError, ValueError, OverflowError):
+                    logger.warning("뉴스 발행일 파싱 실패: %s", item.get('pubDate'))
 
-            # 중복 체크 (URL 기준)
-            url = item.get('originallink') or item.get('link', '')
-            if CrawledNews.objects.filter(url=url).exists():
-                logger.info(f"중복 뉴스 스킵: {url[:50]}...")
+            url = (item.get('originallink') or item.get('link') or '').strip()
+            if not url:
+                logger.warning("URL 없는 뉴스 스킵: %s", item.get('title', '')[:80])
                 continue
 
-            # DB에 저장
-            # origin_news: 원문 링크에서 추출한 뉴스 원본 데이터
             origin_news = item.get('origainal_news') or item.get('original_news') or ''
-            CrawledNews.objects.create(
-                title=item.get('title', ''),
-                content=item.get('description', ''),
-                origin_news=origin_news,
-                url=url,
-                source=source,
-                published_at=published_at
+            news, created = CrawledNews.objects.update_or_create(
+                url=url[:500],
+                defaults={
+                    'title': (item.get('title') or '제목 없음')[:255],
+                    'content': item.get('description') or '',
+                    'origin_news': origin_news,
+                    'thumbnail_url': item.get('thumbnail_url'),
+                    'source': (item.get('source') or source)[:100],
+                    'published_at': published_at,
+                },
             )
-            saved_count += 1
+            artist_ids = {
+                artist_id for artist_id in (item.get('artist_ids') or []) if artist_id
+            }
+            if artist_ids:
+                CrawledNewsArtist.objects.bulk_create(
+                    [CrawledNewsArtist(news=news, artist_id=artist_id) for artist_id in artist_ids],
+                    ignore_conflicts=True,
+                )
+            if created:
+                saved_count += 1
 
         logger.info(f"DB 저장 완료: {saved_count}개")
         return {
@@ -221,13 +232,64 @@ def delete_news_from_db(news_id: str) -> dict:
 
 
 def strip_html(text: str) -> str:
-    """HTML 태그 제거 및 특수문자 변환"""
+    """HTML 태그와 엔티티를 제거한다."""
     if not text:
         return ""
     text = re.sub(r"<[^>]+>", "", text)
-    text = text.replace("&quot;", '"').replace("&amp;", "&")
-    text = text.replace("&lt;", "<").replace("&gt;", ">")
-    return text.strip()
+    return html.unescape(text).strip()
+
+
+class GoogleNewsRssCrawler:
+    """API 자격 증명 없이 Google News RSS의 실제 기사 메타데이터를 조회한다."""
+
+    API_URL = "https://news.google.com/rss/search"
+
+    def search(self, query: str, display: int = 20, start: int = 1, sort: str = "date") -> dict:
+        del start, sort  # RSS는 페이지네이션과 정렬 파라미터를 지원하지 않는다.
+        encoded_query = urllib.parse.quote(query)
+        url = f"{self.API_URL}?q={encoded_query}&hl=ko&gl=KR&ceid=KR:ko"
+        request = urllib.request.Request(url, headers={"User-Agent": "FanPulse/1.0"})
+
+        try:
+            with urllib.request.urlopen(request, timeout=10) as response:
+                root = ET.fromstring(response.read())
+
+            items = []
+            for node in root.findall("./channel/item")[:max(1, min(display, 100))]:
+                published = node.findtext("pubDate", default="")
+                source = node.find("source")
+                link = node.findtext("link", default="")
+                items.append({
+                    "title": strip_html(node.findtext("title", default="")),
+                    "description": strip_html(node.findtext("description", default="")),
+                    "originallink": link,
+                    "link": link,
+                    "pubDate": published,
+                    "pubDateFormatted": self._format_date(published),
+                    "source": strip_html((source.text if source is not None else None) or "Google News"),
+                })
+
+            return {
+                "success": True,
+                "total": len(items),
+                "start": 1,
+                "display": len(items),
+                "items": items,
+                "error": None,
+            }
+        except Exception as exc:
+            logger.exception("Google News RSS 검색 오류")
+            return {"success": False, "total": 0, "items": [], "error": str(exc)}
+
+    @staticmethod
+    def _format_date(pub_date: str) -> str:
+        if not pub_date:
+            return ""
+        try:
+            from email.utils import parsedate_to_datetime
+            return parsedate_to_datetime(pub_date).strftime("%Y-%m-%d %H:%M")
+        except (TypeError, ValueError):
+            return pub_date
 
 
 class NaverNewsCrawler:

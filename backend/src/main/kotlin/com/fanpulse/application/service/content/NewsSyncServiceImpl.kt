@@ -83,11 +83,20 @@ class NewsSyncServiceImpl(
         val errors = mutableListOf<String>()
 
         snapshots.forEach { snapshot ->
-            val matched = newsMatcher.match(
-                title = snapshot.title,
-                content = snapshot.content,
-                artists = artists,
-            )
+            val explicitArtists = if (snapshot.artistIds.isEmpty()) {
+                emptyList()
+            } else {
+                artists.filter { it.active && it.id in snapshot.artistIds }
+            }
+            val matched = if (snapshot.artistIds.isNotEmpty()) {
+                explicitArtists
+            } else {
+                newsMatcher.match(
+                    title = snapshot.title,
+                    content = snapshot.content,
+                    artists = artists,
+                )
+            }
 
             if (matched.isEmpty()) {
                 skipped++

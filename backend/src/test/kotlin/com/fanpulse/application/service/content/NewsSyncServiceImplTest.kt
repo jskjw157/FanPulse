@@ -126,6 +126,27 @@ class NewsSyncServiceImplTest {
         }
 
         @Test
+        @DisplayName("수집 관계 artistId가 있으면 표기명이 달라도 해당 아티스트로 insert 된다")
+        fun shouldUseExplicitCollectedArtistRelationBeforeTextMatching() {
+            val artist = activeArtist(name = "aespa")
+            val snapshot = snapshot(
+                title = "에스파 콘서트 라이브뷰잉 소식",
+                content = "한글 표기로만 작성된 실제 기사",
+                artistIds = setOf(artist.id),
+            )
+            mockArtists(listOf(artist))
+            mockSnapshots(listOf(snapshot))
+            mockExistingNews(emptyList())
+            val captured = mutableListOf<News>()
+            every { transactionalNewsUpserter.upsert(capture(captured)) } returns UpsertOutcome.INSERTED
+
+            val report = service.syncRecent(limit = 100)
+
+            assertEquals(1, report.inserted)
+            assertEquals(artist.id, captured.single().artistId)
+        }
+
+        @Test
         @DisplayName("매칭 아티스트가 없으면 skipped 카운트만 증가한다")
         fun shouldSkipWhenNoArtistMatched() {
             val artist = activeArtist(name = "에스파")
@@ -457,7 +478,8 @@ class NewsSyncServiceImplTest {
         thumbnailUrl: String? = "https://thumb.test/x.jpg",
         source: String? = "테스트신문",
         publishedAt: LocalDateTime? = LocalDateTime.of(2026, 4, 27, 10, 0, 0),
-        createdAt: LocalDateTime = LocalDateTime.of(2026, 4, 27, 10, 1, 0)
+        createdAt: LocalDateTime = LocalDateTime.of(2026, 4, 27, 10, 1, 0),
+        artistIds: Set<UUID> = emptySet(),
     ): CrawledNewsSnapshot =
         CrawledNewsSnapshot(
             id = id,
@@ -468,7 +490,8 @@ class NewsSyncServiceImplTest {
             url = url,
             source = source,
             publishedAt = publishedAt,
-            createdAt = createdAt
+            createdAt = createdAt,
+            artistIds = artistIds,
         )
 
     private fun createExistingNews(

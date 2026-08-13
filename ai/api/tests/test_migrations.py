@@ -2,7 +2,7 @@
 Phase 4 - Test 4.1: Migration 검증 테스트
 
 빈 DB에서 migrate 실행 시 에러 없음 확인
-최종 테이블에 4개 AI 모델 테이블 존재 확인
+최종 테이블에 5개 AI/수집 모델 테이블 존재 확인
 Django TestCase를 사용하여 in-memory SQLite에서 검증
 """
 from django.test import TestCase
@@ -13,7 +13,7 @@ class MigrationTableTest(TestCase):
     """마이그레이션 후 테이블 존재 여부 검증"""
 
     def test_all_ai_model_tables_exist(self):
-        """4개 AI 모델 테이블이 모두 생성되었는지 확인"""
+        """5개 AI/수집 모델 테이블이 모두 생성되었는지 확인"""
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
@@ -22,6 +22,7 @@ class MigrationTableTest(TestCase):
 
         expected_tables = {
             'crawled_news',
+            'crawled_news_artists',
             'comments',
             'comment_filter_rules',
             'filtered_comment_logs',
@@ -95,7 +96,7 @@ class MigrationTableTest(TestCase):
             )
 
     def test_table_count_matches_ai_models(self):
-        """DB에 생성된 앱 관련 테이블 수가 AI 모델 4개와 일치하는지 확인"""
+        """DB에 생성된 앱 관련 테이블 수가 AI/수집 모델 5개와 일치하는지 확인"""
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
@@ -115,6 +116,7 @@ class MigrationTableTest(TestCase):
 
         expected_ai_tables = {
             'crawled_news',
+            'crawled_news_artists',
             'comments',
             'comment_filter_rules',
             'filtered_comment_logs',
@@ -123,5 +125,5 @@ class MigrationTableTest(TestCase):
         self.assertEqual(
             app_tables,
             expected_ai_tables,
-            msg=f"AI 모델 테이블이 정확히 4개여야 합니다. 실제: {app_tables}"
+            msg=f"AI/수집 모델 테이블이 정확히 5개여야 합니다. 실제: {app_tables}"
         )

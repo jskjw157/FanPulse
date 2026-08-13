@@ -16,12 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /install /usr/local
-COPY . .
 
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+COPY --chown=appuser:appgroup . .
 
 EXPOSE 8000
 
 USER appuser
 
-CMD ["sh", "-c", "python manage.py migrate --fake-initial --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 1 --timeout 120"]
+CMD ["sh", "/app/scripts/start_django.sh"]

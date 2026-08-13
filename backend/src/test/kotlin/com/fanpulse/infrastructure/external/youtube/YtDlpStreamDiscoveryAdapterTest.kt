@@ -444,25 +444,22 @@ class YtDlpStreamDiscoveryAdapterTest {
     }
 
     @Nested
-    @DisplayName("discoverChannelStreamsFallback - Circuit Breaker")
-    inner class CircuitBreakerFallback {
+    @DisplayName("Circuit Breaker failure contract")
+    inner class CircuitBreakerFailureContract {
 
         @Test
-        @DisplayName("fallback should return empty list")
-        fun fallbackShouldReturnEmptyList() {
-            // Note: Direct fallback method is private, but we can test the behavior
-            // by verifying that circuit breaker annotation is present and the adapter
-            // handles exceptions appropriately in the real flow
+        @DisplayName("discovery failures must propagate instead of masquerading as an empty result")
+        fun discoveryFailureMustNotUseEmptyListFallback() {
+            val method = YtDlpStreamDiscoveryAdapter::class.java.getMethod(
+                "discoverChannelStreams",
+                String::class.java
+            )
+            val circuitBreaker = method.getAnnotation(
+                io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker::class.java
+            )
 
-            // given - simulate what happens when circuit breaker triggers fallback
-            val channelHandle = "@TestChannel"
-
-            // The fallback method returns emptyList() - this is verified by the annotation
-            // @CircuitBreaker(name = "ytdlp", fallbackMethod = "discoverChannelStreamsFallback")
-
-            // In a real scenario with circuit breaker open, the result would be empty list
-            // This test documents the expected behavior
-            assertTrue(true, "Circuit breaker fallback returns empty list as per implementation")
+            assertNotNull(circuitBreaker)
+            assertEquals("", circuitBreaker.fallbackMethod)
         }
     }
 }
