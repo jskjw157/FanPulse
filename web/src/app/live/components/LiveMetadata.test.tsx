@@ -4,7 +4,7 @@ import LiveMetadata from './LiveMetadata';
 import type { LiveDetail } from '@/types/live';
 
 const mockLiveDetail: LiveDetail = {
-  id: 1,
+  id: '1',
   title: 'NewJeans 컴백 쇼케이스',
   artistName: 'NewJeans Official',
   thumbnailUrl: '/images/mock/live-1.jpg',

@@ -4,7 +4,7 @@ import NewsCard from './NewsCard';
 import type { News } from '@/types/news';
 
 const mockNews: News = {
-  id: 1,
+  id: '1',
   title: 'BTS 새 앨범 발매 예정',
   summary: 'BTS가 2026년 3월 새 앨범 발매를 예고했다. 멤버들의 솔로 활동 이후 첫 완전체 앨범이다.',
   thumbnailUrl: '/images/mock/news-1.jpg',

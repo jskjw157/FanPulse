@@ -1,14 +1,17 @@
 export interface News {
-  id: number;
+  id: string;
   title: string;
   summary: string;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
   source: string;
   publishedAt: string;
 }
 
 export interface NewsDetail extends News {
+  artistId: string;
   content: string;
   sourceUrl: string;
-  author?: string;
+  category: string;
+  viewCount: number;
+  createdAt: string;
 }

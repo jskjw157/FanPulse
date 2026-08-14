@@ -54,7 +54,6 @@ describe('NewsDetailPage', () => {
     });
 
     expect(screen.getByText('스포츠조선')).toBeInTheDocument();
-    expect(screen.getByText('김기자')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /원문 보기/ })).toBeInTheDocument();
   });
 

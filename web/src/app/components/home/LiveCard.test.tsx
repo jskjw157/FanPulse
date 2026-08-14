@@ -4,7 +4,7 @@ import LiveCard from './LiveCard';
 import type { Live } from '@/types/live';
 
 const mockLive: Live = {
-  id: 1,
+  id: '1',
   title: 'NewJeans 컴백 쇼케이스',
   artistName: 'NewJeans Official',
   thumbnailUrl: '/images/mock/live-1.jpg',
@@ -13,7 +13,7 @@ const mockLive: Live = {
 };
 
 const mockScheduled: Live = {
-  id: 10,
+  id: '10',
   title: 'SEVENTEEN Dance Practice',
   artistName: 'SEVENTEEN',
   thumbnailUrl: '/images/mock/upcoming-1.jpg',
@@ -31,6 +31,15 @@ describe('LiveCard', () => {
     render(<LiveCard live={mockLive} />);
     const img = screen.getByAltText(mockLive.title);
     expect(img).toBeInTheDocument();
+  });
+
+  it('renders an explicit empty thumbnail state for null API thumbnails', () => {
+    render(<LiveCard live={{ ...mockLive, thumbnailUrl: null }} />);
+
+    expect(
+      screen.getByRole('img', { name: `${mockLive.title} 썸네일 없음` })
+    ).toBeInTheDocument();
+    expect(screen.queryByAltText(mockLive.title)).not.toBeInTheDocument();
   });
 
   it('renders title and artist name', () => {

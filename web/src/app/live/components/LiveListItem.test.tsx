@@ -12,6 +12,15 @@ describe('LiveListItem', () => {
     expect(screen.getByText('NewJeans Official')).toBeInTheDocument();
   });
 
+  it('renders an explicit empty thumbnail state for null API thumbnails', () => {
+    render(<LiveListItem live={{ ...mockLiveNow[0], thumbnailUrl: null }} />);
+
+    expect(
+      screen.getByRole('img', { name: 'NewJeans 컴백 쇼케이스 썸네일 없음' })
+    ).toBeInTheDocument();
+    expect(screen.queryByAltText('NewJeans 컴백 쇼케이스')).not.toBeInTheDocument();
+  });
+
   it('renders LIVE badge and viewer count for live stream', () => {
     render(<LiveListItem live={mockLiveNow[0]} />);
 

@@ -2,7 +2,7 @@ import Image from 'next/image';
 
 interface NewsHeaderProps {
   title: string;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
 }
 
 export default function NewsHeader({ title, thumbnailUrl }: NewsHeaderProps) {

@@ -2,7 +2,7 @@ import type { Live, LiveDetail } from '@/types/live';
 
 export const mockLiveNow: Live[] = [
   {
-    id: 1,
+    id: '1',
     title: 'NewJeans 컴백 쇼케이스',
     artistName: 'NewJeans Official',
     thumbnailUrl: '/images/mock/live-1.jpg',
@@ -10,7 +10,7 @@ export const mockLiveNow: Live[] = [
     viewerCount: 24583,
   },
   {
-    id: 2,
+    id: '2',
     title: 'BTS Fan Meeting Special',
     artistName: 'BTS',
     thumbnailUrl: '/images/mock/live-2.jpg',
@@ -18,7 +18,7 @@ export const mockLiveNow: Live[] = [
     viewerCount: 89200,
   },
   {
-    id: 3,
+    id: '3',
     title: 'BLACKPINK Behind The Scenes',
     artistName: 'BLACKPINK',
     thumbnailUrl: '/images/mock/live-3.jpg',
@@ -29,7 +29,7 @@ export const mockLiveNow: Live[] = [
 
 export const mockUpcoming: Live[] = [
   {
-    id: 10,
+    id: '10',
     title: 'SEVENTEEN Dance Practice',
     artistName: 'SEVENTEEN',
     thumbnailUrl: '/images/mock/upcoming-1.jpg',
@@ -37,7 +37,7 @@ export const mockUpcoming: Live[] = [
     scheduledAt: '2026-02-15T14:00:00Z',
   },
   {
-    id: 11,
+    id: '11',
     title: 'Stray Kids World Tour Highlights',
     artistName: 'Stray Kids',
     thumbnailUrl: '/images/mock/upcoming-2.jpg',
@@ -50,7 +50,7 @@ export const mockLiveList: Live[] = [
   ...mockLiveNow,
   ...mockUpcoming,
   {
-    id: 20,
+    id: '20',
     title: 'TWICE Concert Replay',
     artistName: 'TWICE',
     thumbnailUrl: '/images/mock/ended-1.jpg',
@@ -59,7 +59,7 @@ export const mockLiveList: Live[] = [
 ];
 
 export const mockLiveDetail: LiveDetail = {
-  id: 1,
+  id: '1',
   title: 'NewJeans 컴백 쇼케이스',
   artistName: 'NewJeans Official',
   thumbnailUrl: '/images/mock/live-1.jpg',
