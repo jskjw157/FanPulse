@@ -53,10 +53,14 @@ export function isIsoDateTime(value: unknown): value is string {
 }
 
 export function isIsoInstant(value: unknown): value is string {
-  return (
-    isIsoDateTime(value) &&
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
-  );
+  if (!isIsoDateTime(value)) return false;
+  const match = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:(Z)|[+-](\d{2}):(\d{2}))$/.exec(value);
+  if (!match) return false;
+  if (match[1] === 'Z') return true;
+
+  const offsetHours = Number(match[2]);
+  const offsetMinutes = Number(match[3]);
+  return offsetHours < 18 || (offsetHours === 18 && offsetMinutes === 0);
 }
 
 export function unwrapApiResponse<T>(

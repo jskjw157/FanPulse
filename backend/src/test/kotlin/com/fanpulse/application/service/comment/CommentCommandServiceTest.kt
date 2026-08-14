@@ -127,8 +127,8 @@ class CommentCommandServiceTest {
         }
 
         @Test
-        @DisplayName("noop 필터 타입이면 APPROVED 상태로 저장되어야 한다")
-        fun `should approve comment when noop filter type`() {
+        @DisplayName("noop 필터 타입이면 PENDING 상태로 저장되어야 한다")
+        fun `should keep PENDING when noop filter type`() {
             // given
             val filterResult = FilterResult(isFiltered = false, filterType = "noop")
             every { commentFilterPort.filterComment(any()) } returns filterResult
@@ -139,7 +139,7 @@ class CommentCommandServiceTest {
             val response = service.createComment(postId, userId, "noop 댓글")
 
             // then
-            assertEquals(CommentStatus.APPROVED, response.status)
+            assertEquals(CommentStatus.PENDING, response.status)
         }
     }
 
@@ -232,6 +232,19 @@ class CommentCommandServiceTest {
     @Nested
     @DisplayName("입력 검증")
     inner class Validation {
+
+        @Test
+        @DisplayName("다른 게시글의 댓글을 부모로 지정하면 거부해야 한다")
+        fun `should reject a parent comment from another post`() {
+            val parent = Comment.create("another-post", userId, "부모 댓글")
+            every { commentPort.findById(parent.id) } returns parent
+
+            assertThrows<IllegalArgumentException> {
+                service.createComment(postId, userId, "교차 게시글 답글", parent.id)
+            }
+            verify(exactly = 0) { commentFilterPort.filterComment(any()) }
+            verify(exactly = 0) { commentPort.save(any()) }
+        }
 
         @Test
         @DisplayName("빈 내용으로 댓글을 생성하면 예외가 발생해야 한다")

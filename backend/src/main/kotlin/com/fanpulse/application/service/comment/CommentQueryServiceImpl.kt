@@ -5,6 +5,7 @@ import com.fanpulse.application.dto.comment.CommentResponse
 import com.fanpulse.domain.comment.CommentStatus
 import com.fanpulse.domain.comment.port.CommentPort
 import com.fanpulse.infrastructure.common.PaginationConverter
+import com.fanpulse.infrastructure.persistence.identity.UserJpaRepository
 import mu.KotlinLogging
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -18,16 +19,19 @@ private val logger = KotlinLogging.logger {}
 @Service
 @Transactional(readOnly = true)
 class CommentQueryServiceImpl(
-    private val commentPort: CommentPort
+    private val commentPort: CommentPort,
+    private val userRepository: UserJpaRepository
 ) : CommentQueryService {
 
     override fun getComments(postId: String, pageable: Pageable): CommentListResponse {
         logger.debug { "Getting APPROVED comments for post: $postId" }
         val pageRequest = PaginationConverter.toDomainPageRequest(pageable)
         val pageResult = commentPort.findByPostIdAndStatus(postId, CommentStatus.APPROVED, pageRequest)
+        val authorNames = userRepository.findAllByIds(pageResult.content.map { it.userId }.distinct())
+            .associate { it.id to it.username }
 
         return CommentListResponse(
-            content = pageResult.content.map { CommentResponse.from(it) },
+            content = pageResult.content.map { CommentResponse.from(it, authorNames[it.userId]) },
             totalElements = pageResult.totalElements,
             page = pageResult.page,
             size = pageResult.size,

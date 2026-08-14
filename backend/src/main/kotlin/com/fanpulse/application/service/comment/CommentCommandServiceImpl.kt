@@ -39,6 +39,13 @@ class CommentCommandServiceImpl(
         content: String,
         parentCommentId: UUID?
     ): CommentResponse {
+        if (parentCommentId != null) {
+            val parent = commentPort.findById(parentCommentId)
+                ?: throw NoSuchElementException("부모 댓글을 찾을 수 없습니다")
+            require(parent.postId == postId) { "부모 댓글은 같은 게시글에 속해야 합니다" }
+            require(parent.status == CommentStatus.APPROVED) { "승인된 댓글에만 답글을 작성할 수 있습니다" }
+        }
+
         // 1. 도메인 엔티티 생성 (content 검증 포함, PENDING 초기 상태)
         val comment = Comment.create(postId, userId, content, parentCommentId)
 
@@ -74,7 +81,9 @@ class CommentCommandServiceImpl(
     private fun resolveStatus(comment: Comment, filterResult: FilterResult) {
         when {
             filterResult.isFiltered -> comment.block(filterResult.reason ?: "AI 필터에 의해 차단됨")
-            filterResult.filterType == "fallback" -> {} // AI 장애 → PENDING 유지 (Fail-Pending)
+            filterResult.filterType.lowercase() in setOf("fallback", "noop") -> {
+                // AI 장애 또는 명시적 비활성화 → PENDING 유지 (Fail-Pending)
+            }
             else -> comment.approve()
         }
     }
