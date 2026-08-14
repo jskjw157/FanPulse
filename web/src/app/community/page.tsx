@@ -5,7 +5,7 @@ import PageWrapper from "@/components/layout/PageWrapper";
 import { fetchCommunityPosts, type CommunityPost, type CommunitySort } from "@/lib/api/community";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const PAGE_SIZE = 20;
 
@@ -28,10 +28,15 @@ export default function CommunityPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const generationRef = useRef(0);
+  const loadMoreControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
+    const generation = ++generationRef.current;
+    loadMoreControllerRef.current?.abort();
     setLoading(true);
+    setLoadingMore(false);
     setError(false);
     setPosts([]);
     setPage(0);
@@ -39,26 +44,44 @@ export default function CommunityPage() {
 
     fetchCommunityPosts(sort, 0, PAGE_SIZE, controller.signal)
       .then((result) => {
+        if (generationRef.current !== generation) return;
         setPosts(result.items);
         setPage(result.page);
         setLast(result.last);
       })
       .catch(() => {
-        if (!controller.signal.aborted) setError(true);
+        if (!controller.signal.aborted && generationRef.current === generation) setError(true);
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted && generationRef.current === generation) setLoading(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      loadMoreControllerRef.current?.abort();
+    };
   }, [sort, retryKey]);
+
+  const changeSort = (nextSort: CommunitySort) => {
+    if (nextSort === sort) return;
+    generationRef.current += 1;
+    loadMoreControllerRef.current?.abort();
+    setLoadingMore(false);
+    setSort(nextSort);
+  };
 
   const loadMore = async () => {
     if (loadingMore || last) return;
+    const generation = generationRef.current;
+    const requestedSort = sort;
+    const controller = new AbortController();
+    loadMoreControllerRef.current?.abort();
+    loadMoreControllerRef.current = controller;
     setLoadingMore(true);
     setError(false);
     try {
-      const result = await fetchCommunityPosts(sort, page + 1, PAGE_SIZE);
+      const result = await fetchCommunityPosts(requestedSort, page + 1, PAGE_SIZE, controller.signal);
+      if (controller.signal.aborted || generationRef.current !== generation || sort !== requestedSort) return;
       setPosts((current) => {
         const seen = new Set(current.map((post) => post.id));
         return [...current, ...result.items.filter((post) => !seen.has(post.id))];
@@ -66,9 +89,10 @@ export default function CommunityPage() {
       setPage(result.page);
       setLast(result.last);
     } catch {
-      setError(true);
+      if (!controller.signal.aborted && generationRef.current === generation) setError(true);
     } finally {
-      setLoadingMore(false);
+      if (generationRef.current === generation) setLoadingMore(false);
+      if (loadMoreControllerRef.current === controller) loadMoreControllerRef.current = null;
     }
   };
 
@@ -90,7 +114,7 @@ export default function CommunityPage() {
         <div className="sticky top-16 z-30 border-b border-gray-200 bg-white">
           <div className="mx-auto flex max-w-7xl">
             <button
-              onClick={() => setSort("LATEST")}
+              onClick={() => changeSort("LATEST")}
               className={`relative flex-1 py-4 text-sm font-medium transition-colors ${
                 sort === "LATEST" ? "text-purple-600" : "text-gray-500"
               }`}
@@ -104,7 +128,7 @@ export default function CommunityPage() {
               )}
             </button>
             <button
-              onClick={() => setSort("POPULAR")}
+              onClick={() => changeSort("POPULAR")}
               className={`relative flex-1 py-4 text-sm font-medium transition-colors ${
                 sort === "POPULAR" ? "text-purple-600" : "text-gray-500"
               }`}

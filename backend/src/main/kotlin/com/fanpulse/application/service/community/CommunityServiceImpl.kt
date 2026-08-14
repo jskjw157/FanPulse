@@ -40,6 +40,7 @@ class CommunityServiceImpl(
         }
         val content = request.content.trim()
         require(content.isNotEmpty()) { "게시글 내용은 비어 있을 수 없습니다" }
+        require(content.length <= 5_000) { "게시글 내용은 5,000자를 초과할 수 없습니다" }
 
         val moderationResult = try {
             moderation.checkContent(content)
@@ -52,6 +53,7 @@ class CommunityServiceImpl(
         val moderationModel = moderationResult.modelUsed.trim().lowercase()
         if (
             moderationResult.error != null ||
+            moderationModel.isBlank() ||
             moderationModel == "fallback" ||
             moderationModel == "noop"
         ) {
@@ -59,7 +61,10 @@ class CommunityServiceImpl(
                 "모더레이션 서비스를 사용할 수 없어 게시글을 저장하지 않았습니다"
             )
         }
-        require(!moderationResult.isFlagged && !moderationResult.action.equals("block", ignoreCase = true)) {
+        require(
+            !moderationResult.isFlagged &&
+                moderationResult.action.equals("allow", ignoreCase = true)
+        ) {
             "허용되지 않는 게시글 내용입니다"
         }
 
@@ -110,9 +115,12 @@ class CommunityServiceImpl(
     @Transactional
     override fun unsave(userId: UUID, postId: UUID): CommunityPostState {
         requireUser(userId)
-        lockPublishedPost(postId)
+        posts.findByIdForUpdate(postId) ?: throw NoSuchElementException("게시글을 찾을 수 없습니다")
         savedPosts.deleteByUserIdAndPostId(userId, postId)
-        return getState(userId, postId)
+        return CommunityPostState(
+            liked = likes.existsByUserIdAndTargetTypeAndTargetId(userId, POST_TARGET_TYPE, postId),
+            saved = false
+        )
     }
 
     override fun getState(userId: UUID, postId: UUID): CommunityPostState {

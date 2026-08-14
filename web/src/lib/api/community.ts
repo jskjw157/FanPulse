@@ -194,7 +194,7 @@ function isCommunityCommentPageDto(value: unknown): value is CommunityCommentPag
   if (!isRecord(value)) return false;
   if (
     !Array.isArray(value.content) ||
-    !value.content.every(isCommunityCommentDto) ||
+    !value.content.every((comment) => isCommunityCommentDto(comment) && comment.status === 'APPROVED') ||
     !isNonNegativeInteger(value.totalElements) ||
     !isNonNegativeInteger(value.page) ||
     !Number.isInteger(value.size) ||
@@ -286,11 +286,15 @@ export async function fetchCommunityPost(
     `/community/posts/${postId}`,
     { signal },
   );
-  return mapPost(unwrapApiResponse(
+  const data = unwrapApiResponse(
     response.data,
     '커뮤니티 상세 API 응답이 올바르지 않습니다.',
     isCommunityPostDto,
-  ));
+  );
+  if (data.id !== postId) {
+    throw new Error('커뮤니티 상세 API 응답이 올바르지 않습니다.');
+  }
+  return mapPost(data);
 }
 
 export async function createCommunityPost(

@@ -93,6 +93,15 @@ describe('community API', () => {
     expect(apiClient.get).toHaveBeenCalledWith(`/community/posts/${dto.id}`, { signal: undefined });
   });
 
+  it('rejects a detail whose id differs from the requested post id', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { success: true, data: { ...dto, id: '99999999-9999-9999-9999-999999999999' } },
+    });
+    await expect(fetchCommunityPost(dto.id)).rejects.toThrow(
+      '커뮤니티 상세 API 응답이 올바르지 않습니다.',
+    );
+  });
+
   it('creates a post with the selected real artist UUID', async () => {
     vi.mocked(apiClient.post).mockResolvedValue({ data: { success: true, data: dto } });
     const request = { artistId: dto.artistId, content: dto.content };
@@ -158,6 +167,8 @@ describe('community comment API', () => {
     { ...commentPageDto, content: [{ ...commentDto, postId: 'not-a-uuid' }] },
     { ...commentPageDto, content: [{ ...commentDto, createdAt: '2026-08-14T09:00:00' }] },
     { ...commentPageDto, content: [{ ...commentDto, authorName: 7 }] },
+    { ...commentPageDto, content: [{ ...commentDto, status: 'PENDING' }] },
+    { ...commentPageDto, content: [{ ...commentDto, status: 'BLOCKED' }] },
     { ...commentPageDto, totalPages: 2 },
   ])('rejects malformed comment pages: %o', async (data) => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data } });
@@ -174,5 +185,11 @@ describe('community comment API', () => {
       content: '실제 댓글',
       parentCommentId: null,
     });
+  });
+
+  it('preserves a PENDING status returned by the authenticated create endpoint', async () => {
+    const pending = { ...commentDto, status: 'PENDING' };
+    vi.mocked(apiClient.post).mockResolvedValue({ data: { success: true, data: pending } });
+    await expect(createCommunityComment(dto.id, pending.content)).resolves.toEqual(pending);
   });
 });

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CommunityPage from './page';
 import { fetchCommunityPosts } from '@/lib/api/community';
@@ -87,5 +87,40 @@ describe('CommunityPage', () => {
     await waitFor(() => {
       expect(fetchCommunityPosts).toHaveBeenLastCalledWith('POPULAR', 0, 20, expect.any(AbortSignal));
     });
+  });
+
+  it('discards an old load-more response after the sort changes', async () => {
+    const stalePost = { ...post, id: '44444444-4444-4444-4444-444444444444', content: '이전 정렬 게시글' };
+    const popularPost = { ...post, id: '55555555-5555-5555-5555-555555555555', content: '현재 인기 게시글' };
+    let resolveStale: ((value: typeof page) => void) | undefined;
+    vi.mocked(fetchCommunityPosts).mockImplementation((sort, requestPage) => {
+      if (sort === 'LATEST' && requestPage === 0) {
+        return Promise.resolve({ ...page, totalElements: 2, totalPages: 2, last: false });
+      }
+      if (sort === 'LATEST' && requestPage === 1) {
+        return new Promise((resolve) => { resolveStale = resolve; });
+      }
+      return Promise.resolve({ ...page, items: [popularPost] });
+    });
+
+    render(<CommunityPage />);
+    await screen.findByText(post.content);
+    fireEvent.click(screen.getByRole('button', { name: '더 보기' }));
+    fireEvent.click(screen.getByRole('button', { name: '인기' }));
+    await screen.findByText(popularPost.content);
+
+    await act(async () => {
+      resolveStale?.({
+        ...page,
+        items: [stalePost],
+        page: 1,
+        totalElements: 2,
+        totalPages: 2,
+        last: true,
+      });
+    });
+
+    expect(screen.queryByText(stalePost.content)).not.toBeInTheDocument();
+    expect(screen.getByText(popularPost.content)).toBeInTheDocument();
   });
 });
