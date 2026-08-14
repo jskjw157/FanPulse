@@ -19,6 +19,21 @@ describe('NewsCard', () => {
     expect(img).toBeInTheDocument();
   });
 
+  it.each([
+    'https://images.example.com/news.jpg',
+    'HTTPS://images.example.com/news.jpg',
+  ])(
+    'renders external API thumbnails directly without the Next image optimizer: %s',
+    (thumbnailUrl) => {
+      render(<NewsCard news={{ ...mockNews, thumbnailUrl }} />);
+
+      const img = screen.getByAltText(mockNews.title);
+      expect(img).toHaveAttribute('src', thumbnailUrl);
+      expect(img).not.toHaveAttribute('srcset');
+      expect(img).toHaveAttribute('referrerpolicy', 'no-referrer');
+    }
+  );
+
   it('renders title', () => {
     render(<NewsCard news={mockNews} />);
     expect(screen.getByText(mockNews.title)).toBeInTheDocument();

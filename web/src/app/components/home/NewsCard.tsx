@@ -23,6 +23,8 @@ export default function NewsCard({ news }: NewsCardProps) {
           alt={title}
           width={96}
           height={80}
+          unoptimized={/^https:\/\//i.test(thumbnailUrl)}
+          referrerPolicy="no-referrer"
           className="w-24 h-20 rounded-lg object-cover object-top flex-shrink-0"
         />
       ) : (

@@ -24,6 +24,8 @@ export default function LiveListItem({ live }: LiveListItemProps) {
               width={384}
               height={192}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              unoptimized={/^https:\/\//i.test(thumbnailUrl)}
+              referrerPolicy="no-referrer"
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (

@@ -22,6 +22,8 @@ export default function LiveCard({ live }: LiveCardProps) {
             alt={title}
             width={280}
             height={160}
+            unoptimized={/^https:\/\//i.test(thumbnailUrl)}
+            referrerPolicy="no-referrer"
             className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (

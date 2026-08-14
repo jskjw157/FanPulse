@@ -12,6 +12,16 @@ describe('LiveListItem', () => {
     expect(screen.getByText('NewJeans Official')).toBeInTheDocument();
   });
 
+  it('renders external API thumbnails directly without the Next image optimizer', () => {
+    const thumbnailUrl = 'https://stream.example.com/live.jpg';
+    render(<LiveListItem live={{ ...mockLiveNow[0], thumbnailUrl }} />);
+
+    const img = screen.getByAltText('NewJeans 컴백 쇼케이스');
+    expect(img).toHaveAttribute('src', thumbnailUrl);
+    expect(img).not.toHaveAttribute('srcset');
+    expect(img).toHaveAttribute('referrerpolicy', 'no-referrer');
+  });
+
   it('renders an explicit empty thumbnail state for null API thumbnails', () => {
     render(<LiveListItem live={{ ...mockLiveNow[0], thumbnailUrl: null }} />);
 
