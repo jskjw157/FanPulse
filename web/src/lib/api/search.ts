@@ -2,7 +2,7 @@ import type { Live } from '@/types/live';
 import type { News } from '@/types/news';
 import { apiClient } from '@/lib/api-client';
 import {
-  isIsoDateTime,
+  isIsoInstant,
   isNonEmptyString,
   isRecord,
   isUuid,
@@ -40,7 +40,7 @@ function isSearchLiveApiDto(value: unknown): value is SearchLiveApiDto {
     isNonEmptyString(value.artistName) &&
     isNullableHttpsUrl(value.thumbnailUrl) &&
     (value.status === 'LIVE' || value.status === 'SCHEDULED' || value.status === 'ENDED') &&
-    isIsoDateTime(value.scheduledAt)
+    isIsoInstant(value.scheduledAt)
   );
 }
 

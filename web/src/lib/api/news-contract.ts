@@ -1,6 +1,6 @@
 import type { News, NewsDetail } from '@/types/news';
 import {
-  isIsoDateTime,
+  isIsoInstant,
   isNonEmptyString,
   isRecord,
   isUuid,
@@ -77,8 +77,8 @@ export function isNewsApiDto(value: unknown): value is NewsApiDto {
     NEWS_CATEGORIES.has(value.category) &&
     Number.isInteger(value.viewCount) &&
     (value.viewCount as number) >= 0 &&
-    isIsoDateTime(value.publishedAt) &&
-    isIsoDateTime(value.createdAt)
+    isIsoInstant(value.publishedAt) &&
+    isIsoInstant(value.createdAt)
   );
 }
 
@@ -120,7 +120,7 @@ export function isNewsSummaryApiDto(value: unknown): value is NewsSummaryApiDto 
     isNonEmptyString(value.sourceName) &&
     typeof value.category === 'string' &&
     NEWS_CATEGORIES.has(value.category) &&
-    isIsoDateTime(value.publishedAt)
+    isIsoInstant(value.publishedAt)
   );
 }
 
@@ -143,7 +143,7 @@ export function isSearchNewsApiDto(value: unknown): value is SearchNewsApiDto {
     isNonEmptyString(value.title) &&
     isNonEmptyString(value.summary) &&
     isNonEmptyString(value.sourceName) &&
-    isIsoDateTime(value.publishedAt)
+    isIsoInstant(value.publishedAt)
   );
 }
 

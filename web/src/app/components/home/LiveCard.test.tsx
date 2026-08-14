@@ -33,6 +33,16 @@ describe('LiveCard', () => {
     expect(img).toBeInTheDocument();
   });
 
+  it('renders external API thumbnails directly without the Next image optimizer', () => {
+    const thumbnailUrl = 'https://cdn.example.com/live.jpg';
+    render(<LiveCard live={{ ...mockLive, thumbnailUrl }} />);
+
+    const img = screen.getByAltText(mockLive.title);
+    expect(img).toHaveAttribute('src', thumbnailUrl);
+    expect(img).not.toHaveAttribute('srcset');
+    expect(img).toHaveAttribute('referrerpolicy', 'no-referrer');
+  });
+
   it('renders an explicit empty thumbnail state for null API thumbnails', () => {
     render(<LiveCard live={{ ...mockLive, thumbnailUrl: null }} />);
 

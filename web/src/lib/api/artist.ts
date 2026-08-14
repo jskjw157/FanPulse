@@ -1,7 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import {
   isIsoDate,
-  isIsoDateTime,
+  isIsoInstant,
   isNonEmptyString,
   isNullableString,
   isRecord,
@@ -38,7 +38,7 @@ function isArtistDetail(value: unknown): value is ArtistDetail {
     value.members.every(isNonEmptyString) &&
     typeof value.active === 'boolean' &&
     (value.debutDate === null || isIsoDate(value.debutDate)) &&
-    isIsoDateTime(value.createdAt)
+    isIsoInstant(value.createdAt)
   );
 }
 

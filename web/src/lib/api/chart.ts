@@ -1,7 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import {
   isIsoDate,
-  isIsoDateTime,
+  isIsoInstant,
   isNonEmptyString,
   isNullableInteger,
   isPositiveInteger,
@@ -82,7 +82,7 @@ function isChartResponse(value: unknown): value is ChartResponse {
     isIsoDate(value.chartDate) &&
     Array.isArray(value.entries) &&
     value.entries.every(isChartEntry) &&
-    isIsoDateTime(value.createdAt)
+    isIsoInstant(value.createdAt)
   );
 }
 
