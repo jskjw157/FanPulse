@@ -1,30 +1,40 @@
 import type { News, NewsDetail } from '@/types/news';
 import { apiClient } from '@/lib/api-client';
+import { unwrapApiResponse } from '@/lib/api-response';
+import {
+  isNewsApiDto,
+  isNewsApiDtoArray,
+  mapNewsApiDto,
+  mapNewsDetailApiDto,
+} from '@/lib/api/news-contract';
 
 export async function fetchNewsList(
   limit = 20,
   offset = 0,
   signal?: AbortSignal
 ): Promise<News[]> {
-  const { data } = await apiClient.get('/news/latest', {
+  const response = await apiClient.get('/news/latest', {
     params: { limit, offset },
     signal,
   });
 
-  const result = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : null;
-
-  if (result === null) {
-    console.error('[fetchNewsList] 예상치 못한 응답 구조:', data);
-    return [];
-  }
-
-  return result;
+  return unwrapApiResponse(
+    response.data,
+    '뉴스 API 응답이 올바르지 않습니다.',
+    isNewsApiDtoArray
+  ).map(mapNewsApiDto);
 }
 
 export async function fetchNewsDetail(
   id: string | number,
   signal?: AbortSignal
 ): Promise<NewsDetail> {
-  const { data } = await apiClient.get(`/news/${id}`, { signal });
-  return data.data;
+  const response = await apiClient.get(`/news/${id}`, { signal });
+  return mapNewsDetailApiDto(
+    unwrapApiResponse(
+      response.data,
+      '뉴스 상세 API 응답이 올바르지 않습니다.',
+      isNewsApiDto
+    )
+  );
 }

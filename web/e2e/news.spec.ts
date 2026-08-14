@@ -3,11 +3,11 @@ import { expect, test, type Page } from '@playwright/test'
 // ── Mock Data ───────────────────────────────────────
 
 const mockNewsDetail = {
-  id: 1,
+  id: '11111111-1111-1111-1111-111111111111',
+  artistId: '22222222-2222-2222-2222-222222222222',
   title: 'BTS 새 앨범 발매 예정',
-  summary: 'BTS가 2026년 3월 새 앨범 발매를 예고했다.',
   thumbnailUrl: 'https://picsum.photos/seed/bts-news/800/450',
-  source: '스포츠조선',
+  sourceName: '스포츠조선',
   publishedAt: '2026-02-01T09:00:00Z',
   content: `
     <p>BTS가 2026년 3월 새 앨범 발매를 예고했다. 멤버들의 솔로 활동 이후 첫 완전체 앨범으로 팬들의 기대를 모으고 있다.</p>
@@ -16,18 +16,23 @@ const mockNewsDetail = {
     <p>BTS는 "팬들에게 새로운 모습을 보여드리고 싶다"고 전했다.</p>
   `,
   sourceUrl: 'https://sports.chosun.com/article/bts-2026',
-  author: '김기자',
+  category: 'GENERAL',
+  viewCount: 0,
+  createdAt: '2026-02-01T09:00:00Z',
 }
 
 const mockNewsDetail2 = {
-  id: 2,
+  id: '33333333-3333-3333-3333-333333333333',
+  artistId: '44444444-4444-4444-4444-444444444444',
   title: 'BLACKPINK 월드투어 추가 공연',
-  summary: 'BLACKPINK가 아시아 투어에 서울 추가 공연을 확정했다.',
   thumbnailUrl: 'https://picsum.photos/seed/bp-news/800/450',
-  source: '엔터미디어',
+  sourceName: '엔터미디어',
   publishedAt: '2026-01-31T15:30:00Z',
   content: '<p>BLACKPINK가 아시아 투어에 서울 추가 공연을 확정했다.</p>',
   sourceUrl: 'https://enter.media.com/article/bp-tour',
+  category: 'GENERAL',
+  viewCount: 0,
+  createdAt: '2026-01-31T15:30:00Z',
 }
 
 // ── Setup Helper ────────────────────────────────
@@ -79,7 +84,7 @@ async function setupMocks(
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ data: newsData }),
+      body: JSON.stringify({ success: true, data: newsData }),
     })
   })
 }
@@ -104,12 +109,12 @@ test.describe('News Detail - 뉴스 상세', () => {
     await expect(page.locator('img[alt="BTS 새 앨범 발매 예정"]')).toBeVisible()
   })
 
-  test('메타데이터(출처, 작성자, 날짜)가 표시된다', async ({ page }) => {
+  test('메타데이터(출처, 날짜)가 표시된다', async ({ page }) => {
     await setupMocks(page)
     await page.goto('/news/1')
 
     await expect(page.getByText('스포츠조선', { exact: true })).toBeVisible({ timeout: 10000 })
-    await expect(page.getByText('김기자')).toBeVisible()
+
   })
 
   test('HTML 본문 콘텐츠가 렌더링된다', async ({ page }) => {
@@ -154,7 +159,7 @@ test.describe('News Detail - 뉴스 상세', () => {
     })
   })
 
-  test('작성자가 없는 뉴스도 정상 렌더링된다', async ({ page }) => {
+  test('두 번째 실제 DTO 뉴스도 정상 렌더링된다', async ({ page }) => {
     await setupMocks(page, { newsData: mockNewsDetail2 })
     await page.goto('/news/2')
 
@@ -162,7 +167,7 @@ test.describe('News Detail - 뉴스 상세', () => {
     await expect(
       page.getByRole('heading', { name: 'BLACKPINK 월드투어 추가 공연', level: 1 })
     ).toBeVisible()
-    await expect(page.getByText('김기자')).not.toBeVisible()
+
   })
 
   test('존재하지 않는 뉴스 ID로 접근 시 404 에러 메시지가 표시된다', async ({
@@ -237,7 +242,7 @@ test.describe('News Detail - 뉴스 상세', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ data: mockNewsDetail }),
+          body: JSON.stringify({ success: true, data: mockNewsDetail }),
         })
       }
     })

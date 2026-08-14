@@ -1,10 +1,10 @@
 export type LiveStatus = 'LIVE' | 'SCHEDULED' | 'ENDED';
 
 export interface Live {
-  id: number;
+  id: string;
   title: string;
   artistName: string;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
   status: LiveStatus;
   scheduledAt?: string;
   viewerCount?: number;

@@ -17,14 +17,24 @@ export default function LiveListItem({ live }: LiveListItemProps) {
     <Link href={`/live/${id}`} className="block group">
       <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
         <div className="relative">
-          <Image
-            src={thumbnailUrl}
-            alt={title}
-            width={384}
-            height={192}
-            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-          />
+          {thumbnailUrl ? (
+            <Image
+              src={thumbnailUrl}
+              alt={title}
+              width={384}
+              height={192}
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div
+              role="img"
+              aria-label={`${title} 썸네일 없음`}
+              className="w-full h-48 bg-gray-100 text-gray-400 flex items-center justify-center"
+            >
+              <span className="text-sm">썸네일 없음</span>
+            </div>
+          )}
           <div className="absolute top-3 left-3">
             <StatusBadge status={status} />
           </div>

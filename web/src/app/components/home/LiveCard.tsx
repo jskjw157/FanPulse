@@ -16,13 +16,23 @@ export default function LiveCard({ live }: LiveCardProps) {
   return (
     <Link href={`/live/${id}`} className="block flex-shrink-0 w-[280px] group">
       <div className="relative rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
-        <Image
-          src={thumbnailUrl}
-          alt={title}
-          width={280}
-          height={160}
-          className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        {thumbnailUrl ? (
+          <Image
+            src={thumbnailUrl}
+            alt={title}
+            width={280}
+            height={160}
+            className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div
+            role="img"
+            aria-label={`${title} 썸네일 없음`}
+            className="w-full h-40 bg-gray-100 text-gray-400 flex items-center justify-center"
+          >
+            <span className="text-sm">썸네일 없음</span>
+          </div>
+        )}
 
         {status === 'LIVE' && (
           <div className="absolute top-3 left-3">

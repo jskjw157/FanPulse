@@ -7,7 +7,6 @@ import NewsHeader from './components/NewsHeader';
 import NewsMetadata from './components/NewsMetadata';
 import NewsContent from './components/NewsContent';
 import SourceLink from './components/SourceLink';
-import SkeletonCard from '@/components/ui/SkeletonCard';
 
 export default function NewsDetailPage() {
   const params = useParams();
@@ -88,7 +87,6 @@ export default function NewsDetailPage() {
       <NewsMetadata
         source={news.source}
         publishedAt={news.publishedAt}
-        author={news.author}
       />
 
       <hr className="my-4 mx-4 border-gray-100" />
