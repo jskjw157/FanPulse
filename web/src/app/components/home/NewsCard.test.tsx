@@ -26,7 +26,12 @@ describe('NewsCard', () => {
 
   it('renders summary', () => {
     render(<NewsCard news={mockNews} />);
-    expect(screen.getByText(mockNews.summary)).toBeInTheDocument();
+    expect(screen.getByText(mockNews.summary!)).toBeInTheDocument();
+  });
+
+  it('does not fabricate a summary when the list DTO has none', () => {
+    const { container } = render(<NewsCard news={{ ...mockNews, summary: null }} />);
+    expect(container.querySelector('.line-clamp-2')).not.toBeInTheDocument();
   });
 
   it('renders source', () => {

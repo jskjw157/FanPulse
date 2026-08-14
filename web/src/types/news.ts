@@ -1,7 +1,7 @@
 export interface News {
   id: string;
   title: string;
-  summary: string;
+  summary: string | null;
   thumbnailUrl: string | null;
   source: string;
   publishedAt: string;

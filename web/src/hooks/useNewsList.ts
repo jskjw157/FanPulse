@@ -60,13 +60,13 @@ export function useNewsList(
         if (abortControllerRef.current.signal.aborted) return;
 
         if (isRefresh) {
-          setItems(result);
+          setItems(result.items);
         } else {
-          setItems((prev) => [...prev, ...result]);
+          setItems((prev) => [...prev, ...result.items]);
         }
 
-        offsetRef.current = (isRefresh ? 0 : offsetRef.current) + result.length;
-        setHasMore(result.length >= limit);
+        offsetRef.current = result.nextOffset;
+        setHasMore(result.hasMore);
         setState('success');
       } catch (err) {
         if (axios.isCancel(err)) return;
@@ -80,9 +80,13 @@ export function useNewsList(
   );
 
   useEffect(() => {
-    fetchData(true);
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void fetchData(true);
+    });
 
     return () => {
+      active = false;
       abortControllerRef.current?.abort();
     };
   }, [fetchData]);
