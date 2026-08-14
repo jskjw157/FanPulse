@@ -13,6 +13,8 @@ interface ChartPort {
     fun findById(id: UUID): Chart?
     fun findByTypeAndDate(chartType: ChartType, date: LocalDate): Chart?
     fun findLatestByType(chartType: ChartType): Chart?
+    fun findLatestBeforeType(chartType: ChartType, beforeDate: LocalDate): Chart?
     fun findByDateRange(chartType: ChartType, startDate: LocalDate, endDate: LocalDate): List<Chart>
     fun delete(chart: Chart)
+    fun flush()
 }

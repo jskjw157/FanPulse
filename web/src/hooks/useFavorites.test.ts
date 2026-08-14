@@ -1,0 +1,78 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/lib/api/social', () => ({ fetchFavorites: vi.fn(), removeFavorite: vi.fn() }));
+
+import { fetchFavorites, removeFavorite } from '@/lib/api/social';
+import { useFavorites } from './useFavorites';
+
+const favorite = {
+  id: '11111111-1111-1111-1111-111111111111', name: 'API Artist', englishName: null,
+  agency: null, profileImageUrl: null, isGroup: true, followedAt: '2026-08-13T12:00:00',
+};
+const otherFavorite = {
+  ...favorite,
+  id: '33333333-3333-3333-3333-333333333333',
+  name: 'Other User Artist',
+};
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolver) => { resolve = resolver; });
+  return { promise, resolve };
+}
+
+describe('useFavorites', () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it('loads API favorites and removes only after API success', async () => {
+    vi.mocked(fetchFavorites).mockResolvedValue([favorite]);
+    vi.mocked(removeFavorite).mockResolvedValue();
+    const { result } = renderHook(() => useFavorites('user-a'));
+    await waitFor(() => expect(result.current.state).toBe('success'));
+    expect(result.current.favorites).toEqual([favorite]);
+
+    await act(() => result.current.unfollow(favorite.id));
+    expect(removeFavorite).toHaveBeenCalledWith(favorite.id);
+    expect(result.current.favorites).toEqual([]);
+  });
+
+  it('shows an explicit load error without fallback artists', async () => {
+    vi.mocked(fetchFavorites).mockRejectedValue(new Error('network'));
+    const { result } = renderHook(() => useFavorites('user-a'));
+    await waitFor(() => expect(result.current.state).toBe('error'));
+    expect(result.current.favorites).toEqual([]);
+    expect(result.current.error).toBe('즐겨찾기를 불러올 수 없습니다');
+  });
+
+  it('clears the previous account rows while the next account reloads', async () => {
+    const next = deferred<Array<typeof otherFavorite>>();
+    vi.mocked(fetchFavorites)
+      .mockResolvedValueOnce([favorite])
+      .mockReturnValueOnce(next.promise);
+
+    const { result, rerender } = renderHook(({ userId }) => useFavorites(userId), {
+      initialProps: { userId: 'user-a' },
+    });
+    await waitFor(() => expect(result.current.favorites).toEqual([favorite]));
+
+    rerender({ userId: 'user-b' });
+    await waitFor(() => expect(result.current.state).toBe('loading'));
+    expect(result.current.favorites).toEqual([]);
+
+    next.resolve([otherFavorite]);
+    await waitFor(() => expect(result.current.favorites).toEqual([otherFavorite]));
+  });
+
+  it('keeps the row and exposes a handled error when unfollow fails', async () => {
+    vi.mocked(fetchFavorites).mockResolvedValue([favorite]);
+    vi.mocked(removeFavorite).mockRejectedValue(new Error('network'));
+    const { result } = renderHook(() => useFavorites('user-a'));
+    await waitFor(() => expect(result.current.state).toBe('success'));
+
+    await act(() => result.current.unfollow(favorite.id));
+
+    expect(result.current.favorites).toEqual([favorite]);
+    expect(result.current.mutationError).toBe('좋아요 취소에 실패했습니다');
+  });
+});

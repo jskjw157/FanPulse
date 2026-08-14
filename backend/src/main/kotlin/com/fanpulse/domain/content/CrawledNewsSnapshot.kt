@@ -28,5 +28,6 @@ data class CrawledNewsSnapshot(
     val url: String,
     val source: String?,
     val publishedAt: LocalDateTime?,
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
+    val artistIds: Set<UUID> = emptySet(),
 )

@@ -26,6 +26,16 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    isAuthenticated: true,
+    isLoading: false,
+    user: { id: 'test-user', email: 'test@example.com', name: '테스트 사용자' },
+    logout: vi.fn(),
+    refreshAuth: vi.fn(),
+  }),
+}))
+
 describe('Smoke Test - All Pages Render', () => {
   it('renders Login Page', () => {
     render(<LoginPage />)
@@ -61,7 +71,7 @@ describe('Smoke Test - All Pages Render', () => {
 
   it('renders Search Page', () => {
     render(<SearchPage />)
-    expect(screen.getByPlaceholderText(/아티스트, 게시글, 뉴스 검색.../i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search lives, news...')).toBeInTheDocument()
   })
 
   it('renders Notifications Page', () => {
@@ -76,7 +86,7 @@ describe('Smoke Test - All Pages Render', () => {
 
   it('renders Error Page', () => {
     render(<ErrorPage />)
-    expect(screen.getByText('Oops!')).toBeInTheDocument()
+    expect(screen.getByText('Something Went Wrong')).toBeInTheDocument()
   })
 
   it('renders Concert Detail Page', () => {

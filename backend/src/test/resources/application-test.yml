@@ -53,6 +53,8 @@ fanpulse:
     news-sync:
       enabled: false
       cron: "0 */10 * * * *"
+    chart-refresh:
+      enabled: false
 
 # Resilience4j - disabled for tests
 resilience4j:

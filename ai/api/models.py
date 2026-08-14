@@ -33,12 +33,33 @@ class CrawledNews(BaseModel):
     content = models.TextField(null=True, blank=True)
     origin_news = models.TextField(null=True, blank=True)  # 뉴스 데이터 원본 (원문 링크에서 추출)
     thumbnail_url = models.TextField(null=True, blank=True)
-    url = models.CharField(max_length=500)
+    url = models.CharField(max_length=500, unique=True)
     source = models.CharField(max_length=100, null=True, blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'crawled_news'
+
+
+class CrawledNewsArtist(models.Model):
+    """Spring artists와 수집 기사 간 명시적 다대다 관계(UUID 참조)."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    news = models.ForeignKey(
+        CrawledNews,
+        db_column='news_id',
+        on_delete=models.CASCADE,
+        related_name='artist_relations',
+    )
+    artist_id = models.UUIDField()
+
+    class Meta:
+        db_table = 'crawled_news_artists'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['news', 'artist_id'],
+                name='ux_crawled_news_artists_news_artist',
+            )
+        ]
 
 
 # =============================================

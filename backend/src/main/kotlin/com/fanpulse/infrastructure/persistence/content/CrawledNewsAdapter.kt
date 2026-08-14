@@ -82,6 +82,7 @@ class CrawledNewsAdapter(
             url = entity.url,
             source = entity.source,
             publishedAt = entity.publishedAt,
-            createdAt = entity.createdAt
+            createdAt = entity.createdAt,
+            artistIds = entity.artistIds,
         )
 }

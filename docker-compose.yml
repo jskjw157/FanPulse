@@ -42,11 +42,13 @@ services:
       JWT_SECRET: ${JWT_SECRET:-default-dev-secret-key-256-bits-long-for-hs256-algorithm}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-test-google-client-id.apps.googleusercontent.com}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
-      FANPULSE_SCHEDULER_LIVE_DISCOVERY_ENABLED: "${FANPULSE_SCHEDULER_LIVE_DISCOVERY_ENABLED:-false}"
-      FANPULSE_SCHEDULER_METADATA_REFRESH_ENABLED: "${FANPULSE_SCHEDULER_METADATA_REFRESH_ENABLED:-false}"
+      FANPULSE_SCHEDULER_LIVE_DISCOVERY_ENABLED: "${FANPULSE_SCHEDULER_LIVE_DISCOVERY_ENABLED:-true}"
+      FANPULSE_SCHEDULER_METADATA_REFRESH_ENABLED: "${FANPULSE_SCHEDULER_METADATA_REFRESH_ENABLED:-true}"
       FANPULSE_SCHEDULER_LIVE_DISCOVERY_MAX_CONCURRENCY: "${FANPULSE_SCHEDULER_LIVE_DISCOVERY_MAX_CONCURRENCY:-2}"
-      # 뉴스 동기화 수동 트리거 토글 (#272). 기본 활성 — docker-compose 환경은 dev/QA 검증용.
-      FANPULSE_NEWS_SYNC_MANUAL_TRIGGER_ENABLED: "${FANPULSE_NEWS_SYNC_MANUAL_TRIGGER_ENABLED:-true}"
+      # 뉴스 동기화 수동 트리거 토글 (#272). 운영 기본값은 비활성.
+      FANPULSE_NEWS_SYNC_MANUAL_TRIGGER_ENABLED: "${FANPULSE_NEWS_SYNC_MANUAL_TRIGGER_ENABLED:-false}"
+      FANPULSE_CHART_REFRESH_ENABLED: "${FANPULSE_CHART_REFRESH_ENABLED:-true}"
+      FANPULSE_CHART_REFRESH_CRON: "${FANPULSE_CHART_REFRESH_CRON:-0 30 10 * * MON}"
       JAVA_TOOL_OPTIONS: "-Xmx512m -Xms256m"
     depends_on:
       postgres:
@@ -80,10 +82,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-fanpulse}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fanpulse}
       DJANGO_DEBUG: "false"
+      DJANGO_RUN_MIGRATIONS: "false"
       ALLOWED_HOSTS: "localhost,127.0.0.1,django-ai"
       AI_SERVICE_ACCEPTED_KEYS: ${AI_API_KEY:-test-api-key}
     depends_on:
       postgres:
+        condition: service_healthy
+      spring:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')\""]
@@ -96,6 +101,47 @@ services:
       resources:
         limits:
           memory: 512M
+    networks:
+      - fanpulse-net
+
+  news-worker:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    container_name: fanpulse-news-worker
+    command: ["sh", "/app/scripts/run_news_worker.sh"]
+    environment:
+      USE_POSTGRES: "true"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-fanpulse}
+      POSTGRES_USER: ${POSTGRES_USER:-fanpulse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fanpulse}
+      DJANGO_DEBUG: "false"
+      NEWS_COLLECTION_PROVIDER: ${NEWS_COLLECTION_PROVIDER:-auto}
+      NEWS_COLLECTION_INTERVAL_SECONDS: "${NEWS_COLLECTION_INTERVAL_SECONDS:-1800}"
+      NEWS_COLLECTION_MAX_ARTISTS: "${NEWS_COLLECTION_MAX_ARTISTS:-30}"
+      NEWS_COLLECTION_PER_ARTIST: "${NEWS_COLLECTION_PER_ARTIST:-10}"
+      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID:-}
+      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      django-ai:
+        condition: service_healthy
+      spring:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/check_news_worker.py"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     networks:
       - fanpulse-net
 

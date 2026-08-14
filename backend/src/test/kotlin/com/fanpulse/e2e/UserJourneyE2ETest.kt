@@ -1,6 +1,5 @@
 package com.fanpulse.e2e
 
-import com.fanpulse.application.dto.identity.AuthResponse
 import com.fanpulse.application.dto.identity.GoogleLoginRequest
 import com.fanpulse.application.dto.identity.TokenResponse
 import com.fanpulse.application.identity.InvalidGoogleTokenException
@@ -11,6 +10,7 @@ import com.fanpulse.domain.identity.User
 import com.fanpulse.domain.identity.Username
 import com.fanpulse.domain.identity.port.UserPort
 import com.fanpulse.infrastructure.persistence.identity.RefreshTokenJpaRepositoryInterface
+import com.fanpulse.interfaces.rest.identity.AuthController
 import com.fanpulse.application.dto.identity.RefreshTokenRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
@@ -43,6 +43,12 @@ import java.util.*
 @ActiveProfiles("test")
 @DisplayName("User Journey E2E Tests")
 class UserJourneyE2ETest {
+
+    private data class LoginSession(
+        val userId: UUID,
+        val accessToken: String,
+        val refreshToken: String
+    )
 
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -98,7 +104,7 @@ class UserJourneyE2ETest {
     /**
      * Helper to perform Google login and extract tokens.
      */
-    private fun performGoogleLogin(idToken: String = "valid_google_id_token"): AuthResponse {
+    private fun performGoogleLogin(idToken: String = "valid_google_id_token"): LoginSession {
         every { googleLoginHandler.handle(any()) } returns testUser
 
         val request = GoogleLoginRequest(idToken = idToken)
@@ -110,7 +116,19 @@ class UserJourneyE2ETest {
             status { isOk() }
         }.andReturn()
 
-        return objectMapper.readValue(result.response.contentAsString, AuthResponse::class.java)
+        val responseBody = objectMapper.readTree(result.response.contentAsString)
+        val accessToken = requireNotNull(
+            result.response.getCookie(AuthController.ACCESS_TOKEN_COOKIE)?.value
+        ) { "Google login must set the HttpOnly access-token cookie" }
+        val refreshToken = requireNotNull(
+            result.response.getCookie(AuthController.REFRESH_TOKEN_COOKIE)?.value
+        ) { "Google login must set the HttpOnly refresh-token cookie" }
+
+        return LoginSession(
+            userId = UUID.fromString(responseBody.required("userId").asText()),
+            accessToken = accessToken,
+            refreshToken = refreshToken
+        )
     }
 
     /**

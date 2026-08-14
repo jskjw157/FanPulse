@@ -37,7 +37,7 @@ class YtDlpStreamDiscoveryAdapter(
      * - CircuitBreaker: 연속 실패 시 일시적으로 호출 차단
      * - Retry: 일시적 오류에 대해 재시도
      */
-    @CircuitBreaker(name = "ytdlp", fallbackMethod = "discoverChannelStreamsFallback")
+    @CircuitBreaker(name = "ytdlp")
     @Retry(name = "ytdlp")
     override fun discoverChannelStreams(channelHandle: String): List<DiscoveredStream> {
         val channelUrl = buildChannelStreamsUrl(channelHandle)
@@ -47,15 +47,6 @@ class YtDlpStreamDiscoveryAdapter(
         return entries.mapNotNull { entry ->
             toDiscoveredStream(entry)
         }
-    }
-
-    /**
-     * Circuit Breaker fallback: 장애 시 빈 리스트 반환
-     */
-    @Suppress("UNUSED_PARAMETER")
-    private fun discoverChannelStreamsFallback(channelHandle: String, ex: Exception): List<DiscoveredStream> {
-        logger.warn { "Circuit breaker fallback for channel $channelHandle: ${ex.message}" }
-        return emptyList()
     }
 
     private fun buildChannelStreamsUrl(handle: String): String {

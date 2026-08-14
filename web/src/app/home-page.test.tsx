@@ -4,16 +4,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/api/home', () => ({
   fetchLiveNow: vi.fn(),
   fetchUpcoming: vi.fn(),
+  fetchRecentLives: vi.fn(),
   fetchLatestNews: vi.fn(),
 }));
 
 import HomePage from './page';
-import { fetchLiveNow, fetchUpcoming, fetchLatestNews } from '@/lib/api/home';
+import {
+  fetchLiveNow,
+  fetchUpcoming,
+  fetchRecentLives,
+  fetchLatestNews,
+} from '@/lib/api/home';
 import { mockLiveNow, mockUpcoming } from '@/__mocks__/live';
 import { mockLatestNews } from '@/__mocks__/news';
 
 const mockedFetchLiveNow = vi.mocked(fetchLiveNow);
 const mockedFetchUpcoming = vi.mocked(fetchUpcoming);
+const mockedFetchRecentLives = vi.mocked(fetchRecentLives);
 const mockedFetchLatestNews = vi.mocked(fetchLatestNews);
 
 describe('HomePage', () => {
@@ -21,6 +28,7 @@ describe('HomePage', () => {
     vi.clearAllMocks();
     mockedFetchLiveNow.mockResolvedValue({ items: mockLiveNow, hasMore: false });
     mockedFetchUpcoming.mockResolvedValue({ items: mockUpcoming, hasMore: false });
+    mockedFetchRecentLives.mockResolvedValue({ items: [], hasMore: false });
     mockedFetchLatestNews.mockResolvedValue(mockLatestNews);
   });
 
@@ -59,8 +67,9 @@ describe('HomePage', () => {
     });
   });
 
-  it('shows error state when API fails', async () => {
+  it('shows error state when both core live APIs fail', async () => {
     mockedFetchLiveNow.mockRejectedValue(new Error('fail'));
+    mockedFetchUpcoming.mockRejectedValue(new Error('fail'));
 
     render(<HomePage />);
 
@@ -69,12 +78,13 @@ describe('HomePage', () => {
     });
   });
 
-  it('calls all three APIs on mount', async () => {
+  it('calls all four APIs on mount', async () => {
     render(<HomePage />);
 
     await waitFor(() => {
       expect(mockedFetchLiveNow).toHaveBeenCalledOnce();
       expect(mockedFetchUpcoming).toHaveBeenCalledOnce();
+      expect(mockedFetchRecentLives).toHaveBeenCalledOnce();
       expect(mockedFetchLatestNews).toHaveBeenCalledOnce();
     });
   });

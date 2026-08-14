@@ -2,7 +2,9 @@ package com.fanpulse.application.service.content
 
 import com.fanpulse.domain.content.News
 import com.fanpulse.domain.content.NewsCategory
+import com.fanpulse.domain.content.Artist
 import com.fanpulse.domain.content.port.NewsPort
+import com.fanpulse.infrastructure.persistence.content.ArtistJpaRepository
 import com.fanpulse.infrastructure.persistence.content.NewsJpaRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -17,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Instant
@@ -66,16 +69,28 @@ class TransactionalNewsUpserterTest {
     private lateinit var newsJpaRepository: NewsJpaRepository
 
     @Autowired
+    private lateinit var artistJpaRepository: ArtistJpaRepository
+
+    @Autowired
     private lateinit var transactionManager: PlatformTransactionManager
+
+    @Autowired
+    private lateinit var jdbcTemplate: JdbcTemplate
 
     @BeforeEach
     fun setUp() {
         newsJpaRepository.deleteAll()
+        artistJpaRepository.deleteAll()
+        jdbcTemplate.execute("ALTER TABLE news DROP CONSTRAINT IF EXISTS news_source_url_artist_id_unique")
+        jdbcTemplate.execute(
+            "ALTER TABLE news ADD CONSTRAINT news_source_url_artist_id_unique UNIQUE (source_url, artist_id)"
+        )
     }
 
     @AfterEach
     fun tearDown() {
         newsJpaRepository.deleteAll()
+        artistJpaRepository.deleteAll()
     }
 
     @Test
@@ -131,8 +146,8 @@ class TransactionalNewsUpserterTest {
     fun shouldInsertBothForSameUrlDifferentArtists() {
         // given: 같은 URL, 다른 artistId — 복수 아티스트 매칭 시나리오
         val sourceUrl = "https://example.com/news/dual-match"
-        val artistA = UUID.randomUUID()
-        val artistB = UUID.randomUUID()
+        val artistA = persistedArtistId()
+        val artistB = persistedArtistId()
         val first = sampleNews(sourceUrl = sourceUrl, artistId = artistA, title = "For Artist A")
         val second = sampleNews(sourceUrl = sourceUrl, artistId = artistB, title = "For Artist B")
 
@@ -152,6 +167,23 @@ class TransactionalNewsUpserterTest {
     }
 
     @Test
+    @DisplayName("동일 source_url + artistId 재호출은 commit 경계에서 SKIPPED_DUPLICATE가 된다")
+    fun shouldCatchDuplicateRaisedAtTransactionCommitBoundary() {
+        val sourceUrl = "https://example.com/news/commit-race"
+        val artistId = persistedArtistId()
+
+        assertEquals(
+            UpsertOutcome.INSERTED,
+            upserter.upsert(sampleNews(sourceUrl = sourceUrl, artistId = artistId)),
+        )
+        assertEquals(
+            UpsertOutcome.SKIPPED_DUPLICATE,
+            upserter.upsert(sampleNews(sourceUrl = sourceUrl, artistId = artistId)),
+        )
+        assertEquals(1, newsJpaRepository.count())
+    }
+
+    @Test
     @DisplayName("upsert 실패 후에도 DB 상태는 일관: 빈 테이블에서 미리 검증")
     fun shouldNotPersistWhenSourceUrlIsMissing() {
         // given: 일부러 검증 실패가 일어나는 케이스는 News.create 가 require 로 거름.
@@ -165,7 +197,7 @@ class TransactionalNewsUpserterTest {
     private fun sampleNews(
         sourceUrl: String,
         title: String = "Sample News Title",
-        artistId: UUID = UUID.randomUUID(),
+        artistId: UUID = persistedArtistId(),
     ): News = News.create(
         artistId = artistId,
         title = title,
@@ -175,4 +207,13 @@ class TransactionalNewsUpserterTest {
         category = NewsCategory.GENERAL,
         publishedAt = Instant.now(),
     )
+
+    private fun persistedArtistId(): UUID = artistJpaRepository.saveAndFlush(
+        Artist.create(
+            name = "Test Artist ${UUID.randomUUID()}",
+            englishName = null,
+            agency = null,
+            isGroup = false,
+        )
+    ).id
 }

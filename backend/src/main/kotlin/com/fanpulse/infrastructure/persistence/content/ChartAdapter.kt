@@ -4,6 +4,7 @@ import com.fanpulse.domain.content.Chart
 import com.fanpulse.domain.content.ChartType
 import com.fanpulse.domain.content.port.ChartPort
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.util.*
 
@@ -31,11 +32,22 @@ class ChartAdapter(
         return repository.findLatestByType(chartType)
     }
 
+    @Transactional(readOnly = true)
+    override fun findLatestBeforeType(chartType: ChartType, beforeDate: LocalDate): Chart? {
+        return repository.findLatestBeforeType(chartType, beforeDate)?.also { chart ->
+            chart.entries.size
+        }
+    }
+
     override fun findByDateRange(chartType: ChartType, startDate: LocalDate, endDate: LocalDate): List<Chart> {
         return repository.findByTypeAndDateRange(chartType, startDate, endDate)
     }
 
     override fun delete(chart: Chart) {
         repository.delete(chart)
+    }
+
+    override fun flush() {
+        repository.flush()
     }
 }

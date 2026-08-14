@@ -14,6 +14,7 @@ interface ArtistPort {
     fun findById(id: UUID): Artist?
     fun findByIds(ids: Set<UUID>): List<Artist>
     fun findByName(name: String): Artist?
+    fun findAllActiveUnpaged(): List<Artist>
     fun findAllActive(pageRequest: PageRequest): PageResult<Artist>
     fun findAll(pageRequest: PageRequest): PageResult<Artist>
     fun searchByName(query: String, pageRequest: PageRequest): PageResult<Artist>

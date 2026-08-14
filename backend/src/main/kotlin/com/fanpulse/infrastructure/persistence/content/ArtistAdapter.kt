@@ -34,6 +34,10 @@ class ArtistAdapter(
         return repository.findByName(name)
     }
 
+    override fun findAllActiveUnpaged(): List<Artist> {
+        return repository.findAllByActiveTrueOrderByNameAsc()
+    }
+
     override fun findAllActive(pageRequest: PageRequest): PageResult<Artist> {
         val pageable = PaginationConverter.toSpringPageable(pageRequest)
         val page = repository.findByActiveTrue(pageable)
