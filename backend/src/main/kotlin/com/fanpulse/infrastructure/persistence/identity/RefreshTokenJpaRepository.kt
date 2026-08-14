@@ -121,6 +121,7 @@ class RefreshTokenAdapter(
         repository.invalidateAllByUserId(userId)
     }
 
+    @Transactional
     override fun deleteExpiredTokens(): Int {
         return repository.deleteExpiredBefore(Instant.now())
     }

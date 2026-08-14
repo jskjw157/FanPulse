@@ -3,6 +3,15 @@
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def stable_public_dns(monkeypatch):
+    """뉴스 저장 테스트가 외부 DNS 가용성에 의존하지 않게 한다."""
+    monkeypatch.setattr(
+        "api.services.url_security.socket.getaddrinfo",
+        lambda host, port, type=None: [(2, 1, 6, "", ("93.184.216.34", port))],
+    )
+
+
 SAMPLE_GOOGLE_NEWS_RSS = b"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
@@ -29,7 +38,8 @@ class FakeHttpResponse:
     def __exit__(self, exc_type, exc_value, traceback):
         return False
 
-    def read(self) -> bytes:
+    def read(self, size: int = -1) -> bytes:
+        del size
         return self.body
 
 
@@ -59,6 +69,26 @@ def test_google_news_rss_crawler_maps_real_feed_fields(monkeypatch):
         "pubDateFormatted": "2026-08-13 08:29",
         "source": "Example News",
     }
+
+
+def test_google_news_rss_crawler_rejects_oversized_response(monkeypatch):
+    from api.services.news_crawler import MAX_PROVIDER_RESPONSE_BYTES, GoogleNewsRssCrawler
+
+    class OversizedResponse(FakeHttpResponse):
+        def read(self, size: int = -1) -> bytes:
+            assert size == MAX_PROVIDER_RESPONSE_BYTES + 1
+            return b"x" * size
+
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        lambda request, timeout: OversizedResponse(b""),
+    )
+
+    result = GoogleNewsRssCrawler().search("K-pop", display=10)
+
+    assert result["success"] is False
+    assert result["items"] == []
+    assert "too large" in result["error"].lower()
 
 
 @pytest.mark.django_db
@@ -93,6 +123,39 @@ def test_save_news_to_db_upserts_by_url_and_preserves_source():
 
 
 @pytest.mark.django_db
+def test_save_news_to_db_rejects_unsafe_article_urls():
+    from api.models import CrawledNews
+    from api.services.news_crawler import save_news_to_db
+
+    result = save_news_to_db([
+        {"title": "script", "originallink": "javascript:alert(1)"},
+        {"title": "loopback", "originallink": "http://127.0.0.1/admin"},
+        {"title": "private", "originallink": "http://10.0.0.5/article"},
+    ])
+
+    assert result == {"success": True, "count": 0, "error": None}
+    assert CrawledNews.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_save_news_to_db_rejects_hostname_resolving_to_private_ip(monkeypatch):
+    from api.models import CrawledNews
+    from api.services.news_crawler import save_news_to_db
+
+    monkeypatch.setattr(
+        "api.services.url_security.socket.getaddrinfo",
+        lambda host, port, type=None: [(2, 1, 6, "", ("127.0.0.1", port))],
+    )
+
+    result = save_news_to_db([
+        {"title": "private DNS", "originallink": "https://private.example/article"},
+    ])
+
+    assert result == {"success": True, "count": 0, "error": None}
+    assert CrawledNews.objects.count() == 0
+
+
+@pytest.mark.django_db
 def test_save_news_to_db_merges_artist_relations_for_existing_url():
     from api.models import CrawledNews, CrawledNewsArtist
     from api.services.news_crawler import save_news_to_db
@@ -117,6 +180,65 @@ def test_save_news_to_db_merges_artist_relations_for_existing_url():
         str(value)
         for value in CrawledNewsArtist.objects.filter(news=news).values_list("artist_id", flat=True)
     ) == {first_artist, second_artist}
+
+
+@pytest.mark.django_db
+def test_save_news_to_db_rolls_back_news_when_artist_relation_fails(monkeypatch):
+    from api.models import CrawledNews, CrawledNewsArtist
+    from api.services.news_crawler import save_news_to_db
+
+    def fail_relation_insert(*args, **kwargs):
+        raise RuntimeError("relation insert failed")
+
+    monkeypatch.setattr(CrawledNewsArtist.objects, "bulk_create", fail_relation_insert)
+
+    result = save_news_to_db([{
+        "title": "atomic article",
+        "description": "must not remain after relation failure",
+        "originallink": "https://example.com/atomic",
+        "artist_ids": ["11111111-1111-1111-1111-111111111111"],
+    }])
+
+    assert result["success"] is False
+    assert result["count"] == 0
+    assert CrawledNews.objects.count() == 0
+    assert CrawledNewsArtist.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_save_news_to_db_rolls_back_whole_batch_when_later_relation_fails(monkeypatch):
+    from api.models import CrawledNews, CrawledNewsArtist
+    from api.services.news_crawler import save_news_to_db
+
+    original_bulk_create = CrawledNewsArtist.objects.bulk_create
+    calls = 0
+
+    def fail_second_relation_insert(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError("second relation insert failed")
+        return original_bulk_create(*args, **kwargs)
+
+    monkeypatch.setattr(CrawledNewsArtist.objects, "bulk_create", fail_second_relation_insert)
+
+    result = save_news_to_db([
+        {
+            "title": "first atomic article",
+            "originallink": "https://example.com/atomic-first",
+            "artist_ids": ["11111111-1111-1111-1111-111111111111"],
+        },
+        {
+            "title": "second atomic article",
+            "originallink": "https://example.com/atomic-second",
+            "artist_ids": ["22222222-2222-2222-2222-222222222222"],
+        },
+    ])
+
+    assert result["success"] is False
+    assert result["count"] == 0
+    assert CrawledNews.objects.count() == 0
+    assert CrawledNewsArtist.objects.count() == 0
 
 
 def test_collect_news_deduplicates_urls_and_merges_artist_relations():
@@ -215,6 +337,134 @@ def test_collect_news_keeps_successful_results_when_one_query_fails():
     assert report["failed_queries"] == 1
     assert report["errors"] == ["query=FAIL: upstream timeout"]
     assert report["inserted"] == 1
+
+
+def test_collect_news_keeps_successful_results_when_one_query_raises():
+    from api.services.news_ingestion import ArtistNewsTarget, collect_news
+
+    class RaisingCrawler:
+        def search(self, query: str, display: int = 20) -> dict:
+            if "FAIL" in query:
+                raise TimeoutError("provider socket timed out\nwith control text")
+            return {
+                "success": True,
+                "items": [{
+                    "title": "real article after another query raised",
+                    "originallink": "https://example.com/real-after-raise",
+                    "link": "https://example.com/real-after-raise",
+                }],
+                "error": None,
+            }
+
+    saved = []
+
+    report = collect_news(
+        crawler=RaisingCrawler(),
+        targets=[
+            ArtistNewsTarget(
+                artist_id="11111111-1111-1111-1111-111111111111",
+                name="FAIL",
+                english_name=None,
+            ),
+            ArtistNewsTarget(
+                artist_id="22222222-2222-2222-2222-222222222222",
+                name="BTS",
+                english_name=None,
+            ),
+        ],
+        display=10,
+        source="google-news",
+        save_fn=lambda items, source: saved.extend(items) or {
+            "success": True,
+            "count": len(items),
+            "error": None,
+        },
+    )
+
+    assert len(saved) == 1
+    assert report["failed_queries"] == 1
+    assert report["errors"] == [
+        "query=FAIL: TimeoutError: provider socket timed out with control text"
+    ]
+    assert report["inserted"] == 1
+
+
+def test_collect_news_discards_unsafe_urls_before_deduplication():
+    from api.services.news_ingestion import ArtistNewsTarget, collect_news
+
+    class UnsafeCrawler:
+        def search(self, query, display):
+            return {
+                "success": True,
+                "items": [
+                    {"title": "unsafe", "originallink": "http://169.254.169.254/latest/meta-data"},
+                    {"title": "safe", "originallink": "https://example.com/real"},
+                ],
+                "error": None,
+            }
+
+    captured = []
+    report = collect_news(
+        crawler=UnsafeCrawler(),
+        targets=[ArtistNewsTarget(
+            artist_id="11111111-1111-1111-1111-111111111111",
+            name="BTS",
+            english_name=None,
+        )],
+        display=10,
+        source="google-news",
+        save_fn=lambda items, source: captured.extend(items) or {
+            "success": True,
+            "count": len(items),
+            "error": None,
+        },
+    )
+
+    assert [item["originallink"] for item in captured] == ["https://example.com/real"]
+    assert report["fetched"] == 2
+    assert report["unique"] == 1
+
+
+def test_collect_news_discards_private_dns_before_deduplication(monkeypatch):
+    from api.services.news_ingestion import ArtistNewsTarget, collect_news
+
+    monkeypatch.setattr(
+        "api.services.url_security.socket.getaddrinfo",
+        lambda host, port, type=None: [(2, 1, 6, "", ("10.0.0.7", port))],
+    )
+
+    class PrivateDnsCrawler:
+        def search(self, query: str, display: int) -> dict:
+            return {
+                "success": True,
+                "items": [{
+                    "title": "private DNS",
+                    "originallink": "https://private.example/article",
+                    "link": "https://private.example/article",
+                }],
+                "error": None,
+            }
+
+    captured = []
+    report = collect_news(
+        crawler=PrivateDnsCrawler(),
+        targets=[ArtistNewsTarget(
+            artist_id="11111111-1111-1111-1111-111111111111",
+            name="BTS",
+            english_name=None,
+        )],
+        display=10,
+        source="google-news",
+        save_fn=lambda items, source: captured.extend(items) or {
+            "success": True,
+            "count": len(items),
+            "error": None,
+        },
+    )
+
+    assert captured == []
+    assert report["unique"] == 0
+    assert report["inserted"] == 0
 
 
 def test_collect_news_command_skips_unrelated_web_system_checks():

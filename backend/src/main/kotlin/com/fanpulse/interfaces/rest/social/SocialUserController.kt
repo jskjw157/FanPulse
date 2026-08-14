@@ -29,8 +29,11 @@ class SocialUserController(private val service: SocialUserService) {
     fun addFavorite(
         @RequestAttribute("userId") userId: UUID,
         @PathVariable artistId: UUID
-    ): ResponseEntity<ApiResponse<FavoriteArtistResponse>> =
-        ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(service.addFavorite(userId, artistId)))
+    ): ResponseEntity<ApiResponse<FavoriteArtistResponse>> {
+        val result = service.addFavorite(userId, artistId)
+        val status = if (result.created) HttpStatus.CREATED else HttpStatus.OK
+        return ResponseEntity.status(status).body(ApiResponse.success(result.favorite))
+    }
 
     @DeleteMapping("/favorites/{artistId}")
     fun removeFavorite(

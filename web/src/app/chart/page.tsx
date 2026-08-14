@@ -1,17 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import PageHeader from '@/components/layout/PageHeader';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { useLatestChart } from '@/hooks/useLatestChart';
-import type { ChartEntry, ChartType } from '@/lib/api/chart';
-
-const CHARTS: Array<{ id: ChartType; name: string }> = [
-  { id: 'MELON', name: 'Melon' },
-  { id: 'BILLBOARD_US', name: 'Billboard' },
-  { id: 'BUGS', name: 'Bugs' },
-];
+import type { ChartEntry } from '@/lib/api/chart';
 
 function RankChange({ entry }: { entry: ChartEntry }) {
   if (entry.isNew) {
@@ -31,29 +24,23 @@ function RankChange({ entry }: { entry: ChartEntry }) {
 }
 
 export default function ChartPage() {
-  const [activeChart, setActiveChart] = useState<ChartType>('MELON');
-  const { chart, state, error, retry } = useLatestChart(activeChart);
+  const { chart, state, error, retry } = useLatestChart('APPLE_MUSIC');
 
   return (
     <>
-      <PageHeader title="Real-time Chart" />
+      <PageHeader title="Music Chart" />
       <PageWrapper>
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
-            {CHARTS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveChart(item.id)}
-                className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${
-                  activeChart === item.id
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
-                    : 'bg-white text-gray-600 border border-gray-200'
-                }`}
-              >
-                {item.name}
-              </button>
-            ))}
+        <div className="mx-auto max-w-4xl px-4 py-6">
+          <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-4">
+            <h1 className="font-bold text-gray-900">Apple Music Korea Top 100</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              FanPulse에 등록된 아티스트와 정확히 연결된 곡만 표시합니다.
+            </p>
+            {chart && (
+              <time className="mt-2 block text-xs text-gray-500" dateTime={chart.chartDate}>
+                차트 기준일 {chart.chartDate}
+              </time>
+            )}
           </div>
 
           {state === 'loading' && (
@@ -74,7 +61,7 @@ export default function ChartPage() {
           )}
 
           {state === 'success' && chart?.entries.length === 0 && (
-            <p className="py-12 text-center text-gray-500">등록된 차트 항목이 없습니다</p>
+            <p className="py-12 text-center text-gray-500">연결된 차트 항목이 없습니다</p>
           )}
 
           {state === 'success' && chart && chart.entries.length > 0 && (
@@ -83,13 +70,13 @@ export default function ChartPage() {
                 <Link
                   key={entry.id}
                   href={`/artists/${entry.artistId}`}
-                  className="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                  className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <span className="w-10 text-center text-lg font-bold text-gray-700">
                     {entry.rank}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-gray-900">{entry.trackTitle}</h3>
+                    <h2 className="font-bold text-gray-900">{entry.trackTitle}</h2>
                     <p className="mt-1 text-sm text-gray-600">{entry.artistName}</p>
                     <p className="mt-1 text-xs text-gray-500">
                       최고 {entry.peakRank}위 · {entry.weeksOnChart}주 차트인

@@ -2,6 +2,7 @@ package com.fanpulse.application.service.content
 
 import com.fanpulse.domain.content.News
 import com.fanpulse.domain.content.port.NewsPort
+import org.hibernate.exception.ConstraintViolationException
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -31,26 +32,63 @@ enum class UpsertOutcome {
  * 매칭되는 정상 케이스를 잘못 SKIPPED 처리하는 회귀(#272 cf4db8d 이후 발견)를 만들기 때문이다.
  */
 @Component
-class TransactionalNewsUpserter(
+class TransactionalNewsWriter(
     private val newsPort: NewsPort,
 ) {
-
-    /**
-     * [news] 를 새 트랜잭션에서 insert 한다.
-     *
-     * - 정상 insert → [UpsertOutcome.INSERTED].
-     * - DB 복합 유니크 제약 위반 ([DataIntegrityViolationException]) → [UpsertOutcome.SKIPPED_DUPLICATE].
-     *   이는 동시 배치 race 또는 외부 [NewsSyncService.existingPairs] 프리로드 누락(예: 배치 진행 중 다른 노드 insert)
-     *   상황을 모두 커버한다.
-     * - 그 외 예외는 호출자에게 그대로 전파한다 (Fail-Open 정책 — 외부 service 가 failed 카운트로 집계).
-     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun insert(news: News) {
+        newsPort.save(news)
+    }
+}
+
+/**
+ * 트랜잭션 proxy 바깥에서 insert 결과를 판정한다.
+ *
+ * DB flush/commit 중 발생한 예외는 [TransactionalNewsWriter.insert]가 반환되는 경계에서
+ * 전파되므로, 이 바깥 컴포넌트가 catch 해야 중복 race를 정확히 SKIPPED 처리할 수 있다.
+ */
+@Component
+class TransactionalNewsUpserter(
+    private val writer: TransactionalNewsWriter,
+) {
     fun upsert(news: News): UpsertOutcome {
         return try {
-            newsPort.save(news)
+            writer.insert(news)
             UpsertOutcome.INSERTED
-        } catch (_: DataIntegrityViolationException) {
-            UpsertOutcome.SKIPPED_DUPLICATE
+        } catch (exception: DataIntegrityViolationException) {
+            if (exception.isKnownDuplicate()) {
+                UpsertOutcome.SKIPPED_DUPLICATE
+            } else {
+                throw exception
+            }
         }
+    }
+
+    private fun DataIntegrityViolationException.isKnownDuplicate(): Boolean {
+        var current: Throwable? = this
+        while (current != null) {
+            if (current is ConstraintViolationException) {
+                val reportedName = current.constraintName
+                    ?.substringBefore(' ')
+                    ?.substringAfterLast('.')
+                    ?.lowercase()
+                    .orEmpty()
+                val isTargetConstraint = reportedName == NEWS_DUPLICATE_CONSTRAINT ||
+                    reportedName.startsWith("${NEWS_DUPLICATE_CONSTRAINT}_index")
+                val messageNamesTarget = current.message
+                    ?.lowercase()
+                    ?.contains(NEWS_DUPLICATE_CONSTRAINT)
+                    ?: false
+                return current.sqlException.sqlState == UNIQUE_VIOLATION_SQL_STATE &&
+                    (isTargetConstraint || messageNamesTarget)
+            }
+            current = current.cause
+        }
+        return false
+    }
+
+    companion object {
+        private const val NEWS_DUPLICATE_CONSTRAINT = "news_source_url_artist_id_unique"
+        private const val UNIQUE_VIOLATION_SQL_STATE = "23505"
     }
 }

@@ -16,7 +16,7 @@ const mockedUseLatestChart = vi.mocked(useLatestChart);
 
 const apiChart = {
   id: 'chart-1',
-  chartType: 'MELON' as const,
+  chartType: 'APPLE_MUSIC' as const,
   chartDate: '2026-08-13',
   createdAt: '2026-08-13T00:00:00Z',
   entries: [
@@ -51,6 +51,8 @@ describe('ChartPage', () => {
 
     render(<ChartPage />);
 
+    expect(mockedUseLatestChart).toHaveBeenCalledWith('APPLE_MUSIC');
+    expect(screen.getByText('Apple Music Korea Top 100')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'API Track' })).toBeInTheDocument();
     expect(screen.getByText('API Artist')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /API Track/ })).toHaveAttribute(
@@ -99,6 +101,6 @@ describe('ChartPage', () => {
 
     render(<ChartPage />);
 
-    expect(screen.getByText('등록된 차트 항목이 없습니다')).toBeInTheDocument();
+    expect(screen.getByText('연결된 차트 항목이 없습니다')).toBeInTheDocument();
   });
 });

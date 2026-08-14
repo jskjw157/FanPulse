@@ -5,8 +5,39 @@
 ALTER TABLE crawled_news
     ADD COLUMN IF NOT EXISTS origin_news TEXT;
 
+-- 수집 검색어의 실제 artists 관계를 보존한다. Django가 먼저 만들었어도 idempotent하다.
+-- 중복 뉴스 정리 전에 생성해야 기존 관계가 ON DELETE CASCADE로 소실되지 않는다.
+CREATE TABLE IF NOT EXISTS crawled_news_artists (
+    id UUID PRIMARY KEY,
+    news_id UUID NOT NULL REFERENCES crawled_news(id) ON DELETE CASCADE,
+    artist_id UUID NOT NULL,
+    CONSTRAINT ux_crawled_news_artists_news_artist UNIQUE (news_id, artist_id)
+);
+CREATE INDEX IF NOT EXISTS idx_crawled_news_artists_artist_id
+    ON crawled_news_artists(artist_id);
+
 -- URL이 같은 과거 중복 뉴스는 가장 최근 row 하나만 보존한다.
--- crawled_news는 외부 수집 스냅샷이며 다른 테이블의 FK 대상이 아니다.
+-- 삭제되는 row의 모든 artist 관계를 먼저 canonical row로 병합한다.
+WITH ranked AS (
+    SELECT id,
+           FIRST_VALUE(id) OVER (
+               PARTITION BY url
+               ORDER BY published_at DESC NULLS LAST, created_at DESC, id DESC
+           ) AS canonical_id,
+           ROW_NUMBER() OVER (
+               PARTITION BY url
+               ORDER BY published_at DESC NULLS LAST, created_at DESC, id DESC
+           ) AS duplicate_rank
+    FROM crawled_news
+    WHERE url IS NOT NULL AND BTRIM(url) <> ''
+)
+INSERT INTO crawled_news_artists (id, news_id, artist_id)
+SELECT uuid_generate_v4(), ranked.canonical_id, relation.artist_id
+FROM ranked
+JOIN crawled_news_artists relation ON relation.news_id = ranked.id
+WHERE ranked.duplicate_rank > 1
+ON CONFLICT (news_id, artist_id) DO NOTHING;
+
 WITH ranked AS (
     SELECT id,
            ROW_NUMBER() OVER (
@@ -22,16 +53,6 @@ WHERE id IN (SELECT id FROM ranked WHERE duplicate_rank > 1);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_crawled_news_url
     ON crawled_news (url)
     WHERE url IS NOT NULL AND BTRIM(url) <> '';
-
--- 수집 검색어의 실제 artists 관계를 보존한다. Django가 먼저 만들었어도 idempotent하다.
-CREATE TABLE IF NOT EXISTS crawled_news_artists (
-    id UUID PRIMARY KEY,
-    news_id UUID NOT NULL REFERENCES crawled_news(id) ON DELETE CASCADE,
-    artist_id UUID NOT NULL,
-    CONSTRAINT ux_crawled_news_artists_news_artist UNIQUE (news_id, artist_id)
-);
-CREATE INDEX IF NOT EXISTS idx_crawled_news_artists_artist_id
-    ON crawled_news_artists(artist_id);
 
 DO $$
 BEGIN

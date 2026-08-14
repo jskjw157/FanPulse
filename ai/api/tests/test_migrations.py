@@ -5,7 +5,8 @@ Phase 4 - Test 4.1: Migration 검증 테스트
 최종 테이블에 5개 AI/수집 모델 테이블 존재 확인
 Django TestCase를 사용하여 in-memory SQLite에서 검증
 """
-from django.test import TestCase
+from django.db.migrations.executor import MigrationExecutor
+from django.test import TestCase, TransactionTestCase
 from django.db import connection
 
 
@@ -127,3 +128,33 @@ class MigrationTableTest(TestCase):
             expected_ai_tables,
             msg=f"AI/수집 모델 테이블이 정확히 5개여야 합니다. 실제: {app_tables}"
         )
+
+
+class CrawledNewsArtistMigrationRollbackTest(TransactionTestCase):
+    """Flyway 소유 공유 테이블을 Django rollback이 삭제하거나 state만 되돌리지 못하게 한다."""
+
+    migrate_from = [('api', '0004_model_slimming_phase2')]
+    migrate_to = [('api', '0005_crawled_news_artist_relations')]
+
+    def setUp(self):
+        MigrationExecutor(connection).migrate(self.migrate_to)
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_rollback_is_rejected_and_relation_table_remains(self):
+        from django.db.migrations.exceptions import IrreversibleError
+
+        self.assertIn('crawled_news_artists', connection.introspection.table_names())
+
+        with self.assertRaises(IrreversibleError):
+            MigrationExecutor(connection).migrate(self.migrate_from)
+
+        self.assertIn('crawled_news_artists', connection.introspection.table_names())
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT COUNT(*) FROM django_migrations WHERE app='api' AND name='0005_crawled_news_artist_relations'"
+            )
+            self.assertEqual(cursor.fetchone()[0], 1)

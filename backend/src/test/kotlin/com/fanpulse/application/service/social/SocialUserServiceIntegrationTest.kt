@@ -8,6 +8,7 @@ import com.fanpulse.infrastructure.persistence.content.ArtistJpaRepository
 import com.fanpulse.infrastructure.persistence.identity.UserJpaRepositoryInterface
 import com.fanpulse.infrastructure.persistence.social.NotificationJpaRepository
 import com.fanpulse.infrastructure.persistence.social.UserFavoriteJpaRepository
+import com.fanpulse.infrastructure.persistence.social.UserFavoriteUpsertWriter
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -20,7 +21,7 @@ import java.time.LocalDateTime
 
 @DataJpaTest
 @ActiveProfiles("test")
-@Import(SocialUserServiceImpl::class)
+@Import(SocialUserServiceImpl::class, UserFavoriteUpsertWriter::class)
 @DisplayName("SocialUserService")
 class SocialUserServiceIntegrationTest {
     @Autowired
@@ -72,9 +73,13 @@ class SocialUserServiceIntegrationTest {
         val owner = userRepository.save(User(email = "idempotent-owner@example.com", username = "idempotent-owner"))
         val artist = artistRepository.save(Artist.create("Idempotent Artist", null, null, isGroup = true))
 
-        service.addFavorite(owner.id, artist.id)
-        service.addFavorite(owner.id, artist.id)
+        val first = service.addFavorite(owner.id, artist.id)
+        val duplicate = service.addFavorite(owner.id, artist.id)
 
+        assertThat(first.created).isTrue()
+        assertThat(duplicate.created).isFalse()
+        assertThat(first.favorite.id).isEqualTo(artist.id)
+        assertThat(duplicate.favorite.id).isEqualTo(artist.id)
         assertThat(favoriteRepository.findAllByUserIdOrderByCreatedAtDesc(owner.id)).hasSize(1)
     }
 
@@ -90,5 +95,23 @@ class SocialUserServiceIntegrationTest {
             service.markNotificationRead(owner.id, notification.id)
         }.isInstanceOf(NoSuchElementException::class.java)
         assertThat(notificationRepository.findById(notification.id).orElseThrow().isRead).isFalse()
+    }
+
+    @Test
+    fun `mark all reads only the authenticated user's notifications`() {
+        val owner = userRepository.save(User(email = "read-all-a@example.com", username = "read-all-a"))
+        val other = userRepository.save(User(email = "read-all-b@example.com", username = "read-all-b"))
+        val ownerNotification = notificationRepository.save(
+            Notification.create(owner.id, message = "owner private", type = "NEWS")
+        )
+        val otherNotification = notificationRepository.save(
+            Notification.create(other.id, message = "other private", type = "NEWS")
+        )
+
+        val updated = service.markAllNotificationsRead(owner.id)
+
+        assertThat(updated).isEqualTo(1)
+        assertThat(notificationRepository.findById(ownerNotification.id).orElseThrow().isRead).isTrue()
+        assertThat(notificationRepository.findById(otherNotification.id).orElseThrow().isRead).isFalse()
     }
 }

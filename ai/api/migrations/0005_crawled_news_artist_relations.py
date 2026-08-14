@@ -1,5 +1,6 @@
 # Generated manually: Flyway remains the physical-schema owner for shared tables.
 from django.db import migrations, models
+from django.db.migrations.exceptions import IrreversibleError
 import django.db.models.deletion
 import uuid
 
@@ -34,6 +35,13 @@ def create_relation_table(apps, schema_editor):
         ''')
 
 
+def reject_relation_table_rollback(apps, schema_editor):
+    del apps, schema_editor
+    raise IrreversibleError(
+        'crawled_news_artists is owned by Spring Flyway and cannot be rolled back by Django'
+    )
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ('api', '0004_model_slimming_phase2'),
@@ -51,7 +59,10 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.SeparateDatabaseAndState(
-            database_operations=[migrations.RunPython(create_relation_table, migrations.RunPython.noop)],
+            database_operations=[migrations.RunPython(
+                create_relation_table,
+                reject_relation_table_rollback,
+            )],
             state_operations=[
                 migrations.CreateModel(
                     name='CrawledNewsArtist',

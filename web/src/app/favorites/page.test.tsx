@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/components/auth/ProtectedRoute', () => ({ default: ({ children }: { children: React.ReactNode }) => children }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ back: vi.fn() }) }));
 vi.mock('@/hooks/useFavorites', () => ({ useFavorites: vi.fn() }));
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'user-a', email: 'a@example.com' } }),
+}));
 
 import FavoritesPage from './page';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -18,7 +21,7 @@ describe('FavoritesPage', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('renders API favorites without fabricated metrics', () => {
-    hook.mockReturnValue({ favorites: [favorite], state: 'success', error: null, retry: vi.fn(), unfollow: vi.fn(), mutatingId: null });
+    hook.mockReturnValue({ favorites: [favorite], state: 'success', error: null, retry: vi.fn(), unfollow: vi.fn(), mutatingId: null, mutationError: null });
     render(<FavoritesPage />);
     expect(screen.getByText('API Artist')).toBeInTheDocument();
     expect(screen.getByText('Real Agency')).toBeInTheDocument();
@@ -28,17 +31,17 @@ describe('FavoritesPage', () => {
   });
 
   it('shows loading, error, and empty states explicitly', () => {
-    hook.mockReturnValue({ favorites: [], state: 'loading', error: null, retry: vi.fn(), unfollow: vi.fn(), mutatingId: null });
+    hook.mockReturnValue({ favorites: [], state: 'loading', error: null, retry: vi.fn(), unfollow: vi.fn(), mutatingId: null, mutationError: null });
     const { rerender } = render(<FavoritesPage />);
     expect(screen.getByText('즐겨찾기를 불러오는 중입니다')).toBeInTheDocument();
 
     const retry = vi.fn();
-    hook.mockReturnValue({ favorites: [], state: 'error', error: '즐겨찾기를 불러올 수 없습니다', retry, unfollow: vi.fn(), mutatingId: null });
+    hook.mockReturnValue({ favorites: [], state: 'error', error: '즐겨찾기를 불러올 수 없습니다', retry, unfollow: vi.fn(), mutatingId: null, mutationError: null });
     rerender(<FavoritesPage />);
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
     expect(retry).toHaveBeenCalled();
 
-    hook.mockReturnValue({ favorites: [], state: 'success', error: null, retry: vi.fn(), unfollow: vi.fn(), mutatingId: null });
+    hook.mockReturnValue({ favorites: [], state: 'success', error: null, retry: vi.fn(), unfollow: vi.fn(), mutatingId: null, mutationError: null });
     rerender(<FavoritesPage />);
     expect(screen.getByText('좋아요한 아티스트가 없습니다')).toBeInTheDocument();
   });

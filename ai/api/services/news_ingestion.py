@@ -1,10 +1,20 @@
 """실제 뉴스 공급원 조회와 Django ORM 저장을 연결하는 배치 서비스."""
 
+import logging
 import os
 from dataclasses import dataclass
 from typing import Callable, Iterable, Mapping, Optional, Protocol
 
 from .news_crawler import GoogleNewsRssCrawler, NaverNewsCrawler, save_news_to_db
+from .url_security import first_safe_article_url
+
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_error_text(error: Exception) -> str:
+    message = " ".join(str(error).split()) or "unknown error"
+    return f"{type(error).__name__}: {message[:200]}"
 
 
 class NewsCrawler(Protocol):
@@ -92,7 +102,16 @@ def collect_news(
 
     for target in target_list:
         query = target.query
-        result = crawler.search(query, display=display)
+        try:
+            result = crawler.search(query, display=display)
+        except Exception as error:
+            logger.exception(
+                "News provider query failed for artist_id=%s source=%s",
+                target.artist_id,
+                source,
+            )
+            errors.append(f"query={target.name}: {_safe_error_text(error)}")
+            continue
         if not result.get("success"):
             errors.append(f"query={target.name}: {result.get('error') or 'unknown error'}")
             continue
@@ -100,12 +119,14 @@ def collect_news(
         items = result.get("items") or []
         fetched += len(items)
         for item in items:
-            url = (item.get("originallink") or item.get("link") or "").strip()
+            url = first_safe_article_url(item.get("originallink"), item.get("link"))
             if not url:
                 continue
             stored = items_by_url.get(url)
             if stored is None:
                 stored = dict(item)
+                stored["originallink"] = url
+                stored["link"] = url
                 stored["artist_ids"] = []
                 items_by_url[url] = stored
             if target.artist_id not in stored["artist_ids"]:

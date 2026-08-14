@@ -5,15 +5,18 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import PageHeader from '@/components/layout/PageHeader';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/contexts/AuthContext';
 
 function FavoritesContent() {
-  const { favorites, state, error, retry, unfollow, mutatingId } = useFavorites();
+  const { user } = useAuth();
+  const { favorites, state, error, retry, unfollow, mutatingId, mutationError } = useFavorites(user?.id);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader title="좋아요한 아티스트" />
       <PageWrapper>
         <main className="mx-auto max-w-3xl px-4 py-6">
+          {mutationError && <p role="alert" className="mb-4 text-sm text-red-600">{mutationError}</p>}
           {state === 'loading' && (
             <p className="py-16 text-center text-gray-500">즐겨찾기를 불러오는 중입니다</p>
           )}

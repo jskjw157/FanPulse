@@ -4,11 +4,20 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
-@Table(name = "user_favorites")
+@Table(
+    name = "user_favorites",
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uq_user_favorites",
+            columnNames = ["user_id", "artist_id"],
+        )
+    ],
+)
 class UserFavorite private constructor(
     @Id
     @Column(columnDefinition = "uuid")

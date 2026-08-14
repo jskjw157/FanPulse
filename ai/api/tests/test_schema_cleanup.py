@@ -230,10 +230,10 @@ class TestKeptModelsImportable:
 # =============================================
 
 class TestModelCount:
-    """api.models에 정확히 4개의 concrete 모델만 존재하는지 확인"""
+    """api.models에 승인된 concrete 모델만 존재하는지 확인"""
 
-    def test_only_four_concrete_models_exist(self):
-        """concrete 모델(abstract 제외)이 정확히 4개인지 확인"""
+    def test_only_approved_concrete_models_exist(self):
+        """뉴스-아티스트 관계 모델을 포함한 승인 모델 집합을 확인"""
         import api.models as models_module
         from django.db.models import Model
 
@@ -252,7 +252,13 @@ class TestModelCount:
             except AttributeError:
                 pass
 
-        expected = {'CrawledNews', 'Comment', 'CommentFilterRule', 'FilteredCommentLog'}
+        expected = {
+            'CrawledNews',
+            'CrawledNewsArtist',
+            'Comment',
+            'CommentFilterRule',
+            'FilteredCommentLog',
+        }
         actual = set(concrete_models)
 
         assert actual == expected, (

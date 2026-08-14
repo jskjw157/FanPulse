@@ -12,7 +12,7 @@ const mockedFetchLatestChart = vi.mocked(fetchLatestChart);
 
 const chart = {
   id: 'chart-1',
-  chartType: 'MELON' as const,
+  chartType: 'APPLE_MUSIC' as const,
   chartDate: '2026-08-13',
   createdAt: '2026-08-13T00:00:00Z',
   entries: [],
@@ -26,7 +26,7 @@ describe('useLatestChart', () => {
   it('loads the selected chart type', async () => {
     mockedFetchLatestChart.mockResolvedValue(chart);
 
-    const { result } = renderHook(() => useLatestChart('MELON'));
+    const { result } = renderHook(() => useLatestChart('APPLE_MUSIC'));
 
     expect(result.current.state).toBe('loading');
 
@@ -35,6 +35,6 @@ describe('useLatestChart', () => {
     });
 
     expect(result.current.chart).toEqual(chart);
-    expect(mockedFetchLatestChart).toHaveBeenCalledWith('MELON', expect.any(AbortSignal));
+    expect(mockedFetchLatestChart).toHaveBeenCalledWith('APPLE_MUSIC', expect.any(AbortSignal));
   });
 });

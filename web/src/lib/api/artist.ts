@@ -1,4 +1,14 @@
 import { apiClient } from '@/lib/api-client';
+import {
+  isIsoDate,
+  isIsoDateTime,
+  isNonEmptyString,
+  isNullableString,
+  isRecord,
+  isUuid,
+  unwrapApiResponse,
+} from '@/lib/api-response';
+import type { ApiResponse } from '@/types/api';
 
 export interface ArtistDetail {
   id: string;
@@ -14,8 +24,22 @@ export interface ArtistDetail {
   createdAt: string;
 }
 
-interface ApiResponse<T> {
-  data: T;
+function isArtistDetail(value: unknown): value is ArtistDetail {
+  if (!isRecord(value)) return false;
+  return (
+    isUuid(value.id) &&
+    isNonEmptyString(value.name) &&
+    isNullableString(value.englishName) &&
+    isNullableString(value.agency) &&
+    isNullableString(value.description) &&
+    isNullableString(value.profileImageUrl) &&
+    typeof value.isGroup === 'boolean' &&
+    Array.isArray(value.members) &&
+    value.members.every(isNonEmptyString) &&
+    typeof value.active === 'boolean' &&
+    (value.debutDate === null || isIsoDate(value.debutDate)) &&
+    isIsoDateTime(value.createdAt)
+  );
 }
 
 export async function fetchArtistDetail(
@@ -23,5 +47,9 @@ export async function fetchArtistDetail(
   signal?: AbortSignal
 ): Promise<ArtistDetail> {
   const response = await apiClient.get<ApiResponse<ArtistDetail>>(`/artists/${id}`, { signal });
-  return response.data.data;
+  return unwrapApiResponse(
+    response.data,
+    '아티스트 API 응답이 올바르지 않습니다.',
+    isArtistDetail
+  );
 }

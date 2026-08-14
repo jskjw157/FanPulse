@@ -11,6 +11,10 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ refreshAuth: vi.fn() }),
+}))
+
 import LoginPage from './page'
 
 describe('LoginPage', () => {
@@ -42,9 +46,9 @@ describe('LoginPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('navigates to home on browse', () => {
+  it('does not expose an authentication bypass', () => {
     render(<LoginPage />)
-    fireEvent.click(screen.getByText('둘러보기'))
-    expect(pushMock).toHaveBeenCalledWith('/')
+    expect(screen.queryByText('둘러보기')).not.toBeInTheDocument()
+    expect(pushMock).not.toHaveBeenCalled()
   })
 })

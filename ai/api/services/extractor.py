@@ -16,9 +16,10 @@
 #######################
 """
 import logging
-import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+
+from .url_security import ExternalResponseError, UnsafeUrlError, safe_fetch_url
 
 logger = logging.getLogger(__name__)
 
@@ -81,10 +82,26 @@ class ArticleExtractor:
                 'error': 에러 메시지 (str or None)
             }
         """
+        try:
+            response = safe_fetch_url(
+                url,
+                timeout=self.TIMEOUT,
+                user_agent=self.USER_AGENT,
+            )
+        except UnsafeUrlError:
+            logger.warning("Blocked unsafe article URL")
+            return self._failure("URL is not allowed")
+        except (ExternalResponseError, OSError, TimeoutError):
+            logger.warning("Article download failed", exc_info=True)
+            return self._failure("Article download failed")
+        except Exception:
+            logger.exception("Unexpected article download failure")
+            return self._failure("Article download failed")
+
         #######################
-        # 1차 시도: newspaper3k
+        # 1차 시도: newspaper3k (네트워크 요청 없이 검증된 HTML만 파싱)
         #######################
-        result = self._extract_with_newspaper(url)
+        result = self._extract_with_newspaper(response.url, response.body)
         if result['success']:
             logger.info(f"Successfully extracted with newspaper3k: {url}")
             return result
@@ -94,7 +111,7 @@ class ArticleExtractor:
         #######################
         # 2차 시도: BeautifulSoup
         #######################
-        result = self._extract_with_bs4(url)
+        result = self._extract_with_bs4(response.url, response.body)
         if result['success']:
             logger.info(f"Successfully extracted with BeautifulSoup: {url}")
             return result
@@ -102,10 +119,21 @@ class ArticleExtractor:
         logger.error(f"All extraction methods failed for: {url}")
         return result
 
+    @staticmethod
+    def _failure(error):
+        return {
+            'success': False,
+            'text': None,
+            'title': None,
+            'source': None,
+            'published_at': None,
+            'error': error,
+        }
+
     #######################
     # newspaper3k 추출
     #######################
-    def _extract_with_newspaper(self, url):
+    def _extract_with_newspaper(self, url, html_content):
         """
         newspaper3k 라이브러리를 사용한 기사 추출
 
@@ -131,7 +159,7 @@ class ArticleExtractor:
             # 기사 객체 생성 및 다운로드
             #######################
             article = Article(url, language='ko')  # 한국어 설정
-            article.download()  # HTML 다운로드
+            article.set_html(html_content.decode('utf-8', errors='replace'))
             article.parse()     # 내용 파싱
 
             #######################
@@ -201,7 +229,7 @@ class ArticleExtractor:
     #######################
     # BeautifulSoup 추출 (폴백)
     #######################
-    def _extract_with_bs4(self, url):
+    def _extract_with_bs4(self, url, html_content):
         """
         requests + BeautifulSoup을 사용한 기사 추출 (폴백)
 
@@ -218,20 +246,9 @@ class ArticleExtractor:
         """
         try:
             #######################
-            # HTML 다운로드
-            #######################
-            response = requests.get(
-                url,
-                headers=self.headers,
-                timeout=self.TIMEOUT,
-                allow_redirects=True  # 리다이렉트 허용
-            )
-            response.raise_for_status()  # HTTP 에러 시 예외 발생
-
-            #######################
             # HTML 파싱
             #######################
-            soup = BeautifulSoup(response.content, 'lxml')
+            soup = BeautifulSoup(html_content, 'lxml')
 
             #######################
             # 제목 추출
@@ -310,26 +327,6 @@ class ArticleExtractor:
         #######################
         # 예외 처리
         #######################
-        except requests.Timeout:
-            # 요청 타임아웃
-            return {
-                'success': False,
-                'text': None,
-                'title': None,
-                'source': None,
-                'published_at': None,
-                'error': 'Request timeout'
-            }
-        except requests.RequestException as e:
-            # 네트워크 오류
-            return {
-                'success': False,
-                'text': None,
-                'title': None,
-                'source': None,
-                'published_at': None,
-                'error': f'Request failed: {str(e)}'
-            }
         except Exception as e:
             # 기타 오류
             logger.exception("BeautifulSoup extraction failed")

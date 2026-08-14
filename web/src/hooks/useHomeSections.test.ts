@@ -5,15 +5,22 @@ import { useHomeSections } from './useHomeSections';
 vi.mock('@/lib/api/home', () => ({
   fetchLiveNow: vi.fn(),
   fetchUpcoming: vi.fn(),
+  fetchRecentLives: vi.fn(),
   fetchLatestNews: vi.fn(),
 }));
 
-import { fetchLiveNow, fetchUpcoming, fetchLatestNews } from '@/lib/api/home';
+import {
+  fetchLiveNow,
+  fetchUpcoming,
+  fetchRecentLives,
+  fetchLatestNews,
+} from '@/lib/api/home';
 import { mockLiveNow, mockUpcoming } from '@/__mocks__/live';
 import { mockLatestNews } from '@/__mocks__/news';
 
 const mockedFetchLiveNow = vi.mocked(fetchLiveNow);
 const mockedFetchUpcoming = vi.mocked(fetchUpcoming);
+const mockedFetchRecentLives = vi.mocked(fetchRecentLives);
 const mockedFetchLatestNews = vi.mocked(fetchLatestNews);
 
 describe('useHomeSections', () => {
@@ -24,6 +31,7 @@ describe('useHomeSections', () => {
   it('starts in loading state', () => {
     mockedFetchLiveNow.mockReturnValue(new Promise(() => {}));
     mockedFetchUpcoming.mockReturnValue(new Promise(() => {}));
+    mockedFetchRecentLives.mockReturnValue(new Promise(() => {}));
     mockedFetchLatestNews.mockReturnValue(new Promise(() => {}));
 
     const { result } = renderHook(() => useHomeSections());
@@ -33,6 +41,7 @@ describe('useHomeSections', () => {
   it('fetches all data in parallel and returns success state', async () => {
     mockedFetchLiveNow.mockResolvedValue({ items: mockLiveNow, hasMore: false });
     mockedFetchUpcoming.mockResolvedValue({ items: mockUpcoming, hasMore: false });
+    mockedFetchRecentLives.mockResolvedValue({ items: [], hasMore: false });
     mockedFetchLatestNews.mockResolvedValue(mockLatestNews);
 
     const { result } = renderHook(() => useHomeSections());
@@ -43,13 +52,15 @@ describe('useHomeSections', () => {
 
     expect(result.current.liveNow).toEqual(mockLiveNow);
     expect(result.current.upcoming).toEqual(mockUpcoming);
+    expect(result.current.recentLives).toEqual([]);
     expect(result.current.latestNews).toEqual(mockLatestNews);
     expect(result.current.error).toBeNull();
   });
 
-  it('sets error state when any API fails', async () => {
+  it('sets error state when both core live APIs fail', async () => {
     mockedFetchLiveNow.mockRejectedValue(new Error('네트워크 오류'));
-    mockedFetchUpcoming.mockResolvedValue({ items: mockUpcoming, hasMore: false });
+    mockedFetchUpcoming.mockRejectedValue(new Error('네트워크 오류'));
+    mockedFetchRecentLives.mockResolvedValue({ items: [], hasMore: false });
     mockedFetchLatestNews.mockResolvedValue(mockLatestNews);
 
     const { result } = renderHook(() => useHomeSections());
@@ -61,9 +72,10 @@ describe('useHomeSections', () => {
     expect(result.current.error).toBe('데이터를 불러올 수 없습니다');
   });
 
-  it('calls all three APIs', async () => {
+  it('calls all four APIs', async () => {
     mockedFetchLiveNow.mockResolvedValue({ items: [], hasMore: false });
     mockedFetchUpcoming.mockResolvedValue({ items: [], hasMore: false });
+    mockedFetchRecentLives.mockResolvedValue({ items: [], hasMore: false });
     mockedFetchLatestNews.mockResolvedValue([]);
 
     renderHook(() => useHomeSections());
@@ -71,6 +83,7 @@ describe('useHomeSections', () => {
     await waitFor(() => {
       expect(mockedFetchLiveNow).toHaveBeenCalledOnce();
       expect(mockedFetchUpcoming).toHaveBeenCalledOnce();
+      expect(mockedFetchRecentLives).toHaveBeenCalledOnce();
       expect(mockedFetchLatestNews).toHaveBeenCalledOnce();
     });
   });
@@ -78,6 +91,7 @@ describe('useHomeSections', () => {
   it('refresh re-fetches all data', async () => {
     mockedFetchLiveNow.mockResolvedValue({ items: mockLiveNow, hasMore: false });
     mockedFetchUpcoming.mockResolvedValue({ items: mockUpcoming, hasMore: false });
+    mockedFetchRecentLives.mockResolvedValue({ items: [], hasMore: false });
     mockedFetchLatestNews.mockResolvedValue(mockLatestNews);
 
     const { result } = renderHook(() => useHomeSections());
@@ -89,12 +103,16 @@ describe('useHomeSections', () => {
     vi.clearAllMocks();
     mockedFetchLiveNow.mockResolvedValue({ items: [], hasMore: false });
     mockedFetchUpcoming.mockResolvedValue({ items: [], hasMore: false });
+    mockedFetchRecentLives.mockResolvedValue({ items: [], hasMore: false });
     mockedFetchLatestNews.mockResolvedValue([]);
 
     await result.current.refresh();
 
     await waitFor(() => {
       expect(mockedFetchLiveNow).toHaveBeenCalledOnce();
+      expect(mockedFetchUpcoming).toHaveBeenCalledOnce();
+      expect(mockedFetchRecentLives).toHaveBeenCalledOnce();
+      expect(mockedFetchLatestNews).toHaveBeenCalledOnce();
       expect(result.current.liveNow).toEqual([]);
     });
   });

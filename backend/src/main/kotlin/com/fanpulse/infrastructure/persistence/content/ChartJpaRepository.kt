@@ -30,6 +30,18 @@ interface ChartJpaRepository : JpaRepository<Chart, UUID> {
     """)
     fun findLatestByType(@Param("chartType") chartType: ChartType): Chart?
 
+    @Query("""
+        SELECT c FROM Chart c
+        WHERE c.chartType = :chartType
+        AND c.chartDate < :beforeDate
+        ORDER BY c.chartDate DESC
+        LIMIT 1
+    """)
+    fun findLatestBeforeType(
+        @Param("chartType") chartType: ChartType,
+        @Param("beforeDate") beforeDate: LocalDate,
+    ): Chart?
+
     /**
      * Find charts by type and date range.
      */

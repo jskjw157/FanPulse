@@ -14,6 +14,11 @@ data class FavoriteArtistResponse(
     val followedAt: LocalDateTime
 )
 
+data class FavoriteAddResult(
+    val favorite: FavoriteArtistResponse,
+    val created: Boolean,
+)
+
 data class NotificationResponse(
     val id: UUID,
     val type: String?,
@@ -34,7 +39,7 @@ data class NotificationResponse(
 
 interface SocialUserService {
     fun getFavorites(userId: UUID): List<FavoriteArtistResponse>
-    fun addFavorite(userId: UUID, artistId: UUID): FavoriteArtistResponse
+    fun addFavorite(userId: UUID, artistId: UUID): FavoriteAddResult
     fun removeFavorite(userId: UUID, artistId: UUID)
     fun getNotifications(userId: UUID, unreadOnly: Boolean): List<NotificationResponse>
     fun markNotificationRead(userId: UUID, notificationId: UUID): NotificationResponse

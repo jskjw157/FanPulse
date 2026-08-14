@@ -32,4 +32,27 @@ describe('fetchArtistDetail', () => {
     await expect(fetchArtistDetail(artist.id)).resolves.toEqual(artist);
     expect(mockedGet).toHaveBeenCalledWith(`/artists/${artist.id}`, { signal: undefined });
   });
+
+  it.each([
+    { success: false, data: artist },
+    { success: true, data: null },
+  ])('rejects an unsuccessful or empty API envelope: %o', async (payload) => {
+    mockedGet.mockResolvedValue({ data: payload });
+
+    await expect(fetchArtistDetail(artist.id)).rejects.toThrow(
+      '아티스트 API 응답이 올바르지 않습니다.'
+    );
+  });
+
+  it.each([
+    { ...artist, id: 'not-a-uuid' },
+    { ...artist, members: ['Karina', 42] },
+    { ...artist, debutDate: '2020-02-31' },
+  ])('rejects malformed successful artist payload: %o', async (data) => {
+    mockedGet.mockResolvedValue({ data: { success: true, data } });
+
+    await expect(fetchArtistDetail(artist.id)).rejects.toThrow(
+      '아티스트 API 응답이 올바르지 않습니다.'
+    );
+  });
 });

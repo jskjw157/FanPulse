@@ -5,6 +5,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import PageHeader from '@/components/layout/PageHeader';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useAuth } from '@/contexts/AuthContext';
 
 function formatCreatedAt(value: string) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -14,7 +15,8 @@ function formatCreatedAt(value: string) {
 
 function NotificationsContent() {
   const [unreadOnly, setUnreadOnly] = useState(false);
-  const { notifications, state, error, retry, markAllRead, markingAll } = useNotifications(unreadOnly);
+  const { user } = useAuth();
+  const { notifications, state, error, retry, markAllRead, markingAll, mutationError } = useNotifications(unreadOnly, user?.id);
   const unreadCount = notifications.filter((row) => !row.isRead).length;
 
   return (
@@ -36,6 +38,7 @@ function NotificationsContent() {
       />
       <PageWrapper>
         <main className="mx-auto max-w-3xl px-4 py-6">
+          {mutationError && <p role="alert" className="mb-4 text-sm text-red-600">{mutationError}</p>}
           <div className="mb-5 flex gap-2" role="group" aria-label="알림 필터">
             <button
               type="button"

@@ -1,6 +1,7 @@
 package com.fanpulse.interfaces.rest.social
 
 import com.fanpulse.application.service.social.FavoriteArtistResponse
+import com.fanpulse.application.service.social.FavoriteAddResult
 import com.fanpulse.application.service.social.NotificationResponse
 import com.fanpulse.application.service.social.SocialUserService
 import com.fanpulse.infrastructure.security.JwtTokenProvider
@@ -51,14 +52,26 @@ class SocialUserControllerTest {
 
     @Test
     @WithMockUser
-    fun `adds and removes the authenticated user's favorite`() {
-        every { service.addFavorite(userId, artistId) } returns favorite()
+    fun `returns 201 for a newly added favorite and removes it`() {
+        every { service.addFavorite(userId, artistId) } returns FavoriteAddResult(favorite(), created = true)
         every { service.removeFavorite(userId, artistId) } returns Unit
 
         mockMvc.post("/api/v1/users/me/favorites/$artistId") { requestAttr("userId", userId) }
             .andExpect { status { isCreated() } }
         mockMvc.delete("/api/v1/users/me/favorites/$artistId") { requestAttr("userId", userId) }
             .andExpect { status { isNoContent() } }
+    }
+
+    @Test
+    @WithMockUser
+    fun `returns 200 for an already existing favorite`() {
+        every { service.addFavorite(userId, artistId) } returns FavoriteAddResult(favorite(), created = false)
+
+        mockMvc.post("/api/v1/users/me/favorites/$artistId") { requestAttr("userId", userId) }
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.data.id") { value(artistId.toString()) }
+            }
     }
 
     @Test

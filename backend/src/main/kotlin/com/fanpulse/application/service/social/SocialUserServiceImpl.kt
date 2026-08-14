@@ -4,6 +4,7 @@ import com.fanpulse.domain.social.UserFavorite
 import com.fanpulse.infrastructure.persistence.content.ArtistJpaRepository
 import com.fanpulse.infrastructure.persistence.social.NotificationJpaRepository
 import com.fanpulse.infrastructure.persistence.social.UserFavoriteJpaRepository
+import com.fanpulse.infrastructure.persistence.social.UserFavoriteUpsertWriter
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -12,6 +13,7 @@ import java.util.UUID
 @Transactional(readOnly = true)
 class SocialUserServiceImpl(
     private val favoriteRepository: UserFavoriteJpaRepository,
+    private val favoriteUpsertWriter: UserFavoriteUpsertWriter,
     private val notificationRepository: NotificationJpaRepository,
     private val artistRepository: ArtistJpaRepository
 ) : SocialUserService {
@@ -26,12 +28,19 @@ class SocialUserServiceImpl(
     }
 
     @Transactional
-    override fun addFavorite(userId: UUID, artistId: UUID): FavoriteArtistResponse {
+    override fun addFavorite(userId: UUID, artistId: UUID): FavoriteAddResult {
         val artist = artistRepository.findById(artistId)
             .orElseThrow { NoSuchElementException("Artist not found: $artistId") }
+        val candidate = UserFavorite.create(userId, artistId)
+        val created = favoriteUpsertWriter.insertIfAbsent(
+            id = candidate.id,
+            userId = candidate.userId,
+            artistId = candidate.artistId,
+            createdAt = candidate.createdAt,
+        ) == 1
         val favorite = favoriteRepository.findByUserIdAndArtistId(userId, artistId)
-            ?: favoriteRepository.save(UserFavorite.create(userId, artistId))
-        return favoriteResponse(artist, favorite)
+            ?: error("Favorite upsert completed without a readable row")
+        return FavoriteAddResult(favoriteResponse(artist, favorite), created)
     }
 
     @Transactional

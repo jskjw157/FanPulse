@@ -73,7 +73,7 @@ class AuthServiceImpl(
      * @throws InvalidTokenException 토큰이 유효하지 않거나 리프레시 토큰이 아닌 경우
      * @throws RefreshTokenReusedException 이미 사용된 토큰이 재사용된 경우 (보안 침해 감지)
      */
-    @Transactional
+    @Transactional(noRollbackFor = [RefreshTokenReusedException::class])
     override fun refreshToken(request: RefreshTokenRequest): TokenResponse {
         val refreshToken = request.refreshToken
         logger.debug { "토큰 갱신 요청" }

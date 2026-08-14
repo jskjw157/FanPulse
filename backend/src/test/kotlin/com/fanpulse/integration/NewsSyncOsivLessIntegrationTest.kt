@@ -25,9 +25,7 @@ import java.util.UUID
 /**
  * [com.fanpulse.application.service.content.NewsSyncServiceImpl] 의 cron-context (OSIV-less) 통합 테스트.
  *
- * **목적**: `Artist._members` (`@ElementCollection`, FetchType.LAZY) 를
- * [com.fanpulse.domain.content.NewsMatcher.match] 에서 접근할 때
- * `LazyInitializationException` 이 발생하지 않는지 cron 경로와 동일한 컨텍스트로 검증한다.
+ * **목적**: 수집 시 확정한 artist UUID relation이 cron 경로에서도 그대로 동기화되는지 검증한다.
  *
  * **OSIV 우회 전략**:
  * - `spring.jpa.open-in-view=false` 로 설정하여 Spring 의 OSIV 인터셉터를 끈다.
@@ -35,10 +33,7 @@ import java.util.UUID
  *   `OpenEntityManagerInViewFilter` 의 보호도 받지 않는다. 이는 운영 환경의 cron 스케줄러
  *   ([com.fanpulse.infrastructure.scheduler.NewsSyncScheduler]) 호출 컨텍스트와 동일하다.
  *
- * **회귀 시나리오**:
- * - 수정 전: `syncRecent` 에 `@Transactional` 부재 → 매처가 `artist.members` 접근 시
- *   세션이 닫혀 있어 `LazyInitializationException` → 테스트 실패.
- * - 수정 후: `@Transactional(readOnly = true)` 가 외부 세션을 유지 → 매칭 성공 → insert 1건.
+ * 기사 제목/본문 이름으로 artist 관계를 추측하지 않는다.
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -94,20 +89,18 @@ class NewsSyncOsivLessIntegrationTest {
 
     /**
      * 회귀 가드 시나리오:
-     * 1. 그룹 아티스트 ("에스파", member="카리나") 영속화 — `_members` 는 LAZY collection.
-     * 2. 멤버명만 포함하는 crawled_news 1건 영속화 ("카리나 신곡 발표").
+     * 1. 그룹 아티스트를 영속화한다.
+     * 2. 해당 UUID relation을 가진 crawled_news 1건을 영속화한다.
      * 3. OSIV 가 꺼진 상태로 [NewsSyncService.syncRecent] 직접 호출 (cron 컨텍스트 모방).
-     * 4. 매칭이 정상 동작하여 inserted=1 이어야 한다.
-     *    - 수정 전이라면 `LazyInitializationException` 으로 syncRecent 가 실패하거나
-     *      매칭에 실패하여 inserted=0 이 된다.
+     * 4. 명시적 relation 동기화가 성공하여 inserted=1 이어야 한다.
      */
     @Test
-    @DisplayName("OSIV-less 컨텍스트에서 멤버명 기반 매칭이 LazyInit 없이 성공한다 (cron 회귀 가드)")
-    fun shouldMatchByMemberNameWithoutLazyInitInCronContext() {
-        // given: 멤버를 가진 그룹 아티스트 영속화
+    @DisplayName("OSIV-less cron 컨텍스트에서 명시적 artist relation이 동기화된다")
+    fun shouldSyncExplicitArtistRelationInCronContext() {
+        // given: 그룹 아티스트 영속화
         val groupName = "에스파"
         val memberName = "카리나"
-        txTemplate.execute {
+        val artistId = txTemplate.execute {
             val artist = Artist.create(
                 name = groupName,
                 englishName = "aespa",
@@ -115,10 +108,10 @@ class NewsSyncOsivLessIntegrationTest {
                 isGroup = true,
             )
             artist.addMember(memberName)
-            artistRepository.save(artist)
-        }
+            artistRepository.save(artist).id
+        }!!
 
-        // and: 멤버명만 포함하는 crawled_news 영속화 (그룹명 미포함 → members lazy load 필수)
+        // and: 본문 표기와 무관하게 확정 UUID relation을 가진 crawled_news 영속화
         val crawledId = UUID.randomUUID()
         val crawledUrl = "https://news.test/lazy-init-guard"
         txTemplate.execute {
@@ -132,6 +125,7 @@ class NewsSyncOsivLessIntegrationTest {
                 source = "테스트신문",
                 publishedAt = LocalDateTime.now().minusMinutes(30),
                 createdAt = LocalDateTime.now().minusMinutes(20),
+                artistIds = setOf(artistId),
             )
             crawledNewsRepository.save(entity)
         }
@@ -139,12 +133,12 @@ class NewsSyncOsivLessIntegrationTest {
         // when: cron 과 동일한 컨텍스트 — OSIV off + non-web 호출
         val report = newsSyncService.syncRecent(limit = 100)
 
-        // then: members lazy load 가 외부 readOnly 트랜잭션 안에서 정상 처리되어 매칭/삽입 성공
+        // then: 명시적 relation으로 삽입 성공
         assertEquals(1, report.total, "1건 입력")
         assertEquals(
             1,
             report.inserted,
-            "members LAZY collection 접근이 LazyInitException 없이 매칭에 도달해야 한다",
+            "명시적 artist UUID relation이 cron 경로에서도 보존되어야 한다",
         )
         assertEquals(0, report.failed, "예외/실패 0건이어야 한다")
         assertTrue(report.errors.isEmpty(), "에러 목록은 비어 있어야 한다 (got=${report.errors})")
@@ -160,19 +154,20 @@ class NewsSyncOsivLessIntegrationTest {
     @Test
     @DisplayName("동일 URL 이 두 아티스트에 매칭되면 news 2건이 모두 INSERT 된다 (Critical 회귀 가드)")
     fun shouldInsertBothNewsForDualArtistMatchInCronContext() {
-        // given: 두 그룹 아티스트 영속화 — 둘 다 title 에 그룹명이 있으므로 NewsMatcher 가 둘 다 매칭
+        // given: 두 그룹 아티스트 영속화
         val groupAName = "에스파"
         val groupBName = "뉴진스"
-        txTemplate.execute {
-            artistRepository.save(
+        val artistIds = txTemplate.execute {
+            val first = artistRepository.save(
                 Artist.create(name = groupAName, englishName = "aespa", agency = "SM", isGroup = true)
             )
-            artistRepository.save(
+            val second = artistRepository.save(
                 Artist.create(name = groupBName, englishName = "NewJeans", agency = "ADOR", isGroup = true)
             )
-        }
+            setOf(first.id, second.id)
+        }!!
 
-        // and: 동일 URL 의 crawled_news 1건 — 두 그룹명 모두 포함
+        // and: 동일 URL에 두 확정 artist relation을 가진 crawled_news 1건
         val crawledId = UUID.randomUUID()
         val crawledUrl = "https://news.test/dual-artist-match-${crawledId}"
         txTemplate.execute {
@@ -186,6 +181,7 @@ class NewsSyncOsivLessIntegrationTest {
                 source = "테스트신문",
                 publishedAt = LocalDateTime.now().minusMinutes(15),
                 createdAt = LocalDateTime.now().minusMinutes(10),
+                artistIds = artistIds,
             )
             crawledNewsRepository.save(entity)
         }

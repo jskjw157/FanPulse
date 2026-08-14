@@ -20,7 +20,18 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
+from .url_security import first_safe_article_url
+
 logger = logging.getLogger(__name__)
+
+MAX_PROVIDER_RESPONSE_BYTES = 2 * 1024 * 1024
+
+
+def _read_limited_response(response, max_bytes: int = MAX_PROVIDER_RESPONSE_BYTES) -> bytes:
+    body = response.read(max_bytes + 1)
+    if len(body) > max_bytes:
+        raise ValueError("External provider response is too large")
+    return body
 
 # news_data 폴더 경로 설정
 NEWS_DATA_DIR = Path(__file__).parent.parent.parent / "news_data"
@@ -47,44 +58,46 @@ def save_news_to_db(items: list, source: str = 'naver') -> dict:
     try:
         from api.models import CrawledNews, CrawledNewsArtist
         from dateutil import parser as date_parser
+        from django.db import transaction
 
         saved_count = 0
-        for item in items:
-            # 발행일 파싱
-            published_at = None
-            if item.get('pubDate'):
-                try:
-                    published_at = date_parser.parse(item['pubDate'])
-                except (TypeError, ValueError, OverflowError):
-                    logger.warning("뉴스 발행일 파싱 실패: %s", item.get('pubDate'))
+        with transaction.atomic():
+            for item in items:
+                # 발행일 파싱
+                published_at = None
+                if item.get('pubDate'):
+                    try:
+                        published_at = date_parser.parse(item['pubDate'])
+                    except (TypeError, ValueError, OverflowError):
+                        logger.warning("뉴스 발행일 파싱 실패: %s", item.get('pubDate'))
 
-            url = (item.get('originallink') or item.get('link') or '').strip()
-            if not url:
-                logger.warning("URL 없는 뉴스 스킵: %s", item.get('title', '')[:80])
-                continue
+                url = first_safe_article_url(item.get('originallink'), item.get('link'))
+                if not url:
+                    logger.warning("허용 가능한 URL 없는 뉴스 스킵: %s", item.get('title', '')[:80])
+                    continue
 
-            origin_news = item.get('origainal_news') or item.get('original_news') or ''
-            news, created = CrawledNews.objects.update_or_create(
-                url=url[:500],
-                defaults={
-                    'title': (item.get('title') or '제목 없음')[:255],
-                    'content': item.get('description') or '',
-                    'origin_news': origin_news,
-                    'thumbnail_url': item.get('thumbnail_url'),
-                    'source': (item.get('source') or source)[:100],
-                    'published_at': published_at,
-                },
-            )
-            artist_ids = {
-                artist_id for artist_id in (item.get('artist_ids') or []) if artist_id
-            }
-            if artist_ids:
-                CrawledNewsArtist.objects.bulk_create(
-                    [CrawledNewsArtist(news=news, artist_id=artist_id) for artist_id in artist_ids],
-                    ignore_conflicts=True,
+                origin_news = item.get('origainal_news') or item.get('original_news') or ''
+                news, created = CrawledNews.objects.update_or_create(
+                    url=url[:500],
+                    defaults={
+                        'title': (item.get('title') or '제목 없음')[:255],
+                        'content': item.get('description') or '',
+                        'origin_news': origin_news,
+                        'thumbnail_url': item.get('thumbnail_url'),
+                        'source': (item.get('source') or source)[:100],
+                        'published_at': published_at,
+                    },
                 )
-            if created:
-                saved_count += 1
+                artist_ids = {
+                    artist_id for artist_id in (item.get('artist_ids') or []) if artist_id
+                }
+                if artist_ids:
+                    CrawledNewsArtist.objects.bulk_create(
+                        [CrawledNewsArtist(news=news, artist_id=artist_id) for artist_id in artist_ids],
+                        ignore_conflicts=True,
+                    )
+                if created:
+                    saved_count += 1
 
         logger.info(f"DB 저장 완료: {saved_count}개")
         return {
@@ -252,7 +265,7 @@ class GoogleNewsRssCrawler:
 
         try:
             with urllib.request.urlopen(request, timeout=10) as response:
-                root = ET.fromstring(response.read())
+                root = ET.fromstring(_read_limited_response(response))
 
             items = []
             for node in root.findall("./channel/item")[:max(1, min(display, 100))]:
@@ -331,7 +344,7 @@ class NaverNewsCrawler:
             request.add_header("X-Naver-Client-Secret", self.client_secret)
 
             with urllib.request.urlopen(request, timeout=10) as response:
-                data = json.loads(response.read().decode("utf-8"))
+                data = json.loads(_read_limited_response(response).decode("utf-8"))
 
             items = []
             for item in data.get("items", []):

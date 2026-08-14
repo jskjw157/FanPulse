@@ -9,4 +9,5 @@ interface UserFavoriteJpaRepository : JpaRepository<UserFavorite, UUID> {
     fun findByUserIdAndArtistId(userId: UUID, artistId: UUID): UserFavorite?
     fun existsByUserIdAndArtistId(userId: UUID, artistId: UUID): Boolean
     fun deleteByUserIdAndArtistId(userId: UUID, artistId: UUID): Long
+
 }

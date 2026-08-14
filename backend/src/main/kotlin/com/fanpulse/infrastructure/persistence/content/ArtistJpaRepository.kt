@@ -25,6 +25,8 @@ interface ArtistJpaRepository : JpaRepository<Artist, UUID> {
     @Query("SELECT a FROM Artist a WHERE a.id IN :ids")
     fun findByIdIn(@Param("ids") ids: Set<UUID>): List<Artist>
 
+    fun findAllByActiveTrueOrderByNameAsc(): List<Artist>
+
     /**
      * Find all active artists with pagination.
      */

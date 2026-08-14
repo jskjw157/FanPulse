@@ -4,27 +4,59 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AsyncState } from '@/types/common';
 import { fetchFavorites, removeFavorite, type FavoriteArtist } from '@/lib/api/social';
 
-export function useFavorites() {
-  const [favorites, setFavorites] = useState<FavoriteArtist[]>([]);
-  const [state, setState] = useState<AsyncState>('loading');
-  const [error, setError] = useState<string | null>(null);
-  const [mutatingId, setMutatingId] = useState<string | null>(null);
+interface FavoritesSnapshot {
+  userId: string | undefined;
+  favorites: FavoriteArtist[];
+  state: AsyncState;
+  error: string | null;
+}
+
+interface FavoriteMutationState {
+  userId: string | undefined;
+  mutatingId: string | null;
+  error: string | null;
+}
+
+export function useFavorites(userId: string | undefined) {
+  const [snapshot, setSnapshot] = useState<FavoritesSnapshot>({
+    userId,
+    favorites: [],
+    state: 'loading',
+    error: null,
+  });
+  const [mutation, setMutation] = useState<FavoriteMutationState>({
+    userId,
+    mutatingId: null,
+    error: null,
+  });
 
   const load = useCallback(async (signal?: AbortSignal) => {
-    setState('loading');
-    setError(null);
+    if (!userId) {
+      setSnapshot({
+        userId,
+        favorites: [],
+        state: 'error',
+        error: '인증된 사용자 정보를 확인할 수 없습니다',
+      });
+      return;
+    }
+
+    setSnapshot({ userId, favorites: [], state: 'loading', error: null });
+    setMutation({ userId, mutatingId: null, error: null });
     try {
       const rows = await fetchFavorites(signal);
       if (signal?.aborted) return;
-      setFavorites(rows);
-      setState('success');
+      setSnapshot({ userId, favorites: rows, state: 'success', error: null });
     } catch {
       if (signal?.aborted) return;
-      setFavorites([]);
-      setError('즐겨찾기를 불러올 수 없습니다');
-      setState('error');
+      setSnapshot({
+        userId,
+        favorites: [],
+        state: 'error',
+        error: '즐겨찾기를 불러올 수 없습니다',
+      });
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -33,14 +65,28 @@ export function useFavorites() {
   }, [load]);
 
   const unfollow = useCallback(async (artistId: string) => {
-    setMutatingId(artistId);
+    setMutation({ userId, mutatingId: artistId, error: null });
     try {
       await removeFavorite(artistId);
-      setFavorites((current) => current.filter((artist) => artist.id !== artistId));
-    } finally {
-      setMutatingId(null);
+      setSnapshot((current) => current.userId === userId
+        ? { ...current, favorites: current.favorites.filter((artist) => artist.id !== artistId) }
+        : current);
+      setMutation({ userId, mutatingId: null, error: null });
+    } catch {
+      setMutation({ userId, mutatingId: null, error: '좋아요 취소에 실패했습니다' });
     }
-  }, []);
+  }, [userId]);
 
-  return { favorites, state, error, retry: load, unfollow, mutatingId };
+  const isCurrentSnapshot = snapshot.userId === userId;
+  const isCurrentMutation = mutation.userId === userId;
+
+  return {
+    favorites: isCurrentSnapshot ? snapshot.favorites : [],
+    state: isCurrentSnapshot ? snapshot.state : 'loading' as AsyncState,
+    error: isCurrentSnapshot ? snapshot.error : null,
+    retry: load,
+    unfollow,
+    mutatingId: isCurrentMutation ? mutation.mutatingId : null,
+    mutationError: isCurrentMutation ? mutation.error : null,
+  };
 }

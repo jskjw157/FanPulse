@@ -27,9 +27,13 @@ pytestmark = pytest.mark.django_db
 # ---------------------------------------------------------------------------
 # Helper: Django test client
 # ---------------------------------------------------------------------------
+TEST_API_KEY = "test-secret-key-for-endpoint-tests"
+
+
 @pytest.fixture
-def client():
-    return Client()
+def client(settings):
+    settings.AI_SERVICE_ACCEPTED_KEYS = TEST_API_KEY
+    return Client(HTTP_X_API_KEY=TEST_API_KEY)
 
 
 # ---------------------------------------------------------------------------
@@ -83,7 +87,7 @@ class TestSummarizeEndpoint:
         }
 
         response = client.post(
-            "/api/summarize",
+            "/api/ai/summarize",
             data=json.dumps(payload),
             content_type="application/json",
         )
@@ -107,7 +111,7 @@ class TestSummarizeEndpoint:
         }
 
         response = client.post(
-            "/api/summarize",
+            "/api/ai/summarize",
             data=json.dumps(payload),
             content_type="application/json",
         )
@@ -136,7 +140,7 @@ class TestSummarizeEndpoint:
         }
 
         response = client.post(
-            "/api/summarize",
+            "/api/ai/summarize",
             data=json.dumps(payload),
             content_type="application/json",
         )
@@ -168,7 +172,7 @@ class TestSummarizeEndpoint:
                 }
 
                 response = client.post(
-                    "/api/summarize",
+                    "/api/ai/summarize",
                     data=json.dumps(payload),
                     content_type="application/json",
                 )
@@ -304,7 +308,7 @@ class TestCommentFilterTestEndpoint:
             payload = {"content": "정말 좋은 게시글이네요. 응원합니다!"}
 
             response = client.post(
-                "/api/comments/filter/test",
+                "/api/ai/filter",
                 data=json.dumps(payload),
                 content_type="application/json",
             )
@@ -319,7 +323,7 @@ class TestCommentFilterTestEndpoint:
         payload = {}  # content 없음
 
         response = client.post(
-            "/api/comments/filter/test",
+            "/api/ai/filter",
             data=json.dumps(payload),
             content_type="application/json",
         )
@@ -347,7 +351,7 @@ class TestCommentFilterTestEndpoint:
             payload = {"content": "테스트 댓글"}
 
             response = client.post(
-                "/api/comments/filter/test",
+                "/api/ai/filter",
                 data=json.dumps(payload),
                 content_type="application/json",
             )
@@ -394,7 +398,7 @@ class TestCommentFilterBatchEndpoint:
             }
 
             response = client.post(
-                "/api/comments/filter/batch",
+                "/api/ai/filter/batch",
                 data=json.dumps(payload),
                 content_type="application/json",
             )
@@ -416,7 +420,7 @@ class TestCommentFilterBatchEndpoint:
             payload = {"comments": ["테스트 댓글"]}
 
             response = client.post(
-                "/api/comments/filter/batch",
+                "/api/ai/filter/batch",
                 data=json.dumps(payload),
                 content_type="application/json",
             )
@@ -435,7 +439,7 @@ class TestCommentFilterBatchEndpoint:
         payload = {}
 
         response = client.post(
-            "/api/comments/filter/batch",
+            "/api/ai/filter/batch",
             data=json.dumps(payload),
             content_type="application/json",
         )
@@ -477,7 +481,7 @@ class TestAIModerationCheckEndpoint:
             payload = {"text": "정상적인 댓글입니다."}
 
             response = client.post(
-                "/api/moderation/check",
+                "/api/ai/moderate",
                 data=json.dumps(payload),
                 content_type="application/json",
             )
@@ -512,7 +516,7 @@ class TestAIModerationCheckEndpoint:
             payload = {"text": "정상적인 댓글입니다."}
 
             response = client.post(
-                "/api/moderation/check",
+                "/api/ai/moderate",
                 data=json.dumps(payload),
                 content_type="application/json",
             )
@@ -533,7 +537,7 @@ class TestAIModerationCheckEndpoint:
         payload = {}
 
         response = client.post(
-            "/api/moderation/check",
+            "/api/ai/moderate",
             data=json.dumps(payload),
             content_type="application/json",
         )
@@ -577,7 +581,7 @@ class TestAIModerationCheckEndpoint:
             payload = {"text": "시발 욕설이 포함된 댓글"}
 
             response = client.post(
-                "/api/moderation/check",
+                "/api/ai/moderate",
                 data=json.dumps(payload),
                 content_type="application/json",
             )
@@ -616,7 +620,7 @@ class TestAIModerationBatchEndpoint:
             }
 
             response = client.post(
-                "/api/moderation/batch",
+                "/api/ai/moderate/batch",
                 data=json.dumps(payload),
                 content_type="application/json",
             )
@@ -641,7 +645,7 @@ class TestAIModerationBatchEndpoint:
             payload = {"texts": ["텍스트 1"]}
 
             response = client.post(
-                "/api/moderation/batch",
+                "/api/ai/moderate/batch",
                 data=json.dumps(payload),
                 content_type="application/json",
             )
@@ -660,7 +664,7 @@ class TestAIModerationBatchEndpoint:
         payload = {}
 
         response = client.post(
-            "/api/moderation/batch",
+            "/api/ai/moderate/batch",
             data=json.dumps(payload),
             content_type="application/json",
         )
@@ -676,13 +680,13 @@ class TestAIModerationStatusEndpoint:
 
     def test_moderation_status_returns_200(self, client):
         """GET /api/moderation/status -> 200"""
-        response = client.get("/api/moderation/status")
+        response = client.get("/api/ai/moderate/status")
 
         assert response.status_code == 200
 
     def test_moderation_status_response_fields(self, client):
         """GET /api/moderation/status 응답에 필수 필드가 있는지 확인"""
-        response = client.get("/api/moderation/status")
+        response = client.get("/api/ai/moderate/status")
 
         assert response.status_code == 200
         data = response.json()
@@ -693,7 +697,7 @@ class TestAIModerationStatusEndpoint:
 
     def test_moderation_status_available_field_is_bool(self, client):
         """GET /api/moderation/status의 available 필드가 boolean인지 확인"""
-        response = client.get("/api/moderation/status")
+        response = client.get("/api/ai/moderate/status")
         data = response.json()
 
         assert isinstance(data.get("available"), bool)
@@ -713,7 +717,7 @@ class TestAIModerationStatusEndpoint:
             "api.services.ai_moderation.check_ai_moderation_available",
             return_value=mock_status,
         ):
-            response = client.get("/api/moderation/status")
+            response = client.get("/api/ai/moderate/status")
 
         assert response.status_code == 200
         data = response.json()
