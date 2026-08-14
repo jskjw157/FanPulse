@@ -34,9 +34,15 @@ const page = {
   last: true,
 };
 
+const nextPost = {
+  ...post,
+  id: '33333333-3333-3333-3333-333333333333',
+  content: '다시 채워진 저장 게시글',
+};
+
 describe('SavedPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     vi.mocked(fetchSavedCommunityPosts).mockResolvedValue(page);
     vi.mocked(unsaveCommunityPost).mockResolvedValue({ liked: false, saved: false });
   });
@@ -67,11 +73,34 @@ describe('SavedPage', () => {
   });
 
   it('removes a post only after the real unsave API succeeds', async () => {
+    vi.mocked(fetchSavedCommunityPosts)
+      .mockResolvedValueOnce(page)
+      .mockResolvedValueOnce({ ...page, items: [], totalElements: 0, totalPages: 0 });
     render(<SavedPage />);
     await screen.findByText('실제로 저장한 게시글');
     fireEvent.click(screen.getByRole('button', { name: '저장 취소' }));
 
     await waitFor(() => expect(unsaveCommunityPost).toHaveBeenCalledWith(post.id));
     expect(await screen.findByText('저장한 게시글이 없습니다.')).toBeInTheDocument();
+    expect(fetchSavedCommunityPosts).toHaveBeenLastCalledWith(0, 20);
+  });
+
+  it('refetches page zero after unsave so shifted rows and metadata stay authoritative', async () => {
+    vi.mocked(fetchSavedCommunityPosts)
+      .mockResolvedValueOnce({ ...page, totalElements: 21, totalPages: 2, last: false })
+      .mockResolvedValueOnce({
+        ...page,
+        items: [nextPost],
+        totalElements: 20,
+        totalPages: 1,
+        last: true,
+      });
+    render(<SavedPage />);
+    await screen.findByText(post.content);
+    fireEvent.click(screen.getByRole('button', { name: '저장 취소' }));
+
+    expect(await screen.findByText(nextPost.content)).toBeInTheDocument();
+    expect(screen.getByText('20')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '더 보기' })).not.toBeInTheDocument();
   });
 });

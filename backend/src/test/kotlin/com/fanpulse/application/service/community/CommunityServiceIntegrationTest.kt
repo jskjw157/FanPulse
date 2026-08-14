@@ -12,6 +12,7 @@ import com.fanpulse.infrastructure.persistence.content.ArtistJpaRepository
 import com.fanpulse.infrastructure.persistence.identity.UserJpaRepositoryInterface
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
@@ -189,6 +190,25 @@ class CommunityServiceIntegrationTest {
     }
 
     @Test
+    fun `only an explicit allow verdict with a named source publishes a post`() {
+        val owner = users.save(User(email = "moderation-verdict@example.com", username = "moderation-verdict"))
+
+        listOf("review", "", "unknown").forEach { action ->
+            every { moderation.checkContent(any()) } returns allow().copy(action = action)
+            assertThatThrownBy {
+                service.createPost(owner.id, CreateCommunityPostRequest(null, "명시적 허용만 게시됩니다"))
+            }.isInstanceOf(IllegalArgumentException::class.java)
+        }
+
+        every { moderation.checkContent(any()) } returns allow().copy(modelUsed = "   ")
+        assertThatThrownBy {
+            service.createPost(owner.id, CreateCommunityPostRequest(null, "출처 없는 판정은 게시되지 않습니다"))
+        }.isInstanceOf(CommunityModerationUnavailableException::class.java)
+
+        assertThat(posts.count()).isZero()
+    }
+
+    @Test
     fun `moderation exceptions never publish and map to the unavailable error`() {
         val owner = users.save(User(email = "moderation-throw@example.com", username = "moderation-throw"))
         every { moderation.checkContent(any()) } throws IllegalStateException("connection refused")
@@ -225,15 +245,34 @@ class CommunityServiceIntegrationTest {
     }
 
     @Test
+    fun `a user can unsave their row after the post is removed`() {
+        val owner = users.save(User(email = "removed-unsave@example.com", username = "removed-unsave"))
+        every { moderation.checkContent(any()) } returns allow()
+        val post = service.createPost(owner.id, CreateCommunityPostRequest(null, "삭제 후 저장 취소"))
+        service.save(owner.id, post.id)
+        entityManager.entityManager.createNativeQuery("UPDATE community_posts SET status = 'REMOVED' WHERE id = :id")
+            .setParameter("id", post.id)
+            .executeUpdate()
+        entityManager.flush()
+        entityManager.clear()
+
+        val state = service.unsave(owner.id, post.id)
+
+        assertThat(state.saved).isFalse()
+        assertThat(savedPosts.existsByUserIdAndPostId(owner.id, post.id)).isFalse()
+    }
+
+    @Test
     fun `rejects content longer than the server limit`() {
         val owner = users.save(User(email = "long-post@example.com", username = "long-post"))
-        every { moderation.checkContent(any()) } returns allow()
 
+        val oversizedContent = "가".repeat(5001)
         assertThatThrownBy {
-            service.createPost(owner.id, CreateCommunityPostRequest(null, "가".repeat(5001)))
+            service.createPost(owner.id, CreateCommunityPostRequest(null, oversizedContent))
         }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("5,000자")
+        verify(exactly = 0) { moderation.checkContent(oversizedContent) }
     }
 
     @TestConfiguration

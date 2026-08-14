@@ -21,6 +21,12 @@ interface CommunityPostJpaRepository : JpaRepository<CommunityPost, UUID> {
     fun findPublishedByIdForUpdate(@Param("id") id: UUID): CommunityPost?
 
     @Query(
+        value = "SELECT * FROM community_posts WHERE id = :id FOR UPDATE",
+        nativeQuery = true
+    )
+    fun findByIdForUpdate(@Param("id") id: UUID): CommunityPost?
+
+    @Query(
         value = """
             SELECT p.*
             FROM community_posts p

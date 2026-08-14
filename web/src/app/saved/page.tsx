@@ -9,7 +9,7 @@ import {
   type CommunityPost,
 } from "@/lib/api/community";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -29,38 +29,56 @@ export default function SavedPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [unsavingId, setUnsavingId] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
+  const generationRef = useRef(0);
+  const loadMoreControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
+    const generation = ++generationRef.current;
+    loadMoreControllerRef.current?.abort();
     setLoading(true);
+    setLoadingMore(false);
     setError(null);
     setPosts([]);
     fetchSavedCommunityPosts(0, 20, controller.signal)
       .then((result) => {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || generationRef.current !== generation) return;
         setPosts(result.items);
         setPage(result.page);
         setTotalPages(result.totalPages);
         setTotalElements(result.totalElements);
       })
       .catch(() => {
-        if (!controller.signal.aborted) setError("저장한 게시글을 불러오지 못했습니다.");
+        if (!controller.signal.aborted && generationRef.current === generation) {
+          setError("저장한 게시글을 불러오지 못했습니다.");
+        }
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted && generationRef.current === generation) setLoading(false);
       });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      loadMoreControllerRef.current?.abort();
+    };
   }, [retryKey]);
 
   const handleUnsave = async (postId: string) => {
     if (unsavingId) return;
     setUnsavingId(postId);
     setActionError(null);
+    const generation = ++generationRef.current;
+    loadMoreControllerRef.current?.abort();
+    setLoadingMore(false);
     try {
       const result = await unsaveCommunityPost(postId);
       if (result.saved) throw new Error("unsave failed");
-      setPosts((current) => current.filter((post) => post.id !== postId));
-      setTotalElements((current) => Math.max(0, current - 1));
+      if (generationRef.current !== generation) return;
+      const refreshed = await fetchSavedCommunityPosts(0, 20);
+      if (generationRef.current !== generation) return;
+      setPosts(refreshed.items);
+      setPage(refreshed.page);
+      setTotalPages(refreshed.totalPages);
+      setTotalElements(refreshed.totalElements);
     } catch {
       setActionError("저장을 취소하지 못했습니다.");
     } finally {
@@ -69,11 +87,16 @@ export default function SavedPage() {
   };
 
   const loadMore = async () => {
-    if (loadingMore || page + 1 >= totalPages) return;
+    if (loadingMore || unsavingId || page + 1 >= totalPages) return;
+    const generation = generationRef.current;
+    const controller = new AbortController();
+    loadMoreControllerRef.current?.abort();
+    loadMoreControllerRef.current = controller;
     setLoadingMore(true);
     setActionError(null);
     try {
-      const result = await fetchSavedCommunityPosts(page + 1, 20);
+      const result = await fetchSavedCommunityPosts(page + 1, 20, controller.signal);
+      if (controller.signal.aborted || generationRef.current !== generation) return;
       setPosts((current) => {
         const seen = new Set(current.map((post) => post.id));
         return [...current, ...result.items.filter((post) => !seen.has(post.id))];
@@ -82,9 +105,12 @@ export default function SavedPage() {
       setTotalPages(result.totalPages);
       setTotalElements(result.totalElements);
     } catch {
-      setActionError("저장한 게시글을 더 불러오지 못했습니다.");
+      if (!controller.signal.aborted && generationRef.current === generation) {
+        setActionError("저장한 게시글을 더 불러오지 못했습니다.");
+      }
     } finally {
-      setLoadingMore(false);
+      if (generationRef.current === generation) setLoadingMore(false);
+      if (loadMoreControllerRef.current === controller) loadMoreControllerRef.current = null;
     }
   };
 
