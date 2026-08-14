@@ -38,6 +38,16 @@ interface SearchNewsApiDto {
   publishedAt: string;
 }
 
+export interface NewsSummaryApiDto {
+  id: string;
+  artistId: string;
+  title: string;
+  thumbnailUrl: string | null;
+  sourceName: string;
+  category: string;
+  publishedAt: string;
+}
+
 function isHttpsUrl(value: unknown): value is string {
   if (!isNonEmptyString(value)) return false;
 
@@ -96,6 +106,32 @@ export function mapNewsDetailApiDto(value: NewsApiDto): NewsDetail {
     category: value.category,
     viewCount: value.viewCount,
     createdAt: value.createdAt,
+  };
+}
+
+export function isNewsSummaryApiDto(value: unknown): value is NewsSummaryApiDto {
+  if (!isRecord(value)) return false;
+
+  return (
+    isUuid(value.id) &&
+    isUuid(value.artistId) &&
+    isNonEmptyString(value.title) &&
+    isNullableHttpsUrl(value.thumbnailUrl) &&
+    isNonEmptyString(value.sourceName) &&
+    typeof value.category === 'string' &&
+    NEWS_CATEGORIES.has(value.category) &&
+    isIsoDateTime(value.publishedAt)
+  );
+}
+
+export function mapNewsSummaryApiDto(value: NewsSummaryApiDto): News {
+  return {
+    id: value.id,
+    title: value.title,
+    summary: null,
+    thumbnailUrl: value.thumbnailUrl,
+    source: value.sourceName,
+    publishedAt: value.publishedAt,
   };
 }
 

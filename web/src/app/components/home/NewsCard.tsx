@@ -34,7 +34,9 @@ export default function NewsCard({ news }: NewsCardProps) {
       )}
       <div className="flex-1 min-w-0">
         <h3 className="font-medium text-gray-900 line-clamp-1">{title}</h3>
-        <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">{summary}</p>
+        {summary && (
+          <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">{summary}</p>
+        )}
         <span className="text-xs text-gray-400 mt-1 block">
           {source} · {formatRelativeTime(publishedAt)}
         </span>
