@@ -117,6 +117,12 @@ enum class ErrorType(
         status = HttpStatus.SERVICE_UNAVAILABLE.value(),
         code = "SEARCH_SERVICE_UNAVAILABLE"
     ),
+    COMMUNITY_MODERATION_UNAVAILABLE(
+        slug = "community-moderation-unavailable",
+        title = "Community Moderation Unavailable",
+        status = HttpStatus.SERVICE_UNAVAILABLE.value(),
+        code = "COMMUNITY_MODERATION_UNAVAILABLE"
+    ),
 
     // === Server Errors (500) ===
     INTERNAL_ERROR(

@@ -1,248 +1,183 @@
 "use client";
 
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import {
+  fetchSavedCommunityPosts,
+  unsaveCommunityPost,
+  type CommunityPost,
+} from "@/lib/api/community";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
 
 export default function SavedPage() {
-  const [sortBy, setSortBy] = useState<'recent' | 'saved'>('recent');
-  const [bookmarkedPosts, setBookmarkedPosts] = useState([
-    {
-      id: 1,
-      author: {
-        name: 'ARMY_Forever',
-        avatar: 'https://readdy.ai/api/search-image?query=icon%2C%20cute%20purple%20heart%20avatar%2C%202.5D%20illustration%20style%2C%20the%20icon%20should%20take%20up%2070%20percent%20of%20the%20frame%2C%20isolated%20on%20white%20background%2C%20centered%20composition%2C%20soft%20lighting%2C%20vibrant%20colors&width=100&height=100&seq=saved001&orientation=squarish',
-        badge: 'VIP'
-      },
-      content: 'BTS 새 앨범 티저 영상 보셨나요? 진짜 너무 기대돼요! 💜 컴백 준비하는 모습 보니까 벌써부터 설레네요.',
-      image: 'https://readdy.ai/api/search-image?query=BTS%20comeback%20teaser%20concept%2C%20professional%20photography%2C%20purple%20theme%2C%20modern%20aesthetic%2C%20high%20quality%2C%20artistic%20composition%2C%20elegant%20lighting%2C%20vibrant%20colors%2C%20isolated%20on%20simple%20background&width=800&height=600&seq=saved002&orientation=landscape',
-      likes: 1234,
-      comments: 89,
-      time: '2시간 전',
-      savedTime: '오늘',
-      tags: ['BTS', '컴백']
-    },
-    {
-      id: 2,
-      author: {
-        name: 'Blink_Girl',
-        avatar: 'https://readdy.ai/api/search-image?query=icon%2C%20cute%20pink%20crown%20avatar%2C%202.5D%20illustration%20style%2C%20the%20icon%20should%20take%20up%2070%20percent%20of%20the%20frame%2C%20isolated%20on%20white%20background%2C%20centered%20composition%2C%20soft%20lighting%2C%20vibrant%20colors&width=100&height=100&seq=saved003&orientation=squarish',
-        badge: 'PRO'
-      },
-      content: 'BLACKPINK 월드투어 서울 공연 티켓팅 성공했어요! 🎉 드디어 직관할 수 있게 됐어요 ㅠㅠ',
-      image: 'https://readdy.ai/api/search-image?query=BLACKPINK%20concert%20stage%20performance%2C%20professional%20photography%2C%20pink%20and%20black%20theme%2C%20dynamic%20lighting%2C%20high%20energy%2C%20artistic%20composition%2C%20vibrant%20colors%2C%20isolated%20on%20simple%20background&width=800&height=600&seq=saved004&orientation=landscape',
-      likes: 892,
-      comments: 67,
-      time: '5시간 전',
-      savedTime: '오늘',
-      tags: ['BLACKPINK', '콘서트']
-    },
-    {
-      id: 3,
-      author: {
-        name: 'Kpop_Lover',
-        avatar: 'https://readdy.ai/api/search-image?query=icon%2C%20cute%20blue%20star%20avatar%2C%202.5D%20illustration%20style%2C%20the%20icon%20should%20take%20up%2070%20percent%20of%20the%20frame%2C%20isolated%20on%20white%20background%2C%20centered%20composition%2C%20soft%20lighting%2C%20vibrant%20colors&width=100&height=100&seq=saved005&orientation=squarish',
-        badge: 'VIP'
-      },
-      content: '오늘 음악방송 무대 레전드였어요! 직캠 보고 또 보고 있어요 👀',
-      image: 'https://readdy.ai/api/search-image?query=K-pop%20music%20show%20stage%20performance%2C%20professional%20photography%2C%20colorful%20lighting%2C%20energetic%20atmosphere%2C%20high%20quality%2C%20artistic%20composition%2C%20vibrant%20colors%2C%20isolated%20on%20simple%20background&width=800&height=600&seq=saved006&orientation=landscape',
-      likes: 567,
-      comments: 45,
-      time: '1일 전',
-      savedTime: '어제',
-      tags: ['음악방송', '무대']
-    },
-    {
-      id: 4,
-      author: {
-        name: 'Music_Fan',
-        avatar: 'https://readdy.ai/api/search-image?query=icon%2C%20cute%20orange%20music%20note%20avatar%2C%202.5D%20illustration%20style%2C%20the%20icon%20should%20take%20up%2070%20percent%20of%20the%20frame%2C%20isolated%20on%20white%20background%2C%20centered%20composition%2C%20soft%20lighting%2C%20vibrant%20colors&width=100&height=100&seq=saved007&orientation=squarish',
-        badge: 'PRO'
-      },
-      content: '이번 주 차트 순위 업데이트! 우리 아티스트 1위 유지 중 🏆',
-      image: 'https://readdy.ai/api/search-image?query=music%20chart%20ranking%20display%2C%20modern%20digital%20interface%2C%20colorful%20graphics%2C%20professional%20design%2C%20clean%20composition%2C%20vibrant%20colors%2C%20isolated%20on%20simple%20background&width=800&height=600&seq=saved008&orientation=landscape',
-      likes: 423,
-      comments: 34,
-      time: '2일 전',
-      savedTime: '2일 전',
-      tags: ['차트', '순위']
-    },
-    {
-      id: 5,
-      author: {
-        name: 'Fan_Club',
-        avatar: 'https://readdy.ai/api/search-image?query=icon%2C%20cute%20green%20clover%20avatar%2C%202.5D%20illustration%20style%2C%20the%20icon%20should%20take%20up%2070%20percent%20of%20the%20frame%2C%20isolated%20on%20white%20background%2C%20centered%20composition%2C%20soft%20lighting%2C%20vibrant%20colors&width=100&height=100&seq=saved009&orientation=squarish',
-        badge: 'VIP'
-      },
-      content: '팬미팅 현장 분위기 미쳤어요! 평생 잊지 못할 추억 💚',
-      image: 'https://readdy.ai/api/search-image?query=K-pop%20fan%20meeting%20event%2C%20happy%20fans%20and%20artists%20interaction%2C%20professional%20photography%2C%20warm%20atmosphere%2C%20joyful%20moment%2C%20vibrant%20colors%2C%20isolated%20on%20simple%20background&width=800&height=600&seq=saved010&orientation=landscape',
-      likes: 756,
-      comments: 52,
-      time: '3일 전',
-      savedTime: '3일 전',
-      tags: ['팬미팅', '이벤트']
-    }
-  ]);
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [unsavingId, setUnsavingId] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
-  const handleRemoveBookmark = (postId: number) => {
-    setBookmarkedPosts(bookmarkedPosts.filter(post => post.id !== postId));
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+    setPosts([]);
+    fetchSavedCommunityPosts(0, 20, controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        setPosts(result.items);
+        setPage(result.page);
+        setTotalPages(result.totalPages);
+        setTotalElements(result.totalElements);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setError("저장한 게시글을 불러오지 못했습니다.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [retryKey]);
+
+  const handleUnsave = async (postId: string) => {
+    if (unsavingId) return;
+    setUnsavingId(postId);
+    setActionError(null);
+    try {
+      const result = await unsaveCommunityPost(postId);
+      if (result.saved) throw new Error("unsave failed");
+      setPosts((current) => current.filter((post) => post.id !== postId));
+      setTotalElements((current) => Math.max(0, current - 1));
+    } catch {
+      setActionError("저장을 취소하지 못했습니다.");
+    } finally {
+      setUnsavingId(null);
+    }
   };
 
-  const sortedPosts = [...bookmarkedPosts].sort((a, b) => {
-    if (sortBy === 'recent') {
-      return a.id - b.id;
+  const loadMore = async () => {
+    if (loadingMore || page + 1 >= totalPages) return;
+    setLoadingMore(true);
+    setActionError(null);
+    try {
+      const result = await fetchSavedCommunityPosts(page + 1, 20);
+      setPosts((current) => {
+        const seen = new Set(current.map((post) => post.id));
+        return [...current, ...result.items.filter((post) => !seen.has(post.id))];
+      });
+      setPage(result.page);
+      setTotalPages(result.totalPages);
+      setTotalElements(result.totalElements);
+    } catch {
+      setActionError("저장한 게시글을 더 불러오지 못했습니다.");
+    } finally {
+      setLoadingMore(false);
     }
-    return b.id - a.id;
-  });
+  };
 
   return (
     <ProtectedRoute>
-      <PageHeader
-        title="저장한 게시물"
-        rightAction={
-          <Link href="/search" className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100">
-            <i className="ri-search-line text-xl text-gray-700"></i>
-          </Link>
-        }
-      />
-      <PageWrapper>
-        {/* Stats Card */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-4 mb-4 shadow-lg text-white mx-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/90 text-sm mb-1">저장한 게시물</p>
-              <p className="text-3xl font-bold">{bookmarkedPosts.length}</p>
-            </div>
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <i className="ri-bookmark-fill text-3xl text-white"></i>
-            </div>
-          </div>
-        </div>
+      <PageHeader title="저장한 게시물" showBack />
+      <PageWrapper className="mx-auto max-w-3xl px-4 py-6">
+        {loading && <p className="py-16 text-center text-gray-500">저장한 게시글을 불러오는 중입니다.</p>}
 
-        {/* Sort Tabs */}
-        <div className="px-4 py-3">
-          <div className="bg-white rounded-full p-1 inline-flex border border-gray-100 shadow-sm">
+        {!loading && error && (
+          <div className="py-16 text-center">
+            <p className="text-gray-700">{error}</p>
             <button
-              onClick={() => setSortBy('recent')}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                sortBy === 'recent'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
+              type="button"
+              onClick={() => setRetryKey((value) => value + 1)}
+              className="mt-4 rounded-full bg-purple-600 px-5 py-2 text-sm font-semibold text-white"
             >
-              최신순
-            </button>
-            <button
-              onClick={() => setSortBy('saved')}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                sortBy === 'saved'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              저장순
+              다시 시도
             </button>
           </div>
-        </div>
+        )}
 
-        {/* Posts List */}
-        {sortedPosts.length > 0 ? (
-          <div className="px-4 space-y-4 pb-6">
-            {sortedPosts.map(post => (
-              <div key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                {/* Author Info */}
-                <div className="p-4 pb-3">
-                  <div className="flex items-center gap-3 mb-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                      src={post.author.avatar}
-                      alt={post.author.name}
-                      className="w-10 h-10 rounded-full object-cover border border-gray-100"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-sm text-gray-900">{post.author.name}</h3>
-                        <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                          {post.author.badge}
-                        </span>
+        {!loading && !error && (
+          <>
+            <div className="mb-5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 p-5 text-white shadow-lg">
+              <p className="text-sm text-white/80">저장한 게시글</p>
+              <p className="mt-1 text-3xl font-bold">{totalElements.toLocaleString()}</p>
+            </div>
+
+            {actionError && <p className="mb-4 text-sm text-red-600">{actionError}</p>}
+
+            {posts.length === 0 ? (
+              <p className="rounded-2xl bg-white py-16 text-center text-gray-500 shadow-sm">
+                저장한 게시글이 없습니다.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {posts.map((post) => (
+                  <article key={post.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                    <header className="mb-3 flex items-center gap-3">
+                      <div
+                        aria-hidden="true"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 font-bold text-purple-700"
+                      >
+                        {post.author.name.slice(0, 1).toUpperCase()}
                       </div>
-                      <p className="text-xs text-gray-500">{post.time}</p>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveBookmark(post.id)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-purple-50 transition-colors"
-                    >
-                      <i className="ri-bookmark-fill text-xl text-purple-600"></i>
-                    </button>
-                  </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-gray-900">{post.author.name}</p>
+                        <p className="text-xs text-gray-500">{formatTime(post.createdAt)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="저장 취소"
+                        onClick={() => handleUnsave(post.id)}
+                        disabled={unsavingId === post.id}
+                        className="rounded-full bg-purple-50 px-3 py-2 text-sm font-semibold text-purple-700 disabled:opacity-40"
+                      >
+                        <i className="ri-bookmark-fill" /> 저장 취소
+                      </button>
+                    </header>
 
-                  {/* Content */}
-                  <Link href="/post-detail">
-                    <p className="text-sm text-gray-900 leading-relaxed mb-3">
-                      {post.content}
-                    </p>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {post.tags.map(tag => (
-                        <span key={tag} className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full font-medium">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Image */}
-                    {post.image && (
-                      <div className="rounded-xl overflow-hidden mb-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={post.image}
-                          alt="Post"
-                          className="w-full h-48 object-cover object-top hover:scale-105 transition-transform duration-500"
+                    <Link href={`/post-detail?id=${post.id}`} aria-label={`${post.content} 상세 보기`}>
+                      <p className="whitespace-pre-wrap leading-relaxed text-gray-800">{post.content}</p>
+                      {post.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element -- validated external HTTPS URL must bypass Next host allowlists
+                        <img
+                          src={post.imageUrl}
+                          alt="게시글 첨부 이미지"
+                          referrerPolicy="no-referrer"
+                          className="mt-4 max-h-96 w-full rounded-xl object-cover"
                         />
+                      )}
+                      <div className="mt-4 flex gap-4 text-sm text-gray-500">
+                        <span><i className="ri-heart-line" /> {post.likeCount.toLocaleString()}</span>
+                        <span><i className="ri-chat-3-line" /> {post.commentCount.toLocaleString()}</span>
                       </div>
-                    )}
-                  </Link>
-
-                  {/* Stats */}
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span className="flex items-center gap-1 hover:text-pink-500 transition-colors">
-                        <i className="ri-heart-line"></i>
-                        {post.likes}
-                      </span>
-                      <span className="flex items-center gap-1 hover:text-blue-500 transition-colors">
-                        <i className="ri-chat-3-line"></i>
-                        {post.comments}
-                      </span>
-                    </div>
-                    <span className="text-xs text-gray-400 font-medium">
-                      저장: {post.savedTime}
-                    </span>
-                  </div>
-                </div>
+                    </Link>
+                  </article>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          /* Empty State */
-          <div className="px-4 py-16 text-center">
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="ri-bookmark-line text-5xl text-gray-400"></i>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">저장한 게시물이 없어요</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              마음에 드는 게시물을 저장해보세요
-            </p>
-            <Link
-              href="/community"
-              className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-shadow"
-            >
-              게시물 둘러보기
-            </Link>
-          </div>
+            )}
+
+            {page + 1 < totalPages && (
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="mt-5 w-full rounded-xl border border-gray-200 bg-white py-3 font-semibold text-gray-700"
+              >
+                {loadingMore ? "불러오는 중" : "더 보기"}
+              </button>
+            )}
+          </>
         )}
       </PageWrapper>
     </ProtectedRoute>

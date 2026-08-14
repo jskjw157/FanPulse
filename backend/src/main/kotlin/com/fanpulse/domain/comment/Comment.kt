@@ -23,7 +23,7 @@ class Comment private constructor(
     @Column(columnDefinition = "uuid")
     val id: UUID,
 
-    @Column(name = "post_id", length = 24, nullable = false)
+    @Column(name = "post_id", length = 36, nullable = false)
     val postId: String,
 
     @Column(name = "user_id", columnDefinition = "uuid", nullable = false)

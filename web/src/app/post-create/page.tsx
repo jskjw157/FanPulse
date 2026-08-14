@@ -1,162 +1,154 @@
 "use client";
 
-import PageWrapper from "@/components/layout/PageWrapper";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import PageWrapper from "@/components/layout/PageWrapper";
+import { fetchActiveArtists, type ArtistSummary } from "@/lib/api/artist";
+import { createCommunityPost } from "@/lib/api/community";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function PostCreatePage() {
   const router = useRouter();
-  const [content, setContent] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
-  const [selectedArtist, setSelectedArtist] = useState('');
+  const [content, setContent] = useState("");
+  const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
+  const [artists, setArtists] = useState<ArtistSummary[]>([]);
+  const [artistsLoading, setArtistsLoading] = useState(true);
+  const [artistError, setArtistError] = useState(false);
+  const [artistRetryKey, setArtistRetryKey] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
 
-  const artists = ['BTS', 'BLACKPINK', 'SEVENTEEN', 'NewJeans', 'Stray Kids', 'TWICE'];
+  useEffect(() => {
+    const controller = new AbortController();
+    setArtistsLoading(true);
+    setArtistError(false);
+    fetchActiveArtists(controller.signal)
+      .then(setArtists)
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setArtists([]);
+          setArtistError(true);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setArtistsLoading(false);
+      });
+    return () => controller.abort();
+  }, [artistRetryKey]);
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && tags.length < 5) {
-      setTags([...tags, tagInput.trim()]);
-      setTagInput('');
-    }
-  };
+  const canSubmit = content.trim().length > 0 && selectedArtistId !== null && !submitting;
 
-  const handleRemoveTag = (index: number) => {
-    setTags(tags.filter((_, i) => i !== index));
-  };
-
-  const handlePost = () => {
-    if (content.trim() && selectedArtist) {
-      // 게시글 작성 로직 (API call simulation)
-      router.push('/community');
+  const handlePost = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setSubmitError(false);
+    try {
+      const post = await createCommunityPost({
+        artistId: selectedArtistId,
+        content: content.trim(),
+      });
+      router.push(`/post-detail?id=${post.id}`);
+    } catch {
+      setSubmitError(true);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <ProtectedRoute>
-      {/* Custom Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pt-8 lg:pb-4">
-        <div className="px-4 py-3 flex items-center justify-between h-16 lg:h-auto lg:px-0 lg:max-w-4xl lg:mx-auto">
-          <Link href="/community" className="text-sm text-gray-600 hover:text-gray-900 transition-colors lg:text-base lg:bg-gray-100 lg:px-4 lg:py-2 lg:rounded-lg">취소</Link>
-          <h1 className="text-base font-bold text-gray-900 lg:text-3xl lg:flex-1 lg:ml-8">게시글 작성</h1>
-          <button 
+      <header className="fixed left-0 right-0 top-0 z-50 border-b border-gray-200 bg-white lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pb-4 lg:pt-8">
+        <div className="flex h-16 items-center justify-between px-4 py-3 lg:mx-auto lg:h-auto lg:max-w-4xl lg:px-0">
+          <Link href="/community" className="text-sm text-gray-600 transition-colors hover:text-gray-900 lg:rounded-lg lg:bg-gray-100 lg:px-4 lg:py-2 lg:text-base">
+            취소
+          </Link>
+          <h1 className="text-base font-bold text-gray-900 lg:ml-8 lg:flex-1 lg:text-3xl">게시글 작성</h1>
+          <button
             onClick={handlePost}
-            disabled={!content.trim() || !selectedArtist}
-            className={`text-sm font-medium transition-colors lg:text-base lg:px-6 lg:py-2 lg:rounded-lg ${
-              content.trim() && selectedArtist 
-                ? 'text-purple-600 hover:text-purple-700 lg:bg-purple-600 lg:text-white lg:hover:bg-purple-700' 
-                : 'text-gray-400 cursor-not-allowed lg:bg-gray-200 lg:text-gray-500'
+            disabled={!canSubmit}
+            className={`text-sm font-medium transition-colors lg:rounded-lg lg:px-6 lg:py-2 lg:text-base ${
+              canSubmit
+                ? "text-purple-600 hover:text-purple-700 lg:bg-purple-600 lg:text-white lg:hover:bg-purple-700"
+                : "cursor-not-allowed text-gray-400 lg:bg-gray-200 lg:text-gray-500"
             }`}
           >
-            게시
+            {submitting ? "등록 중" : "게시"}
           </button>
         </div>
       </header>
 
       <PageWrapper>
-        <div className="px-4 pb-6">
-          {/* Artist Selection */}
+        <div className="mx-auto max-w-4xl px-4 pb-6">
           <div className="py-4">
-            <label className="text-sm font-bold text-gray-900 mb-3 block">
-              아티스트 선택 *
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {artists.map(artist => (
+            <p className="mb-3 block text-sm font-bold text-gray-900">아티스트 선택 *</p>
+            {artistsLoading && <p role="status" className="text-sm text-gray-500">아티스트를 불러오는 중입니다.</p>}
+            {!artistsLoading && artistError && (
+              <div className="rounded-xl border border-red-100 bg-red-50 p-4">
+                <p className="text-sm text-red-700">아티스트를 불러오지 못했습니다.</p>
                 <button
-                  key={artist}
-                  onClick={() => setSelectedArtist(artist)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedArtist === artist
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                  onClick={() => setArtistRetryKey((key) => key + 1)}
+                  className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-medium text-purple-700"
                 >
-                  {artist}
+                  다시 시도
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Content Input */}
-          <div className="py-4">
-            <label className="text-sm font-bold text-gray-900 mb-3 block">
-              내용 *
-            </label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="팬 여러분과 공유하고 싶은 이야기를 작성해주세요..."
-              maxLength={500}
-              className="w-full h-48 bg-gray-50 rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-purple-600 resize-none transition-all"
-            />
-            <div className="flex justify-end mt-2">
-              <span className="text-xs text-gray-500">{content.length}/500</span>
-            </div>
-          </div>
-
-          {/* Image Upload */}
-          <div className="py-4">
-            <label className="text-sm font-bold text-gray-900 mb-3 block">
-              이미지 첨부
-            </label>
-            <button className="w-full h-32 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-2 text-gray-500 hover:border-purple-400 hover:text-purple-500 transition-colors">
-              <i className="ri-image-add-line text-3xl"></i>
-              <span className="text-sm">이미지 추가 (최대 5장)</span>
-            </button>
-          </div>
-
-          {/* Tags */}
-          <div className="py-4">
-            <label className="text-sm font-bold text-gray-900 mb-3 block">
-              태그 (최대 5개)
-            </label>
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                placeholder="태그 입력 후 엔터"
-                className="flex-1 bg-gray-50 rounded-full px-4 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all"
-              />
-              <button
-                onClick={handleAddTag}
-                disabled={tags.length >= 5}
-                className="px-4 py-2.5 bg-purple-600 text-white rounded-full text-sm font-medium disabled:bg-gray-300 transition-colors shadow-sm"
-              >
-                추가
-              </button>
-            </div>
-            {tags.length > 0 && (
+              </div>
+            )}
+            {!artistsLoading && !artistError && artists.length === 0 && (
+              <p className="text-sm text-gray-500">선택 가능한 아티스트가 없습니다.</p>
+            )}
+            {!artistsLoading && !artistError && artists.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {tags.map((tag, index) => (
-                  <div
-                    key={index}
-                    className="bg-purple-50 text-purple-600 px-3 py-1.5 rounded-full text-sm flex items-center gap-2"
+                {artists.map((artist) => (
+                  <button
+                    key={artist.id}
+                    onClick={() => setSelectedArtistId(artist.id)}
+                    aria-pressed={selectedArtistId === artist.id}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                      selectedArtistId === artist.id
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                   >
-                    <span>#{tag}</span>
-                    <button
-                      onClick={() => handleRemoveTag(index)}
-                      className="w-4 h-4 flex items-center justify-center hover:text-purple-800"
-                    >
-                      <i className="ri-close-line text-sm"></i>
-                    </button>
-                  </div>
+                    {artist.name}
+                  </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Guidelines */}
-          <div className="mt-6 bg-purple-50 rounded-2xl p-4">
+          <div className="py-4">
+            <label htmlFor="community-content" className="mb-3 block text-sm font-bold text-gray-900">
+              내용 *
+            </label>
+            <textarea
+              id="community-content"
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder="팬 여러분과 공유하고 싶은 이야기를 작성해주세요..."
+              maxLength={5000}
+              className="h-48 w-full resize-none rounded-2xl border-none bg-gray-50 px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-purple-600"
+            />
+            <div className="mt-2 flex justify-end">
+              <span className="text-xs text-gray-500">{content.length}/5000</span>
+            </div>
+          </div>
+
+
+          {submitError && (
+            <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+              게시글을 등록하지 못했습니다. 내용을 확인해 주세요.
+            </p>
+          )}
+
+          <div className="mt-6 rounded-2xl bg-purple-50 p-4">
             <div className="flex items-start gap-2">
-              <i className="ri-information-line text-purple-600 text-lg flex-shrink-0 mt-0.5"></i>
+              <i className="ri-information-line mt-0.5 flex-shrink-0 text-lg text-purple-600" />
               <div>
-                <h3 className="text-sm font-bold text-purple-900 mb-2">게시글 작성 가이드</h3>
-                <ul className="text-xs text-purple-700 space-y-1">
+                <h3 className="mb-2 text-sm font-bold text-purple-900">게시글 작성 가이드</h3>
+                <ul className="space-y-1 text-xs text-purple-700">
                   <li>• 타인을 존중하는 내용을 작성해주세요</li>
-                  <li>• 욕설, 비방, 허위사실은 삭제될 수 있습니다</li>
+                  <li>• 욕설, 비방, 허위사실은 등록이 거부될 수 있습니다</li>
                   <li>• 저작권을 침해하는 콘텐츠는 게시할 수 없습니다</li>
                 </ul>
               </div>

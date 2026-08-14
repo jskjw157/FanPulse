@@ -34,6 +34,10 @@ class UserJpaRepository(
         return jpaRepository.findByEmail(email)
     }
 
+    fun findAllByIds(ids: Collection<UUID>): List<User> {
+        return jpaRepository.findAllById(ids)
+    }
+
     override fun findByUsername(username: String): User? {
         return jpaRepository.findByUsername(username)
     }

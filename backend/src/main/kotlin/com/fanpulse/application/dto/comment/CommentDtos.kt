@@ -84,17 +84,21 @@ data class CommentResponse(
     val parentCommentId: UUID?,
 
     @Schema(description = "작성 일시")
-    val createdAt: Instant
+    val createdAt: Instant,
+
+    @Schema(description = "작성자명")
+    val authorName: String? = null
 ) {
     companion object {
-        fun from(comment: Comment): CommentResponse = CommentResponse(
+        fun from(comment: Comment, authorName: String? = null): CommentResponse = CommentResponse(
             id = comment.id,
             postId = comment.postId,
             userId = comment.userId,
             content = comment.content,
             status = comment.status,
             parentCommentId = comment.parentCommentId,
-            createdAt = comment.createdAt
+            createdAt = comment.createdAt,
+            authorName = authorName
         )
     }
 }

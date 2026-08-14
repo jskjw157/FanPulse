@@ -5,7 +5,7 @@ vi.mock('@/lib/api-client', () => ({
 }));
 
 import { apiClient } from '@/lib/api-client';
-import { fetchArtistDetail } from './artist';
+import { fetchActiveArtists, fetchArtistDetail } from './artist';
 
 const mockedGet = vi.mocked(apiClient.get);
 
@@ -54,5 +54,61 @@ describe('fetchArtistDetail', () => {
     await expect(fetchArtistDetail(artist.id)).rejects.toThrow(
       '아티스트 API 응답이 올바르지 않습니다.'
     );
+  });
+});
+
+describe('fetchActiveArtists', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const summary = {
+    id: artist.id,
+    name: artist.name,
+    englishName: artist.englishName,
+    agency: artist.agency,
+    profileImageUrl: artist.profileImageUrl,
+    isGroup: artist.isGroup,
+  };
+
+  it('loads active artist choices from the real paginated API', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        success: true,
+        data: { content: [summary], totalElements: 1, page: 0, size: 100, totalPages: 1 },
+      },
+    });
+
+    await expect(fetchActiveArtists()).resolves.toEqual([summary]);
+    expect(mockedGet).toHaveBeenCalledWith('/artists', {
+      params: { activeOnly: true, page: 0, size: 100, sortBy: 'name', sortDir: 'asc' },
+      signal: undefined,
+    });
+  });
+
+  it('rejects repeated or incomplete rows across pages', async () => {
+    mockedGet
+      .mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: { content: [summary], totalElements: 101, page: 0, size: 100, totalPages: 2 },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: { content: [summary], totalElements: 101, page: 1, size: 100, totalPages: 2 },
+        },
+      });
+
+    await expect(fetchActiveArtists()).rejects.toThrow('아티스트 목록 API 응답이 올바르지 않습니다.');
+  });
+
+  it.each([
+    { content: [{ ...summary, id: 7 }], totalElements: 1, page: 0, size: 100, totalPages: 1 },
+    { content: [summary], totalElements: -1, page: 0, size: 100, totalPages: 1 },
+    { content: [summary], totalElements: 1, page: 0, size: 100, totalPages: 2 },
+    { content: [summary], totalElements: 101, page: 1, size: 100, totalPages: 2 },
+  ])('rejects malformed artist list payloads: %o', async (data) => {
+    mockedGet.mockResolvedValue({ data: { success: true, data } });
+    await expect(fetchActiveArtists()).rejects.toThrow('아티스트 목록 API 응답이 올바르지 않습니다.');
   });
 });

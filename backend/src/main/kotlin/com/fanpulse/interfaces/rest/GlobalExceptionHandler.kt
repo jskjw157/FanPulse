@@ -1,6 +1,7 @@
 package com.fanpulse.interfaces.rest
 
 import com.fanpulse.application.identity.*
+import com.fanpulse.application.service.community.CommunityModerationUnavailableException
 import com.fanpulse.application.service.search.SearchServiceException
 import com.fanpulse.interfaces.rest.error.*
 import mu.KotlinLogging
@@ -159,6 +160,19 @@ class GlobalExceptionHandler {
         logger.error(ex) { "Search service error: ${ex.message}" }
         return createResponse(
             ErrorType.SEARCH_SERVICE_UNAVAILABLE,
+            detail = ex.message,
+            request = request
+        )
+    }
+
+    @ExceptionHandler(CommunityModerationUnavailableException::class)
+    fun handleCommunityModerationUnavailable(
+        ex: CommunityModerationUnavailableException,
+        request: WebRequest
+    ): ResponseEntity<ProblemDetail> {
+        logger.warn { "Community moderation unavailable: ${ex.message}" }
+        return createResponse(
+            ErrorType.COMMUNITY_MODERATION_UNAVAILABLE,
             detail = ex.message,
             request = request
         )
