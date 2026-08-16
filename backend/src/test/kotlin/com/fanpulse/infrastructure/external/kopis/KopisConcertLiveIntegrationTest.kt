@@ -24,7 +24,7 @@ class KopisConcertLiveIntegrationTest {
             .allSatisfy { record ->
                 assertThat(record.externalId).matches("PF\\d{6,12}")
                 assertThat(record.name).isNotBlank()
-                assertThat(record.startDate).isAfterOrEqualTo(LocalDate.now(ZoneId.of("Asia/Seoul")))
+                assertThat(record.endDate).isAfterOrEqualTo(LocalDate.now(ZoneId.of("Asia/Seoul")))
                 assertThat(record.ticketUrl).startsWith("https://kopis.or.kr/por/db/pblprfr/")
             }
     }
