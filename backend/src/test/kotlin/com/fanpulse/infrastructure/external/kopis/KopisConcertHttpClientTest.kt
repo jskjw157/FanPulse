@@ -168,6 +168,51 @@ class KopisConcertHttpClientTest {
     }
 
     @Test
+    fun `marks a detail row stale when it ended after list selection`() {
+        val source = spyk(client)
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+        val externalId = "PF298702"
+        val ongoing = KopisConcertListItem(
+            externalId = externalId,
+            name = "목록에서는 진행 중인 공연",
+            venueName = null,
+            venueHall = null,
+            startDate = today.minusDays(3),
+            endDate = today.plusDays(1),
+            status = "공연중",
+            posterUrl = null,
+        )
+        every {
+            source.fetchListPage(1, KOPIS_ONGOING_STATE_QUERY)
+        } returns KopisConcertListPage(1, listOf(ongoing))
+        every {
+            source.fetchListPage(1, KOPIS_SCHEDULED_STATE_QUERY)
+        } returns KopisConcertListPage(totalElements = 0, items = emptyList())
+        every { source.fetchDetail(externalId) } returns KopisConcertDetail(
+            externalId = externalId,
+            name = ongoing.name,
+            venueName = null,
+            venueHall = null,
+            startDate = ongoing.startDate,
+            endDate = today.minusDays(1),
+            status = "공연중",
+            posterUrl = null,
+            performanceTime = null,
+            priceText = null,
+            performers = null,
+            runtime = null,
+            ageRating = null,
+            venueAddress = null,
+            ticketUrl = "https://kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=$externalId",
+        )
+
+        val snapshot = source.fetchUpcomingPopularMusic(1)
+
+        assertThat(snapshot.detailFailures).containsExactly(externalId)
+        assertThat(snapshot.records.single().endDate).isEqualTo(ongoing.endDate)
+    }
+
+    @Test
     fun `orders ongoing and scheduled rows together before applying the limit`() {
         val source = spyk(client)
         val today = LocalDate.now(ZoneId.of("Asia/Seoul"))

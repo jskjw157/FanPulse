@@ -15,6 +15,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import com.ninjasquad.springmockk.MockkBean
 import org.springframework.context.annotation.Import
 import java.time.LocalDate
+import java.time.ZoneId
 
 @DataJpaTest(properties = ["spring.flyway.enabled=false", "spring.jpa.hibernate.ddl-auto=create-drop"])
 @Import(ConcertServiceImpl::class, ConcertSnapshotWriter::class)
@@ -151,6 +152,44 @@ class ConcertServiceIntegrationTest {
 
         assertThatThrownBy { service.getById(other.id) }
             .isInstanceOf(NoSuchElementException::class.java)
+    }
+
+    @Test
+    fun `public detail excludes ended rows that are still active`() {
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+        val ended = concerts.saveAndFlush(
+            CrawledConcert(
+                source = CrawledConcert.SOURCE_KOPIS,
+                externalId = "PF200004",
+                name = "종료됐지만 active인 공연",
+                startDate = today.minusDays(2),
+                endDate = today.minusDays(1),
+                status = "공연중",
+                ticketUrl = "https://kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=PF200004",
+            ),
+        )
+
+        assertThat(ended.active).isTrue()
+        assertThatThrownBy { service.getById(ended.id) }
+            .isInstanceOf(NoSuchElementException::class.java)
+    }
+
+    @Test
+    fun `public detail includes active rows ending today`() {
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+        val ongoing = concerts.saveAndFlush(
+            CrawledConcert(
+                source = CrawledConcert.SOURCE_KOPIS,
+                externalId = "PF200005",
+                name = "오늘 종료하는 진행 중 공연",
+                startDate = today.minusDays(2),
+                endDate = today,
+                status = "공연중",
+                ticketUrl = "https://kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=PF200005",
+            ),
+        )
+
+        assertThat(service.getById(ongoing.id).externalId).isEqualTo("PF200005")
     }
 
     private fun record(id: String, name: String, start: String, price: String?) = KopisConcertRecord(

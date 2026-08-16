@@ -156,7 +156,11 @@ class KopisConcertHttpClient(
         val failures = mutableListOf<String>()
         val records = selected.map { item ->
             val detail = try {
-                fetchDetail(item.externalId)
+                fetchDetail(item.externalId).also { fetched ->
+                    if (fetched.endDate.isBefore(today)) {
+                        throw KopisConcertSourceException("KOPIS detail row was stale")
+                    }
+                }
             } catch (_: KopisConcertSourceException) {
                 failures += item.externalId
                 null

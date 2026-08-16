@@ -19,6 +19,7 @@ class KopisConcertLiveIntegrationTest {
         ).fetchUpcomingPopularMusic(maxItems = 3)
 
         assertThat(snapshot.records).hasSize(3)
+        assertThat(snapshot.detailFailures).isEmpty()
         assertThat(snapshot.records.map { it.externalId }).doesNotHaveDuplicates()
         assertThat(snapshot.records)
             .allSatisfy { record ->

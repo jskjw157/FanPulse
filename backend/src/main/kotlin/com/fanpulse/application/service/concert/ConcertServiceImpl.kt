@@ -79,9 +79,15 @@ class ConcertServiceImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun getById(id: UUID): ConcertResponse =
-        concerts.findByIdAndSourceAndActiveTrue(id, CrawledConcert.SOURCE_KOPIS)?.let(::toResponse)
+    override fun getById(id: UUID): ConcertResponse {
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+        return concerts.findByIdAndSourceAndActiveTrueAndEndDateGreaterThanEqual(
+            id,
+            CrawledConcert.SOURCE_KOPIS,
+            today,
+        )?.let(::toResponse)
             ?: throw NoSuchElementException("공연을 찾을 수 없습니다")
+    }
 
     private fun toResponse(concert: CrawledConcert) = ConcertResponse(
         id = concert.id,

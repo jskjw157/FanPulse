@@ -12,7 +12,11 @@ interface CrawledConcertJpaRepository : JpaRepository<CrawledConcert, UUID> {
 
     fun findBySourceAndExternalId(source: String, externalId: String): CrawledConcert?
 
-    fun findByIdAndSourceAndActiveTrue(id: UUID, source: String): CrawledConcert?
+    fun findByIdAndSourceAndActiveTrueAndEndDateGreaterThanEqual(
+        id: UUID,
+        source: String,
+        endDate: LocalDate,
+    ): CrawledConcert?
 
     fun findAllBySourceAndActiveTrueAndEndDateGreaterThanEqualOrderByStartDateAscExternalIdAsc(
         source: String,
