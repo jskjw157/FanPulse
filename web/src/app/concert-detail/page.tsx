@@ -2,181 +2,102 @@
 
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
-import Link from "next/link";
-import { useState } from "react";
+import { fetchConcert, type Concert } from "@/lib/api/concert";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
+function formatDateRange(startDate: string, endDate: string): string {
+  const format = (value: string) => new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric", month: "long", day: "numeric", timeZone: "Asia/Seoul",
+  }).format(new Date(`${value}T00:00:00+09:00`));
+  return startDate === endDate ? format(startDate) : `${format(startDate)} ~ ${format(endDate)}`;
+}
 
 export default function ConcertDetailPage() {
-  const [selectedDate, setSelectedDate] = useState('2024-12-20');
-  const [selectedTicket, setSelectedTicket] = useState('');
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+  const [concert, setConcert] = useState<Concert | null>(null);
+  const [loading, setLoading] = useState(Boolean(id));
+  const [error, setError] = useState<string | null>(null);
+  const [resolvedId, setResolvedId] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
-  const concert = {
-    title: 'BTS World Tour Seoul',
-    artist: 'BTS',
-    image: 'https://readdy.ai/api/search-image?query=BTS%20world%20tour%20concert%20poster%2C%20spectacular%20stage%20design%2C%20purple%20and%20blue%20lighting%2C%20professional%20concert%20photography%2C%20massive%20LED%20screens%2C%20dynamic%20atmosphere%2C%20high%20quality&width=800&height=600&seq=concert002&orientation=landscape',
-    venue: '잠실 올림픽 주경기장',
-    address: '서울특별시 송파구 올림픽로 25',
-    dates: [
-      { date: '2024-12-20', time: '19:00', status: 'available' },
-      { date: '2024-12-21', time: '19:00', status: 'available' },
-      { date: '2024-12-22', time: '18:00', status: 'soldout' }
-    ],
-    tickets: [
-      { id: 'vip', name: 'VIP석', price: '220,000원', status: 'available' },
-      { id: 'r', name: 'R석', price: '165,000원', status: 'available' },
-      { id: 's', name: 'S석', price: '132,000원', status: 'available' },
-      { id: 'a', name: 'A석', price: '99,000원', status: 'soldout' }
-    ],
-    description: 'BTS의 월드투어가 서울에서 개최됩니다. 최고의 무대와 퍼포먼스를 경험하세요!',
-    notice: [
-      '본 공연은 전석 지정석입니다',
-      '7세 이상 입장 가능합니다',
-      '공연 당일 신분증을 지참해주세요',
-      '티켓 예매 후 취소/환불은 공연 7일 전까지 가능합니다'
-    ]
-  };
+  useEffect(() => {
+    if (!id) return;
+    const controller = new AbortController();
+    queueMicrotask(() => {
+      if (controller.signal.aborted) return;
+      setLoading(true); setError(null); setConcert(null); setResolvedId(null);
+    });
+    const load = async () => {
+      try {
+        const value = await fetchConcert(id, controller.signal);
+        if (!controller.signal.aborted) {
+          setConcert(value);
+          setResolvedId(id);
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setError("공연 상세 정보를 불러오지 못했습니다.");
+          setResolvedId(id);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+    void load();
+    return () => controller.abort();
+  }, [id, retryKey]);
 
   return (
     <>
-      <PageHeader 
-        title="공연 상세" 
-        rightAction={
-          <button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100">
-            <i className="ri-share-line text-xl text-gray-700"></i>
-          </button>
-        }
-      />
+      <PageHeader title="공연 상세" />
       <PageWrapper className="pb-24">
-        {/* Poster */}
-        <div className="h-80">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img 
-            src={concert.image}
-            alt={concert.title}
-            className="w-full h-full object-cover object-top"
-          />
-        </div>
-
-        {/* Concert Info */}
-        <div className="px-4 py-5">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{concert.title}</h1>
-          <p className="text-base text-purple-600 font-medium mb-4">{concert.artist}</p>
-
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-3">
-              <i className="ri-map-pin-line text-purple-600 text-lg flex-shrink-0 mt-0.5"></i>
-              <div>
-                <p className="font-medium text-gray-900">{concert.venue}</p>
-                <p className="text-gray-600 text-xs mt-0.5">{concert.address}</p>
+        {!id ? (
+          <div role="alert" className="py-16 text-center text-gray-700">공연 ID가 올바르지 않습니다.</div>
+        ) : loading || resolvedId !== id ? (
+          <div role="status" className="py-16 text-center text-gray-500">공연 상세 정보를 불러오는 중입니다.</div>
+        ) : error || !concert ? (
+          <div role="alert" className="py-16 text-center">
+            <p className="text-gray-700">{error ?? "공연 상세 정보를 불러오지 못했습니다."}</p>
+            {id && <button onClick={() => setRetryKey((value) => value + 1)} className="mt-4 px-5 py-2 rounded-full bg-purple-600 text-white">다시 시도</button>}
+          </div>
+        ) : (
+          <article>
+            {concert.posterUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={concert.posterUrl} alt={concert.title} referrerPolicy="no-referrer" className="w-full h-80 object-cover object-top" />
+            ) : (
+              <div className="h-56 bg-gray-100 flex items-center justify-center text-gray-400" aria-label="포스터 없음"><i className="ri-image-line text-4xl" /></div>
+            )}
+            <div className="px-4 py-6 space-y-6">
+              <header>
+                <p className="text-sm font-medium text-purple-600">{concert.status}</p>
+                <h1 className="mt-1 text-2xl font-bold text-gray-900">{concert.title}</h1>
+                {concert.artist && <p className="mt-2 text-gray-600">{concert.artist}</p>}
+              </header>
+              <section className="rounded-2xl bg-gray-50 p-5">
+                <h2 className="font-bold text-gray-900">공연 정보</h2>
+                <dl className="mt-4 space-y-3 text-sm">
+                  <div><dt className="text-gray-500">기간</dt><dd className="mt-1 text-gray-900">{formatDateRange(concert.startDate, concert.endDate)}</dd></div>
+                  {concert.performanceTime && <div><dt className="text-gray-500">시간</dt><dd className="mt-1 text-gray-900">{concert.performanceTime}</dd></div>}
+                  {concert.venue && <div><dt className="text-gray-500">장소</dt><dd className="mt-1 text-gray-900">{concert.venue}</dd></div>}
+                  {concert.venueAddress && <div><dt className="text-gray-500">주소</dt><dd className="mt-1 text-gray-900">{concert.venueAddress}</dd></div>}
+                  <div><dt className="text-gray-500">가격</dt><dd className="mt-1 text-gray-900">{concert.priceText ?? "가격 정보 없음"}</dd></div>
+                  {concert.runtime && <div><dt className="text-gray-500">관람시간</dt><dd className="mt-1 text-gray-900">{concert.runtime}</dd></div>}
+                  {concert.ageRating && <div><dt className="text-gray-500">관람연령</dt><dd className="mt-1 text-gray-900">{concert.ageRating}</dd></div>}
+                  {concert.performers && <div><dt className="text-gray-500">출연진</dt><dd className="mt-1 text-gray-900">{concert.performers}</dd></div>}
+                </dl>
+              </section>
+              <p className="text-xs leading-relaxed text-gray-500">공연 정보와 예매처는 KOPIS 공식 상세 페이지에서 다시 확인해 주세요.</p>
+            </div>
+            <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white px-4 py-4">
+              <div className="mx-auto max-w-4xl">
+                <a href={concert.ticketUrl} target="_blank" rel="noopener noreferrer" className="block w-full rounded-full bg-purple-600 py-4 text-center font-bold text-white">KOPIS 공식 정보 확인</a>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Date Selection */}
-        <div className="px-4 py-4 bg-gray-50">
-          <h2 className="text-base font-bold text-gray-900 mb-3">공연 일정</h2>
-          <div className="space-y-2">
-            {concert.dates.map(item => (
-              <button
-                key={item.date}
-                onClick={() => item.status === 'available' && setSelectedDate(item.date)}
-                disabled={item.status === 'soldout'}
-                className={`w-full p-4 rounded-xl text-left transition-all ${
-                  selectedDate === item.date
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                    : item.status === 'soldout'
-                    ? 'bg-gray-200 text-gray-400'
-                    : 'bg-white text-gray-900'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-bold">{item.date}</p>
-                    <p className="text-sm mt-1">{item.time} 시작</p>
-                  </div>
-                  {item.status === 'soldout' && (
-                    <span className="text-xs font-medium">매진</span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Ticket Selection */}
-        <div className="px-4 py-4">
-          <h2 className="text-base font-bold text-gray-900 mb-3">좌석 선택</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {concert.tickets.map(ticket => (
-              <button
-                key={ticket.id}
-                onClick={() => ticket.status === 'available' && setSelectedTicket(ticket.id)}
-                disabled={ticket.status === 'soldout'}
-                className={`p-4 rounded-xl text-left transition-all ${
-                  selectedTicket === ticket.id
-                    ? 'bg-purple-100 border-2 border-purple-600'
-                    : ticket.status === 'soldout'
-                    ? 'bg-gray-100 border-2 border-gray-200'
-                    : 'bg-white border-2 border-gray-200'
-                }`}
-              >
-                <p className={`font-bold mb-1 ${
-                  ticket.status === 'soldout' ? 'text-gray-400' : 'text-gray-900'
-                }`}>
-                  {ticket.name}
-                </p>
-                <p className={`text-sm ${
-                  selectedTicket === ticket.id ? 'text-purple-600' : 
-                  ticket.status === 'soldout' ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  {ticket.status === 'soldout' ? '매진' : ticket.price}
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Description */}
-        <div className="px-4 py-4 bg-gray-50">
-          <h2 className="text-base font-bold text-gray-900 mb-3">공연 소개</h2>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            {concert.description}
-          </p>
-        </div>
-
-        {/* Notice */}
-        <div className="px-4 py-4 mb-20">
-          <h2 className="text-base font-bold text-gray-900 mb-3">유의사항</h2>
-          <div className="space-y-2">
-            {concert.notice.map((item, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <i className="ri-checkbox-circle-line text-purple-600 flex-shrink-0 mt-0.5"></i>
-                <p className="text-sm text-gray-700">{item}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-              {/* Bottom Action */}
-              <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-40">
-                <div className="max-w-4xl mx-auto">
-                  {selectedDate && selectedTicket ? (
-                    <Link
-                      href={`/tickets/book?date=${selectedDate}&ticket=${selectedTicket}`}
-                      className="block w-full py-4 rounded-full font-bold text-base text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white"
-                    >
-                      티켓 예매하기
-                    </Link>
-                  ) : (
-                    <button
-                      disabled
-                      className="w-full py-4 rounded-full font-bold text-base bg-gray-200 text-gray-400"
-                    >
-                      티켓 예매하기
-                    </button>
-                  )}
-          </div>
-        </div>
+          </article>
+        )}
       </PageWrapper>
     </>
   );
