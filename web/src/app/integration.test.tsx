@@ -66,7 +66,7 @@ describe('Smoke Test - All Pages Render', () => {
 
   it('renders Tickets Page', () => {
     render(<TicketsPage />)
-    expect(screen.getByText('예매 내역')).toBeInTheDocument()
+    expect(screen.getByText('티켓 예매')).toBeInTheDocument()
   })
 
   it('renders Search Page', () => {
@@ -89,9 +89,10 @@ describe('Smoke Test - All Pages Render', () => {
     expect(screen.getByText('Something Went Wrong')).toBeInTheDocument()
   })
 
-  it('renders Concert Detail Page', () => {
+  it('renders Concert Detail Page', async () => {
     render(<ConcertDetailPage />)
     expect(screen.getByText('공연 상세')).toBeInTheDocument()
+    expect(await screen.findByText('공연 상세 정보를 불러오지 못했습니다.')).toBeInTheDocument()
   })
 
   it('renders Notice Detail Page', () => {

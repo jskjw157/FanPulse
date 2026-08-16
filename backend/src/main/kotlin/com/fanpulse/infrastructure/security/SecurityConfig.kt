@@ -79,6 +79,7 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/artists/**").permitAll()
                     .requestMatchers("/api/v1/search/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/community/posts", "/api/v1/community/posts/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/concerts", "/api/v1/concerts/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/comments/**").permitAll()
 
                     // Admin: 뉴스 동기화 수동 트리거 (#272)
