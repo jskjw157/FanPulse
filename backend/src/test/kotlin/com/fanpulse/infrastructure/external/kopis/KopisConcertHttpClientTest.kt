@@ -103,6 +103,119 @@ class KopisConcertHttpClientTest {
     }
 
     @Test
+    fun `accepts ongoing popular music rows in list and detail responses`() {
+        val list = client.parseListResponse(
+            """
+            {"result":[
+              {"prfrId":"PF298700","prfrNm":"진행 중 공연","genreNm":"대중음악","prfrBgngDt":"2026.08.15","prfrEndDt":"2026.08.20","prfState":"공연중","totcnt":1}
+            ]}
+            """.trimIndent().toByteArray()
+        )
+        val detail = client.parseDetailResponse(
+            "PF298700",
+            """
+            {"result":{"prfrId":"PF298700","prfrNm":"진행 중 공연","genreNm":"대중음악","prfrBgngDt":"2026.08.15","prfrEndDt":"2026.08.20","prfState":"공연중"}}
+            """.trimIndent().toByteArray()
+        )
+
+        assertThat(list.items.single().status).isEqualTo("공연중")
+        assertThat(detail.status).isEqualTo("공연중")
+    }
+
+    @Test
+    fun `keeps ongoing multi day concerts after their start date`() {
+        val source = spyk(client)
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+        val externalId = "PF298701"
+        val ongoing = KopisConcertListItem(
+            externalId = externalId,
+            name = "진행 중 장기 공연",
+            venueName = "공연장",
+            venueHall = "홀",
+            startDate = today.minusDays(3),
+            endDate = today.plusDays(3),
+            status = "공연중",
+            posterUrl = "https://kopis.or.kr/upload/$externalId.gif",
+        )
+        every {
+            source.fetchListPage(1, KOPIS_ONGOING_STATE_QUERY)
+        } returns KopisConcertListPage(1, listOf(ongoing))
+        every {
+            source.fetchListPage(1, KOPIS_SCHEDULED_STATE_QUERY)
+        } returns KopisConcertListPage(totalElements = 0, items = emptyList())
+        every { source.fetchDetail(externalId) } returns KopisConcertDetail(
+            externalId = externalId,
+            name = ongoing.name,
+            venueName = ongoing.venueName,
+            venueHall = ongoing.venueHall,
+            startDate = ongoing.startDate,
+            endDate = ongoing.endDate,
+            status = ongoing.status,
+            posterUrl = ongoing.posterUrl,
+            performanceTime = null,
+            priceText = null,
+            performers = null,
+            runtime = null,
+            ageRating = null,
+            venueAddress = null,
+            ticketUrl = "https://kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=$externalId",
+        )
+
+        val snapshot = source.fetchUpcomingPopularMusic(1)
+
+        assertThat(snapshot.records.map { it.externalId }).containsExactly(externalId)
+        verify(exactly = 1) { source.fetchListPage(1, KOPIS_SCHEDULED_STATE_QUERY) }
+    }
+
+    @Test
+    fun `orders ongoing and scheduled rows together before applying the limit`() {
+        val source = spyk(client)
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+        val ongoing = KopisConcertListItem(
+            externalId = "PF298801",
+            name = "진행 중 공연",
+            venueName = null,
+            venueHall = null,
+            startDate = today,
+            endDate = today.plusDays(1),
+            status = "공연중",
+            posterUrl = null,
+        )
+        val scheduled = ongoing.copy(
+            externalId = "PF298800",
+            name = "예정 공연",
+            status = "공연예정",
+        )
+        every {
+            source.fetchListPage(1, KOPIS_ONGOING_STATE_QUERY)
+        } returns KopisConcertListPage(1, listOf(ongoing))
+        every {
+            source.fetchListPage(1, KOPIS_SCHEDULED_STATE_QUERY)
+        } returns KopisConcertListPage(1, listOf(scheduled))
+        every { source.fetchDetail(scheduled.externalId) } returns KopisConcertDetail(
+            externalId = scheduled.externalId,
+            name = scheduled.name,
+            venueName = null,
+            venueHall = null,
+            startDate = scheduled.startDate,
+            endDate = scheduled.endDate,
+            status = scheduled.status,
+            posterUrl = null,
+            performanceTime = null,
+            priceText = null,
+            performers = null,
+            runtime = null,
+            ageRating = null,
+            venueAddress = null,
+            ticketUrl = "https://kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=${scheduled.externalId}",
+        )
+
+        val snapshot = source.fetchUpcomingPopularMusic(1)
+
+        assertThat(snapshot.records.map { it.externalId }).containsExactly(scheduled.externalId)
+    }
+
+    @Test
     fun `rejects malformed duplicate or mismatched rows`() {
         val duplicate =
             """
@@ -163,7 +276,10 @@ class KopisConcertHttpClientTest {
                 posterUrl = "https://kopis.or.kr/upload/$externalId.gif",
             )
         }
-        every { source.fetchListPage(any()) } answers {
+        every {
+            source.fetchListPage(1, KOPIS_ONGOING_STATE_QUERY)
+        } returns KopisConcertListPage(totalElements = 0, items = emptyList())
+        every { source.fetchListPage(any(), KOPIS_SCHEDULED_STATE_QUERY) } answers {
             check(firstArg<Int>() == 1) { "필요한 행을 확보한 뒤 추가 페이지를 요청하면 안 됩니다" }
             KopisConcertListPage(totalElements = 1_001, items = items)
         }
@@ -192,6 +308,72 @@ class KopisConcertHttpClientTest {
 
         assertThat(snapshot.records).hasSize(60)
         assertThat(snapshot.detailFailures).isEmpty()
-        verify(exactly = 1) { source.fetchListPage(1) }
+        verify(exactly = 1) { source.fetchListPage(1, KOPIS_ONGOING_STATE_QUERY) }
+        verify(exactly = 1) { source.fetchListPage(1, KOPIS_SCHEDULED_STATE_QUERY) }
+    }
+
+    @Test
+    fun `shares the ten page safety limit across ongoing and scheduled queries`() {
+        val source = spyk(client)
+        val staleDate = LocalDate.now(ZoneId.of("Asia/Seoul")).minusDays(1)
+        every {
+            source.fetchListPage(1, KOPIS_ONGOING_STATE_QUERY)
+        } returns KopisConcertListPage(totalElements = 0, items = emptyList())
+        every { source.fetchListPage(any(), KOPIS_SCHEDULED_STATE_QUERY) } answers {
+            val page = firstArg<Int>()
+            check(page <= 9) { "공유 10페이지 한도를 넘겨 요청하면 안 됩니다" }
+            val items = (1..100).map { index ->
+                val externalId = "PF${400000 + ((page - 1) * 100) + index}"
+                KopisConcertListItem(
+                    externalId = externalId,
+                    name = externalId,
+                    venueName = null,
+                    venueHall = null,
+                    startDate = staleDate.minusDays(1),
+                    endDate = staleDate,
+                    status = "공연예정",
+                    posterUrl = null,
+                )
+            }
+            KopisConcertListPage(totalElements = 1_001, items = items)
+        }
+
+        assertThatThrownBy { source.fetchUpcomingPopularMusic(1) }
+            .isInstanceOf(KopisConcertSourceException::class.java)
+            .hasMessageContaining("safe page limit")
+        verify(exactly = 0) { source.fetchListPage(10, KOPIS_SCHEDULED_STATE_QUERY) }
+    }
+
+    @Test
+    fun `fails closed when one nonempty active state contains only stale rows`() {
+        val source = spyk(client)
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+        val ongoing = KopisConcertListItem(
+            externalId = "PF298900",
+            name = "정상 진행 중 공연",
+            venueName = null,
+            venueHall = null,
+            startDate = today.minusDays(1),
+            endDate = today.plusDays(1),
+            status = "공연중",
+            posterUrl = null,
+        )
+        val staleScheduled = ongoing.copy(
+            externalId = "PF298901",
+            name = "비정상 종료 예정 공연",
+            endDate = today.minusDays(1),
+            status = "공연예정",
+        )
+        every {
+            source.fetchListPage(1, KOPIS_ONGOING_STATE_QUERY)
+        } returns KopisConcertListPage(1, listOf(ongoing))
+        every {
+            source.fetchListPage(1, KOPIS_SCHEDULED_STATE_QUERY)
+        } returns KopisConcertListPage(1, listOf(staleScheduled))
+
+        assertThatThrownBy { source.fetchUpcomingPopularMusic(1) }
+            .isInstanceOf(KopisConcertSourceException::class.java)
+            .hasMessageContaining("stale")
+        verify(exactly = 0) { source.fetchDetail(any()) }
     }
 }

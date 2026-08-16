@@ -23,6 +23,15 @@ private const val KOPIS_DETAIL_PATH = "/api/prs/v1/por/db/prfrdb/perfo-infos"
 private const val KOPIS_USER_AGENT = "FanPulse/1.0 (+https://fanpulse-psi.vercel.app)"
 private const val KOPIS_PAGE_SIZE = 100
 private const val KOPIS_MAX_PAGES = 10
+internal const val KOPIS_SCHEDULED_STATE_QUERY = "^01"
+internal const val KOPIS_ONGOING_STATE_QUERY = "^02"
+private const val KOPIS_SCHEDULED_STATUS = "공연예정"
+private const val KOPIS_ONGOING_STATUS = "공연중"
+private val KOPIS_STATUS_BY_STATE_QUERY = linkedMapOf(
+    KOPIS_ONGOING_STATE_QUERY to KOPIS_ONGOING_STATUS,
+    KOPIS_SCHEDULED_STATE_QUERY to KOPIS_SCHEDULED_STATUS,
+)
+private val KOPIS_ACTIVE_STATUSES = KOPIS_STATUS_BY_STATE_QUERY.values.toSet()
 private val KOPIS_ID = Regex("PF\\d{6,12}")
 private val KOPIS_FORBIDDEN_ENCODED_PATH = Regex("%(?:2e|2f|5c)", RegexOption.IGNORE_CASE)
 private val KOPIS_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu.MM.dd")
@@ -44,6 +53,12 @@ data class KopisConcertListItem(
 data class KopisConcertListPage(
     val totalElements: Int,
     val items: List<KopisConcertListItem>,
+)
+
+private data class KopisCandidateBatch(
+    val selected: List<KopisConcertListItem>,
+    val fetchedIds: Set<String>,
+    val pagesUsed: Int,
 )
 
 data class KopisConcertDetail(
@@ -109,19 +124,79 @@ class KopisConcertHttpClient(
 
     override fun fetchUpcomingPopularMusic(maxItems: Int): KopisConcertSnapshot {
         require(maxItems in 1..100) { "KOPIS max items must be between 1 and 100" }
-        val first = fetchListPage(1)
-        if (first.totalElements <= 0 || first.items.isEmpty()) {
-            throw KopisConcertSourceException("KOPIS upcoming popular music list was empty")
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+        val candidates = mutableListOf<KopisConcertListItem>()
+        val fetchedIds = mutableSetOf<String>()
+        var remainingPages = KOPIS_MAX_PAGES
+        for (stateQuery in KOPIS_STATUS_BY_STATE_QUERY.keys) {
+            if (remainingPages <= 0) {
+                throw KopisConcertSourceException("KOPIS active rows exceeded the safe page limit")
+            }
+            val batch = fetchCandidates(
+                stateQuery = stateQuery,
+                maxItems = maxItems,
+                today = today,
+                pageBudget = remainingPages,
+            )
+            remainingPages -= batch.pagesUsed
+            batch.fetchedIds.forEach { externalId ->
+                if (!fetchedIds.add(externalId)) {
+                    throw KopisConcertSourceException("KOPIS active identifiers were duplicated between statuses")
+                }
+            }
+            candidates += batch.selected
+        }
+        val selected = candidates
+            .sortedWith(compareBy<KopisConcertListItem> { it.startDate }.thenBy { it.externalId })
+            .take(maxItems)
+        if (selected.isEmpty()) {
+            throw KopisConcertSourceException("KOPIS active popular music list was empty")
+        }
+
+        val failures = mutableListOf<String>()
+        val records = selected.map { item ->
+            val detail = try {
+                fetchDetail(item.externalId)
+            } catch (_: KopisConcertSourceException) {
+                failures += item.externalId
+                null
+            }
+            if (detail == null) {
+                item.toRecord()
+            } else {
+                detail.toRecord()
+            }
+        }
+        return KopisConcertSnapshot(records, failures)
+    }
+
+    private fun fetchCandidates(
+        stateQuery: String,
+        maxItems: Int,
+        today: LocalDate,
+        pageBudget: Int,
+    ): KopisCandidateBatch {
+        require(maxItems in 1..100)
+        require(pageBudget in 1..KOPIS_MAX_PAGES)
+        val first = fetchListPage(1, stateQuery)
+        if (first.totalElements == 0) {
+            if (first.items.isNotEmpty()) {
+                throw KopisConcertSourceException("KOPIS empty list metadata was inconsistent")
+            }
+            return KopisCandidateBatch(emptyList(), emptySet(), pagesUsed = 1)
+        }
+        if (first.totalElements < 0 || first.items.isEmpty()) {
+            throw KopisConcertSourceException("KOPIS active popular music list was invalid")
         }
         val totalPages = ((first.totalElements.toLong() + KOPIS_PAGE_SIZE - 1) / KOPIS_PAGE_SIZE).toInt()
         if (totalPages < 1) {
-            throw KopisConcertSourceException("KOPIS upcoming popular music page count was invalid")
+            throw KopisConcertSourceException("KOPIS active popular music page count was invalid")
         }
 
-        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
         val all = mutableListOf<KopisConcertListItem>()
         val seen = mutableSetOf<String>()
         var page = 1
+        var pagesUsed = 1
         var current = first
         lateinit var selected: List<KopisConcertListItem>
         while (true) {
@@ -142,42 +217,30 @@ class KopisConcertHttpClient(
                 all += item
             }
             selected = all.asSequence()
-                .filter { !it.startDate.isBefore(today) }
+                .filter { !it.endDate.isBefore(today) }
                 .sortedWith(compareBy<KopisConcertListItem> { it.startDate }.thenBy { it.externalId })
                 .take(maxItems)
                 .toList()
             if (selected.size == maxItems || page == totalPages) {
                 break
             }
-            if (page == KOPIS_MAX_PAGES) {
-                throw KopisConcertSourceException("KOPIS upcoming rows exceeded the safe page limit")
+            if (pagesUsed == pageBudget) {
+                throw KopisConcertSourceException("KOPIS active rows exceeded the safe page limit")
             }
             page += 1
-            current = fetchListPage(page)
+            pagesUsed += 1
+            current = fetchListPage(page, stateQuery)
         }
         if (selected.isEmpty()) {
-            throw KopisConcertSourceException("KOPIS upcoming popular music rows were stale")
+            throw KopisConcertSourceException("KOPIS active popular music rows were stale")
         }
-
-        val failures = mutableListOf<String>()
-        val records = selected.map { item ->
-            val detail = try {
-                fetchDetail(item.externalId)
-            } catch (_: KopisConcertSourceException) {
-                failures += item.externalId
-                null
-            }
-            if (detail == null) {
-                item.toRecord()
-            } else {
-                detail.toRecord()
-            }
-        }
-        return KopisConcertSnapshot(records, failures)
+        return KopisCandidateBatch(selected, seen, pagesUsed)
     }
 
-    internal fun fetchListPage(page: Int): KopisConcertListPage {
+    internal fun fetchListPage(page: Int, stateQuery: String): KopisConcertListPage {
         require(page in 1..KOPIS_MAX_PAGES)
+        val expectedStatus = KOPIS_STATUS_BY_STATE_QUERY[stateQuery]
+            ?: throw IllegalArgumentException("Unsupported KOPIS state query")
         val query = linkedMapOf(
             "sPageIndex" to page.toString(),
             "pageRcdPer" to KOPIS_PAGE_SIZE.toString(),
@@ -189,7 +252,7 @@ class KopisConcertHttpClient(
             "signguCodeSub" to "",
             "prfPdFrom" to "",
             "prfPdTo" to "",
-            "prfState" to "^01",
+            "prfState" to stateQuery,
             "srchOpenRun" to "",
             "mt2zGenreCode" to "",
             "seatScale" to "",
@@ -206,7 +269,11 @@ class KopisConcertHttpClient(
         ).entries.joinToString("&") { (key, value) ->
             "${encode(key)}=${encode(value)}"
         }
-        return parseListResponse(fetch(URI.create("$KOPIS_API_BASE$KOPIS_LIST_PATH?$query")))
+        val result = parseListResponse(fetch(URI.create("$KOPIS_API_BASE$KOPIS_LIST_PATH?$query")))
+        if (result.items.any { it.status != expectedStatus }) {
+            throw KopisConcertSourceException("KOPIS list status did not match the requested state")
+        }
+        return result
     }
 
     internal fun fetchDetail(externalId: String): KopisConcertDetail {
@@ -225,7 +292,10 @@ class KopisConcertHttpClient(
         }
         val rows = response.result
             ?: throw KopisConcertSourceException("KOPIS list result was missing")
-        if (rows.isEmpty() || rows.size > KOPIS_PAGE_SIZE) {
+        if (rows.isEmpty()) {
+            return KopisConcertListPage(totalElements = 0, items = emptyList())
+        }
+        if (rows.size > KOPIS_PAGE_SIZE) {
             throw KopisConcertSourceException("KOPIS list row count was invalid")
         }
         val totals = rows.mapNotNull { it.totcnt }.toSet()
@@ -238,7 +308,8 @@ class KopisConcertHttpClient(
             if (!seen.add(id)) {
                 throw KopisConcertSourceException("KOPIS list identifiers were duplicated")
             }
-            if (row.genreNm != "대중음악" || row.prfState != "공연예정") {
+            val status = row.prfState?.takeIf { it in KOPIS_ACTIVE_STATUSES }
+            if (row.genreNm != "대중음악" || status == null) {
                 throw KopisConcertSourceException("KOPIS list category or status was invalid")
             }
             val startDate = parseDate(row.prfrBgngDt, "start")
@@ -253,7 +324,7 @@ class KopisConcertHttpClient(
                 venueHall = optionalText(row.prfrPlceNm, 255),
                 startDate = startDate,
                 endDate = endDate,
-                status = row.prfState,
+                status = status,
                 posterUrl = posterUrl(row.pstrUrlAddr),
             )
         }
@@ -272,7 +343,8 @@ class KopisConcertHttpClient(
         if (validateExternalId(row.prfrId) != externalId) {
             throw KopisConcertSourceException("KOPIS detail identifier did not match")
         }
-        if (row.genreNm != "대중음악" || row.prfState != "공연예정") {
+        val status = row.prfState?.takeIf { it in KOPIS_ACTIVE_STATUSES }
+        if (row.genreNm != "대중음악" || status == null) {
             throw KopisConcertSourceException("KOPIS detail category or status was invalid")
         }
         val startDate = parseDate(row.prfrBgngDt, "start")
@@ -291,7 +363,7 @@ class KopisConcertHttpClient(
             venueHall = optionalText(row.prfrPlceNm, 255),
             startDate = startDate,
             endDate = endDate,
-            status = row.prfState,
+            status = status,
             posterUrl = posterUrl(row.pstrUrlAddr),
             performanceTime = optionalText(row.prfrTmGdCn, 500),
             priceText = optionalText(row.prcSeCn, 1000),
