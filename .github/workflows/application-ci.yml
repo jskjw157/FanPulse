@@ -38,6 +38,7 @@ jobs:
       DB_USERNAME: fanpulse
       DB_PASSWORD: fanpulse
       AI_SERVICE_API_KEY: ci-test-api-key
+      KOPIS_POSTGRES_VERTICAL: 'true'
     steps:
       - name: 소스 체크아웃
         uses: actions/checkout@v7
