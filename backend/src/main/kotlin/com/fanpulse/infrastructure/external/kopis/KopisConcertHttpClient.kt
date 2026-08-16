@@ -4,17 +4,26 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import java.io.ByteArrayOutputStream
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.net.http.HttpTimeoutException
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.ResolverStyle
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Flow
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 private const val KOPIS_API_BASE = "https://kopis.or.kr:9001"
 private const val KOPIS_SITE_BASE = "https://kopis.or.kr"
@@ -38,6 +47,122 @@ private val KOPIS_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu.MM.dd")
     .withResolverStyle(ResolverStyle.STRICT)
 
 class KopisConcertSourceException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+
+internal fun sendBoundedKopisRequest(
+    client: HttpClient,
+    request: HttpRequest,
+    timeout: Duration,
+    maxBytes: Int,
+): HttpResponse<ByteArray> {
+    require(!timeout.isZero && !timeout.isNegative) { "timeout must be positive" }
+    require(maxBytes > 0) { "maxBytes must be positive" }
+
+    val future = client.sendAsync(
+        request,
+        HttpResponse.BodyHandler { responseInfo ->
+            val contentType = responseInfo.headers().firstValue("Content-Type").orElse("").lowercase()
+            val declared = responseInfo.headers().firstValueAsLong("Content-Length")
+            val failure = when {
+                responseInfo.statusCode() != 200 ->
+                    KopisConcertSourceException("KOPIS returned HTTP ${responseInfo.statusCode()}")
+                !contentType.contains("application/json") ->
+                    KopisConcertSourceException("KOPIS response Content-Type was invalid")
+                declared.isPresent && declared.asLong > maxBytes ->
+                    KopisConcertSourceException("KOPIS response exceeded byte limit")
+                else -> null
+            }
+            if (failure == null) {
+                BoundedByteArraySubscriber(maxBytes)
+            } else {
+                FailedByteArraySubscriber(failure)
+            }
+        }
+    )
+    return try {
+        future.get(timeout.toNanos(), TimeUnit.NANOSECONDS)
+    } catch (exc: TimeoutException) {
+        future.cancel(true)
+        throw HttpTimeoutException("KOPIS response body timed out")
+    } catch (exc: InterruptedException) {
+        future.cancel(true)
+        throw exc
+    } catch (exc: ExecutionException) {
+        throw (exc.cause ?: exc)
+    }
+}
+
+private class FailedByteArraySubscriber(
+    failure: Throwable,
+) : HttpResponse.BodySubscriber<ByteArray> {
+    private val result = CompletableFuture<ByteArray>().apply {
+        completeExceptionally(failure)
+    }
+
+    override fun getBody(): CompletionStage<ByteArray> = result
+
+    override fun onSubscribe(subscription: Flow.Subscription) {
+        subscription.cancel()
+    }
+
+    override fun onNext(item: List<ByteBuffer>) = Unit
+
+    override fun onError(throwable: Throwable) = Unit
+
+    override fun onComplete() = Unit
+}
+
+private class BoundedByteArraySubscriber(
+    private val maxBytes: Int,
+) : HttpResponse.BodySubscriber<ByteArray> {
+    private val result = CompletableFuture<ByteArray>()
+    private val output = ByteArrayOutputStream(minOf(maxBytes, 8_192))
+    private var subscription: Flow.Subscription? = null
+    private var receivedBytes = 0
+
+    override fun getBody(): CompletionStage<ByteArray> = result
+
+    override fun onSubscribe(subscription: Flow.Subscription) {
+        if (this.subscription != null) {
+            subscription.cancel()
+            return
+        }
+        this.subscription = subscription
+        subscription.request(1)
+    }
+
+    override fun onNext(item: List<ByteBuffer>) {
+        if (result.isDone) return
+        try {
+            item.forEach { buffer ->
+                val bytesInBuffer = buffer.remaining()
+                if (bytesInBuffer > maxBytes - receivedBytes) {
+                    fail(KopisConcertSourceException("KOPIS response exceeded byte limit"))
+                    return
+                }
+                val chunk = ByteArray(bytesInBuffer)
+                buffer.get(chunk)
+                output.write(chunk)
+                receivedBytes += bytesInBuffer
+            }
+            subscription?.request(1)
+        } catch (exc: Exception) {
+            fail(exc)
+        }
+    }
+
+    override fun onError(throwable: Throwable) {
+        result.completeExceptionally(throwable)
+    }
+
+    override fun onComplete() {
+        result.complete(output.toByteArray())
+    }
+
+    private fun fail(throwable: Throwable) {
+        subscription?.cancel()
+        result.completeExceptionally(throwable)
+    }
+}
 
 data class KopisConcertListItem(
     val externalId: String,
@@ -390,28 +515,16 @@ class KopisConcertHttpClient(
                 .header("User-Agent", KOPIS_USER_AGENT)
                 .GET()
                 .build()
-            val response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream())
-            if (response.statusCode() != 200) {
-                response.body().close()
-                throw KopisConcertSourceException("KOPIS returned HTTP ${response.statusCode()}")
-            }
-            val contentType = response.headers().firstValue("Content-Type").orElse("").lowercase()
-            if (!contentType.contains("application/json")) {
-                response.body().close()
-                throw KopisConcertSourceException("KOPIS response Content-Type was invalid")
-            }
-            val declared = response.headers().firstValueAsLong("Content-Length")
-            if (declared.isPresent && declared.asLong > maxBytes) {
-                response.body().close()
-                throw KopisConcertSourceException("KOPIS response exceeded byte limit")
-            }
-            val bytes = response.body().use { it.readNBytes(maxBytes + 1) }
+            val response = sendBoundedKopisRequest(httpClient, request, timeout, maxBytes)
+            val bytes = response.body()
             if (bytes.size > maxBytes) {
                 throw KopisConcertSourceException("KOPIS response exceeded byte limit")
             }
             return bytes
         } catch (exc: KopisConcertSourceException) {
             throw exc
+        } catch (exc: HttpTimeoutException) {
+            throw KopisConcertSourceException("KOPIS request timed out", exc)
         } catch (exc: InterruptedException) {
             Thread.currentThread().interrupt()
             throw KopisConcertSourceException("KOPIS request was interrupted", exc)

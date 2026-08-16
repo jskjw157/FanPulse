@@ -1,15 +1,25 @@
 package com.fanpulse.infrastructure.external.kopis
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.sun.net.httpserver.HttpExchange
+import com.sun.net.httpserver.HttpServer
 import io.mockk.every
 import io.mockk.spyk
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import java.net.InetSocketAddress
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpTimeoutException
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class KopisConcertHttpClientTest {
     private val client = KopisConcertHttpClient(
@@ -17,6 +27,110 @@ class KopisConcertHttpClientTest {
         timeout = Duration.ofSeconds(2),
         maxBytes = 1_048_576,
     )
+
+    @Test
+    fun `bounded request times out when response body stalls after headers`() {
+        val bodyStarted = CountDownLatch(1)
+        withHttpServer(
+            handler = { exchange ->
+                exchange.responseHeaders.add("Content-Type", "application/json")
+                exchange.sendResponseHeaders(200, 0)
+                exchange.responseBody.write('{'.code)
+                exchange.responseBody.flush()
+                bodyStarted.countDown()
+                Thread.sleep(5_000)
+            }
+        ) { uri ->
+            val request = HttpRequest.newBuilder(uri)
+                .timeout(Duration.ofSeconds(1))
+                .GET()
+                .build()
+
+            assertThatThrownBy {
+                sendBoundedKopisRequest(
+                    client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build(),
+                    request = request,
+                    timeout = Duration.ofSeconds(1),
+                    maxBytes = 1_024,
+                )
+            }.isInstanceOf(HttpTimeoutException::class.java)
+            assertThat(bodyStarted.await(100, TimeUnit.MILLISECONDS)).isTrue()
+        }
+    }
+
+    @Test
+    fun `bounded request accepts the byte limit and rejects one extra chunked byte`() {
+        withHttpServer(
+            handler = { exchange ->
+                val query = exchange.requestURI.query
+                val size = query.substringAfter("size=").substringBefore('&').toInt()
+                val declaredLength = query.contains("declared=true")
+                exchange.responseHeaders.add("Content-Type", "application/json")
+                exchange.sendResponseHeaders(200, if (declaredLength) size.toLong() else 0)
+                exchange.responseBody.write(ByteArray(size))
+            }
+        ) { uri ->
+            val httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build()
+            fun request(size: Int, declaredLength: Boolean = false) = HttpRequest.newBuilder(
+                URI.create("$uri?size=$size&declared=$declaredLength")
+            )
+                .timeout(Duration.ofSeconds(2))
+                .GET()
+                .build()
+
+            val exact = sendBoundedKopisRequest(
+                client = httpClient,
+                request = request(1_024),
+                timeout = Duration.ofSeconds(2),
+                maxBytes = 1_024,
+            )
+            assertThat(exact.body()).hasSize(1_024)
+
+            fun assertRejected(request: HttpRequest) {
+                assertThatThrownBy {
+                    sendBoundedKopisRequest(
+                        client = httpClient,
+                        request = request,
+                        timeout = Duration.ofSeconds(2),
+                        maxBytes = 1_024,
+                    )
+                }
+                    .isInstanceOf(KopisConcertSourceException::class.java)
+                    .hasMessageContaining("byte limit")
+            }
+
+            assertRejected(request(1_025))
+            assertRejected(request(1_025, declaredLength = true))
+        }
+    }
+
+    private fun withHttpServer(
+        handler: (HttpExchange) -> Unit,
+        assertion: (URI) -> Unit,
+    ) {
+        val executor = Executors.newSingleThreadExecutor { task ->
+            Thread(task, "kopis-http-test").apply { isDaemon = true }
+        }
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.executor = executor
+        server.createContext("/test") { exchange ->
+            try {
+                handler(exchange)
+            } catch (_: Exception) {
+                // Timeout tests intentionally close the exchange while the handler is blocked.
+            } finally {
+                exchange.close()
+            }
+        }
+        server.start()
+
+        try {
+            assertion(URI.create("http://127.0.0.1:${server.address.port}/test"))
+        } finally {
+            server.stop(0)
+            executor.shutdownNow()
+        }
+    }
 
     @Test
     fun `parses upcoming popular music list rows with strict source identifiers and dates`() {
