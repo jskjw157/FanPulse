@@ -1,5 +1,6 @@
 package com.fanpulse.application.service.concert
 
+import com.fanpulse.domain.concert.CrawledConcert
 import com.fanpulse.infrastructure.external.kopis.KopisConcertRecord
 import com.fanpulse.infrastructure.external.kopis.KopisConcertSnapshot
 import com.fanpulse.infrastructure.external.kopis.KopisConcertSource
@@ -135,6 +136,23 @@ class ConcertServiceIntegrationTest {
         assertThat(persisted?.venueAddress).isEqualTo(venueAddress)
     }
 
+    @Test
+    fun `public list excludes active rows from other sources`() {
+        concerts.saveAndFlush(otherSourceConcert())
+
+        val page = service.getUpcoming(page = 0, size = 20)
+
+        assertThat(page.content).isEmpty()
+    }
+
+    @Test
+    fun `public detail excludes active rows from other sources`() {
+        val other = concerts.saveAndFlush(otherSourceConcert())
+
+        assertThatThrownBy { service.getById(other.id) }
+            .isInstanceOf(NoSuchElementException::class.java)
+    }
+
     private fun record(id: String, name: String, start: String, price: String?) = KopisConcertRecord(
         externalId = id,
         name = name,
@@ -152,4 +170,17 @@ class ConcertServiceIntegrationTest {
         venueAddress = "서울특별시",
         ticketUrl = "https://kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=$id",
     )
+
+    private fun otherSourceConcert(): CrawledConcert {
+        val date = LocalDate.now().plusDays(30)
+        return CrawledConcert(
+            source = "OTHER",
+            externalId = "OTHER-1",
+            name = "다른 수집원 공연",
+            startDate = date,
+            endDate = date,
+            status = "ACTIVE",
+            ticketUrl = "https://example.com/concert",
+        )
+    }
 }
