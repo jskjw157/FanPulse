@@ -8,6 +8,8 @@ import {
 } from '@/lib/api-response';
 import type { ApiResponse } from '@/types/api';
 
+export type ConcertStatus = '공연예정' | '공연중';
+
 interface ConcertDto {
   id: string;
   externalId: string;
@@ -17,7 +19,7 @@ interface ConcertDto {
   venueHall: string | null;
   startDate: string;
   endDate: string;
-  status: '공연예정';
+  status: ConcertStatus;
   posterUrl: string | null;
   performanceTime: string | null;
   priceText: string | null;
@@ -45,7 +47,7 @@ export interface Concert {
   venue: string | null;
   startDate: string;
   endDate: string;
-  status: '공연예정';
+  status: ConcertStatus;
   posterUrl: string | null;
   performanceTime: string | null;
   priceText: string | null;
@@ -126,7 +128,7 @@ function isConcertDto(value: unknown): value is ConcertDto {
     !isNullableText(value.venueHall) ||
     !isIsoDate(value.startDate) ||
     !isIsoDate(value.endDate) ||
-    value.status !== '공연예정' ||
+    (value.status !== '공연예정' && value.status !== '공연중') ||
     !isKopisPosterUrl(value.posterUrl) ||
     !isNullableText(value.performanceTime) ||
     !isNullableText(value.priceText) ||

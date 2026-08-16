@@ -67,6 +67,20 @@ describe('concert API contract', () => {
     await expect(fetchConcert(dto.id)).resolves.toMatchObject({ id: dto.id, title: dto.name });
   });
 
+  it('accepts ongoing concerts in page and detail contracts', async () => {
+    const ongoing = { ...dto, status: '공연중' };
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: { success: true, data: { ...page, content: [ongoing] } },
+    });
+
+    await expect(fetchConcerts()).resolves.toMatchObject({
+      items: [{ id: dto.id, status: '공연중' }],
+    });
+
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: { success: true, data: ongoing } });
+    await expect(fetchConcert(dto.id)).resolves.toMatchObject({ id: dto.id, status: '공연중' });
+  });
+
   it('rejects a detail response for a different UUID', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({
       data: {
@@ -83,6 +97,7 @@ describe('concert API contract', () => {
     { ...dto, externalId: 'wrong' },
     { ...dto, startDate: '2026-02-31' },
     { ...dto, endDate: '2026-09-11' },
+    { ...dto, status: '공연완료' },
     { ...dto, posterUrl: 'https://example.com/poster.jpg' },
     { ...dto, ticketUrl: 'https://example.com/ticket' },
     { ...dto, priceText: 110000 },
