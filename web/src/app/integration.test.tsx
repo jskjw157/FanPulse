@@ -66,7 +66,7 @@ describe('Smoke Test - All Pages Render', () => {
 
   it('renders Tickets Page', () => {
     render(<TicketsPage />)
-    expect(screen.getByText('티켓 예매')).toBeInTheDocument()
+    expect(screen.getByText('티켓 정보')).toBeInTheDocument()
   })
 
   it('renders Search Page', () => {
