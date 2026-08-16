@@ -15,7 +15,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.ResolverStyle
-import kotlin.math.ceil
 
 private const val KOPIS_API_BASE = "https://kopis.or.kr:9001"
 private const val KOPIS_SITE_BASE = "https://kopis.or.kr"
@@ -25,6 +24,7 @@ private const val KOPIS_USER_AGENT = "FanPulse/1.0 (+https://fanpulse-psi.vercel
 private const val KOPIS_PAGE_SIZE = 100
 private const val KOPIS_MAX_PAGES = 10
 private val KOPIS_ID = Regex("PF\\d{6,12}")
+private val KOPIS_FORBIDDEN_ENCODED_PATH = Regex("%(?:2e|2f|5c)", RegexOption.IGNORE_CASE)
 private val KOPIS_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu.MM.dd")
     .withResolverStyle(ResolverStyle.STRICT)
 
@@ -113,27 +113,48 @@ class KopisConcertHttpClient(
         if (first.totalElements <= 0 || first.items.isEmpty()) {
             throw KopisConcertSourceException("KOPIS upcoming popular music list was empty")
         }
-        val totalPages = ceil(first.totalElements.toDouble() / KOPIS_PAGE_SIZE).toInt()
-        if (totalPages !in 1..KOPIS_MAX_PAGES) {
+        val totalPages = ((first.totalElements.toLong() + KOPIS_PAGE_SIZE - 1) / KOPIS_PAGE_SIZE).toInt()
+        if (totalPages < 1) {
             throw KopisConcertSourceException("KOPIS upcoming popular music page count was invalid")
         }
-        val all = first.items.toMutableList()
-        for (page in 2..totalPages) {
-            val next = fetchListPage(page)
-            if (next.totalElements != first.totalElements) {
+
+        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+        val all = mutableListOf<KopisConcertListItem>()
+        val seen = mutableSetOf<String>()
+        var page = 1
+        var current = first
+        lateinit var selected: List<KopisConcertListItem>
+        while (true) {
+            if (current.totalElements != first.totalElements) {
                 throw KopisConcertSourceException("KOPIS list metadata changed between pages")
             }
-            all += next.items
+            val expectedRows = minOf(
+                KOPIS_PAGE_SIZE,
+                first.totalElements - ((page - 1) * KOPIS_PAGE_SIZE),
+            )
+            if (expectedRows <= 0 || current.items.size != expectedRows) {
+                throw KopisConcertSourceException("KOPIS list rows were incomplete")
+            }
+            current.items.forEach { item ->
+                if (!seen.add(item.externalId)) {
+                    throw KopisConcertSourceException("KOPIS list identifiers were duplicated between pages")
+                }
+                all += item
+            }
+            selected = all.asSequence()
+                .filter { !it.startDate.isBefore(today) }
+                .sortedWith(compareBy<KopisConcertListItem> { it.startDate }.thenBy { it.externalId })
+                .take(maxItems)
+                .toList()
+            if (selected.size == maxItems || page == totalPages) {
+                break
+            }
+            if (page == KOPIS_MAX_PAGES) {
+                throw KopisConcertSourceException("KOPIS upcoming rows exceeded the safe page limit")
+            }
+            page += 1
+            current = fetchListPage(page)
         }
-        if (all.size != first.totalElements || all.map { it.externalId }.toSet().size != all.size) {
-            throw KopisConcertSourceException("KOPIS list rows were incomplete or duplicated")
-        }
-        val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
-        val selected = all.asSequence()
-            .filter { !it.startDate.isBefore(today) }
-            .sortedWith(compareBy<KopisConcertListItem> { it.startDate }.thenBy { it.externalId })
-            .take(maxItems)
-            .toList()
         if (selected.isEmpty()) {
             throw KopisConcertSourceException("KOPIS upcoming popular music rows were stale")
         }
@@ -353,7 +374,13 @@ class KopisConcertHttpClient(
                 throw KopisConcertSourceException("KOPIS poster URL was invalid", exc)
             }
         }
-        if (uri.scheme != "https" || uri.host != "kopis.or.kr" || uri.userInfo != null || uri.port !in listOf(-1, 443)) {
+        val rawPath = uri.rawPath
+        if (
+            uri.scheme != "https" || uri.host != "kopis.or.kr" || uri.userInfo != null ||
+            uri.port !in listOf(-1, 443) || rawPath?.startsWith("/upload/") != true ||
+            uri.normalize().rawPath != rawPath || KOPIS_FORBIDDEN_ENCODED_PATH.containsMatchIn(rawPath) ||
+            uri.rawQuery != null || uri.rawFragment != null
+        ) {
             throw KopisConcertSourceException("KOPIS poster URL was invalid")
         }
         return uri.toASCIIString()

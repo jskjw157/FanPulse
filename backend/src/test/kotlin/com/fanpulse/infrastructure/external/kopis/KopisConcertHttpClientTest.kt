@@ -1,11 +1,15 @@
 package com.fanpulse.infrastructure.external.kopis
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.mockk.every
+import io.mockk.spyk
+import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.LocalDate
+import java.time.ZoneId
 
 class KopisConcertHttpClientTest {
     private val client = KopisConcertHttpClient(
@@ -118,5 +122,76 @@ class KopisConcertHttpClientTest {
 
         assertThatThrownBy { client.parseDetailResponse("PF298563", wrongDetail) }
             .isInstanceOf(KopisConcertSourceException::class.java)
+    }
+
+    @Test
+    fun `rejects poster URLs outside the KOPIS upload path`() {
+        listOf(
+            "https://kopis.or.kr/por/poster.gif",
+            "https://kopis.or.kr/upload/%2e%2e/por/poster.gif",
+            "https://kopis.or.kr/upload/posters%2foutside.gif",
+            "https://kopis.or.kr/upload/posters%5coutside.gif",
+        ).forEach { posterUrl ->
+            val wrongPoster =
+                """
+                {"result":[
+                  {"prfrId":"PF298563","prfrNm":"Wrong Poster","genreNm":"대중음악","prfrBgngDt":"2026.09.12","prfrEndDt":"2026.09.12","prfState":"공연예정","pstrUrlAddr":"$posterUrl","totcnt":1}
+                ]}
+                """.trimIndent().toByteArray()
+
+            assertThatThrownBy { client.parseListResponse(wrongPoster) }
+                .describedAs("poster URL must be rejected: %s", posterUrl)
+                .isInstanceOf(KopisConcertSourceException::class.java)
+                .hasMessageContaining("poster")
+        }
+    }
+
+    @Test
+    fun `selects the requested rows without rejecting a larger valid catalog`() {
+        val source = spyk(client)
+        val startDate = LocalDate.now(ZoneId.of("Asia/Seoul")).plusDays(30)
+        val items = (1..100).map { index ->
+            val externalId = "PF${300000 + index}"
+            KopisConcertListItem(
+                externalId = externalId,
+                name = "공연 $index",
+                venueName = "공연장",
+                venueHall = "홀",
+                startDate = startDate,
+                endDate = startDate,
+                status = "공연예정",
+                posterUrl = "https://kopis.or.kr/upload/$externalId.gif",
+            )
+        }
+        every { source.fetchListPage(any()) } answers {
+            check(firstArg<Int>() == 1) { "필요한 행을 확보한 뒤 추가 페이지를 요청하면 안 됩니다" }
+            KopisConcertListPage(totalElements = 1_001, items = items)
+        }
+        every { source.fetchDetail(any()) } answers {
+            val externalId = firstArg<String>()
+            KopisConcertDetail(
+                externalId = externalId,
+                name = externalId,
+                venueName = "공연장",
+                venueHall = "홀",
+                startDate = startDate,
+                endDate = startDate,
+                status = "공연예정",
+                posterUrl = "https://kopis.or.kr/upload/$externalId.gif",
+                performanceTime = null,
+                priceText = null,
+                performers = null,
+                runtime = null,
+                ageRating = null,
+                venueAddress = null,
+                ticketUrl = "https://kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=$externalId",
+            )
+        }
+
+        val snapshot = source.fetchUpcomingPopularMusic(60)
+
+        assertThat(snapshot.records).hasSize(60)
+        assertThat(snapshot.detailFailures).isEmpty()
+        verify(exactly = 1) { source.fetchListPage(1) }
     }
 }

@@ -27,7 +27,7 @@ class CrawledConcert(
     @Column(name = "event_name", nullable = false, length = 255)
     var name: String,
 
-    @Column(name = "artist", length = 255)
+    @Column(name = "artist", length = 1000)
     var artist: String? = null,
 
     @Column(name = "venue", length = 255)
@@ -75,7 +75,7 @@ class CrawledConcert(
     @Column(name = "age_rating", length = 100)
     var ageRating: String? = null,
 
-    @Column(name = "venue_address", length = 755)
+    @Column(name = "venue_address", length = 756)
     var venueAddress: String? = null,
 
     @Column(name = "source_url", length = 500)

@@ -113,6 +113,28 @@ class ConcertServiceIntegrationTest {
             .containsExactly("PF200001")
     }
 
+    @Test
+    fun `maximum accepted performers and venue address persist without truncation`() {
+        val performers = "가".repeat(1_000)
+        val venueAddress = "나".repeat(756)
+        every { source.fetchUpcomingPopularMusic(60) } returns KopisConcertSnapshot(
+            records = listOf(
+                record("PF200003", "긴 필드 공연", "2026-09-30", null).copy(
+                    performers = performers,
+                    venueAddress = venueAddress,
+                ),
+            ),
+            detailFailures = emptyList(),
+        )
+
+        service.refreshFromSource()
+
+        val persisted = concerts.findBySourceAndExternalId("KOPIS", "PF200003")
+        assertThat(persisted?.artist).isEqualTo(performers)
+        assertThat(persisted?.performers).isEqualTo(performers)
+        assertThat(persisted?.venueAddress).isEqualTo(venueAddress)
+    }
+
     private fun record(id: String, name: String, start: String, price: String?) = KopisConcertRecord(
         externalId = id,
         name = name,
