@@ -38,7 +38,7 @@ export interface ChartEntry {
   id: string;
   rank: number;
   trackId: string;
-  artistId: string;
+  artistId: string | null;
   trackTitle: string;
   artistName: string;
   previousRank: number | null;
@@ -46,6 +46,7 @@ export interface ChartEntry {
   weeksOnChart: number;
   rankChange: number | null;
   isNew: boolean;
+  artworkUrl: string | null;
 }
 
 export interface ChartResponse {
@@ -56,20 +57,47 @@ export interface ChartResponse {
   createdAt: string;
 }
 
+function isNullableAppleArtworkUrl(value: unknown): value is string | null {
+  if (value === null) return true;
+  if (typeof value !== 'string') return false;
+  try {
+    const url = new URL(value);
+    const pathname = url.pathname;
+    const rawPath = url.href.slice(url.origin.length).split('?')[0].split('#')[0];
+    return (
+      url.protocol === 'https:' &&
+      /^is[1-9]-ssl\.mzstatic\.com$/.test(url.hostname) &&
+      (url.port === '' || url.port === '443') &&
+      url.username === '' &&
+      url.password === '' &&
+      url.search === '' &&
+      url.hash === '' &&
+      pathname.startsWith('/image/thumb/') &&
+      !pathname.includes('/../') &&
+      !pathname.includes('/./') &&
+      !/%2e|%2f|%5c/i.test(rawPath) &&
+      (pathname.endsWith('.jpg') || pathname.endsWith('.jpeg') || pathname.endsWith('.png'))
+    );
+  } catch {
+    return false;
+  }
+}
+
 function isChartEntry(value: unknown): value is ChartEntry {
   if (!isRecord(value)) return false;
   return (
     isUuid(value.id) &&
     isPositiveInteger(value.rank) &&
     isUuid(value.trackId) &&
-    isUuid(value.artistId) &&
+    (value.artistId === null || isUuid(value.artistId)) &&
     isNonEmptyString(value.trackTitle) &&
     isNonEmptyString(value.artistName) &&
     (value.previousRank === null || isPositiveInteger(value.previousRank)) &&
     isPositiveInteger(value.peakRank) &&
     isPositiveInteger(value.weeksOnChart) &&
     isNullableInteger(value.rankChange) &&
-    typeof value.isNew === 'boolean'
+    typeof value.isNew === 'boolean' &&
+    isNullableAppleArtworkUrl(value.artworkUrl)
   );
 }
 

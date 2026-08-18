@@ -30,7 +30,7 @@ class ChartRefreshServiceTest {
     private val service = ChartRefreshServiceImpl(source, artistPort, chartPort, writer, clock)
 
     @Test
-    fun `stores only exact active artist matches and preserves global rank`() {
+    fun `stores full chart ranks and only links exact active artist matches`() {
         val aespa = artist("aespa")
         val blackpink = artist("BLACKPINK")
         val chartWeek = LocalDate.of(2026, 8, 10)
@@ -61,13 +61,20 @@ class ChartRefreshServiceTest {
         assertEquals(3, report.fetched)
         assertEquals(2, report.matched)
         assertEquals(1, report.skipped)
+        assertEquals(3, report.saved)
         assertEquals(chartWeek, report.chartDate)
-        assertEquals(listOf(6, 63), captured.captured.entries.map { it.rank })
-        val returning = captured.captured.entries.first()
+        assertEquals(listOf(6, 7, 63), captured.captured.entries.map { it.rank })
+        val returning = captured.captured.entries[0]
+        assertEquals(aespa.id, returning.artistId)
         assertEquals(10, returning.previousRank)
         assertEquals(5, returning.peakRank)
         assertEquals(4, returning.weeksOnChart)
-        val newcomer = captured.captured.entries.last()
+        val unmatched = captured.captured.entries[1]
+        assertNull(unmatched.artistId)
+        assertEquals("Unknown Artist", unmatched.artistName)
+        assertEquals("Unknown Song", unmatched.trackTitle)
+        val newcomer = captured.captured.entries[2]
+        assertEquals(blackpink.id, newcomer.artistId)
         assertNull(newcomer.previousRank)
         assertEquals(63, newcomer.peakRank)
         assertEquals(1, newcomer.weeksOnChart)
@@ -89,7 +96,10 @@ class ChartRefreshServiceTest {
         val report = service.refresh()
 
         assertEquals(1, report.matched)
-        assertEquals(listOf("Surfin' Boy"), captured.captured.entries.map { it.trackTitle })
+        assertEquals(2, report.saved)
+        assertEquals(listOf("Surfin' Boy", "Not Exact"), captured.captured.entries.map { it.trackTitle })
+        assertEquals(redVelvet.id, captured.captured.entries[0].artistId)
+        assertNull(captured.captured.entries[1].artistId)
     }
 
     @Test
@@ -120,12 +130,20 @@ class ChartRefreshServiceTest {
     }
 
     @Test
-    fun `does not replace existing data when no artist matches`() {
+    fun `saves unmatched rows when no FanPulse artist matches`() {
         every { source.fetchTopSongs() } returns feed(track(1, "401", "Song", "Unknown"))
         every { artistPort.findAllActiveUnpaged() } returns listOf(artist("aespa"))
+        every { chartPort.findByTypeAndDate(any(), any()) } returns null
+        every { chartPort.findLatestBeforeType(any(), any()) } returns null
+        val captured = slot<Chart>()
+        every { writer.replace(null, capture(captured)) } answers { captured.captured }
 
-        assertThrows<ChartRefreshException> { service.refresh() }
-        verify(exactly = 0) { writer.replace(any(), any()) }
+        val report = service.refresh()
+
+        assertEquals(0, report.matched)
+        assertEquals(1, report.saved)
+        assertNull(captured.captured.entries.single().artistId)
+        assertEquals("Unknown", captured.captured.entries.single().artistName)
     }
 
     private fun artist(name: String, englishName: String? = null): Artist = Artist.create(
