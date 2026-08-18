@@ -56,7 +56,8 @@ class KopisConcertPostgresVerticalIntegrationTest {
         dataSource.connection.use { connection ->
             assertThat(connection.metaData.databaseProductName).isEqualTo("PostgreSQL")
         }
-        assertThat(flyway.info().current().version.toString()).isEqualTo("124")
+        assertThat(flyway.info().applied().map { it.version.toString() }).contains("124", "125")
+        assertThat(flyway.info().current().version.toString()).isEqualTo("125")
         assertThat(columnLength("artist")).isEqualTo(1_000)
         assertThat(columnLength("venue_address")).isEqualTo(756)
 
