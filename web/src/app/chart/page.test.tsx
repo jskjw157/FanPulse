@@ -32,6 +32,21 @@ const apiChart = {
       weeksOnChart: 5,
       rankChange: 2,
       isNew: false,
+      artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ab/cd/ef/cover/100x100bb.jpg',
+    },
+    {
+      id: 'entry-2',
+      rank: 2,
+      trackId: 'track-2',
+      artistId: null,
+      trackTitle: 'Unmatched Track',
+      artistName: 'Unknown Artist',
+      previousRank: null,
+      peakRank: 2,
+      weeksOnChart: 1,
+      rankChange: null,
+      isNew: true,
+      artworkUrl: null,
     },
   ],
 };
@@ -59,6 +74,12 @@ describe('ChartPage', () => {
       'href',
       '/artists/artist-123'
     );
+    expect(screen.getByRole('img', { name: 'API Track' })).toHaveAttribute(
+      'src',
+      'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ab/cd/ef/cover/100x100bb.jpg'
+    );
+    expect(screen.getByText('Unmatched Track')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Unmatched Track/ })).not.toBeInTheDocument();
     expect(screen.queryByText('Super Shy')).not.toBeInTheDocument();
   });
 
@@ -101,6 +122,6 @@ describe('ChartPage', () => {
 
     render(<ChartPage />);
 
-    expect(screen.getByText('연결된 차트 항목이 없습니다')).toBeInTheDocument();
+    expect(screen.getByText('차트 항목이 없습니다')).toBeInTheDocument();
   });
 });

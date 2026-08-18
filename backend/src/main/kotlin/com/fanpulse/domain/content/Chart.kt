@@ -63,15 +63,17 @@ class Chart private constructor(
     fun addEntry(
         rank: Int,
         trackId: UUID,
-        artistId: UUID,
+        artistId: UUID?,
         trackTitle: String,
         artistName: String,
         previousRank: Int? = null,
         peakRank: Int? = null,
-        weeksOnChart: Int = 1
+        weeksOnChart: Int = 1,
+        artworkUrl: String? = null,
     ) {
         require(rank > 0) { "Rank must be positive: $rank" }
         require(trackTitle.isNotBlank()) { "Track title cannot be blank" }
+        require(artistName.isNotBlank()) { "Artist name cannot be blank" }
 
         val entry = ChartEntry(
             id = UUID.randomUUID(),
@@ -83,7 +85,8 @@ class Chart private constructor(
             artistName = artistName,
             previousRank = previousRank,
             peakRank = peakRank ?: rank,
-            weeksOnChart = weeksOnChart
+            weeksOnChart = weeksOnChart,
+            artworkUrl = artworkUrl,
         )
         _entries.add(entry)
     }
@@ -129,13 +132,13 @@ class ChartEntry(
     @Column(name = "track_id", columnDefinition = "uuid", nullable = false)
     val trackId: UUID,
 
-    @Column(name = "artist_id", columnDefinition = "uuid", nullable = false)
-    val artistId: UUID,
+    @Column(name = "artist_id", columnDefinition = "uuid")
+    val artistId: UUID?,
 
     @Column(name = "track_title", length = 255, nullable = false)
     val trackTitle: String,
 
-    @Column(name = "artist_name", length = 100, nullable = false)
+    @Column(name = "artist_name", length = 255, nullable = false)
     val artistName: String,
 
     @Column(name = "previous_rank")
@@ -145,7 +148,10 @@ class ChartEntry(
     val peakRank: Int,
 
     @Column(name = "weeks_on_chart", nullable = false)
-    val weeksOnChart: Int
+    val weeksOnChart: Int,
+
+    @Column(name = "artwork_url", length = 512)
+    val artworkUrl: String? = null,
 ) {
     /**
      * Rank change compared to previous chart.

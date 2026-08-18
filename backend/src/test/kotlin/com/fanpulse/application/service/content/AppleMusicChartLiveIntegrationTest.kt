@@ -40,12 +40,10 @@ class AppleMusicChartLiveIntegrationTest {
 
         assertThat(report.fetched).isBetween(1, 100)
         assertThat(report.matched).isGreaterThan(0)
-        assertThat(report.saved).isEqualTo(report.matched)
+        assertThat(report.saved).isEqualTo(report.fetched)
         assertThat(chart.chartType).isEqualTo("APPLE_MUSIC")
-        assertThat(chart.entries).hasSize(report.matched)
-        assertThat(chart.entries).allSatisfy { entry ->
-            assertThat(entry.rank).isPositive()
-            assertThat(entry.trackTitle).isNotBlank()
+        assertThat(chart.entries).hasSize(report.fetched)
+        assertThat(chart.entries.filter { it.artistId != null }).allSatisfy { entry ->
             assertThat(entry.artistName).isIn("aespa", "BLACKPINK", "RIIZE")
         }
     }

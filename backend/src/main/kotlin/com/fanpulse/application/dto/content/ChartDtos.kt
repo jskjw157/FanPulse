@@ -54,8 +54,8 @@ data class ChartEntryResponse(
     @Schema(description = "Track ID")
     val trackId: UUID,
 
-    @Schema(description = "Artist ID")
-    val artistId: UUID,
+    @Schema(description = "Artist ID when the chart artist is registered in FanPulse")
+    val artistId: UUID?,
 
     @Schema(description = "Track title")
     val trackTitle: String,
@@ -76,7 +76,10 @@ data class ChartEntryResponse(
     val rankChange: Int?,
 
     @Schema(description = "Whether this is a new entry")
-    val isNew: Boolean
+    val isNew: Boolean,
+
+    @Schema(description = "Official Apple Music artwork URL")
+    val artworkUrl: String?,
 ) {
     companion object {
         fun from(entry: ChartEntry): ChartEntryResponse = ChartEntryResponse(
@@ -90,7 +93,8 @@ data class ChartEntryResponse(
             peakRank = entry.peakRank,
             weeksOnChart = entry.weeksOnChart,
             rankChange = entry.rankChange,
-            isNew = entry.isNew
+            isNew = entry.isNew,
+            artworkUrl = entry.artworkUrl,
         )
     }
 }

@@ -23,6 +23,66 @@ function RankChange({ entry }: { entry: ChartEntry }) {
   );
 }
 
+function Artwork({ entry }: { entry: ChartEntry }) {
+  if (entry.artworkUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={entry.artworkUrl}
+        alt={entry.trackTitle}
+        width={56}
+        height={56}
+        className="h-14 w-14 flex-shrink-0 rounded-xl object-cover bg-gray-100"
+      />
+    );
+  }
+
+  return (
+    <div
+      aria-hidden="true"
+      className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-400"
+    >
+      <i className="ri-music-2-line text-xl" />
+    </div>
+  );
+}
+
+function ChartRow({ entry }: { entry: ChartEntry }) {
+  const body = (
+    <>
+      <span className="w-10 text-center text-lg font-bold text-gray-700">
+        {entry.rank}
+      </span>
+      <Artwork entry={entry} />
+      <div className="min-w-0 flex-1">
+        <h2 className="font-bold text-gray-900">{entry.trackTitle}</h2>
+        <p className="mt-1 text-sm text-gray-600">{entry.artistName}</p>
+        <p className="mt-1 text-xs text-gray-500">
+          최고 {entry.peakRank}위 · {entry.weeksOnChart}주 차트인
+        </p>
+      </div>
+      <RankChange entry={entry} />
+    </>
+  );
+
+  if (entry.artistId) {
+    return (
+      <Link
+        href={`/artists/${entry.artistId}`}
+        className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+      >
+        {body}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm">
+      {body}
+    </div>
+  );
+}
+
 export default function ChartPage() {
   const { chart, state, error, retry } = useLatestChart('APPLE_MUSIC');
 
@@ -34,7 +94,7 @@ export default function ChartPage() {
           <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-4">
             <h1 className="font-bold text-gray-900">Apple Music Korea Top 100</h1>
             <p className="mt-1 text-sm text-gray-500">
-              FanPulse에 등록된 아티스트와 정확히 연결된 곡만 표시합니다.
+              Apple Music Korea 실시간 Top 100입니다. 등록된 아티스트만 상세 페이지로 연결됩니다.
             </p>
             {chart && (
               <time className="mt-2 block text-xs text-gray-500" dateTime={chart.chartDate}>
@@ -61,29 +121,13 @@ export default function ChartPage() {
           )}
 
           {state === 'success' && chart?.entries.length === 0 && (
-            <p className="py-12 text-center text-gray-500">연결된 차트 항목이 없습니다</p>
+            <p className="py-12 text-center text-gray-500">차트 항목이 없습니다</p>
           )}
 
           {state === 'success' && chart && chart.entries.length > 0 && (
             <div className="space-y-3">
               {chart.entries.map((entry) => (
-                <Link
-                  key={entry.id}
-                  href={`/artists/${entry.artistId}`}
-                  className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <span className="w-10 text-center text-lg font-bold text-gray-700">
-                    {entry.rank}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="font-bold text-gray-900">{entry.trackTitle}</h2>
-                    <p className="mt-1 text-sm text-gray-600">{entry.artistName}</p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      최고 {entry.peakRank}위 · {entry.weeksOnChart}주 차트인
-                    </p>
-                  </div>
-                  <RankChange entry={entry} />
-                </Link>
+                <ChartRow key={entry.id} entry={entry} />
               ))}
             </div>
           )}

@@ -29,6 +29,7 @@ const chartResponse = {
       weeksOnChart: 4,
       rankChange: 1,
       isNew: false,
+      artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ab/cd/ef/cover/100x100bb.jpg',
     },
   ],
 };
@@ -64,6 +65,56 @@ describe('fetchLatestChart', () => {
     { ...chartResponse, entries: [{ ...chartResponse.entries[0], artistId: 'not-a-uuid' }] },
   ])('rejects malformed successful chart payload: %o', async (data) => {
     mockedGet.mockResolvedValue({ data: { success: true, data } });
+
+    await expect(fetchLatestChart('APPLE_MUSIC')).rejects.toThrow(
+      '차트 API 응답이 올바르지 않습니다.'
+    );
+  });
+
+  it('accepts unmatched rows with a null artistId and official artwork', async () => {
+    const unmatched = {
+      ...chartResponse,
+      entries: [
+        {
+          ...chartResponse.entries[0],
+          artistId: null,
+        },
+      ],
+    };
+    mockedGet.mockResolvedValue({ data: { success: true, data: unmatched } });
+
+    await expect(fetchLatestChart('APPLE_MUSIC')).resolves.toEqual(unmatched);
+  });
+
+  it('rejects a successful payload whose artwork host is not Apple', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...chartResponse,
+          entries: [{ ...chartResponse.entries[0], artworkUrl: 'https://evil.example/cover.jpg' }],
+        },
+      },
+    });
+
+    await expect(fetchLatestChart('APPLE_MUSIC')).rejects.toThrow(
+      '차트 API 응답이 올바르지 않습니다.'
+    );
+  });
+
+  it('rejects a successful payload whose artwork path is encoded', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...chartResponse,
+          entries: [{
+            ...chartResponse.entries[0],
+            artworkUrl: 'https://is1-ssl.mzstatic.com/image/thumb/%2e%2e/secret.jpg',
+          }],
+        },
+      },
+    });
 
     await expect(fetchLatestChart('APPLE_MUSIC')).rejects.toThrow(
       '차트 API 응답이 올바르지 않습니다.'

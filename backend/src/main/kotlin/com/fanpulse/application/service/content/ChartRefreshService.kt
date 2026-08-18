@@ -29,7 +29,7 @@ data class ChartRefreshReport(
     val chartDate: LocalDate,
 ) {
     val saved: Int
-        get() = matched
+        get() = fetched
 }
 
 interface ChartRefreshService {
@@ -59,13 +59,6 @@ class ChartRefreshServiceImpl(
         }
 
         val aliasMap = uniqueArtistAliases(artistPort.findAllActiveUnpaged())
-        val matchedTracks = feed.tracks.mapNotNull { track ->
-            aliasMap[normalizeArtistName(track.artistName)]?.let { artist -> track to artist }
-        }
-        if (matchedTracks.isEmpty()) {
-            throw ChartRefreshException("Apple Music chart had no exact FanPulse artist matches")
-        }
-
         val chartDate = feed.updatedAt.atZone(KOREA_ZONE).toLocalDate()
             .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
         val existing = chartPort.findByTypeAndDate(ChartType.APPLE_MUSIC, chartDate)
@@ -75,26 +68,29 @@ class ChartRefreshServiceImpl(
             .orEmpty()
         val replacement = Chart.create(ChartType.APPLE_MUSIC, chartDate)
 
-        matchedTracks.forEach { (track, artist) ->
+        feed.tracks.forEach { track ->
+            val artist = aliasMap[normalizeArtistName(track.artistName)]
             val trackId = AppleMusicTrackIds.toUuid(track.externalId)
             val previous = previousByTrackId[trackId]
             replacement.addEntry(
                 rank = track.rank,
                 trackId = trackId,
-                artistId = artist.id,
+                artistId = artist?.id,
                 trackTitle = track.title,
-                artistName = artist.name,
+                artistName = artist?.name ?: track.artistName,
                 previousRank = previous?.rank,
                 peakRank = previous?.let { minOf(it.peakRank, track.rank) } ?: track.rank,
                 weeksOnChart = previous?.weeksOnChart?.plus(1) ?: 1,
+                artworkUrl = track.artworkUrl,
             )
         }
         writer.replace(existing, replacement)
 
+        val matched = feed.tracks.count { aliasMap.containsKey(normalizeArtistName(it.artistName)) }
         return ChartRefreshReport(
             fetched = feed.tracks.size,
-            matched = matchedTracks.size,
-            skipped = feed.tracks.size - matchedTracks.size,
+            matched = matched,
+            skipped = feed.tracks.size - matched,
             chartDate = chartDate,
         )
     }

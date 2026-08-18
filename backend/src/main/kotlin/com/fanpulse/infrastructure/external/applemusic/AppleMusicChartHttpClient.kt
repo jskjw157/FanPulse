@@ -21,6 +21,7 @@ data class AppleMusicChartTrack(
     val externalId: String,
     val title: String,
     val artistName: String,
+    val artworkUrl: String? = null,
 )
 
 data class AppleMusicChartFeed(
@@ -119,6 +120,7 @@ class AppleMusicChartHttpClient(
                 externalId = id,
                 title = title,
                 artistName = artist,
+                artworkUrl = AppleMusicArtworkUrls.parseOptional(result.artworkUrl100),
             )
         }
         return AppleMusicChartFeed(updatedAt, tracks)
@@ -133,5 +135,6 @@ class AppleMusicChartHttpClient(
         val id: String? = null,
         val name: String? = null,
         val artistName: String? = null,
+        val artworkUrl100: String? = null,
     )
 }
