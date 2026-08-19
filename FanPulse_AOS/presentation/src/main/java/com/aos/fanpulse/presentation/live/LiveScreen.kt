@@ -77,7 +77,7 @@ fun LiveScreen(
     Column {
         CommonTopAppBar(
             isActiveLeftTextTitle = true,
-            leftTextTitle = "Live",
+            leftTextTitle = "VOD",
             isActiveRightSearch = true,
             onRightSearch = { goSearchScreen() },
             isActiveRightNotification = true,
@@ -98,10 +98,10 @@ fun LiveScreen(
                 }
             }
 
-            //  More Live Streams
+            //  More VOD
             Column {
                 Text(
-                    text = "More Live Streams",
+                    text = "More VOD",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
@@ -118,26 +118,26 @@ fun LiveScreen(
             }
 
             // TODO: //  Upcoming Concerts
-            Column {
-                Text(
-                    text = "Upcoming Concerts",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(end = 16.dp)
-                ) {
-                    items(state.scheduledItem) { item ->
-                        UpcomingConcertItem(streamingEventSimpleItem = item){
-                            viewModel.goLiveDetailScreen(it)
-                        }
-                    }
-                }
-            }
+//            Column {
+//                Text(
+//                    text = "Upcoming Concerts",
+//                    fontSize = 18.sp,
+//                    fontWeight = FontWeight.Bold,
+//                    color = Color.Black
+//                )
+//                Spacer(modifier = Modifier.height(16.dp))
+//
+//                LazyRow(
+//                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+//                    contentPadding = PaddingValues(end = 16.dp)
+//                ) {
+//                    items(state.scheduledItem) { item ->
+//                        UpcomingConcertItem(streamingEventSimpleItem = item){
+//                            viewModel.goLiveDetailScreen(it)
+//                        }
+//                    }
+//                }
+//            }
         }
     }
 }
@@ -174,8 +174,8 @@ fun MainLiveBanner(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
                 // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
-                placeholder = painterResource(id = R.drawable.home_ex1),
-                error = painterResource(id = R.drawable.home_ex1)
+                placeholder = painterResource(id = R.drawable.fanpulse_placeholder),
+                error = painterResource(id = R.drawable.fanpulse_placeholder)
             )
 
             // 상단 뱃지들 (Live, View Count)
@@ -186,8 +186,6 @@ fun MainLiveBanner(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Live Badge
-                Badge(backgroundColor = colorResource(R.color.color_6), text = "LIVE", showDot = true)
                 // View Count
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -258,18 +256,14 @@ fun LiveStreamListItem(
                     .size(width = 110.dp, height = 70.dp)
                     .clip(RoundedCornerShape(8.dp))
             ) {
-                Image(
-                    painter = painterResource(id = android.R.drawable.ic_menu_gallery),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .alpha(0.3f),
-                    contentScale = ContentScale.Crop
+                AsyncImage(
+                    model = streamingEventItem.thumbnailUrl,
+                    contentDescription = "라이브 썸네일",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(id = R.drawable.fanpulse_placeholder),
+                    error = painterResource(id = R.drawable.fanpulse_placeholder)
                 )
-                // LIVE 뱃지
-                Box(modifier = Modifier.padding(6.dp)) {
-                    Badge(backgroundColor = colorResource(R.color.color_6), text = "LIVE", showDot = true, scale = 0.7f)
-                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))

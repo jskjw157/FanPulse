@@ -28,9 +28,9 @@ object DataStoreModule {
     ): DataStore<UserData> {
         return DataStoreFactory.create(
             serializer = UserDataSerializer,
-            produceFile = { context.dataStoreFile("user_data.pb") }, // 파일명 설정
+            produceFile = { context.dataStoreFile("user_data.pb") },
             corruptionHandler = ReplaceFileCorruptionHandler(
-                produceNewData = { UserData.getDefaultInstance() } // 파일 손상 시 빈 데이터(초기값)로 대체
+                produceNewData = { UserData.getDefaultInstance() }
             ),
             migrations = emptyList(),
             scope = scope

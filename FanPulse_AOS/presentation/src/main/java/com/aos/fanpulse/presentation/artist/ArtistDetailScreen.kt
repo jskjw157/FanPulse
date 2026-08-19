@@ -52,7 +52,7 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 
 
 enum class ArtistTab {
-    OVERVIEW, NEWS, SCHEDULE
+    OVERVIEW, NEWS
 }
 
 @Composable
@@ -95,22 +95,28 @@ fun ArtistDetailContent(
 
     var selectedTab by remember { mutableStateOf(ArtistTab.OVERVIEW) }
 
-    if (state.artistDetail == null || state.newsItems == null) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        CommonTopAppBar(
+            isActiveLeftBack = true,
+            onLeftBack = { onBackClick() },
+            isActiveCenterTextTitle = true,
+            centerTextTitle = "아티스트",
+            isActiveRightShare = true,
+            onRightShare = {  }
+        )
+    if (state.isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
-    }else {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            CommonTopAppBar(
-                isActiveLeftBack = true,
-                onLeftBack = { onBackClick() },
-                isActiveCenterTextTitle = true,
-                centerTextTitle = "아티스트",
-                isActiveRightShare = true,
-                onRightShare = {  }
-            )
+    }
+    else if (state.errorMessage != null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(text = state.errorMessage, color = Color.Red)
+        }
+    }
+    else if (state.artistDetail != null) {
 
             LazyColumn(
                 modifier = Modifier
@@ -128,9 +134,8 @@ fun ArtistDetailContent(
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
-                            // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
-                            placeholder = painterResource(id = R.drawable.home_ex1),
-                            error = painterResource(id = R.drawable.home_ex1)
+                            placeholder = painterResource(id = R.drawable.fanpulse_placeholder),
+                            error = painterResource(id = R.drawable.fanpulse_placeholder)
                         )
 
                         Column(
@@ -164,7 +169,6 @@ fun ArtistDetailContent(
                 // Tab Content
                 when (selectedTab) {
                     ArtistTab.OVERVIEW -> {
-                        // Overview Section
                         item {
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
@@ -238,22 +242,6 @@ fun ArtistDetailContent(
                             })
                         }
                     }
-                    ArtistTab.SCHEDULE -> {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "일정 콘텐츠",
-                                    fontSize = 14.sp,
-                                    color = Color.Gray
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -280,12 +268,6 @@ fun ArtistTabRow(
             text = "뉴스",
             isSelected = selectedTab == ArtistTab.NEWS,
             onClick = { onTabSelected(ArtistTab.NEWS) },
-            modifier = Modifier.weight(1f)
-        )
-        ArtistTabButton(
-            text = "일정",
-            isSelected = selectedTab == ArtistTab.SCHEDULE,
-            onClick = { onTabSelected(ArtistTab.SCHEDULE) },
             modifier = Modifier.weight(1f)
         )
     }
@@ -360,12 +342,11 @@ fun NewsItemCard(
         Row(
             modifier = Modifier
                 .padding(12.dp)
-                .height(IntrinsicSize.Min), // 높이를 내용에 맞춤
+                .height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 1. 썸네일 이미지 영역
             AsyncImage(
-                model = newsItem.thumbnailUrl ,//?: R.drawable.placeholder_news, // 이미지 없을 시 대체 이미지
+                model = newsItem.thumbnailUrl ,
                 contentDescription = "News Thumbnail",
                 modifier = Modifier
                     .size(100.dp)
@@ -374,7 +355,6 @@ fun NewsItemCard(
                 contentScale = ContentScale.Crop
             )
 
-            // 2. 텍스트 정보 영역
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -382,7 +362,6 @@ fun NewsItemCard(
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    // 카테고리 태그 (RELEASE, TOUR 등)
                     Text(
                         text = newsItem.category,
                         color = MaterialTheme.colorScheme.primary,
@@ -398,7 +377,6 @@ fun NewsItemCard(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // 뉴스 제목
                     Text(
                         text = newsItem.title,
                         fontSize = 15.sp,
@@ -410,7 +388,6 @@ fun NewsItemCard(
                     )
                 }
 
-                // 하단 정보 (출처 및 시간)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -421,7 +398,6 @@ fun NewsItemCard(
                         color = Color.Gray
                     )
 
-                    // 구분 점
                     Box(
                         modifier = Modifier
                             .size(2.dp)
@@ -429,7 +405,7 @@ fun NewsItemCard(
                     )
 
                     Text(
-                        text = formatPublishedAt(newsItem.publishedAt), // 시간 포맷팅 함수 필요
+                        text = formatPublishedAt(newsItem.publishedAt),
                         fontSize = 12.sp,
                         color = Color.Gray
                     )

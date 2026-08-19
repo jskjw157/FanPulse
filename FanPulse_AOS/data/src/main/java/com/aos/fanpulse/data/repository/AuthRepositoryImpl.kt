@@ -6,8 +6,11 @@ import com.aos.fanpulse.data.remote.dto.GoogleLoginRequest
 import com.aos.fanpulse.datastore.UserData
 import com.aos.fanpulse.domain.model.AuthToken
 import com.aos.fanpulse.domain.repository.AuthenticationRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 /**
@@ -17,6 +20,7 @@ import javax.inject.Inject
 class AuthRepositoryImpl @Inject constructor(
     private val authApiService: AuthenticationApiService,
     private val userDataStore: DataStore<UserData>,
+    private val firebaseAuth: FirebaseAuth,
 ) : AuthenticationRepository {
 
     override val authTokens: Flow<AuthToken> = userDataStore.data
@@ -53,6 +57,10 @@ class AuthRepositoryImpl @Inject constructor(
             val refresh = extractToken(cookies, "fanpulse_refresh_token")
 
             if (access != null && refresh != null) {
+
+                val credential = GoogleAuthProvider.getCredential(googleIdToken, null)
+                firebaseAuth.signInWithCredential(credential).await()
+
                 updateTokens(access, refresh)
                 AuthToken(accessToken = access, refreshToken = refresh)
             } else {
@@ -67,5 +75,28 @@ class AuthRepositoryImpl @Inject constructor(
             ?.substringAfter("$key=")
             ?.substringBefore(";")
             ?.trim()
+    }
+
+    override fun getCurrentUserId(): String? {
+        val currentUser = firebaseAuth.currentUser
+        return currentUser?.uid
+    }
+
+    override fun getCurrentUserEmail(): String? {
+        return firebaseAuth.currentUser?.email
+    }
+
+    override fun getCurrentUserPhotoUrl(): String? {
+        return firebaseAuth.currentUser?.photoUrl?.toString()
+    }
+
+    override suspend fun logout(): Result<Unit> {
+        return try {
+            firebaseAuth.signOut()
+            clearAll()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

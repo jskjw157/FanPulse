@@ -1,6 +1,8 @@
 package com.aos.fanpulse.presentation.home
 
+import com.aos.fanpulse.domain.model.ChartTrack
 import com.aos.fanpulse.domain.model.NewsDetail
+import com.aos.fanpulse.domain.model.Post
 import com.aos.fanpulse.domain.model.StreamingEventItem
 import com.aos.fanpulse.domain.model.StreamingEventSimpleItem
 
@@ -12,6 +14,8 @@ object HomeContract {
         val streamingEventItem: List<StreamingEventItem> = emptyList(),     //  라이브 목록
         val scheduledItem: List<StreamingEventSimpleItem> = emptyList(),    //  예정된 이벤트
         val newsItem: List<NewsDetail> = emptyList(),                       //  뉴스 목록
+        val chartTracks: List<ChartTrack> = emptyList(),                    //  차트 순위
+        val posts: List<Post> = emptyList(),                                //  게시글
     )
 
     sealed interface SideEffect {
@@ -19,6 +23,8 @@ object HomeContract {
 
         object NavigateAds : SideEffect
         object NavigateArtist : SideEffect
+        object NavigateCommunity : SideEffect
+        data class NavigateCommunityDetail(val postId: String) : SideEffect
         object NavigateChart : SideEffect
         object NavigateConcert : SideEffect
         object NavigateFavorites : SideEffect

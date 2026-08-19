@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,13 +27,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,12 +59,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.aos.fanpulse.domain.model.ChartTrack
 import com.aos.fanpulse.domain.model.NewsDetail
+import com.aos.fanpulse.domain.model.Post
 import com.aos.fanpulse.domain.model.StreamingEventItem
 import com.aos.fanpulse.domain.model.StreamingEventSimpleItem
 import com.aos.fanpulse.presentation.R
@@ -78,6 +86,8 @@ fun HomeScreen(
     goNewsScreen: () -> Unit = {},
     goNewsDetailScreen: (String) -> Unit = {},
     goConcertScreen: () -> Unit = {},
+    goCommunityScreen:() -> Unit = {},
+    goCommunityDetailScreen:(String) -> Unit = {},
     goTicketsScreen: () -> Unit = {},
     goMembershipScreen: () -> Unit = {},
     goAdsScreen: () -> Unit = {},
@@ -120,6 +130,12 @@ fun HomeScreen(
             is HomeContract.SideEffect.ShowToast -> {
 
             }
+            HomeContract.SideEffect.NavigateCommunity -> {
+                goCommunityScreen()
+            }
+            is HomeContract.SideEffect.NavigateCommunityDetail -> {
+                goCommunityDetailScreen(sideEffect.postId)
+            }
         }
     }
 
@@ -151,12 +167,17 @@ fun HomeScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(colorResource(id = R.color.color_12))
+                        .background(colorResource(id = R.color.color_12)),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        top = 16.dp,
+                        end = 16.dp,
+                        bottom = 16.dp
+                    )
                 ) {
                     item {
                         Box(
                             modifier = Modifier
-                                .padding(16.dp)
                                 .height(192.dp)
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(16.dp)),
@@ -167,8 +188,8 @@ fun HomeScreen(
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop,
-                                    placeholder = painterResource(id = R.drawable.home_ex1),
-                                    error = painterResource(id = R.drawable.home_ex1)
+                                    placeholder = painterResource(id = R.drawable.fanpulse_placeholder),
+                                    error = painterResource(id = R.drawable.fanpulse_placeholder)
                                 )
                                 Column(
                                     modifier = Modifier
@@ -203,45 +224,55 @@ fun HomeScreen(
 
                     //  최신 뉴스
                     item {
-                        Column(
+                        Card(
                             modifier = Modifier
-                                .padding(
-                                    start = 16.dp,
-                                    end = 16.dp,
-                                    bottom = 16.dp
-                                )
-                                .background(
-                                    color = colorResource(R.color.white),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
                                 .fillMaxWidth()
+                                .padding(horizontal = 4.dp, vertical = 8.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .clickable {
-                                        viewModel.goNewsScreen()
-                                    }
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.icon_news),
-                                    contentDescription = "",
-                                    tint = Color.Unspecified
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { viewModel.goNewsScreen() }
+                                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.icon_news),
+                                        contentDescription = "뉴스 아이콘",
+                                        modifier = Modifier.size(20.dp),
+                                        tint = Color.Unspecified
+                                    )
+
+                                    Spacer(Modifier.width(8.dp))
+
+                                    Text(
+                                        text = "최신 뉴스",
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    color = Color.LightGray.copy(alpha = 0.5f),
+                                    thickness = 1.dp
                                 )
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    modifier = Modifier,
-                                    text = "최신 뉴스",
-                                    textAlign = TextAlign.Center,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = FontFamily.SansSerif,
-                                    color = Color.Black,
-                                )
-                            }
-                            state.newsItem.drop(1).forEach { item ->
-                                LatestNewsItem(item){
-                                    viewModel.goNewsDetailScreen(it)
+
+                                Column(
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                ) {
+                                    state.newsItem.drop(1).forEach { item ->
+                                        LatestNewsItem(item) {
+                                            viewModel.goNewsDetailScreen(it)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -250,12 +281,9 @@ fun HomeScreen(
                     //  라이브 스크린
                     item {
                         Column(
-                            modifier = Modifier.padding(
-                                start = 16.dp,
-                                top = 8.dp,
-                                bottom = 16.dp
-                            )
+                            modifier = Modifier
                         ) {
+                            Spacer(modifier = Modifier.height(16.dp))
                             Row(
                                 modifier = Modifier.padding(
                                     end = 16.dp
@@ -263,7 +291,7 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     modifier = Modifier,
-                                    text = "\uD83D\uDD34 Live Now",
+                                    text = "VOD",
                                     textAlign = TextAlign.Center,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Normal,
@@ -284,7 +312,10 @@ fun HomeScreen(
                                 )
                             }
                             Spacer(Modifier.height(12.dp))
-                            LazyRow {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp)
+                            ) {
                                 items(state.streamingEventItem) { item ->
                                     LiveNowItem(item){
                                         viewModel.goLiveDetailScreen(it)
@@ -297,14 +328,9 @@ fun HomeScreen(
                     //  인기 게시글
                     item {
                         Column(
-                            modifier = Modifier
-                                .padding(
-                                    start = 16.dp,
-                                    top = 24.dp,
-                                    end = 16.dp
-                                )
-                                .fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         ) {
+                            Spacer(modifier = Modifier.height(16.dp))
                             Row(
                                 modifier = Modifier.padding(
                                     end = 16.dp
@@ -312,7 +338,7 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     modifier = Modifier,
-                                    text = "\uD83D\uDD25 인기 게시글",
+                                    text = "인기 게시글",
                                     textAlign = TextAlign.Center,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Normal,
@@ -321,7 +347,9 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.weight(1f))
                                 Text(
-                                    modifier = Modifier,
+                                    modifier = Modifier.clickable{
+                                        viewModel.goCommunityScreen()
+                                    },
                                     text = "더보기",
                                     textAlign = TextAlign.Center,
                                     fontSize = 14.sp,
@@ -330,21 +358,20 @@ fun HomeScreen(
                                     color = colorResource(id = R.color.color_1),
                                 )
                             }
-                            SetPopularPostItem()
+                        }
+                    }
+                    itemsIndexed(state.posts) { index, item ->
+                        if (index < 3) SetPopularPostItem(post = item){
+                            viewModel.goCommunityDetailScreen(item.id)
                         }
                     }
 
                     //  실시간 차트
                     item {
                         Column(
-                            modifier = Modifier
-                                .padding(
-                                    start = 16.dp,
-                                    top = 24.dp,
-                                    end = 16.dp
-                                )
-                                .fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         ) {
+                            Spacer(modifier = Modifier.height(16.dp))
                             Row(
                                 modifier = Modifier.padding(
                                     end = 16.dp
@@ -352,7 +379,7 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     modifier = Modifier,
-                                    text = "\uD83D\uDCCA 실시간 차트",
+                                    text = "실시간 차트",
                                     textAlign = TextAlign.Center,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Normal,
@@ -361,7 +388,9 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.weight(1f))
                                 Text(
-                                    modifier = Modifier,
+                                    modifier = Modifier.clickable{
+                                        viewModel.goChartScreen()
+                                    },
                                     text = "전체보기",
                                     textAlign = TextAlign.Center,
                                     fontSize = 14.sp,
@@ -370,167 +399,16 @@ fun HomeScreen(
                                     color = colorResource(id = R.color.color_1),
                                 )
                             }
-
                             Spacer((Modifier.height(12.dp)))
-
-                            Column(
-                                modifier = Modifier
-                                    .background(
-                                        color = colorResource(R.color.white),
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp)
-                                ) {
-                                    SetRealTimeChartItem(1)
-                                }
-                            }
                         }
                     }
 
-//                //  Best Male Group
-//                item {
-//                    Column(
-//                        modifier = Modifier
-//                            .padding(
-//                                start = 16.dp,
-//                                top = 24.dp,
-//                                end = 16.dp
-//                            )
-//                            .fillMaxWidth()
-//                    ) {
-//                        Row(
-//                            modifier = Modifier.padding(
-//                                end = 16.dp
-//                            )
-//                        ) {
-//                            Text(
-//                                modifier = Modifier,
-//                                text = "Best Male Group 2024",
-//                                textAlign = TextAlign.Center,
-//                                fontSize = 18.sp,
-//                                fontWeight = FontWeight.Normal,
-//                                fontFamily = FontFamily.SansSerif,
-//                                color = Color.Black,
-//                            )
-//                            Spacer(modifier = Modifier.weight(1f))
-//                            Text(
-//                                modifier = Modifier,
-//                                text = "Vote Now",
-//                                textAlign = TextAlign.Center,
-//                                fontSize = 14.sp,
-//                                fontWeight = FontWeight.Normal,
-//                                fontFamily = FontFamily.SansSerif,
-//                                color = colorResource(id = R.color.color_1),
-//                            )
-//                        }
-//                        Spacer((Modifier.height(12.dp)))
-//                        SetBestGroupItem()
-//                    }
-//                }
-//
-//                //  Upcoming Events
-//                item {
-//                    Column(
-//                        modifier = Modifier
-//                            .padding(
-//                                start = 16.dp,
-//                                top = 24.dp,
-//                                end = 16.dp
-//                            )
-//                            .fillMaxWidth()
-//                    ) {
-//                        Row(
-//                            modifier = Modifier.padding(
-//                                end = 16.dp
-//                            )
-//                        ) {
-//                            Text(
-//                                modifier = Modifier,
-//                                text = "\uD83D\uDCC5 Upcoming Events",
-//                                textAlign = TextAlign.Center,
-//                                fontSize = 18.sp,
-//                                fontWeight = FontWeight.Normal,
-//                                fontFamily = FontFamily.SansSerif,
-//                                color = Color.Black,
-//                            )
-//                            Spacer(modifier = Modifier.weight(1f))
-//                            Text(
-//                                modifier = Modifier.clickable{
-//                                    viewModel.goLiveScreen()
-//                                },
-//                                text = "See All",
-//                                textAlign = TextAlign.Center,
-//                                fontSize = 14.sp,
-//                                fontWeight = FontWeight.Normal,
-//                                fontFamily = FontFamily.SansSerif,
-//                                color = colorResource(id = R.color.color_1),
-//                            )
-//                        }
-//                        Spacer((Modifier.height(12.dp)))
-//
-//                        state.scheduledItem.forEach { item ->
-//                            UpcomingEventsItem(item)
-//                        }
-//                    }
-//                }
-
-                //  기타 항목
-//                item {
-//                    Row(
-//                        modifier = Modifier
-//                            .padding(
-//                                start = 16.dp,
-//                                top = 24.dp,
-//                                end = 16.dp,
-//                                bottom = 24.dp
-//                            )
-//                            .fillMaxWidth()
-//                    ) {
-//                        Box(
-//                            modifier = Modifier
-//                                .weight(1f)
-//                                .aspectRatio(1f)
-//                                .clickable { }
-//                        ) {
-//                            Image(
-//                                painter = painterResource(id = R.drawable.btn_earn_rewards),
-//                                contentDescription = null,
-//                                modifier = Modifier.fillMaxSize(),
-//                                contentScale = ContentScale.Crop
-//                            )
-//                        }
-//                        Spacer((Modifier.width(12.dp)))
-//                        Box(
-//                            modifier = Modifier
-//                                .weight(1f)
-//                                .aspectRatio(1f)
-//                                .clickable { }
-//                        ) {
-//                            Image(
-//                                painter = painterResource(id = R.drawable.btn_vip_club),
-//                                contentDescription = null,
-//                                modifier = Modifier.fillMaxSize(),
-//                                contentScale = ContentScale.Crop
-//                            )
-//                        }
-//                        Spacer((Modifier.width(12.dp)))
-//                        Box(
-//                            modifier = Modifier
-//                                .weight(1f)
-//                                .aspectRatio(1f)
-//                                .clickable { }
-//                        ) {
-//                            Image(
-//                                painter = painterResource(id = R.drawable.btn_community),
-//                                contentDescription = null,
-//                                modifier = Modifier.fillMaxSize(),
-//                                contentScale = ContentScale.Crop
-//                            )
-//                        }
-//                    }
-//                }
+                    itemsIndexed(state.chartTracks) { index, item ->
+                        SetRealTimeChartItem(
+                            rank = index + 1,
+                            item = item
+                        )
+                    }
                 }
             }
         }
@@ -616,7 +494,6 @@ fun RightDrawer(
         )
     }
 
-    // Drawer 본체
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -707,7 +584,7 @@ fun LatestNewsItem(
     Row(
         modifier = Modifier
             .padding(16.dp)
-            .clickable{
+            .clickable {
                 goNewsDetail(newsDetail.id)
             }
     ) {
@@ -750,248 +627,157 @@ fun LatestNewsItem(
 fun LiveNowItem(
     streamingEventItem: StreamingEventItem,
     goLiveDetail: (String) -> Unit
-){
-    Column (
-        modifier = Modifier.width(268.dp)
-            .clickable{
-                goLiveDetail(streamingEventItem.id)
-            }
-    ){
+) {
+    Column(
+        modifier = Modifier
+            .width(260.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { goLiveDetail(streamingEventItem.id) }
+            .padding(bottom = 8.dp)
+    ) {
         Box(
             modifier = Modifier
-                .padding(6.dp)
-                .height(144.dp)
-                .width(256.dp)
-                .clip(RoundedCornerShape(12.dp)),
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(12.dp))
         ) {
             AsyncImage(
                 model = streamingEventItem.thumbnailUrl,
-                contentDescription = null,
+                contentDescription = "라이브 썸네일",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
-                // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
-                placeholder = painterResource(id = R.drawable.home_ex1),
-                error = painterResource(id = R.drawable.home_ex1)
+                placeholder = painterResource(id = R.drawable.fanpulse_placeholder),
+                error = painterResource(id = R.drawable.fanpulse_placeholder)
             )
-            Column (
+
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .align(Alignment.BottomEnd)
                     .padding(8.dp)
-            ){
-                Row (
-                    modifier = Modifier
-                        .background(
-                            color = colorResource(R.color.color_5),
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    verticalAlignment = Alignment.CenterVertically
-                ){
-                    Spacer(Modifier.width(8.dp))
-                    Image(
-                        painter = painterResource(id = R.drawable.icon_circle),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
+                    .background(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(4.dp)
                     )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = "LIVE",
-                        textAlign = TextAlign.Center,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
-                        color = Color.White,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-                Row (
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .background(
-                            color = colorResource(R.color.black),
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    verticalAlignment = Alignment.CenterVertically
-                ){
-                    Spacer(Modifier.width(8.dp))
-                    Image(
-                        painter = painterResource(id = R.drawable.icon_watch),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        modifier = Modifier,
-                        text = streamingEventItem.viewerCount.toString(),
-                        textAlign = TextAlign.Center,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        fontFamily = FontFamily.SansSerif,
-                        color = Color.White,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                }
-            }
-        }
-        Text(
-            modifier = Modifier,
-            text = streamingEventItem.title,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Normal,
-            fontFamily = FontFamily.SansSerif,
-            color = colorResource(R.color.color_new_1),
-        )
-    }
-}
-
-@Composable
-fun UpcomingEventsItem(
-    streamingEventSimpleItem : StreamingEventSimpleItem
-){
-    Column (
-        modifier = Modifier.background(
-            color = colorResource(R.color.white),
-            shape = RoundedCornerShape(12.dp)
-        )
-    ){
-        AsyncImage(
-            model = streamingEventSimpleItem.thumbnailUrl,
-            contentDescription = null,
-            modifier = Modifier.fillMaxWidth()
-                .height(176.dp)
-                .clip(RoundedCornerShape(
-                        topStart = 12.dp,
-                        topEnd = 12.dp,
-                        bottomStart = 0.dp,
-                        bottomEnd = 0.dp
-                    )
-                ),
-            contentScale = ContentScale.Crop,
-            // (선택 사항) thumbnailUrl이 null이거나 로딩에 실패했을 때 보여줄 이미지
-            placeholder = painterResource(id = R.drawable.home_ex1),
-            error = painterResource(id = R.drawable.home_ex1)
-        )
-
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Row (
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
-            ){
-                Column (
-                    modifier = Modifier.background(
-                        color = colorResource(id = R.color.color_7),
-                        shape = RoundedCornerShape(100.dp)
-                    )
-                ) {
-                    Text(
-                        color = colorResource(id = R.color.color_8),
-                        text = streamingEventSimpleItem.platform,
-                        modifier = Modifier
-                            .padding(
-                                top = 4.dp,
-                                bottom = 4.dp,
-                                start = 8.dp,
-                                end = 8.dp),
-                        fontSize = 12.sp
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.icon_watch),
+                    contentDescription = "시청자 수",
+                    tint = Color.White,
+                    modifier = Modifier.size(12.dp)
+                )
+                Spacer(Modifier.width(4.dp))
                 Text(
-                    color = colorResource(id = R.color.color_text_3),
-                    text = streamingEventSimpleItem.scheduledAt
+                    text = streamingEventItem.viewerCount.toString(),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
                 )
             }
-
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                text = streamingEventSimpleItem.title
-            )
-
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = {},
-                contentPadding = PaddingValues(0.dp),
-                shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(2.dp, colorResource(id = R.color.color_1), RoundedCornerShape(100.dp))
-                    .height(40.dp)
-            ) {
-                Text( text = "Get Tickets" )
-            }
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = streamingEventItem.title,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
     }
 }
 
 @Composable
-fun SetPopularPostItem(){
-    Spacer((Modifier.height(12.dp)))
-
-    Row (
-        modifier = Modifier.background(
-            color = colorResource(R.color.white),
-            shape = RoundedCornerShape(12.dp)
-        )
-    ){
+fun SetPopularPostItem(
+    post: Post,
+    goCommunityDetailScreen: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 6.dp)
+            .clickable { goCommunityDetailScreen() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(104.dp)
-                .padding(12.dp)
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.home_ex1),
-                contentDescription = null,
-                modifier = Modifier
-                    .width(96.dp)
-                    .height(80.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
-            Spacer((Modifier.width(12.dp)))
-            Column {
-                Text(
-                    text = "BTS 콘서트 후기 - 정말 최고였어요!"
+            if (post.imageUrls.isNotEmpty()) {
+                AsyncImage(
+                    model = post.imageUrls[0],
+                    contentDescription = "썸네일",
+                    placeholder = painterResource(id = R.drawable.fanpulse_placeholder),
+                    error = painterResource(id = R.drawable.fanpulse_placeholder),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(8.dp))
                 )
-                Spacer((Modifier.height(8.dp)))
-                Row {
+                Spacer(Modifier.width(16.dp))
+            }
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = post.content,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "4ever"
+                        text = post.author.nickname,
+                        color = Color.DarkGray,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(Modifier.width(12.dp))
-                    Row {
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            painter = painterResource(id = R.drawable.icon_news),
+                            painter = if (post.isLikedByMe) painterResource(id = R.drawable.icon_heart_ena_pre) else painterResource(id = R.drawable.icon_heart_ena_nor),
                             contentDescription = "좋아요",
-                            tint = Color.Unspecified
+                            modifier = Modifier.size(16.dp),
+                            tint = Color.Gray
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "2,222"
+                            text = post.likeCount.toString(),
+                            color = Color.Gray
                         )
                     }
+
                     Spacer(Modifier.width(12.dp))
-                    Row {
+
+                    // 댓글 영역
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            painter = painterResource(id = R.drawable.icon_news),
+                            painter = painterResource(id = R.drawable.icon_chat_ena),
                             contentDescription = "댓글",
-                            tint = Color.Unspecified
+                            modifier = Modifier.size(16.dp),
+                            tint = Color.Gray
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "1,111"
+                            text = post.commentCount.toString(),
+                            color = Color.Gray
                         )
                     }
                 }
@@ -1001,122 +787,57 @@ fun SetPopularPostItem(){
 }
 
 @Composable
-fun SetRealTimeChartItem(ind: Int){
-
+fun SetRealTimeChartItem(
+    rank: Int,
+    item: ChartTrack,
+) {
     Row(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Spacer((Modifier.width(9.dp)))
         Text(
-            text = "$ind"
+            text = "$rank",
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.width(28.dp),
+            textAlign = TextAlign.Center
         )
-        Spacer((Modifier.width(22.dp)))
-        Image(
-            painter = painterResource(id = R.drawable.home_ex1),
-            contentDescription = null,
-            modifier = Modifier
-                .width(48.dp)
-                .height(48.dp),
-            contentScale = ContentScale.Crop
-        )
-        Spacer((Modifier.width(12.dp)))
-        Column {
-            Text("musicTitle")
-            Text("musicArtist")
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Text("↑↓-")
-        Spacer((Modifier.width(12.dp)))
-        Text("변동 순위")
-    }
-}
 
-@Composable
-fun SetBestGroupItem(){
-    Column (
-        modifier = Modifier.background(
-            color = colorResource(R.color.white),
-            shape = RoundedCornerShape(12.dp)
-        )
-    ){
-        Image(
-            painter = painterResource(id = R.drawable.home_group_ex1),
-            contentDescription = null,
+        Spacer(Modifier.width(16.dp))
+
+        AsyncImage(
+            model = item.imageUrl,
+            contentDescription = "앨범 커버 이미지",
+            placeholder = painterResource(id = R.drawable.fanpulse_placeholder),
+            error = painterResource(id = R.drawable.fanpulse_placeholder),
+            contentScale = ContentScale.Crop,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(176.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 12.dp,
-                        topEnd = 12.dp,
-                        bottomStart = 0.dp,
-                        bottomEnd = 0.dp
-                    )
-                ),
-            contentScale = ContentScale.Crop
+                .size(52.dp) // 정사각형 크기
+                .clip(RoundedCornerShape(8.dp))
         )
+
+        Spacer(Modifier.width(16.dp))
+
         Column(
-            modifier = Modifier
-                .padding(12.dp)
+            modifier = Modifier.weight(1f)
         ) {
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                text = "BTS"
-            )
-            Spacer(Modifier.height(8.dp))
-            Row {
-                Image(
-                    painter = painterResource(id = R.drawable.icon_person),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .width(16.dp)
-                        .height(16.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Text(text = "BTS")
-                Spacer(modifier = Modifier.weight(1f))
-                Image(
-                    painter = painterResource(id = R.drawable.icon_heart),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .width(16.dp)
-                        .height(16.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Text("850K")
-            }
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = {},
-                contentPadding = PaddingValues(0.dp),
-                shape = RoundedCornerShape(100.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = Color.White
-                ),
-                modifier = Modifier
-                    .height(36.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.loginscreen_bg),
-                        contentDescription = null,
-                        modifier = Modifier.matchParentSize(),
-                        contentScale = ContentScale.Crop
-                    )
 
-                    Text(
-                        modifier = Modifier.align(Alignment.Center),
-                        text = "Vote"
-                    )
-                }
-            }
+            Text(
+                text = item.title,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                text = item.artistName,
+                color = Color.Gray,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
