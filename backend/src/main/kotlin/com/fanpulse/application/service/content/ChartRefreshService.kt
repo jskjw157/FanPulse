@@ -25,11 +25,23 @@ class ChartRefreshException(message: String) : RuntimeException(message)
 data class ChartRefreshReport(
     val fetched: Int,
     val matched: Int,
-    val skipped: Int,
+    val unmatched: Int,
     val chartDate: LocalDate,
 ) {
+    /** Successful refreshes persist the entire fetched snapshot atomically. */
     val saved: Int
         get() = fetched
+
+    init {
+        require(fetched >= 0) { "Fetched count must not be negative: $fetched" }
+        require(matched in 0..fetched) {
+            "Matched count must be between 0 and fetched: matched=$matched, fetched=$fetched"
+        }
+        require(unmatched == fetched - matched) {
+            "Unmatched count must equal fetched - matched: " +
+                "unmatched=$unmatched, fetched=$fetched, matched=$matched"
+        }
+    }
 }
 
 interface ChartRefreshService {
@@ -90,7 +102,7 @@ class ChartRefreshServiceImpl(
         return ChartRefreshReport(
             fetched = feed.tracks.size,
             matched = matched,
-            skipped = feed.tracks.size - matched,
+            unmatched = feed.tracks.size - matched,
             chartDate = chartDate,
         )
     }
