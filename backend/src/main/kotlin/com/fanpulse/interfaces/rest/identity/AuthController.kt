@@ -76,15 +76,18 @@ class AuthController(
     @Operation(summary = "Refresh tokens for mobile clients")
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
-        ApiResponse(responseCode = "400", description = "Refresh token body is missing or blank"),
-        ApiResponse(responseCode = "401", description = "Invalid refresh token")
+        ApiResponse(responseCode = "401", description = "Refresh token body is missing, blank, or invalid")
     )
     fun refreshMobile(
-        @Valid @RequestBody request: RefreshTokenRequest,
+        @RequestBody(required = false) request: RefreshTokenRequest?,
         response: HttpServletResponse
     ): ResponseEntity<TokenResponse> {
         logger.debug { "Mobile token refresh request" }
-        val tokenResponse = authService.refreshToken(request)
+
+        // 기존 모바일 계약: 누락·빈 토큰은 유효하지 않은 인증 정보로 보고 401을 반환한다.
+        val validRequest = request?.takeIf { it.refreshToken.isNotBlank() }
+            ?: return ResponseEntity.status(401).build()
+        val tokenResponse = authService.refreshToken(validRequest)
 
         // Android CookieJar 호환을 위해 Set-Cookie도 함께 갱신한다.
         setAuthCookies(
