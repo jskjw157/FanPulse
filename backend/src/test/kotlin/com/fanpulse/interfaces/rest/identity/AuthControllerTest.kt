@@ -171,12 +171,12 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("쿠키만으로 모바일 갱신 경로를 호출하면 400을 반환해야 한다")
+        @DisplayName("쿠키만으로 모바일 갱신 경로를 호출하면 401을 반환해야 한다")
         fun `should reject cookie only refresh on mobile endpoint`() {
             mockMvc.post("/api/v1/auth/refresh") {
                 cookie(Cookie(AuthController.REFRESH_TOKEN_COOKIE, "cookie_refresh_token"))
             }.andExpect {
-                status { isBadRequest() }
+                status { isUnauthorized() }
             }
 
             verify(exactly = 0) { authService.refreshToken(any()) }
@@ -355,15 +355,15 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("빈 Refresh Token 본문으로 모바일 갱신하면 400을 반환해야 한다")
-        fun `should return 400 when refresh token is blank`() {
+        @DisplayName("빈 Refresh Token 본문으로 모바일 갱신하면 401을 반환해야 한다")
+        fun `should return 401 when refresh token is blank`() {
             mockMvc.post("/api/v1/auth/refresh") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(
                     RefreshTokenRequest("")
                 )
             }.andExpect {
-                status { isBadRequest() }
+                status { isUnauthorized() }
             }
 
             verify(exactly = 0) { authService.refreshToken(any()) }
