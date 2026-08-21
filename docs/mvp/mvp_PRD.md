@@ -16,6 +16,12 @@ FanPulse는 K-POP 팬을 위한 플랫폼으로, MVP에서는 로그인 후 **�
 - 실시간 채팅/하트/도네이션 등 라이브 인터랙션.
 - 자동 크롤링/추천/AI 운영 적용.
 
+> 📎 **v2 후속 기획**
+> - [커뮤니티 & 고객센터](../v2/community.md) — 게시글/댓글/투표/신고 등 팬덤 참여 기능 v2 스코프
+> - [수익화](../v2/monetization.md) — 멤버십 구독·도네이션·광고&리워드 v2 스코프
+> - [실시간 인터랙션](../v2/realtime.md) — 라이브 채팅·하트·도네이션 WebSocket 기반 v2 스코프
+> - [콘텐츠 수집 파이프라인](../v2/content-pipeline.md) — 차트/콘서트 크롤러·YouTube API 보강 v2 스코프
+
 ---
 
 ## 4) 대상 사용자/시나리오
@@ -41,6 +47,8 @@ FanPulse는 K-POP 팬을 위한 플랫폼으로, MVP에서는 로그인 후 **�
 - My/Settings: 프로필 요약, 로그아웃, 기본 설정
 - Error: 공통 에러 안내
 
+> 📎 **v2 후속 기획**: [인증 확장 계획](../v2/auth.md) — 이메일 회원가입 정식 지원 및 Kakao/Naver/Apple 소셜 로그인 확장 v2 스코프
+
 ### 제외 (Out)
 - Community, Voting, Rewards, Membership, Concert, Support 상세 기능
 - 실시간 상호작용(채팅/하트)
@@ -62,6 +70,8 @@ FanPulse는 K-POP 팬을 위한 플랫폼으로, MVP에서는 로그인 후 **�
 - MVP 크롤링 범위는 Live/News만 포함(차트/콘서트/광고는 Next)
 - 운영 플로우: artists → live/news 순서로 upsert
 
+> 📎 **v2 후속 기획**: [콘텐츠 수집 파이프라인](../v2/content-pipeline.md) — 차트(Melon/Bugs/Spotify) 및 콘서트(인터파크/예스24) 크롤러와 YouTube Data API 메타데이터 자동 보강 v2 스코프
+
 ---
 
 ## 8) 성공 지표 (예시)
@@ -69,6 +79,8 @@ FanPulse는 K-POP 팬을 위한 플랫폼으로, MVP에서는 로그인 후 **�
 - 홈→라이브 상세 진입률 ≥ 40%
 - 앱 크래시율 ≤ 1%
 - API 5xx 비율 ≤ 1%
+
+> 📎 **v2 후속 기획**: [운영 & 관측성](../v2/ops.md) — MVP Micrometer metrics 기반 Grafana 대시보드·알림 룰 구성 v2 스코프
 
 ---
 
