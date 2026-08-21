@@ -10,7 +10,11 @@ import com.fanpulse.infrastructure.security.JwtTokenProvider
 import com.fanpulse.infrastructure.security.SecurityConfig
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
+import io.mockk.verify
+import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -25,7 +29,7 @@ import java.util.*
 /**
  * AuthController TDD Tests
  *
- * Tests Google OAuth login and token refresh endpoints.
+ * 웹 httpOnly 쿠키와 모바일 토큰 응답의 경계를 포함한 인증 API 계약을 검증한다.
  */
 @WebMvcTest(AuthController::class)
 @Import(SecurityConfig::class, com.fanpulse.interfaces.rest.GlobalExceptionHandler::class)
@@ -70,9 +74,8 @@ class AuthControllerTest {
     inner class GoogleLogin {
 
         @Test
-        @DisplayName("유효한 Google ID Token으로 로그인하면 200과 토큰을 반환해야 한다")
-        fun `should return 200 with tokens when Google login is successful`() {
-            // Given
+        @DisplayName("로그인 성공 시 사용자 정보와 수명에 맞는 httpOnly 쿠키를 반환해야 한다")
+        fun `should return user info and aligned cookies when Google login is successful`() {
             val request = GoogleLoginRequest(idToken = "valid_google_id_token")
             val userId = UUID.randomUUID()
             val response = AuthResponse(
@@ -84,11 +87,9 @@ class AuthControllerTest {
                 expiresIn = 3600L,
                 refreshExpiresIn = 604800L
             )
-
             every { authService.googleLogin(any()) } returns response
 
-            // When & Then
-            mockMvc.post("/api/v1/auth/google") {
+            val result = mockMvc.post("/api/v1/auth/google") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(request)
             }.andExpect {
@@ -96,22 +97,23 @@ class AuthControllerTest {
                 jsonPath("$.userId") { value(userId.toString()) }
                 jsonPath("$.email") { value("user@gmail.com") }
                 jsonPath("$.username") { value("googleuser") }
-                // 토큰은 httpOnly 쿠키로만 전달, 응답 바디에 미포함
                 jsonPath("$.accessToken") { doesNotExist() }
                 jsonPath("$.refreshToken") { doesNotExist() }
-                cookie { value("fanpulse_access_token", "access_token") }
-                cookie { value("fanpulse_refresh_token", "refresh_token") }
-            }
+                cookie { value(AuthController.ACCESS_TOKEN_COOKIE, "access_token") }
+                cookie { value(AuthController.REFRESH_TOKEN_COOKIE, "refresh_token") }
+            }.andReturn()
+
+            val cookies = result.response.cookies.associateBy { it.name }
+            assertEquals(3600, cookies.getValue(AuthController.ACCESS_TOKEN_COOKIE).maxAge)
+            assertEquals(604800, cookies.getValue(AuthController.REFRESH_TOKEN_COOKIE).maxAge)
         }
 
         @Test
         @DisplayName("유효하지 않은 Google ID Token으로 로그인하면 401을 반환해야 한다")
         fun `should return 401 when Google ID token is invalid`() {
-            // Given
             val request = GoogleLoginRequest(idToken = "invalid_token")
             every { authService.googleLogin(any()) } throws InvalidGoogleTokenException()
 
-            // When & Then
             mockMvc.post("/api/v1/auth/google") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(request)
@@ -123,11 +125,9 @@ class AuthControllerTest {
         @Test
         @DisplayName("이메일이 검증되지 않은 Google 계정으로 로그인하면 400을 반환해야 한다")
         fun `should return 400 when Google email is not verified`() {
-            // Given
             val request = GoogleLoginRequest(idToken = "valid_but_unverified")
             every { authService.googleLogin(any()) } throws OAuthEmailNotVerifiedException()
 
-            // When & Then
             mockMvc.post("/api/v1/auth/google") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(request)
@@ -138,43 +138,55 @@ class AuthControllerTest {
     }
 
     @Nested
-    @DisplayName("POST /api/v1/auth/refresh")
-    inner class RefreshToken {
+    @DisplayName("POST /api/v1/auth/refresh - 모바일")
+    inner class MobileRefreshToken {
 
         @Test
-        @DisplayName("유효한 Refresh 토큰으로 갱신하면 200과 새 토큰을 반환해야 한다")
-        fun `should return 200 with new tokens when refresh is successful`() {
-            // Given
-            val request = mapOf("refreshToken" to "valid_refresh_token")
+        @DisplayName("요청 본문의 Refresh Token으로 갱신하면 새 토큰과 쿠키를 반환해야 한다")
+        fun `should return token body and cookies for mobile refresh`() {
+            val request = RefreshTokenRequest("valid_refresh_token")
             val response = TokenResponse(
                 accessToken = "new_access_token",
                 expiresIn = 3600L,
                 refreshToken = "new_refresh_token",
                 refreshExpiresIn = 604800L
             )
+            every { authService.refreshToken(request) } returns response
 
-            every { authService.refreshToken(any()) } returns response
-
-            // When & Then
-            mockMvc.post("/api/v1/auth/refresh") {
+            val result = mockMvc.post("/api/v1/auth/refresh") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(request)
             }.andExpect {
                 status { isOk() }
                 jsonPath("$.accessToken") { value("new_access_token") }
                 jsonPath("$.refreshToken") { value("new_refresh_token") }
+                cookie { value(AuthController.ACCESS_TOKEN_COOKIE, "new_access_token") }
+                cookie { value(AuthController.REFRESH_TOKEN_COOKIE, "new_refresh_token") }
+            }.andReturn()
+
+            val cookies = result.response.cookies.associateBy { it.name }
+            assertEquals(3600, cookies.getValue(AuthController.ACCESS_TOKEN_COOKIE).maxAge)
+            assertEquals(604800, cookies.getValue(AuthController.REFRESH_TOKEN_COOKIE).maxAge)
+        }
+
+        @Test
+        @DisplayName("쿠키만으로 모바일 갱신 경로를 호출하면 400을 반환해야 한다")
+        fun `should reject cookie only refresh on mobile endpoint`() {
+            mockMvc.post("/api/v1/auth/refresh") {
+                cookie(Cookie(AuthController.REFRESH_TOKEN_COOKIE, "cookie_refresh_token"))
+            }.andExpect {
+                status { isBadRequest() }
             }
+
+            verify(exactly = 0) { authService.refreshToken(any()) }
         }
 
         @Test
         @DisplayName("유효하지 않은 토큰으로 갱신하면 401을 반환해야 한다")
         fun `should return 401 when refresh token is invalid`() {
-            // Given
-            val request = mapOf("refreshToken" to "invalid_token")
+            val request = RefreshTokenRequest("invalid_token")
+            every { authService.refreshToken(request) } throws InvalidTokenException()
 
-            every { authService.refreshToken(any()) } throws InvalidTokenException()
-
-            // When & Then
             mockMvc.post("/api/v1/auth/refresh") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(request)
@@ -186,12 +198,9 @@ class AuthControllerTest {
         @Test
         @DisplayName("Refresh Token 재사용 시 401을 반환해야 한다")
         fun `should return 401 when refresh token is reused`() {
-            // Given
-            val request = mapOf("refreshToken" to "reused_token")
+            val request = RefreshTokenRequest("reused_token")
+            every { authService.refreshToken(request) } throws RefreshTokenReusedException()
 
-            every { authService.refreshToken(any()) } throws RefreshTokenReusedException()
-
-            // When & Then
             mockMvc.post("/api/v1/auth/refresh") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(request)
@@ -202,22 +211,161 @@ class AuthControllerTest {
     }
 
     @Nested
+    @DisplayName("POST /api/v1/auth/web/refresh - 웹")
+    inner class WebRefreshToken {
+
+        @Test
+        @DisplayName("Refresh Cookie로 갱신하면 204와 새 쿠키만 반환해야 한다")
+        fun `should rotate cookies without exposing tokens in response body`() {
+            val response = TokenResponse(
+                accessToken = "new_access_token",
+                expiresIn = 3600L,
+                refreshToken = "new_refresh_token",
+                refreshExpiresIn = 604800L
+            )
+            every {
+                authService.refreshToken(RefreshTokenRequest("cookie_refresh_token"))
+            } returns response
+
+            val result = mockMvc.post("/api/v1/auth/web/refresh") {
+                cookie(Cookie(AuthController.REFRESH_TOKEN_COOKIE, "cookie_refresh_token"))
+            }.andExpect {
+                status { isNoContent() }
+                content { string("") }
+                cookie { value(AuthController.ACCESS_TOKEN_COOKIE, "new_access_token") }
+                cookie { value(AuthController.REFRESH_TOKEN_COOKIE, "new_refresh_token") }
+            }.andReturn()
+
+            val cookies = result.response.cookies.associateBy { it.name }
+            assertEquals(3600, cookies.getValue(AuthController.ACCESS_TOKEN_COOKIE).maxAge)
+            assertEquals(604800, cookies.getValue(AuthController.REFRESH_TOKEN_COOKIE).maxAge)
+        }
+
+        @Test
+        @DisplayName("요청 본문만 있고 Refresh Cookie가 없으면 401을 반환해야 한다")
+        fun `should reject body token on web refresh endpoint`() {
+            mockMvc.post("/api/v1/auth/web/refresh") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(
+                    RefreshTokenRequest("body_refresh_token")
+                )
+            }.andExpect {
+                status { isUnauthorized() }
+            }
+
+            verify(exactly = 0) { authService.refreshToken(any()) }
+        }
+
+        @Test
+        @DisplayName("유효하지 않은 Refresh Cookie이면 401과 쿠키 삭제를 반환해야 한다")
+        fun `should return 401 and clear cookies when web refresh cookie is invalid`() {
+            every {
+                authService.refreshToken(RefreshTokenRequest("invalid_cookie_token"))
+            } throws InvalidTokenException()
+
+            val result = mockMvc.post("/api/v1/auth/web/refresh") {
+                cookie(Cookie(AuthController.REFRESH_TOKEN_COOKIE, "invalid_cookie_token"))
+            }.andExpect {
+                status { isUnauthorized() }
+            }.andReturn()
+
+            val cookies = result.response.cookies.associateBy { it.name }
+            assertEquals(0, cookies.getValue(AuthController.ACCESS_TOKEN_COOKIE).maxAge)
+            assertEquals(0, cookies.getValue(AuthController.REFRESH_TOKEN_COOKIE).maxAge)
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/auth/logout")
+    inner class Logout {
+
+        @Test
+        @DisplayName("웹 로그아웃 시 현재 Refresh Cookie를 무효화하고 쿠키를 삭제해야 한다")
+        fun `should invalidate current cookie session and clear cookies`() {
+            every { authService.logoutCurrentSession("cookie_refresh_token") } just Runs
+
+            val result = mockMvc.post("/api/v1/auth/logout") {
+                cookie(Cookie(AuthController.REFRESH_TOKEN_COOKIE, "cookie_refresh_token"))
+            }.andExpect {
+                status { isOk() }
+            }.andReturn()
+
+            verify(exactly = 1) {
+                authService.logoutCurrentSession("cookie_refresh_token")
+            }
+            val cookies = result.response.cookies.associateBy { it.name }
+            assertEquals(0, cookies.getValue(AuthController.ACCESS_TOKEN_COOKIE).maxAge)
+            assertEquals(0, cookies.getValue(AuthController.REFRESH_TOKEN_COOKIE).maxAge)
+        }
+
+        @Test
+        @DisplayName("모바일 로그아웃은 요청 본문의 Refresh Token을 우선 사용해야 한다")
+        fun `should prefer explicit mobile token when logging out`() {
+            every { authService.logoutCurrentSession("body_refresh_token") } just Runs
+
+            mockMvc.post("/api/v1/auth/logout") {
+                cookie(Cookie(AuthController.REFRESH_TOKEN_COOKIE, "cookie_refresh_token"))
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(
+                    RefreshTokenRequest("body_refresh_token")
+                )
+            }.andExpect {
+                status { isOk() }
+            }
+
+            verify(exactly = 1) {
+                authService.logoutCurrentSession("body_refresh_token")
+            }
+            verify(exactly = 0) {
+                authService.logoutCurrentSession("cookie_refresh_token")
+            }
+        }
+
+        @Test
+        @DisplayName("토큰이 없는 로그아웃 요청도 멱등적으로 성공하고 쿠키를 삭제해야 한다")
+        fun `should keep logout idempotent without refresh token`() {
+            val result = mockMvc.post("/api/v1/auth/logout") {}
+                .andExpect {
+                    status { isOk() }
+                }.andReturn()
+
+            verify(exactly = 0) { authService.logoutCurrentSession(any()) }
+            val cookies = result.response.cookies.associateBy { it.name }
+            assertEquals(0, cookies.getValue(AuthController.ACCESS_TOKEN_COOKIE).maxAge)
+            assertEquals(0, cookies.getValue(AuthController.REFRESH_TOKEN_COOKIE).maxAge)
+        }
+    }
+
+    @Nested
     @DisplayName("Request Validation Tests")
     inner class ValidationTests {
 
         @Test
         @DisplayName("빈 idToken으로 Google 로그인하면 400을 반환해야 한다")
         fun `should return 400 when idToken is blank`() {
-            // Given
             val request = GoogleLoginRequest(idToken = "")
 
-            // When & Then
             mockMvc.post("/api/v1/auth/google") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(request)
             }.andExpect {
                 status { isBadRequest() }
             }
+        }
+
+        @Test
+        @DisplayName("빈 Refresh Token 본문으로 모바일 갱신하면 400을 반환해야 한다")
+        fun `should return 400 when refresh token is blank`() {
+            mockMvc.post("/api/v1/auth/refresh") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(
+                    RefreshTokenRequest("")
+                )
+            }.andExpect {
+                status { isBadRequest() }
+            }
+
+            verify(exactly = 0) { authService.refreshToken(any()) }
         }
     }
 }

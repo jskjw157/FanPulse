@@ -2,6 +2,7 @@ package com.fanpulse.interfaces.rest.identity
 
 import com.fanpulse.application.dto.identity.*
 import com.fanpulse.application.identity.InvalidTokenException
+import com.fanpulse.application.identity.RefreshTokenReusedException
 import com.fanpulse.application.service.identity.AuthService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -27,8 +28,7 @@ private val logger = KotlinLogging.logger {}
 class AuthController(
     private val authService: AuthService,
     @Value("\${app.cookie.secure:false}") private val cookieSecure: Boolean,
-    @Value("\${app.cookie.domain:}") private val cookieDomain: String,
-    @Value("\${app.cookie.max-age:604800}") private val cookieMaxAge: Int // 7일
+    @Value("\${app.cookie.domain:}") private val cookieDomain: String
 ) {
     companion object {
         const val ACCESS_TOKEN_COOKIE = "fanpulse_access_token"
@@ -49,10 +49,14 @@ class AuthController(
         logger.debug { "Google login request" }
         val authResponse = authService.googleLogin(request)
 
-        // httpOnly 쿠키로 토큰 설정
-        setAuthCookies(response, authResponse.accessToken, authResponse.refreshToken)
+        setAuthCookies(
+            response = response,
+            accessToken = authResponse.accessToken,
+            refreshToken = authResponse.refreshToken,
+            accessMaxAgeSeconds = authResponse.expiresIn,
+            refreshMaxAgeSeconds = authResponse.refreshExpiresIn
+        )
 
-        // 응답에는 토큰 제외하고 사용자 정보만 반환
         return ResponseEntity.ok(
             GoogleLoginResponse(
                 userId = authResponse.userId,
@@ -62,44 +66,101 @@ class AuthController(
         )
     }
 
+    /**
+     * 모바일 클라이언트용 토큰 갱신 엔드포인트.
+     *
+     * Refresh Token은 요청 본문으로만 받고, 새 토큰은 응답 본문과 Set-Cookie로 반환한다.
+     * 웹 브라우저는 토큰을 응답 본문에 노출하지 않는 `/web/refresh`를 사용한다.
+     */
     @PostMapping("/refresh")
-    @Operation(summary = "Refresh access token")
+    @Operation(summary = "Refresh tokens for mobile clients")
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
+        ApiResponse(responseCode = "400", description = "Refresh token body is missing or blank"),
         ApiResponse(responseCode = "401", description = "Invalid refresh token")
     )
-    fun refresh(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        @RequestBody(required = false) body: RefreshTokenRequest?
+    fun refreshMobile(
+        @Valid @RequestBody request: RefreshTokenRequest,
+        response: HttpServletResponse
     ): ResponseEntity<TokenResponse> {
-        logger.debug { "Token refresh request" }
+        logger.debug { "Mobile token refresh request" }
+        val tokenResponse = authService.refreshToken(request)
 
-        // 1순위: 쿠키, 2순위: request body (모바일 앱 지원)
-        val refreshToken = request.cookies?.find { it.name == REFRESH_TOKEN_COOKIE }?.value
-            ?: body?.refreshToken
-            ?: return ResponseEntity.status(401).build()
+        // Android CookieJar 호환을 위해 Set-Cookie도 함께 갱신한다.
+        setAuthCookies(
+            response = response,
+            accessToken = tokenResponse.accessToken,
+            refreshToken = tokenResponse.refreshToken,
+            accessMaxAgeSeconds = tokenResponse.expiresIn,
+            refreshMaxAgeSeconds = tokenResponse.refreshExpiresIn
+        )
 
-        val tokenResponse = authService.refreshToken(RefreshTokenRequest(refreshToken))
-
-        // 웹: 쿠키 갱신
-        setAuthCookies(response, tokenResponse.accessToken, tokenResponse.refreshToken)
-
-        // 모바일: 응답 바디로 토큰 반환
         return ResponseEntity.ok(tokenResponse)
     }
 
-    @PostMapping("/logout")
-    @Operation(summary = "Logout and clear auth cookies")
+    /**
+     * 웹 브라우저용 토큰 갱신 엔드포인트.
+     *
+     * httpOnly Refresh Cookie만 사용하며 새 토큰은 Set-Cookie로만 전달한다.
+     * 응답 본문에는 Access/Refresh Token을 노출하지 않는다.
+     */
+    @PostMapping("/web/refresh")
+    @Operation(summary = "Refresh web authentication cookies")
     @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Logout successful")
+        ApiResponse(responseCode = "204", description = "Authentication cookies refreshed"),
+        ApiResponse(responseCode = "401", description = "Refresh cookie is missing or invalid")
     )
-    fun logout(response: HttpServletResponse): ResponseEntity<Unit> {
+    fun refreshWeb(
+        request: HttpServletRequest,
+        response: HttpServletResponse
+    ): ResponseEntity<Void> {
+        logger.debug { "Web cookie refresh request" }
+
+        val refreshToken = findCookie(request, REFRESH_TOKEN_COOKIE)
+        if (refreshToken == null) {
+            clearAuthCookies(response)
+            return ResponseEntity.status(401).build()
+        }
+
+        return try {
+            val tokenResponse = authService.refreshToken(RefreshTokenRequest(refreshToken))
+            setAuthCookies(
+                response = response,
+                accessToken = tokenResponse.accessToken,
+                refreshToken = tokenResponse.refreshToken,
+                accessMaxAgeSeconds = tokenResponse.expiresIn,
+                refreshMaxAgeSeconds = tokenResponse.refreshExpiresIn
+            )
+            ResponseEntity.noContent().build()
+        } catch (exception: InvalidTokenException) {
+            clearAuthCookies(response)
+            throw exception
+        } catch (exception: RefreshTokenReusedException) {
+            clearAuthCookies(response)
+            throw exception
+        }
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout current session and clear auth cookies")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Logout successful"),
+        ApiResponse(responseCode = "400", description = "Refresh token body is blank")
+    )
+    fun logout(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        @Valid @RequestBody(required = false) body: RefreshTokenRequest?
+    ): ResponseEntity<Unit> {
         logger.debug { "Logout request" }
 
-        // 쿠키 삭제
-        clearAuthCookies(response)
+        // 명시적인 모바일 요청 본문을 우선하고, 웹은 httpOnly 쿠키를 사용한다.
+        val refreshToken = body?.refreshToken ?: findCookie(request, REFRESH_TOKEN_COOKIE)
+        refreshToken
+            ?.takeIf { it.isNotBlank() }
+            ?.let(authService::logoutCurrentSession)
 
+        clearAuthCookies(response)
         return ResponseEntity.ok().build()
     }
 
@@ -112,7 +173,7 @@ class AuthController(
     fun getCurrentUser(request: HttpServletRequest): ResponseEntity<AuthStatusResponse> {
         // 1순위: Authorization 헤더 (모바일 앱), 2순위: 쿠키 (웹)
         val accessToken = extractTokenFromHeader(request)
-            ?: request.cookies?.find { it.name == ACCESS_TOKEN_COOKIE }?.value
+            ?: findCookie(request, ACCESS_TOKEN_COOKIE)
             ?: return ResponseEntity.ok(AuthStatusResponse(authenticated = false))
 
         return try {
@@ -136,21 +197,28 @@ class AuthController(
     private fun setAuthCookies(
         response: HttpServletResponse,
         accessToken: String,
-        refreshToken: String
+        refreshToken: String,
+        accessMaxAgeSeconds: Long,
+        refreshMaxAgeSeconds: Long
     ) {
-        val accessCookie = createCookie(ACCESS_TOKEN_COOKIE, accessToken, cookieMaxAge)
-        val refreshCookie = createCookie(REFRESH_TOKEN_COOKIE, refreshToken, cookieMaxAge * 2)
+        val accessCookie = createCookie(
+            ACCESS_TOKEN_COOKIE,
+            accessToken,
+            toCookieMaxAge(accessMaxAgeSeconds)
+        )
+        val refreshCookie = createCookie(
+            REFRESH_TOKEN_COOKIE,
+            refreshToken,
+            toCookieMaxAge(refreshMaxAgeSeconds)
+        )
 
         response.addCookie(accessCookie)
         response.addCookie(refreshCookie)
     }
 
     private fun clearAuthCookies(response: HttpServletResponse) {
-        val accessCookie = createCookie(ACCESS_TOKEN_COOKIE, "", 0)
-        val refreshCookie = createCookie(REFRESH_TOKEN_COOKIE, "", 0)
-
-        response.addCookie(accessCookie)
-        response.addCookie(refreshCookie)
+        response.addCookie(createCookie(ACCESS_TOKEN_COOKIE, "", 0))
+        response.addCookie(createCookie(REFRESH_TOKEN_COOKIE, "", 0))
     }
 
     private fun createCookie(name: String, value: String, maxAge: Int): Cookie {
@@ -165,6 +233,21 @@ class AuthController(
             setAttribute("SameSite", "Lax")
         }
     }
+
+    private fun toCookieMaxAge(seconds: Long): Int {
+        if (seconds !in 1..Int.MAX_VALUE.toLong()) {
+            logger.warn {
+                "Cookie max age was outside the supported range and was clamped: $seconds"
+            }
+        }
+        return seconds.coerceIn(1, Int.MAX_VALUE.toLong()).toInt()
+    }
+
+    private fun findCookie(request: HttpServletRequest, name: String): String? =
+        request.cookies
+            ?.firstOrNull { it.name == name }
+            ?.value
+            ?.takeIf { it.isNotBlank() }
 
     private fun extractTokenFromHeader(request: HttpServletRequest): String? {
         val authHeader = request.getHeader("Authorization") ?: return null
