@@ -4,7 +4,6 @@ import com.fanpulse.application.service.content.NewsSyncReport
 import com.fanpulse.application.service.content.NewsSyncService
 import com.fanpulse.infrastructure.security.AdminApiKeyAuthenticationFilter
 import com.fanpulse.infrastructure.security.JwtTokenProvider
-import com.fanpulse.infrastructure.security.SecurityConfig
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.verify
@@ -12,24 +11,25 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.context.annotation.Import
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import java.util.UUID
 
-@WebMvcTest(NewsSyncAdminController::class)
-@Import(SecurityConfig::class)
-@TestPropertySource(
+@SpringBootTest(
     properties = [
         "fanpulse.scheduler.news-sync.manual-trigger-enabled=true",
         "fanpulse.security.admin.api-key=test-admin-api-key-0123456789abcdef",
         "fanpulse.cors.allowed-origins=https://configured.example.com",
+        "fanpulse.scheduler.news-sync.enabled=false",
+        "fanpulse.scheduler.live-discovery.enabled=false",
+        "fanpulse.scheduler.metadata-refresh.enabled=false",
     ]
 )
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("NewsSyncAdminController 관리자 인증")
 class NewsSyncAdminControllerSecurityTest {
