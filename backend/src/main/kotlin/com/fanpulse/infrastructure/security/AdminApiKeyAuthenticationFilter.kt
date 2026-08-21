@@ -15,7 +15,7 @@ import java.security.MessageDigest
 private val adminAuthLogger = KotlinLogging.logger {}
 
 /**
- * `/api/v1/admin/**` 전용 API Key 인증 필터.
+ * `/api/v1/admin/…` 경로 전용 API Key 인증 필터.
  *
  * 일반 사용자 JWT와 관리자 자격 증명을 분리하기 위해 관리자 요청은
  * [HEADER_NAME] 헤더의 전용 키로만 인증한다. 비교 전 양쪽 값을 SHA-256으로
