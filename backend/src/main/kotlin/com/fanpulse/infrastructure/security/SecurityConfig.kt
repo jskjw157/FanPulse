@@ -1,5 +1,6 @@
 package com.fanpulse.infrastructure.security
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -24,17 +25,25 @@ data class CorsProperties(
     )
 )
 
+@ConfigurationProperties(prefix = "fanpulse.security.admin")
+data class AdminSecurityProperties(
+    val apiKey: String = "",
+)
+
 /**
  * Spring Security Configuration.
  *
- * Configures JWT-based stateless authentication.
+ * Configures JWT-based stateless authentication and a separate API Key boundary
+ * for administrator endpoints.
  */
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties(CorsProperties::class)
+@EnableConfigurationProperties(CorsProperties::class, AdminSecurityProperties::class)
 class SecurityConfig(
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
-    private val corsProperties: CorsProperties
+    private val corsProperties: CorsProperties,
+    private val adminSecurityProperties: AdminSecurityProperties,
+    private val objectMapper: ObjectMapper,
 ) {
 
     @Bean
@@ -60,7 +69,7 @@ class SecurityConfig(
             // Enable CORS
             .cors { it.configurationSource(corsConfigurationSource()) }
 
-            // Disable CSRF (not needed for stateless JWT authentication)
+            // Cookie authentication CSRF protection is handled in a separate hardening change.
             .csrf { it.disable() }
 
             // Stateless session management
@@ -82,11 +91,8 @@ class SecurityConfig(
                     .requestMatchers(HttpMethod.GET, "/api/v1/concerts", "/api/v1/concerts/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/comments/**").permitAll()
 
-                    // Admin: 뉴스 동기화 수동 트리거 (#272)
-                    // 컨트롤러 자체가 fanpulse.scheduler.news-sync.manual-trigger-enabled=true 일 때만 빈 등록.
-                    // 빈이 없으면 Spring 이 자동으로 404 반환 → 운영에선 토글 false 로 차단 (1차 방어선).
-                    // permitAll() 은 토글이 켜져 있을 때만 의미가 있으므로 dev/QA 편의에 충분.
-                    .requestMatchers("/api/v1/admin/news-sync/**").permitAll()
+                    // Admin endpoints require the dedicated X-FanPulse-Admin-Key credential.
+                    .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
                     // Actuator endpoints - only health and info are public
                     .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
@@ -102,8 +108,16 @@ class SecurityConfig(
                     .anyRequest().authenticated()
             }
 
-            // Add JWT filter before UsernamePasswordAuthenticationFilter
+            // User JWT authentication runs first. The admin filter then replaces any
+            // user authentication only when a valid dedicated administrator key is present.
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterAfter(
+                AdminApiKeyAuthenticationFilter(
+                    configuredApiKey = adminSecurityProperties.apiKey,
+                    objectMapper = objectMapper,
+                ),
+                JwtAuthenticationFilter::class.java,
+            )
 
         return http.build()
     }
