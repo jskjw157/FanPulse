@@ -16,6 +16,7 @@ import io.mockk.just
 import io.mockk.verify
 import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.context.annotation.Import
