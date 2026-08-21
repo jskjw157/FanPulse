@@ -35,7 +35,8 @@ class ChartRefreshScheduler(private val service: ChartRefreshService) {
             val report = service.refresh()
             chartLogger.info {
                 "Apple Music chart refresh completed: trigger=$trigger, date=${report.chartDate}, " +
-                    "fetched=${report.fetched}, matched=${report.matched}, skipped=${report.skipped}"
+                    "fetched=${report.fetched}, saved=${report.saved}, matched=${report.matched}, " +
+                    "unmatched=${report.unmatched}"
             }
         } catch (exception: Exception) {
             chartLogger.error(exception) { "Apple Music chart refresh failed: trigger=$trigger" }

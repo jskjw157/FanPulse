@@ -59,9 +59,10 @@ class ChartRefreshServiceTest {
         val report = service.refresh()
 
         assertEquals(3, report.fetched)
-        assertEquals(2, report.matched)
-        assertEquals(1, report.skipped)
         assertEquals(3, report.saved)
+        assertEquals(2, report.matched)
+        assertEquals(1, report.unmatched)
+        assertEquals(report.fetched, report.matched + report.unmatched)
         assertEquals(chartWeek, report.chartDate)
         assertEquals(listOf(6, 7, 63), captured.captured.entries.map { it.rank })
         val returning = captured.captured.entries[0]
@@ -81,6 +82,18 @@ class ChartRefreshServiceTest {
     }
 
     @Test
+    fun `rejects contradictory refresh report counts`() {
+        assertThrows<IllegalArgumentException> {
+            ChartRefreshReport(
+                fetched = 100,
+                matched = 30,
+                unmatched = 69,
+                chartDate = LocalDate.of(2026, 8, 10),
+            )
+        }
+    }
+
+    @Test
     fun `uses normalized exact english name without substring guessing`() {
         val redVelvet = artist("레드벨벳", englishName = "Red Velvet")
         every { source.fetchTopSongs() } returns feed(
@@ -96,7 +109,9 @@ class ChartRefreshServiceTest {
         val report = service.refresh()
 
         assertEquals(1, report.matched)
+        assertEquals(1, report.unmatched)
         assertEquals(2, report.saved)
+        assertEquals(report.fetched, report.matched + report.unmatched)
         assertEquals(listOf("Surfin' Boy", "Not Exact"), captured.captured.entries.map { it.trackTitle })
         assertEquals(redVelvet.id, captured.captured.entries[0].artistId)
         assertNull(captured.captured.entries[1].artistId)
@@ -141,7 +156,9 @@ class ChartRefreshServiceTest {
         val report = service.refresh()
 
         assertEquals(0, report.matched)
+        assertEquals(1, report.unmatched)
         assertEquals(1, report.saved)
+        assertEquals(report.fetched, report.matched + report.unmatched)
         assertNull(captured.captured.entries.single().artistId)
         assertEquals("Unknown", captured.captured.entries.single().artistName)
     }
