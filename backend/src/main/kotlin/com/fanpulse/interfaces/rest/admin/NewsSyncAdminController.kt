@@ -22,9 +22,12 @@ private val logger = KotlinLogging.logger {}
  * cron 기반 자동 실행 ([com.fanpulse.infrastructure.scheduler.NewsSyncScheduler]) 과 별개로,
  * 클라이언트가 직접 결과를 검증하고 싶을 때 사용한다.
  *
- * **활성화 조건**: `fanpulse.scheduler.news-sync.manual-trigger-enabled=true`
- * - dev/docker 프로필에서만 켜고, prod 에서는 끄는 것을 권장.
- * - 빈이 등록되지 않으면 경로 자체가 404 → SecurityConfig 에 `permitAll` 해도 사실상 차단.
+ * **활성화 및 인증 조건**
+ * - `fanpulse.scheduler.news-sync.manual-trigger-enabled=true`인 경우에만 컨트롤러가 등록된다.
+ * - 요청마다 `X-FanPulse-Admin-Key` 헤더로 전용 관리자 키를 전달해야 한다.
+ * - 키는 `fanpulse.security.admin.api-key` 또는 환경변수
+ *   `FANPULSE_SECURITY_ADMIN_API_KEY`로 주입하며, 기본값은 없다.
+ * - 기능 토글만 켜고 키를 설정하지 않아도 인증 필터가 모든 요청을 거부한다.
  *
  * **ShedLock 와의 관계**: 이 트리거는 ShedLock 락을 거치지 않는다.
  * cron 실행과 동시에 수동 트리거를 호출하면 두 번 동시 실행될 수 있으므로,
