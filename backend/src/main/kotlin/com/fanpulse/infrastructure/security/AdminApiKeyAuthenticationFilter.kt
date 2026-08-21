@@ -44,7 +44,7 @@ class AdminApiKeyAuthenticationFilter(
             return true
         }
 
-        val path = request.servletPath
+        val path = resolveApplicationPath(request)
         return path != ADMIN_PATH && !path.startsWith("$ADMIN_PATH/")
     }
 
@@ -67,6 +67,15 @@ class AdminApiKeyAuthenticationFilter(
         )
         SecurityContextHolder.getContext().authentication = authentication
         filterChain.doFilter(request, response)
+    }
+
+    /**
+     * DispatcherServlet 매핑 방식에 따라 servletPath가 비어 있을 수 있으므로,
+     * 그런 경우 contextPath를 제외한 requestURI를 사용한다.
+     */
+    private fun resolveApplicationPath(request: HttpServletRequest): String {
+        return request.servletPath.takeIf { it.isNotBlank() }
+            ?: request.requestURI.removePrefix(request.contextPath)
     }
 
     private fun matchesConfiguredKey(providedApiKey: String?): Boolean {
