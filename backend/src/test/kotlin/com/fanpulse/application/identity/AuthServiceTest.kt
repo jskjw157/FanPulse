@@ -55,7 +55,6 @@ class AuthServiceTest {
         @Test
         @DisplayName("유효한 Google ID Token으로 로그인할 수 있어야 한다")
         fun `should login with valid Google ID token`() {
-            // Given
             val request = GoogleLoginRequest(idToken = "valid_google_id_token")
             val user = User.registerWithOAuth(
                 email = Email.of("user@gmail.com"),
@@ -68,10 +67,8 @@ class AuthServiceTest {
             every { tokenPort.getAccessTokenExpirationSeconds() } returns 3600L
             every { tokenPort.getRefreshTokenExpirationSeconds() } returns 604800L
 
-            // When
             val result = authService.googleLogin(request)
 
-            // Then
             assertNotNull(result)
             assertEquals("access_token", result.accessToken)
             assertEquals("refresh_token", result.refreshToken)
@@ -86,11 +83,9 @@ class AuthServiceTest {
         @Test
         @DisplayName("유효하지 않은 Google ID Token으로는 로그인할 수 없어야 한다")
         fun `should reject login with invalid Google ID token`() {
-            // Given
             val request = GoogleLoginRequest(idToken = "invalid_token")
             every { googleLoginHandler.handle(any()) } throws InvalidGoogleTokenException()
 
-            // When & Then
             assertThrows<InvalidGoogleTokenException> {
                 authService.googleLogin(request)
             }
@@ -99,11 +94,9 @@ class AuthServiceTest {
         @Test
         @DisplayName("이메일이 검증되지 않은 Google 계정으로는 로그인할 수 없어야 한다")
         fun `should reject login with unverified Google email`() {
-            // Given
             val request = GoogleLoginRequest(idToken = "valid_but_unverified")
             every { googleLoginHandler.handle(any()) } throws OAuthEmailNotVerifiedException()
 
-            // When & Then
             assertThrows<OAuthEmailNotVerifiedException> {
                 authService.googleLogin(request)
             }
@@ -117,7 +110,6 @@ class AuthServiceTest {
         @Test
         @DisplayName("유효한 Refresh Token으로 새 Access Token을 발급받을 수 있어야 한다")
         fun `should refresh access token with valid refresh token`() {
-            // Given
             val refreshToken = "valid_refresh_token"
             val userId = UUID.randomUUID()
             val user = User.registerWithOAuth(
@@ -128,17 +120,17 @@ class AuthServiceTest {
             every { tokenPort.validateToken(refreshToken) } returns true
             every { tokenPort.getTokenType(refreshToken) } returns "refresh"
             every { tokenPort.getUserIdFromToken(refreshToken) } returns userId
-            every { refreshTokenPort.findAndInvalidateByToken(refreshToken) } returns TokenInvalidationResult.Invalidated
+            every {
+                refreshTokenPort.findAndInvalidateByToken(refreshToken)
+            } returns TokenInvalidationResult.Invalidated
             every { userPort.findById(userId) } returns user
             every { tokenPort.generateAccessToken(userId) } returns "new_access_token"
             every { tokenPort.generateRefreshToken(userId) } returns "new_refresh_token"
             every { tokenPort.getAccessTokenExpirationSeconds() } returns 3600L
             every { tokenPort.getRefreshTokenExpirationSeconds() } returns 604800L
 
-            // When
             val result = authService.refreshToken(RefreshTokenRequest(refreshToken))
 
-            // Then
             assertEquals("new_access_token", result.accessToken)
             assertEquals("new_refresh_token", result.refreshToken)
             assertEquals(3600L, result.expiresIn)
@@ -148,16 +140,16 @@ class AuthServiceTest {
         @Test
         @DisplayName("저장소에 미등록된 Refresh Token은 거부해야 한다")
         fun `should reject refresh token not found in rotation store`() {
-            // Given
             val refreshToken = "unregistered_refresh_token"
             val userId = UUID.randomUUID()
 
             every { tokenPort.validateToken(refreshToken) } returns true
             every { tokenPort.getTokenType(refreshToken) } returns "refresh"
             every { tokenPort.getUserIdFromToken(refreshToken) } returns userId
-            every { refreshTokenPort.findAndInvalidateByToken(refreshToken) } returns TokenInvalidationResult.NotFound
+            every {
+                refreshTokenPort.findAndInvalidateByToken(refreshToken)
+            } returns TokenInvalidationResult.NotFound
 
-            // When & Then
             assertThrows<InvalidTokenException> {
                 authService.refreshToken(RefreshTokenRequest(refreshToken))
             }
@@ -166,11 +158,9 @@ class AuthServiceTest {
         @Test
         @DisplayName("유효하지 않은 Refresh Token으로는 갱신할 수 없어야 한다")
         fun `should reject refresh with invalid token`() {
-            // Given
             val invalidToken = "invalid_token"
             every { tokenPort.validateToken(invalidToken) } returns false
 
-            // When & Then
             assertThrows<InvalidTokenException> {
                 authService.refreshToken(RefreshTokenRequest(invalidToken))
             }
@@ -179,12 +169,10 @@ class AuthServiceTest {
         @Test
         @DisplayName("Access Token으로는 갱신할 수 없어야 한다")
         fun `should reject refresh with access token`() {
-            // Given
             val accessToken = "access_token"
             every { tokenPort.validateToken(accessToken) } returns true
             every { tokenPort.getTokenType(accessToken) } returns "access"
 
-            // When & Then
             assertThrows<InvalidTokenException> {
                 authService.refreshToken(RefreshTokenRequest(accessToken))
             }
@@ -196,15 +184,32 @@ class AuthServiceTest {
     inner class Logout {
 
         @Test
-        @DisplayName("로그아웃 시 모든 Refresh Token이 무효화되어야 한다")
+        @DisplayName("현재 세션 로그아웃은 전달된 Refresh Token만 무효화해야 한다")
+        fun `should invalidate only current refresh token on session logout`() {
+            val refreshToken = "current_refresh_token"
+
+            authService.logoutCurrentSession(refreshToken)
+
+            verify(exactly = 1) { refreshTokenPort.invalidate(refreshToken) }
+            verify(exactly = 0) { refreshTokenPort.invalidateAllByUserId(any()) }
+        }
+
+        @Test
+        @DisplayName("빈 Refresh Token 로그아웃은 저장소를 변경하지 않아야 한다")
+        fun `should keep current session logout idempotent for blank token`() {
+            authService.logoutCurrentSession("   ")
+
+            verify(exactly = 0) { refreshTokenPort.invalidate(any()) }
+            verify(exactly = 0) { refreshTokenPort.invalidateAllByUserId(any()) }
+        }
+
+        @Test
+        @DisplayName("전체 로그아웃 시 모든 Refresh Token이 무효화되어야 한다")
         fun `should invalidate all refresh tokens on logout`() {
-            // Given
             val userId = UUID.randomUUID()
 
-            // When
             authService.logout(userId)
 
-            // Then
             verify(exactly = 1) { refreshTokenPort.invalidateAllByUserId(userId) }
         }
     }

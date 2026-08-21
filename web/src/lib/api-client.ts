@@ -1,7 +1,47 @@
-import axios, { AxiosError, AxiosInstance } from "axios";
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+} from "axios";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.fanpulse.app/api/v1";
+
+const WEB_REFRESH_URL = `${API_BASE_URL.replace(/\/$/, "")}/auth/web/refresh`;
+const AUTO_REFRESH_EXCLUDED_PATHS = [
+  "/auth/google",
+  "/auth/refresh",
+  "/auth/web/refresh",
+  "/auth/logout",
+];
+
+type RetriableRequestConfig = InternalAxiosRequestConfig & {
+  _fanPulseRetried?: boolean;
+};
+
+let refreshPromise: Promise<void> | null = null;
+
+/**
+ * 웹 httpOnly Refresh Cookie를 사용해 인증 쿠키를 회전한다.
+ *
+ * 동시에 여러 요청이 401을 반환해도 실제 갱신 요청은 하나만 실행한다.
+ * 기본 axios 클라이언트를 사용해 apiClient 응답 인터셉터의 재귀 호출을 피한다.
+ */
+export function refreshWebSession(): Promise<void> {
+  if (refreshPromise === null) {
+    refreshPromise = axios
+      .post<void>(WEB_REFRESH_URL, undefined, {
+        withCredentials: true,
+        timeout: 30000,
+      })
+      .then(() => undefined)
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
 
 /**
  * Axios 인스턴스
@@ -14,20 +54,53 @@ export const apiClient: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // httpOnly 쿠키 자동 전송
+  withCredentials: true,
 });
 
-// Response 인터셉터: 401 에러 처리
+function shouldSkipAutoRefresh(url?: string): boolean {
+  if (!url) return true;
+  return AUTO_REFRESH_EXCLUDED_PATHS.some((path) => url.includes(path));
+}
+
+function redirectToLogin(): void {
+  if (
+    typeof window !== "undefined" &&
+    window.location.pathname !== "/login"
+  ) {
+    window.location.href = "/login";
+  }
+}
+
+// Response 인터셉터: 401이면 웹 쿠키를 한 번 갱신한 후 원래 요청을 재시도한다.
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // 인증 만료 시 로그인 페이지로 리다이렉트
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
+  async (error: AxiosError) => {
+    const status = error.response?.status;
+    const requestConfig = error.config as RetriableRequestConfig | undefined;
+
+    if (
+      status !== 401 ||
+      !requestConfig ||
+      typeof window === "undefined" ||
+      shouldSkipAutoRefresh(requestConfig.url)
+    ) {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    if (requestConfig._fanPulseRetried) {
+      redirectToLogin();
+      return Promise.reject(error);
+    }
+
+    requestConfig._fanPulseRetried = true;
+
+    try {
+      await refreshWebSession();
+      return apiClient.request(requestConfig);
+    } catch {
+      redirectToLogin();
+      return Promise.reject(error);
+    }
   }
 );
 

@@ -24,7 +24,16 @@ interface AuthService {
     fun refreshToken(request: RefreshTokenRequest): TokenResponse
 
     /**
-     * 사용자의 토큰을 무효화하여 로그아웃 처리한다.
+     * 현재 클라이언트 세션의 Refresh Token만 무효화한다.
+     * 토큰이 이미 무효화됐거나 저장소에 없어도 로그아웃은 멱등적으로 완료한다.
+     *
+     * @param refreshToken 현재 세션의 Refresh Token
+     */
+    fun logoutCurrentSession(refreshToken: String)
+
+    /**
+     * 사용자의 모든 Refresh Token을 무효화하여 전체 세션에서 로그아웃 처리한다.
+     *
      * @param userId 로그아웃할 사용자의 ID
      */
     fun logout(userId: UUID)

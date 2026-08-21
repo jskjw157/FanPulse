@@ -125,15 +125,30 @@ class AuthServiceImpl(
     }
 
     /**
-     * 사용자의 모든 리프레시 토큰을 무효화하여 로그아웃 처리한다.
+     * 현재 세션의 Refresh Token만 무효화한다.
+     * 존재하지 않거나 이미 무효화된 토큰도 멱등적으로 처리한다.
+     */
+    @Transactional
+    override fun logoutCurrentSession(refreshToken: String) {
+        if (refreshToken.isBlank()) {
+            return
+        }
+
+        logger.debug { "현재 세션 로그아웃 요청" }
+        refreshTokenPort.invalidate(refreshToken)
+        logger.info { "현재 세션 로그아웃 완료" }
+    }
+
+    /**
+     * 사용자의 모든 리프레시 토큰을 무효화하여 전체 세션에서 로그아웃 처리한다.
      *
      * @param userId 로그아웃할 사용자 ID
      */
     @Transactional
     override fun logout(userId: UUID) {
-        logger.debug { "로그아웃 요청. 사용자: $userId" }
+        logger.debug { "전체 세션 로그아웃 요청. 사용자: $userId" }
         refreshTokenPort.invalidateAllByUserId(userId)
-        logger.info { "로그아웃 완료. 사용자: $userId" }
+        logger.info { "전체 세션 로그아웃 완료. 사용자: $userId" }
     }
 
     /**
