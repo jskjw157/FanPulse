@@ -75,6 +75,11 @@ fun CommonTopAppBar(
     onRightNotification:() -> Unit = {},
     isActiveRightMenu: Boolean = false,         //  오른쪽 메뉴
     onRightMenu:() -> Unit = {},
+    isActiveRightTextTitle: Boolean = false,    //  오른쪽 제목
+    rightTextTitle: String? = null,
+    onRightTextTitle:() -> Unit = {},
+    isActiveRightThreeDot: Boolean = false,     //  오른쪽 세개 점
+    onRightThreeDot:() -> Unit = {},
 ){
 
     var searchText by remember { mutableStateOf("") }
@@ -138,7 +143,7 @@ fun CommonTopAppBar(
                             Icon(
                                 painter = painterResource(id = R.drawable.home_title),
                                 contentDescription = null,
-                                tint = Color.Unspecified
+                                tint = if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1)
                             )
                         }
                     }
@@ -223,7 +228,7 @@ fun CommonTopAppBar(
                         Icon(
                             painter = painterResource(id = R.drawable.icon_close),
                             contentDescription = null,
-                            tint = Color.Unspecified
+                            tint = if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1)
                         )
                     }
                 }
@@ -232,7 +237,7 @@ fun CommonTopAppBar(
                         Text(
                             text = "게시",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White
+                            color = if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1)
                         )
                     }
                 }
@@ -241,7 +246,7 @@ fun CommonTopAppBar(
                         Icon(
                             painter = painterResource(id = R.drawable.icon_settings),
                             contentDescription = null,
-                            tint = Color.Unspecified
+                            tint = if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1)
                         )
                     }
                 }
@@ -250,7 +255,7 @@ fun CommonTopAppBar(
                         Icon(
                             painter = painterResource(id = R.drawable.icon_refresh),
                             contentDescription = null,
-                            tint = Color.Unspecified
+                            tint = if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1)
                         )
                     }
                 }
@@ -259,7 +264,7 @@ fun CommonTopAppBar(
                         Icon(
                             painter = painterResource(id = R.drawable.icon_share),
                             contentDescription = null,
-                            tint = Color.Unspecified
+                            tint = if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1)
                         )
                     }
                 }
@@ -268,7 +273,7 @@ fun CommonTopAppBar(
                         Icon(
                             painter = painterResource(id = R.drawable.icon_search),
                             contentDescription = null,
-                            tint = Color.Unspecified
+                            tint = if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1)
                         )
                     }
                 }
@@ -277,7 +282,7 @@ fun CommonTopAppBar(
                         Icon(
                             painter = painterResource(id = R.drawable.icon_alarm_inactive),
                             contentDescription = null,
-                            tint = Color.Unspecified
+                            tint = if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1)
                         )
                     }
                 }
@@ -288,7 +293,32 @@ fun CommonTopAppBar(
                         Icon(
                             painter = painterResource(id = R.drawable.icon_inventory),
                             contentDescription = null,
-                            tint = Color.Unspecified
+                            tint = if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1)
+                        )
+                    }
+                }
+                if (isActiveRightTextTitle){
+                    TextButton(
+                        onClick = { onRightTextTitle() },
+                        modifier = Modifier
+                            .wrapContentHeight()
+                            .wrapContentWidth()
+                    ) {
+                        Text(
+                            text = rightTextTitle.toString(),
+                            fontSize = 18.sp,
+                            color =  if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                if (isActiveRightThreeDot){
+                    IconButton(onClick = { onRightThreeDot() }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.icon_list),
+                            contentDescription = null,
+                            tint = if (setBackground == 0) Color.Unspecified else colorResource(R.color.color_new_1)
                         )
                     }
                 }

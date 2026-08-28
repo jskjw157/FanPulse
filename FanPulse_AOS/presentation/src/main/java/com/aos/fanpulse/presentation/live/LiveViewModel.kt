@@ -36,9 +36,9 @@ class LiveViewModel@Inject constructor(
 
         try {
             coroutineScope {
-                val streamEventsDeferred = async { getStreamingEventsUseCase.invoke() }
-                val scheduledEventsDeferred = async { getScheduledEventsUseCase.invoke() }
-                val liveEventsDeferred = async { getLiveEventsUseCase.invoke() }
+                val streamEventsDeferred = async { getStreamingEventsUseCase() }
+                val scheduledEventsDeferred = async { getScheduledEventsUseCase() }
+                val liveEventsDeferred = async { getLiveEventsUseCase() }
 
                 val streamResult = streamEventsDeferred.await()
                 val scheduledResult = scheduledEventsDeferred.await()

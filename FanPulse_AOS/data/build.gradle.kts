@@ -7,6 +7,8 @@ plugins {
     id("com.google.protobuf") version "0.9.6"
     id("com.google.devtools.ksp")
     id("dagger.hilt.android.plugin")
+    alias(libs.plugins.google.gms.google.services)
+    id("androidx.room") version "2.8.4"
 }
 
 val localProperties = Properties()
@@ -25,16 +27,23 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
 
-        val webClientId = localProperties.getProperty("GOOGLE_WEB_CLIENT_ID") ?: ""
-        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$webClientId\"")
+        val lastFmApiKey = localProperties.getProperty("LASTFM_API_KEY") ?: ""
+        buildConfigField("String", "LASTFM_API_KEY", "\"$lastFmApiKey\"")
+
+        val youTubeApiKey = localProperties.getProperty("YOUTUBE_API_KEY") ?: ""
+        buildConfigField("String", "YOUTUBE_API_KEY", "\"$youTubeApiKey\"")
     }
 
     buildTypes {
         debug {
             buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/api/v1/\"")
+            buildConfigField("String", "LAST_FM_URL","\"https://ws.audioscrobbler.com/2.0/\"")
+            buildConfigField("String", "YOUTUBE_URL","\"https://www.googleapis.com/youtube/v3/\"")
         }
         release {
             buildConfigField("String", "BASE_URL", "\"https://api.fanpulse.com/api/v1/\"")
+            buildConfigField("String", "LAST_FM_URL","\"https://ws.audioscrobbler.com/2.0/\"")
+            buildConfigField("String", "YOUTUBE_URL","\"https://www.googleapis.com/youtube/v3/\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -61,6 +70,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.androidx.room.common.jvm)
+    implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -90,6 +101,9 @@ dependencies {
     // Firebase (데이터 수집/분석 로직을 Data 모듈에서 처리할 경우)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
+    implementation(libs.firebase.auth)
 
     //  hilt 공통 사항
     implementation(libs.hilt.android)
@@ -102,11 +116,19 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    //  Room
+    ksp(libs.androidx.room.compiler)
+
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:4.32.1"
+        artifact = "com.google.protobuf:protoc:4.26.1"
     }
     generateProtoTasks {
         all().forEach { task ->

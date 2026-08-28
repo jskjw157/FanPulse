@@ -44,11 +44,10 @@ class NewsRepositoryImpl @Inject constructor(
      */
     override suspend fun getNewsDetail(newsId: String): NewsDetail {
         val response = apiService.getNewsDetail(newsId)
-
-        if (response.isSuccessful) {
-            return response.body()?.toDomain() ?: throw Exception("뉴스 상세 정보를 찾을 수 없습니다.")
+        if (response.success) {
+            return response.data.toDomain()
         } else {
-            throw Exception("네트워크 에러: ${response.code()}")
+            throw Exception("서버 응답 실패")
         }
     }
 

@@ -16,7 +16,7 @@ object CoroutineModule {
 
     @Provides
     @Singleton
-    @ApplicationScope // 우리가 만든 어노테이션을 붙여줌
+    @ApplicationScope
     fun provideApplicationScope(): CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Default)
 }

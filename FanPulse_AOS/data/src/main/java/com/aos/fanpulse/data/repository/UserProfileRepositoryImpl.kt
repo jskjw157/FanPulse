@@ -25,11 +25,9 @@ class UserProfileRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateProfile(request: UpdateProfileRequest): MyProfile {
-        // 1. 도메인 요청 모델을 DTO로 변환하여 전송
         val response = apiService.updateProfile(request.toData())
 
         if (response.isSuccessful) {
-            // 2. 수정된 결과 DTO를 다시 도메인 모델로 변환하여 반환
             return response.body()?.toDomain() ?: throw Exception("프로필 수정에 실패했습니다.")
         } else {
             throw Exception("네트워크 에러: ${response.code()}")

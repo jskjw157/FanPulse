@@ -2,6 +2,7 @@ package com.aos.fanpulse.data.remote.apiservice
 
 import com.aos.fanpulse.data.remote.dto.ArtistDetail
 import com.aos.fanpulse.data.remote.dto.ArtistListResponse
+import com.aos.fanpulse.data.remote.dto.BaseResponse
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -20,13 +21,13 @@ interface ArtistsApiService {
         @Query("size") size: Int = 20,
         @Query("sortBy") sortBy: String = "name",
         @Query("sortDir") sortDir: String = "asc"
-    ): Response<ArtistListResponse>
+    ): BaseResponse<ArtistListResponse>
 
     //  나중에 필터 조건이 더 많아질 경우 Map을 사용하여 관리
     @GET("artists")
     suspend fun getArtists(
         @QueryMap options: Map<String, String>
-    ): Response<ArtistListResponse>
+    ): BaseResponse<ArtistListResponse>
 
     /**
      * Returns detailed information about a specific artist
@@ -35,7 +36,7 @@ interface ArtistsApiService {
     @GET("artists/{id}")
     suspend fun getArtistDetail(
         @Path("id") artistId: String
-    ): Response<ArtistDetail>
+    ): BaseResponse<ArtistDetail>
 
     /**
      * Search artists by name
@@ -48,6 +49,6 @@ interface ArtistsApiService {
         @Query("q") query: String,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
-    ): Response<ArtistListResponse>
+    ): BaseResponse<ArtistListResponse>
 
 }

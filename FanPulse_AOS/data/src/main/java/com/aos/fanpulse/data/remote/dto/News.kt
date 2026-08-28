@@ -9,11 +9,6 @@ data class NewsListResponse(
     val totalPages: Int
 )
 
-data class BaseResponse<T>(
-    val success: Boolean,
-    val data: T
-)
-
 // 개별 뉴스 아이템
 data class NewsItem(
     val id: String,                 // UUID

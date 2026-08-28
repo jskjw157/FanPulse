@@ -7,7 +7,9 @@ import com.aos.fanpulse.domain.model.CommentListResponse
 import com.aos.fanpulse.domain.model.CommentRequest
 import com.aos.fanpulse.data.remote.apiservice.CommentsApiService
 import com.aos.fanpulse.domain.repository.CommentsRepository
+import com.google.protobuf.LazyStringArrayList.emptyList
 import javax.inject.Inject
+import kotlin.collections.emptyList
 
 class CommentsRepositoryImpl @Inject constructor(
     private val apiService: CommentsApiService
@@ -30,8 +32,10 @@ class CommentsRepositoryImpl @Inject constructor(
         )
 
         if (response.isSuccessful) {
-            // CommentListResponse DTO를 Domain 모델로 변환
-            return response.body()?.toDomain() ?: throw Exception("Empty Comment List")
+            val body = response.body()
+            return (body?.toDomain()
+                ?: emptyList()
+                    ) as CommentListResponse
         } else {
             throw Exception("Network Error: ${response.code()}")
         }
@@ -44,11 +48,9 @@ class CommentsRepositoryImpl @Inject constructor(
     override suspend fun createComment(
         request: CommentRequest
     ): Comment {
-        // 1. 도메인 모델인 request를 서버 DTO인 toData()로 변환해서 전송
         val response = apiService.createComment(request.toData())
 
         if (response.isSuccessful) {
-            // 2. 서버에서 받은 Comment DTO를 도메인 모델로 변환해서 반환
             return response.body()?.toDomain() ?: throw Exception("Comment Creation Failed")
         } else {
             throw Exception("Network Error: ${response.code()}")

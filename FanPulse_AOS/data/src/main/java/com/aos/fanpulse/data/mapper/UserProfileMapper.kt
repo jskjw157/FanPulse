@@ -1,6 +1,5 @@
 package com.aos.fanpulse.data.mapper
 
-// [Data 계층 DTO] (서버 통신용)
 import com.aos.fanpulse.data.remote.dto.MyProfile as DataMyProfile
 import com.aos.fanpulse.data.remote.dto.UserSettings as DataUserSettings
 import com.aos.fanpulse.data.remote.dto.UpdateProfileRequest as DataUpdateProfileRequest
@@ -15,11 +14,6 @@ import com.aos.fanpulse.domain.model.UpdateProfileRequest as DomainUpdateProfile
 import com.aos.fanpulse.domain.model.UpdateSettingsRequest as DomainUpdateSettingsRequest
 import com.aos.fanpulse.domain.model.ChangePasswordRequest as DomainChangePasswordRequest
 import com.aos.fanpulse.domain.model.MessageResponse as DomainMessageResponse
-
-
-// ==========================================
-// 1. Data(서버 응답) -> Domain(앱 모델) 방향
-// ==========================================
 
 internal fun DataMyProfile.toDomain(): DomainMyProfile {
     return DomainMyProfile(
@@ -45,11 +39,6 @@ internal fun DataMessageResponse.toDomain(): DomainMessageResponse {
         message = this.message
     )
 }
-
-
-// ==========================================
-// 2. Domain(앱 데이터) -> Data(서버 요청) 방향
-// ==========================================
 
 internal fun DomainUpdateProfileRequest.toData(): DataUpdateProfileRequest {
     return DataUpdateProfileRequest(

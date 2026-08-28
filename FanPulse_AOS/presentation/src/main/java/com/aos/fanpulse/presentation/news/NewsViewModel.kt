@@ -44,7 +44,7 @@ class NewsViewModel@Inject constructor(
 
         try {
             coroutineScope {
-                val response = async { getNewsLatestUseCase.invoke(3) }
+                val response = async { getNewsLatestUseCase(3) }
                 val responseResult = response.await()
 //                Log.d("NewsViewModel", "API 호출 결과: ${responseResult.isSuccess}")
 

@@ -10,8 +10,8 @@ data class ArtistChannelListResponse(
 data class ArtistChannel(
     val id: String,
     val artistId: String,
-    val platform: String,           // 예: "YOUTUBE"
-    val channelHandle: String?,      // 예: "@IVEstarship"
+    val platform: String,
+    val channelHandle: String?,
     val channelId: String?,
     val channelUrl: String?,
     val isOfficial: Boolean,

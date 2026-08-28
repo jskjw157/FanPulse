@@ -72,4 +72,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 
     implementation(libs.androidx.activity.compose)
+
+    //  FCM
+    implementation(libs.firebase.messaging)
 }

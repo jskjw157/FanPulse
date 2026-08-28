@@ -1,6 +1,5 @@
 package com.aos.fanpulse.data.mapper
 
-// [Data 계층 DTO] (서버 통신용)
 import com.aos.fanpulse.data.remote.dto.StreamingBaseResponse as DataStreamingBaseResponse
 import com.aos.fanpulse.data.remote.dto.StreamingEventCursorData as DataStreamingEventCursorData
 import com.aos.fanpulse.data.remote.dto.StreamingEventItem as DataStreamingEventItem
@@ -15,10 +14,6 @@ import com.aos.fanpulse.domain.model.StreamingEventItem as DomainStreamingEventI
 import com.aos.fanpulse.domain.model.StreamingEventDetail as DomainStreamingEventDetail
 import com.aos.fanpulse.domain.model.StreamingPageResponse as DomainStreamingPageResponse
 import com.aos.fanpulse.domain.model.StreamingEventSimpleItem as DomainStreamingEventSimpleItem
-
-// ==========================================
-// 1. 단일 아이템 매핑 (항상 가장 위에 위치해야 함!)
-// ==========================================
 
 internal fun DataStreamingEventItem.toDomain(): DomainStreamingEventItem {
     return DomainStreamingEventItem(
@@ -65,27 +60,14 @@ internal fun DataStreamingEventSimpleItem.toDomain(): DomainStreamingEventSimple
     )
 }
 
-// ==========================================
-// 2. 내부 리스트 포함 데이터 매핑 (커서 기반)
-// ==========================================
-
 internal fun DataStreamingEventCursorData.toDomain(): DomainStreamingEventCursorData {
     return DomainStreamingEventCursorData(
-        // 위에서 정의한 DataStreamingEventItem.toDomain()을 사용합니다.
         items = this.items.map { it.toDomain() },
         nextCursor = this.nextCursor,
         hasMore = this.hasMore
     )
 }
 
-// ==========================================
-// 3. 제네릭 공통 응답 래퍼 매핑 (Base & Page)
-// ==========================================
-
-/**
- * 단일 데이터 제네릭 매퍼 (StreamingBaseResponse)
- * 예: BaseResponse<StreamingEventDetail> 변환 시 사용
- */
 internal fun <T, R> DataStreamingBaseResponse<T>.toDomain(mapData: (T) -> R): DomainStreamingBaseResponse<R> {
     return DomainStreamingBaseResponse(
         success = this.success,
@@ -93,13 +75,8 @@ internal fun <T, R> DataStreamingBaseResponse<T>.toDomain(mapData: (T) -> R): Do
     )
 }
 
-/**
- * 리스트 데이터 제네릭 매퍼 (StreamingPageResponse)
- * 예: StreamingPageResponse<StreamingEventSimpleItem> 변환 시 사용
- */
 internal fun <T, R> DataStreamingPageResponse<T>.toDomain(mapItem: (T) -> R): DomainStreamingPageResponse<R> {
     return DomainStreamingPageResponse(
-        // 리스트 안의 각 아이템(T)을 mapItem 함수를 통해 R로 변환합니다.
         content = this.content.map { mapItem(it) },
         totalElements = this.totalElements,
         page = this.page,

@@ -70,7 +70,6 @@ fun ArtistScreen(
 
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {
-            // 예: 뷰모델에서 postSideEffect(SideEffect.NavigateToDetail(id)) 를 호출했을 때
             is ArtistContract.SideEffect.NavigateArtistDetail -> {
                 goArtistDetail(sideEffect.artistId)
             }
@@ -91,7 +90,6 @@ fun ArtistScreen(
         CommonTopAppBar(
             isActiveLeftBack = true,
             onLeftBack = { onBackClick() },
-            isActiveLeftImage = true,
             isActiveRightSearch = true,
             onRightSearch = { goSearchScreen() },
             isActiveRightNotification = true,
@@ -143,7 +141,14 @@ fun ArtistScreen(
         }
 
         if (state.isLoading) {
-            CircularProgressIndicator()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(colorResource(id = R.color.color_12)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
         } else {
             // Artist Grid
             LazyVerticalGrid(
@@ -169,10 +174,10 @@ fun ArtistScreen(
 
 @Composable
 fun ArtistRadioButtonItem(
-    text: String,           // 보여줄 텍스트
+    text: String,
     filterImage: Int?,
-    isSelected: Boolean,    // 선택 여부
-    onClick: () -> Unit     // 클릭 시 실행할 동작
+    isSelected: Boolean,
+    onClick: () -> Unit
 ) {
 
     Box(
@@ -231,27 +236,27 @@ fun ArtistItem(
                 contentScale = ContentScale.Crop
             )
 
-            // Ranking Badge
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .size(32.dp)
-                    .background(
-                        color = colorResource(id = R.color.color_1),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                // TODO:
-                Text(
-                    text = "#${artist.name//ranking
-                    }",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+//            // Ranking Badge
+//            Box(
+//                modifier = Modifier
+//                    .align(Alignment.TopEnd)
+//                    .padding(8.dp)
+//                    .size(32.dp)
+//                    .background(
+//                        color = colorResource(id = R.color.color_1),
+//                        shape = CircleShape
+//                    ),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                // TODO:
+//                Text(
+//                    text = "#${artist.name//ranking
+//                    }",
+//                    color = Color.White,
+//                    fontSize = 12.sp,
+//                    fontWeight = FontWeight.Bold
+//                )
+//            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -281,41 +286,41 @@ fun ArtistItem(
         Spacer(modifier = Modifier.height(8.dp))
 
         // TODO: Followers and Like
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_person),
-                    contentDescription = null,
-                    tint = Color.Gray,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = formatFollowers(100000//followers
-                    ),
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
-            }
-
-            IconButton(
-                onClick = { isFavorite = !isFavorite },
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = "좋아요",
-                    tint = if (isFavorite) colorResource(id = R.color.color_1) else Color.Gray,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Row(
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Icon(
+//                    painter = painterResource(id = R.drawable.icon_person),
+//                    contentDescription = null,
+//                    tint = Color.Gray,
+//                    modifier = Modifier.size(16.dp)
+//                )
+//                Spacer(modifier = Modifier.width(4.dp))
+//                Text(
+//                    text = formatFollowers(100000//followers
+//                    ),
+//                    fontSize = 12.sp,
+//                    color = Color.Gray
+//                )
+//            }
+//
+//            IconButton(
+//                onClick = { isFavorite = !isFavorite },
+//                modifier = Modifier.size(24.dp)
+//            ) {
+//                Icon(
+//                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+//                    contentDescription = "좋아요",
+//                    tint = if (isFavorite) colorResource(id = R.color.color_1) else Color.Gray,
+//                    modifier = Modifier.size(20.dp)
+//                )
+//            }
+//        }
     }
 }
 

@@ -12,6 +12,6 @@ object ArtistContract {
     sealed interface SideEffect {
         data class ShowToast(val message: String) : SideEffect
         data class NavigateArtistDetail(val artistId: String) : SideEffect
-        object NavigateHome : SideEffect    // 파라미터가 필요 없는 곳은 그대로 object 유지
+        object NavigateHome : SideEffect
     }
 }

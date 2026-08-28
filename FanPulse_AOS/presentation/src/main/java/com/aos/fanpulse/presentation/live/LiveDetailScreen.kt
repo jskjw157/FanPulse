@@ -108,11 +108,6 @@ fun LiveDetailScreen(
                         CircularProgressIndicator()
                     }
                     state.streamingEventDetailItem != null -> {
-//                        val m3u8Url = state.streamingEventDetailItem!!.streamUrl
-//                        HlsVideoPlayer(
-//                            videoUrl = m3u8Url!!,
-//                            modifier = Modifier.fillMaxSize()
-//                        )
                         val streamUrl = state.streamingEventDetailItem?.streamUrl.toString()
                         YouTubeWebPlayer(
                             videoUrl = streamUrl,
@@ -132,15 +127,6 @@ fun LiveDetailScreen(
             )
 
             // LIVE 배지 + 시청자 수
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .statusBarsPadding()
-                    .padding(start = 16.dp, top = 52.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                LiveBadge()
-            }
 
             ViewerCount(
                 count = state.streamingEventDetailItem?.viewerCount.toString(),
@@ -231,30 +217,24 @@ fun HlsVideoPlayer(
 ) {
     val context = LocalContext.current
 
-    // 1. ExoPlayer 객체 생성 및 기억 (리컴포지션 방지)
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
-            // 전달받은 m3u8 URL을 미디어 아이템으로 설정
             val mediaItem = MediaItem.fromUri(videoUrl)
             setMediaItem(mediaItem)
-            prepare() // 영상 로딩 시작
-            playWhenReady = true // 로딩 완료되면 바로 재생
+            prepare()
+            playWhenReady = true
         }
     }
-
-    // 2. 화면에서 벗어날 때 메모리 해제 (매우 중요!)
     DisposableEffect(Unit) {
         onDispose {
             exoPlayer.release()
         }
     }
-
-    // 3. AndroidView를 통해 기존 PlayerView를 Compose에 그리기
     AndroidView(
         factory = { ctx ->
             PlayerView(ctx).apply {
                 player = exoPlayer
-                useController = true // 재생/일시정지 등 기본 컨트롤러 사용 여부
+                useController = true
             }
         },
         modifier = modifier.fillMaxSize()
@@ -317,7 +297,6 @@ fun YouTubeWebPlayer(
 
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-//                        Log.e("WebViewLog", "유튜브 에러: ${consoleMessage?.message()}")
                         return super.onConsoleMessage(consoleMessage)
                     }
                 }
@@ -361,27 +340,6 @@ fun extractYouTubeVideoId(url: String): String? {
     }
 }
 
-// ── LIVE 배지 ──────────────────────────────────────────────────────────────────
-@Composable
-fun LiveBadge() {
-    Box(
-        modifier = Modifier
-            .background(Color(0xFFE91E8C), RoundedCornerShape(4.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .background(Color.White, CircleShape)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("LIVE", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
-        }
-    }
-}
-
-// ── 시청자 수 ──────────────────────────────────────────────────────────────────
 @Composable
 fun ViewerCount(count: String, modifier: Modifier = Modifier) {
     Box(
@@ -398,7 +356,6 @@ fun ViewerCount(count: String, modifier: Modifier = Modifier) {
     }
 }
 
-// ── 액션 바 ────────────────────────────────────────────────────────────────────
 @Composable
 fun ActionBar(
 ) {
@@ -444,14 +401,12 @@ fun ActionBarItem(
     }
 }
 
-// ── 채팅 섹션 ──────────────────────────────────────────────────────────────────
 @Composable
 fun ChatSection(
     modifier: Modifier = Modifier,
     messages: List<LiveDetailViewModel.ChatMessage>
 ) {
     Column(modifier = modifier.background(Color.White)) {
-        // 헤더
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -534,7 +489,6 @@ fun ChatMessageItem(message: LiveDetailViewModel.ChatMessage) {
     }
 }
 
-// ── 채팅 입력창 ────────────────────────────────────────────────────────────────
 @Composable
 fun ChatInputBar(
     value: String,
@@ -589,7 +543,6 @@ fun ChatInputBar(
     }
 }
 
-// ── 프리뷰 ─────────────────────────────────────────────────────────────────────
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LiveDetailScreenPreview() {
