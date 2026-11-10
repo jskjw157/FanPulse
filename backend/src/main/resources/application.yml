@@ -36,6 +36,12 @@ fanpulse:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
 
+  comment-review:
+    enabled: ${COMMENT_REVIEW_ENABLED:true}
+    interval-ms: ${COMMENT_REVIEW_INTERVAL_MS:60000}
+    # Trusted deployment configuration only. Empty means every admin request is denied.
+    admin-user-ids: ${COMMENT_REVIEW_ADMIN_USER_IDS:}
+
   ai-service:
     # Feature Flag: set to false to disable AI service integration and use NoOp adapters (Fail-Open).
     # true  → AiModerationAdapter / AiCommentFilterAdapter / AiNewsSummarizerAdapter (real HTTP calls)

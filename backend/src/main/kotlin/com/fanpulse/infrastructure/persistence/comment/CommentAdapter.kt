@@ -21,7 +21,7 @@ class CommentAdapter(
 
     @Transactional
     override fun save(comment: Comment): Comment {
-        return repository.save(comment)
+        return repository.saveAndFlush(comment)
     }
 
     @Transactional(readOnly = true)

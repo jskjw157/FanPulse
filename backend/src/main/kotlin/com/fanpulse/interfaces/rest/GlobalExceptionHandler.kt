@@ -7,6 +7,8 @@ import com.fanpulse.interfaces.rest.error.*
 import mu.KotlinLogging
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.dao.OptimisticLockingFailureException
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -177,6 +179,14 @@ class GlobalExceptionHandler {
             request = request
         )
     }
+
+    @ExceptionHandler(AccessDeniedException::class)
+    fun handleContentForbidden(ex: AccessDeniedException, request: WebRequest): ResponseEntity<ProblemDetail> =
+        createResponse(ErrorType.CONTENT_FORBIDDEN, detail = ex.message, request = request)
+
+    @ExceptionHandler(OptimisticLockingFailureException::class)
+    fun handleContentConflict(ex: OptimisticLockingFailureException, request: WebRequest): ResponseEntity<ProblemDetail> =
+        createResponse(ErrorType.CONTENT_CONFLICT, detail = "내용이 변경되었습니다. 새로고침 후 다시 시도해 주세요.", request = request)
 
     // === Not Found Exceptions ===
 

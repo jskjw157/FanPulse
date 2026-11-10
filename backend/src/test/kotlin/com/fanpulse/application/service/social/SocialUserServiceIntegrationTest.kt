@@ -80,7 +80,25 @@ class SocialUserServiceIntegrationTest {
         assertThat(duplicate.created).isFalse()
         assertThat(first.favorite.id).isEqualTo(artist.id)
         assertThat(duplicate.favorite.id).isEqualTo(artist.id)
+        assertThat(duplicate.favorite.followedAt).isEqualTo(first.favorite.followedAt)
         assertThat(favoriteRepository.findAllByUserIdOrderByCreatedAtDesc(owner.id)).hasSize(1)
+        entityManager.flush()
+        entityManager.clear()
+        assertThat(service.getFavorites(owner.id).map { it.id }).containsExactly(artist.id)
+
+        service.removeFavorite(owner.id, artist.id)
+        entityManager.flush()
+        entityManager.clear()
+        assertThat(service.getFavorites(owner.id)).isEmpty()
+    }
+
+    @Test
+    fun `a missing artist does not create a favorite`() {
+        val owner = userRepository.save(User(email = "missing-artist@example.com", username = "missing-artist"))
+        org.assertj.core.api.Assertions.assertThatThrownBy {
+            service.addFavorite(owner.id, java.util.UUID.randomUUID())
+        }.isInstanceOf(NoSuchElementException::class.java)
+        assertThat(favoriteRepository.findAllByUserIdOrderByCreatedAtDesc(owner.id)).isEmpty()
     }
 
     @Test

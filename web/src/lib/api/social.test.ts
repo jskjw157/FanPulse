@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/api-client', () => ({ apiClient: { get: vi.fn(), delete: vi.fn(), patch: vi.fn() } }));
+vi.mock('@/lib/api-client', () => ({ apiClient: { get: vi.fn(), post: vi.fn(), delete: vi.fn(), patch: vi.fn() } }));
 
 import { apiClient } from '@/lib/api-client';
-import { fetchFavorites, removeFavorite, fetchNotifications, markAllNotificationsRead } from './social';
+import { addFavorite, fetchFavorites, removeFavorite, fetchNotifications, markAllNotificationsRead,
+  fetchNotificationPage, fetchNotificationUnreadCount, markNotificationRead } from './social';
 
 const favorite = {
   id: '11111111-1111-1111-1111-111111111111',
@@ -42,6 +43,17 @@ describe('social API', () => {
       data: { success: true, data: [{ ...favorite, name: 42 }] },
     });
     await expect(fetchFavorites()).rejects.toThrow('즐겨찾기 API 응답이 올바르지 않습니다.');
+  });
+
+  it.each([201, 200])('accepts a favorite from new or duplicate POST (%s)', async (status) => {
+    vi.mocked(apiClient.post).mockResolvedValue({ status, data: { success: true, data: favorite } });
+    await expect(addFavorite(favorite.id)).resolves.toEqual(favorite);
+    expect(apiClient.post).toHaveBeenCalledWith(`/users/me/favorites/${favorite.id}`);
+  });
+
+  it('rejects malformed POST results rather than claiming follow succeeded', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: { success: true, data: { ...favorite, followedAt: null } } });
+    await expect(addFavorite(favorite.id)).rejects.toThrow('즐겨찾기 API 응답이 올바르지 않습니다.');
   });
 
   it('removes a favorite through the API', async () => {
@@ -91,4 +103,59 @@ describe('social API', () => {
       '알림 API 응답이 올바르지 않습니다.'
     );
   });
+
+  it('loads the new paginated endpoint without changing the legacy endpoint contract', async () => {
+    const page = { content: [notification], page: 1, size: 20, totalElements: 21, totalPages: 2, last: true, unreadCount: 19 };
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: page } });
+    await expect(fetchNotificationPage(true, 1)).resolves.toEqual(page);
+    expect(apiClient.get).toHaveBeenCalledWith('/users/me/notifications/page', {
+      params: { unreadOnly: true, page: 1, size: 20 }, signal: undefined,
+    });
+  });
+
+  it.each([{ targetId: '/malicious' }, { targetType: 1 }, { targetAvailable: 'false' }])(
+    'rejects malformed target metadata', async (fields) => {
+      vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: [{ ...notification, ...fields }] } });
+      await expect(fetchNotifications(false)).rejects.toThrow('알림 API 응답이 올바르지 않습니다.');
+    },
+  );
+
+  it('accepts legacy rows and nullable target metadata', async () => {
+    const rows = [notification, { ...notification, targetType: null, targetId: null, targetAvailable: false }];
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: rows } });
+    await expect(fetchNotifications(false)).resolves.toEqual(rows);
+  });
+
+  it.each([-1, '3', 1.5])('rejects an invalid unread count %s', async (unreadCount) => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: { unreadCount } } });
+    await expect(fetchNotificationUnreadCount()).rejects.toThrow();
+  });
+
+  it('loads an account-wide unread count', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: { unreadCount: 0 } } });
+    await expect(fetchNotificationUnreadCount()).resolves.toBe(0);
+    expect(apiClient.get).toHaveBeenCalledWith('/users/me/notifications/unread-count', { signal: undefined });
+  });
+
+  it('returns fresh availability from the individual read response', async () => {
+    const read = { ...notification, isRead: true, targetType: 'POST', targetId: favorite.id, targetAvailable: false };
+    vi.mocked(apiClient.patch).mockResolvedValue({ data: { success: true, data: read } });
+    await expect(markNotificationRead(notification.id)).resolves.toEqual(read);
+    expect(apiClient.patch).toHaveBeenCalledWith(`/users/me/notifications/${notification.id}/read`);
+  });
+
+  it.each([{ ...notification }, { ...notification, id: favorite.id, isRead: true }])(
+    'rejects mismatched or unread mutation responses', async (read) => {
+      vi.mocked(apiClient.patch).mockResolvedValue({ data: { success: true, data: read } });
+      await expect(markNotificationRead(notification.id)).rejects.toThrow();
+    },
+  );
+
+  it.each([{ page: 1 }, { size: 0 }, { totalPages: 9 }, { content: null }, { unreadCount: -1 }])(
+    'rejects malformed or mismatched page metadata', async (fields) => {
+      const page = { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0, last: true, unreadCount: 0, ...fields };
+      vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: page } });
+      await expect(fetchNotificationPage(false)).rejects.toThrow();
+    },
+  );
 });

@@ -71,7 +71,7 @@ describe('Smoke Test - All Pages Render', () => {
 
   it('renders Search Page', () => {
     render(<SearchPage />)
-    expect(screen.getByPlaceholderText('Search lives, news...')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('라이브, 뉴스 검색...')).toBeInTheDocument()
   })
 
   it('renders Notifications Page', () => {
@@ -86,7 +86,7 @@ describe('Smoke Test - All Pages Render', () => {
 
   it('renders Error Page', () => {
     render(<ErrorPage />)
-    expect(screen.getByText('Something Went Wrong')).toBeInTheDocument()
+    expect(screen.getByText('문제가 발생했습니다')).toBeInTheDocument()
   })
 
   it('renders Concert Detail Page', async () => {

@@ -14,6 +14,7 @@ import com.fanpulse.infrastructure.persistence.content.ArtistJpaRepository
 import com.fanpulse.infrastructure.persistence.identity.UserJpaRepositoryInterface
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -38,7 +39,35 @@ class CommunityServiceImpl(
                 .filter { it.active }
                 .orElseThrow { NoSuchElementException("활성 아티스트를 찾을 수 없습니다") }
         }
-        val content = request.content.trim()
+        val content = moderatedContent(request.content)
+        val post = posts.save(CommunityPost.create(userId, artist?.id, content))
+        return toResponse(post)
+    }
+
+    @Transactional
+    override fun updatePost(
+        userId: UUID,
+        postId: UUID,
+        request: UpdateCommunityPostRequest
+    ): CommunityPostResponse {
+        val post = lockPublishedPost(postId)
+        if (post.userId != userId) throw AccessDeniedException("작성자만 게시글을 수정할 수 있습니다")
+        // A rejected edit leaves the previously approved body intact.
+        post.edit(moderatedContent(request.content))
+        return toResponse(posts.save(post))
+    }
+
+    @Transactional
+    override fun deletePost(userId: UUID, postId: UUID) {
+        val post = posts.findByIdForUpdate(postId) ?: throw NoSuchElementException("게시글을 찾을 수 없습니다")
+        if (post.userId != userId) throw AccessDeniedException("작성자만 게시글을 삭제할 수 있습니다")
+        if (post.status == CommunityPostStatus.REMOVED) return
+        post.remove()
+        posts.save(post)
+    }
+
+    private fun moderatedContent(value: String): String {
+        val content = value.trim()
         require(content.isNotEmpty()) { "게시글 내용은 비어 있을 수 없습니다" }
         require(content.length <= 5_000) { "게시글 내용은 5,000자를 초과할 수 없습니다" }
 
@@ -67,9 +96,7 @@ class CommunityServiceImpl(
         ) {
             "허용되지 않는 게시글 내용입니다"
         }
-
-        val post = posts.save(CommunityPost.create(userId, artist?.id, content))
-        return toResponse(post)
+        return content
     }
 
     override fun getPosts(page: Int, size: Int, sort: CommunitySort): CommunityPostPageResponse {

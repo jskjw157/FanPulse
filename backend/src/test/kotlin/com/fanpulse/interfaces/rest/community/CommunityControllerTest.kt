@@ -16,6 +16,8 @@ import com.fanpulse.infrastructure.security.SecurityConfig
 import com.fanpulse.interfaces.rest.GlobalExceptionHandler
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
+import io.mockk.just
+import io.mockk.Runs
 import io.mockk.verify
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -28,6 +30,9 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.put
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.dao.OptimisticLockingFailureException
 import java.time.Instant
 import java.util.UUID
 
@@ -178,6 +183,67 @@ class CommunityControllerTest {
         verify(exactly = 1) {
             commentCommandService.createComment(postId.toString(), userId, "실제 댓글", null)
         }
+    }
+
+    @Test
+    @WithMockUser
+    fun `owner post edit and delete use authenticated identity and documented response contracts`() {
+        every { service.updatePost(userId, postId, any()) } returns post().copy(content = "수정된 게시글")
+        every { service.deletePost(userId, postId) } just Runs
+        mockMvc.put("/api/v1/community/posts/$postId") {
+            requestAttr("userId", userId)
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"content":"수정된 게시글","userId":"${UUID.randomUUID()}"}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.content") { value("수정된 게시글") }
+        }
+        mockMvc.delete("/api/v1/community/posts/$postId") { requestAttr("userId", userId) }
+            .andExpect { status { isNoContent() } }
+    }
+
+    @Test
+    @WithMockUser
+    fun `comment edit returns accepted envelope for moderation and delete is scoped to parent post`() {
+        val id = comment().id
+        every { commentCommandService.updateComment(id, userId, "재검토", postId.toString()) } returns
+            comment().copy(content = "재검토", status = CommentStatus.PENDING)
+        every { commentCommandService.deleteComment(id, userId, postId.toString()) } just Runs
+        mockMvc.put("/api/v1/community/posts/$postId/comments/$id") {
+            requestAttr("userId", userId)
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"content":"재검토"}"""
+        }.andExpect {
+            status { isAccepted() }
+            jsonPath("$.data.status") { value("PENDING") }
+        }
+        mockMvc.delete("/api/v1/community/posts/$postId/comments/$id") { requestAttr("userId", userId) }
+            .andExpect { status { isNoContent() } }
+    }
+
+    @Test
+    @WithMockUser
+    fun `direct unauthorized and stale mutations return forbidden and conflict rather than server error`() {
+        every { service.deletePost(userId, postId) } throws AccessDeniedException("작성자만 삭제 가능")
+        mockMvc.delete("/api/v1/community/posts/$postId") { requestAttr("userId", userId) }
+            .andExpect { status { isForbidden() }; jsonPath("$.errorCode") { value("CONTENT_FORBIDDEN") } }
+        every { commentCommandService.updateComment(any(), userId, any(), any()) } throws
+            OptimisticLockingFailureException("stale")
+        mockMvc.put("/api/v1/community/posts/$postId/comments/${comment().id}") {
+            requestAttr("userId", userId)
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"content":"구버전"}"""
+        }.andExpect { status { isConflict() } }
+    }
+
+    @Test
+    fun `post and comment edit delete endpoints never allow anonymous mutations`() {
+        listOf("/api/v1/community/posts/$postId", "/api/v1/community/posts/$postId/comments/${comment().id}")
+            .forEach { path ->
+                mockMvc.put(path) { contentType = MediaType.APPLICATION_JSON; content = """{"content":"수정"}""" }
+                    .andExpect { status { isForbidden() } }
+                mockMvc.delete(path).andExpect { status { isForbidden() } }
+            }
     }
 
     private fun page() = CommunityPostPageResponse(

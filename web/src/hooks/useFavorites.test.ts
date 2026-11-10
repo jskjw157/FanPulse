@@ -1,9 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/api/social', () => ({ fetchFavorites: vi.fn(), removeFavorite: vi.fn() }));
+vi.mock('@/lib/api/social', () => ({ addFavorite: vi.fn(), fetchFavorites: vi.fn(), removeFavorite: vi.fn() }));
 
-import { fetchFavorites, removeFavorite } from '@/lib/api/social';
+import { addFavorite, fetchFavorites, removeFavorite } from '@/lib/api/social';
 import { useFavorites } from './useFavorites';
 
 const favorite = {
@@ -74,5 +74,45 @@ describe('useFavorites', () => {
 
     expect(result.current.favorites).toEqual([favorite]);
     expect(result.current.mutationError).toBe('좋아요 취소에 실패했습니다');
+  });
+
+  it('serializes rapid mutations and waits for server success before adding a row', async () => {
+    const pending = deferred<typeof favorite>();
+    vi.mocked(fetchFavorites).mockResolvedValue([otherFavorite]);
+    vi.mocked(addFavorite).mockReturnValue(pending.promise);
+    const { result } = renderHook(() => useFavorites('user-a'));
+    await waitFor(() => expect(result.current.state).toBe('success'));
+
+    let request!: Promise<void>;
+    act(() => {
+      request = result.current.follow(favorite.id);
+      void result.current.follow(favorite.id);
+      void result.current.unfollow(otherFavorite.id);
+    });
+    expect(result.current.favorites).toEqual([otherFavorite]);
+    expect(addFavorite).toHaveBeenCalledTimes(1);
+    expect(removeFavorite).not.toHaveBeenCalled();
+    expect(result.current.mutatingId).toBe(favorite.id);
+
+    await act(async () => { pending.resolve(favorite); await request; });
+    expect(result.current.favorites).toEqual([favorite, otherFavorite]);
+    expect(result.current.mutatingId).toBeNull();
+  });
+
+  it('does not leak a late follow result into another account', async () => {
+    const pending = deferred<typeof favorite>();
+    vi.mocked(fetchFavorites).mockResolvedValueOnce([]).mockResolvedValueOnce([otherFavorite]);
+    vi.mocked(addFavorite).mockReturnValue(pending.promise);
+    const { result, rerender } = renderHook(({ userId }) => useFavorites(userId), {
+      initialProps: { userId: 'user-a' },
+    });
+    await waitFor(() => expect(result.current.state).toBe('success'));
+    let request!: Promise<void>;
+    act(() => { request = result.current.follow(favorite.id); });
+    rerender({ userId: 'user-b' });
+    await waitFor(() => expect(result.current.favorites).toEqual([otherFavorite]));
+    await act(async () => { pending.resolve(favorite); await request; });
+    expect(result.current.favorites).toEqual([otherFavorite]);
+    expect(result.current.mutatingId).toBeNull();
   });
 });

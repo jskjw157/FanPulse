@@ -45,6 +45,16 @@ class Comment private constructor(
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant
 ) {
+    @Version
+    @Column(nullable = false)
+    var version: Long = 0
+
+    @Column(name = "review_attempts", nullable = false)
+    var reviewAttempts: Int = 0
+
+    @Column(name = "next_review_at")
+    var nextReviewAt: Instant? = null
+
     @Column(name = "block_reason", columnDefinition = "TEXT")
     var blockReason: String? = null
         private set
@@ -78,15 +88,39 @@ class Comment private constructor(
 
     /** Transitions the comment to APPROVED status. AI 필터 통과 시 호출된다. */
     fun approve() {
+        check(status != CommentStatus.DELETED) { "Deleted comments cannot be approved" }
         this.status = CommentStatus.APPROVED
+        this.blockReason = null
         this.updatedAt = Instant.now()
     }
 
     /** Transitions the comment to BLOCKED status with a reason. AI 필터 차단 시 호출된다. */
     fun block(reason: String) {
+        check(status != CommentStatus.DELETED) { "Deleted comments cannot be moderated" }
         require(reason.isNotBlank()) { "Block reason cannot be blank" }
         this.status = CommentStatus.BLOCKED
         this.blockReason = reason
+        this.updatedAt = Instant.now()
+    }
+
+    fun edit(content: String) {
+        check(status != CommentStatus.DELETED) { "Deleted comments cannot be edited" }
+        require(content.isNotBlank()) { "Comment content cannot be blank" }
+        this.content = content.trim()
+        this.status = CommentStatus.PENDING
+        this.blockReason = null
+        this.reviewAttempts = 0
+        this.nextReviewAt = null
+        this.updatedAt = Instant.now()
+    }
+
+    /** Retain the row and reply references, but erase the deleted author's body. */
+    fun delete() {
+        this.content = "삭제된 댓글입니다."
+        this.status = CommentStatus.DELETED
+        this.blockReason = null
+        this.reviewAttempts = 0
+        this.nextReviewAt = null
         this.updatedAt = Instant.now()
     }
 

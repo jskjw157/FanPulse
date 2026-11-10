@@ -11,7 +11,7 @@ import java.util.*
  */
 interface CommentPort {
 
-    /** Saves or updates a comment entity. */
+    /** Saves and flushes before returning, so version conflicts precede approval events. */
     fun save(comment: Comment): Comment
 
     /** Finds a comment by its unique ID, or null if not found. */

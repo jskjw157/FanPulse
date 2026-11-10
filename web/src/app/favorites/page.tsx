@@ -69,7 +69,7 @@ function FavoritesContent() {
                   </Link>
                   <button
                     type="button"
-                    disabled={mutatingId === artist.id}
+                    disabled={mutatingId !== null}
                     onClick={() => void unfollow(artist.id)}
                     className="rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 disabled:opacity-50"
                     aria-label={`${artist.name} 좋아요 취소`}

@@ -19,4 +19,8 @@ interface CommentCommandService {
      * @return created comment with resolved status (APPROVED / BLOCKED / PENDING)
      */
     fun createComment(postId: String, userId: UUID, content: String, parentCommentId: UUID? = null): CommentResponse
+
+    fun updateComment(commentId: UUID, userId: UUID, content: String, postId: String? = null): CommentResponse
+
+    fun deleteComment(commentId: UUID, userId: UUID, postId: String? = null)
 }

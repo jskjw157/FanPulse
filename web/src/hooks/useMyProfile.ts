@@ -16,25 +16,30 @@ export function useMyProfile(): UseMyProfileReturn {
   const [state, setState] = useState<AsyncState>('loading');
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProfile = useCallback(async (signal?: AbortSignal) => {
+  const fetchProfile = useCallback((signal?: AbortSignal) =>
+    fetchMyProfile(signal).then(
+      (data) => {
+        if (signal?.aborted) return;
+        setProfile(data);
+        setState('success');
+      },
+      () => {
+        if (signal?.aborted) return;
+        setError('프로필을 불러올 수 없습니다');
+        setState('error');
+      }
+    ), []);
+
+  const refresh = useCallback(async () => {
+    setProfile(null);
     setState('loading');
     setError(null);
-
-    try {
-      const data = await fetchMyProfile(signal);
-      if (signal?.aborted) return;
-      setProfile(data);
-      setState('success');
-    } catch (err) {
-      if (signal?.aborted) return;
-      setError('프로필을 불러올 수 없습니다');
-      setState('error');
-    }
-  }, []);
+    await fetchProfile();
+  }, [fetchProfile]);
 
   useEffect(() => {
     const abortController = new AbortController();
-    fetchProfile(abortController.signal);
+    void fetchProfile(abortController.signal);
 
     return () => {
       abortController.abort();
@@ -45,6 +50,6 @@ export function useMyProfile(): UseMyProfileReturn {
     profile,
     state,
     error,
-    refresh: fetchProfile,
+    refresh,
   };
 }

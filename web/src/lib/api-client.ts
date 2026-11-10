@@ -67,7 +67,9 @@ function redirectToLogin(): void {
     typeof window !== "undefined" &&
     window.location.pathname !== "/login"
   ) {
-    window.location.href = "/login";
+    window.location.href = window.location.pathname.startsWith("/artists/")
+      ? `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+      : "/login";
   }
 }
 

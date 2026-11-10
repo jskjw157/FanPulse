@@ -34,6 +34,26 @@ class CommentController(
     private val queryService: CommentQueryService
 ) {
 
+    @PutMapping("/{commentId}")
+    fun updateComment(
+        @RequestAttribute("userId") userId: UUID,
+        @PathVariable commentId: UUID,
+        @RequestBody request: UpdateCommentRequest
+    ): ResponseEntity<CommentResponse> {
+        val response = commandService.updateComment(commentId, userId, request.content)
+        val status = if (response.status == CommentStatus.PENDING) HttpStatus.ACCEPTED else HttpStatus.OK
+        return ResponseEntity.status(status).body(response)
+    }
+
+    @DeleteMapping("/{commentId}")
+    fun deleteComment(
+        @RequestAttribute("userId") userId: UUID,
+        @PathVariable commentId: UUID
+    ): ResponseEntity<Void> {
+        commandService.deleteComment(commentId, userId)
+        return ResponseEntity.noContent().build()
+    }
+
     @PostMapping
     @Operation(
         summary = "댓글 생성",
@@ -97,3 +117,5 @@ class CommentController(
         return ResponseEntity.ok(response)
     }
 }
+
+data class UpdateCommentRequest(val content: String)

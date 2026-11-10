@@ -1,16 +1,16 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
 import messages from './local/index';
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    lng: 'en',
+    lng: 'ko',
     fallbackLng: 'en',
+    supportedLngs: ['ko', 'en'],
     debug: false,
     resources: messages,
+    react: { useSuspense: false },
     interpolation: {
       escapeValue: false,
     },

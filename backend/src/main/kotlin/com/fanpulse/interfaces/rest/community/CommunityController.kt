@@ -10,6 +10,7 @@ import com.fanpulse.application.service.community.CommunityPostState
 import com.fanpulse.application.service.community.CommunityService
 import com.fanpulse.application.service.community.CommunitySort
 import com.fanpulse.application.service.community.CreateCommunityPostRequest
+import com.fanpulse.application.service.community.UpdateCommunityPostRequest
 import com.fanpulse.domain.comment.CommentStatus
 import com.fanpulse.interfaces.rest.common.ApiResponse
 import org.springframework.data.domain.PageRequest
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestAttribute
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -70,6 +72,44 @@ class CommunityController(
     ): ResponseEntity<ApiResponse<CommunityPostResponse>> = ResponseEntity
         .status(HttpStatus.CREATED)
         .body(ApiResponse.success(service.createPost(userId, request)))
+
+    @PutMapping("/posts/{postId}")
+    fun updatePost(
+        @RequestAttribute("userId") userId: UUID,
+        @PathVariable postId: UUID,
+        @RequestBody request: UpdateCommunityPostRequest
+    ): ApiResponse<CommunityPostResponse> = ApiResponse.success(service.updatePost(userId, postId, request))
+
+    @DeleteMapping("/posts/{postId}")
+    fun deletePost(
+        @RequestAttribute("userId") userId: UUID,
+        @PathVariable postId: UUID
+    ): ResponseEntity<Void> {
+        service.deletePost(userId, postId)
+        return ResponseEntity.noContent().build()
+    }
+
+    @PutMapping("/posts/{postId}/comments/{commentId}")
+    fun updateComment(
+        @RequestAttribute("userId") userId: UUID,
+        @PathVariable postId: UUID,
+        @PathVariable commentId: UUID,
+        @RequestBody request: UpdateCommunityCommentRequest
+    ): ResponseEntity<ApiResponse<CommentResponse>> {
+        val response = commentCommandService.updateComment(commentId, userId, request.content, postId.toString())
+        val status = if (response.status == CommentStatus.PENDING) HttpStatus.ACCEPTED else HttpStatus.OK
+        return ResponseEntity.status(status).body(ApiResponse.success(response))
+    }
+
+    @DeleteMapping("/posts/{postId}/comments/{commentId}")
+    fun deleteComment(
+        @RequestAttribute("userId") userId: UUID,
+        @PathVariable postId: UUID,
+        @PathVariable commentId: UUID
+    ): ResponseEntity<Void> {
+        commentCommandService.deleteComment(commentId, userId, postId.toString())
+        return ResponseEntity.noContent().build()
+    }
 
     @PostMapping("/posts/{postId}/comments")
     fun createComment(
@@ -138,3 +178,5 @@ data class CreateCommunityCommentRequest(
     val content: String,
     val parentCommentId: UUID? = null
 )
+
+data class UpdateCommunityCommentRequest(val content: String)

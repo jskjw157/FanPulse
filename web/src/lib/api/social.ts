@@ -25,6 +25,19 @@ export interface UserNotification {
   message: string;
   isRead: boolean;
   createdAt: string;
+  targetType?: string | null;
+  targetId?: string | null;
+  targetAvailable?: boolean;
+}
+
+export interface NotificationPage {
+  content: UserNotification[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+  unreadCount: number;
 }
 
 function isFavoriteArtist(value: unknown): value is FavoriteArtist {
@@ -47,7 +60,10 @@ function isUserNotification(value: unknown): value is UserNotification {
     isNullableString(value.type) &&
     isNonEmptyString(value.message) &&
     typeof value.isRead === 'boolean' &&
-    isIsoDateTime(value.createdAt)
+    isIsoDateTime(value.createdAt) &&
+    (value.targetType === undefined || isNullableString(value.targetType)) &&
+    (value.targetId === undefined || value.targetId === null || isUuid(value.targetId)) &&
+    (value.targetAvailable === undefined || typeof value.targetAvailable === 'boolean')
   );
 }
 
@@ -69,6 +85,15 @@ export async function fetchFavorites(signal?: AbortSignal): Promise<FavoriteArti
     response.data,
     '즐겨찾기 API 응답이 올바르지 않습니다.',
     isFavoriteArray
+  );
+}
+
+export async function addFavorite(artistId: string): Promise<FavoriteArtist> {
+  const response = await apiClient.post<ApiResponse<FavoriteArtist>>(`/users/me/favorites/${artistId}`);
+  return unwrapApiResponse(
+    response.data,
+    '즐겨찾기 API 응답이 올바르지 않습니다.',
+    isFavoriteArtist
   );
 }
 
@@ -101,4 +126,49 @@ export async function markAllNotificationsRead(): Promise<number> {
     isUpdatedResult
   );
   return result.updated;
+}
+
+function isCount(value: unknown): value is number {
+  return Number.isSafeInteger(value) && (value as number) >= 0;
+}
+
+function isNotificationPage(value: unknown): value is NotificationPage {
+  if (!isRecord(value) || !isNotificationArray(value.content) ||
+      !isCount(value.page) || !isCount(value.size) || value.size === 0 ||
+      !isCount(value.totalElements) || !isCount(value.totalPages) ||
+      !isCount(value.unreadCount) || typeof value.last !== 'boolean') return false;
+  return value.content.length <= value.size &&
+    value.totalPages === Math.ceil(value.totalElements / value.size) &&
+    value.last === (value.page + 1 >= value.totalPages);
+}
+
+export async function fetchNotificationPage(
+  unreadOnly: boolean,
+  page = 0,
+  size = 20,
+  signal?: AbortSignal,
+): Promise<NotificationPage> {
+  const response = await apiClient.get<ApiResponse<NotificationPage>>('/users/me/notifications/page', {
+    params: { unreadOnly, page, size }, signal,
+  });
+  const data = unwrapApiResponse(response.data, '알림 API 응답이 올바르지 않습니다.', isNotificationPage);
+  if (data.page !== page || data.size !== size) throw new Error('알림 페이지 응답이 올바르지 않습니다.');
+  return data;
+}
+
+export async function fetchNotificationUnreadCount(signal?: AbortSignal): Promise<number> {
+  const response = await apiClient.get<ApiResponse<{ unreadCount: number }>>(
+    '/users/me/notifications/unread-count', { signal },
+  );
+  const data = unwrapApiResponse(response.data, '알림 API 응답이 올바르지 않습니다.',
+    (value): value is { unreadCount: number } => isRecord(value) && isCount(value.unreadCount));
+  return data.unreadCount;
+}
+
+export async function markNotificationRead(id: string): Promise<UserNotification> {
+  if (!isUuid(id)) throw new Error('알림 ID가 올바르지 않습니다.');
+  const response = await apiClient.patch<ApiResponse<UserNotification>>(`/users/me/notifications/${id}/read`);
+  const data = unwrapApiResponse(response.data, '알림 API 응답이 올바르지 않습니다.', isUserNotification);
+  if (data.id !== id || !data.isRead) throw new Error('알림 읽음 응답이 올바르지 않습니다.');
+  return data;
 }

@@ -1,9 +1,12 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import PageHeader from '@/components/layout/PageHeader';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { useArtistDetail } from '@/hooks/useArtistDetail';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/contexts/AuthContext';
 
 function formatDate(value: string | null): string {
   if (!value) return '정보 없음';
@@ -14,6 +17,22 @@ export default function ArtistPage() {
   const params = useParams<{ id: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const { artist, state, error, retry } = useArtistDetail(id);
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+  const {
+    favorites, state: favoriteState, error: favoriteError, retry: retryFavorites,
+    follow, unfollow, mutatingId, mutationError,
+  } = useFavorites(isAuthenticated ? user?.id : undefined);
+  const following = favorites.some((favorite) => favorite.id === artist?.id);
+
+  function toggleFollow() {
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=${encodeURIComponent(`/artists/${id}`)}`);
+      return;
+    }
+    if (!artist) return;
+    void (following ? unfollow(artist.id) : follow(artist.id));
+  }
 
   return (
     <>
@@ -61,6 +80,29 @@ export default function ArtistPage() {
                   <p className="mt-3 font-medium text-purple-700">
                     {artist.agency ?? '소속사 정보 없음'}
                   </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      aria-pressed={following}
+                      disabled={isLoading || (isAuthenticated && (favoriteState !== 'success' || mutatingId !== null))}
+                      onClick={toggleFollow}
+                      className={`rounded-full px-6 py-2.5 text-sm font-semibold disabled:opacity-50 ${following ? 'border border-purple-600 text-purple-700' : 'bg-purple-600 text-white'}`}
+                    >
+                      {mutatingId ? '처리 중' : isLoading || (isAuthenticated && favoriteState === 'loading') ? '팔로우 상태 확인 중' : following ? '팔로우 해제' : '팔로우'}
+                    </button>
+                    <Link href="/favorites" className="text-sm font-medium text-purple-700 underline underline-offset-4">
+                      좋아요한 아티스트
+                    </Link>
+                  </div>
+                  {isAuthenticated && favoriteState === 'error' && (
+                    <div className="mt-3 text-sm">
+                      <p role="alert" className="text-red-600">{favoriteError}</p>
+                      <button type="button" onClick={() => void retryFavorites()} className="mt-2 text-purple-700 underline">
+                        팔로우 상태 다시 확인
+                      </button>
+                    </div>
+                  )}
+                  {mutationError && <p role="alert" className="mt-3 text-sm text-red-600">{mutationError}</p>}
                 </header>
 
                 <section>

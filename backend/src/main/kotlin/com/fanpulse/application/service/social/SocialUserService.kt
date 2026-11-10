@@ -24,24 +24,42 @@ data class NotificationResponse(
     val type: String?,
     val message: String,
     val isRead: Boolean,
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
+    val targetType: String? = null,
+    val targetId: UUID? = null,
+    val targetAvailable: Boolean = false
 ) {
     companion object {
-        fun from(notification: Notification) = NotificationResponse(
+        fun from(notification: Notification, targetAvailable: Boolean = false) = NotificationResponse(
             id = notification.id,
             type = notification.type,
             message = notification.message,
             isRead = notification.isRead,
-            createdAt = notification.createdAt
+            createdAt = notification.createdAt,
+            targetType = notification.targetType,
+            targetId = notification.targetId,
+            targetAvailable = targetAvailable
         )
     }
 }
+
+data class NotificationPageResponse(
+    val content: List<NotificationResponse>,
+    val page: Int,
+    val size: Int,
+    val totalElements: Long,
+    val totalPages: Int,
+    val last: Boolean,
+    val unreadCount: Long
+)
 
 interface SocialUserService {
     fun getFavorites(userId: UUID): List<FavoriteArtistResponse>
     fun addFavorite(userId: UUID, artistId: UUID): FavoriteAddResult
     fun removeFavorite(userId: UUID, artistId: UUID)
     fun getNotifications(userId: UUID, unreadOnly: Boolean): List<NotificationResponse>
+    fun getNotificationPage(userId: UUID, unreadOnly: Boolean, page: Int, size: Int): NotificationPageResponse
+    fun getUnreadNotificationCount(userId: UUID): Long
     fun markNotificationRead(userId: UUID, notificationId: UUID): NotificationResponse
     fun markAllNotificationsRead(userId: UUID): Int
 }

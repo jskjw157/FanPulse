@@ -4,6 +4,7 @@ vi.mock('@/lib/api-client', () => ({
   apiClient: {
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
     delete: vi.fn(),
   },
 }));
@@ -12,6 +13,8 @@ import { apiClient } from '@/lib/api-client';
 import {
   createCommunityComment,
   createCommunityPost,
+  deleteCommunityComment,
+  deleteCommunityPost,
   fetchCommunityComments,
   fetchCommunityPost,
   fetchCommunityPosts,
@@ -19,6 +22,8 @@ import {
   saveCommunityPost,
   unlikeCommunityPost,
   unsaveCommunityPost,
+  updateCommunityComment,
+  updateCommunityPost,
 } from './community';
 
 const dto = {
@@ -143,6 +148,112 @@ const commentPageDto = {
   size: 20,
   totalPages: 1,
 };
+
+describe('community owner mutations', () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it('PUTs only post content and maps the validated post', async () => {
+    vi.mocked(apiClient.put).mockResolvedValue({ status: 200, data: { success: true, data: dto } });
+    await expect(updateCommunityPost(dto.id, dto.content)).resolves.toEqual(mapped);
+    expect(apiClient.put).toHaveBeenCalledExactlyOnceWith(`/community/posts/${dto.id}`, { content: dto.content });
+  });
+
+  it.each([
+    { status: 202, data: { success: true, data: dto } },
+    { status: 200, data: { success: false, data: dto } },
+    { status: 200, data: { success: true, data: { ...dto, id: commentDto.id } } },
+    { status: 200, data: { success: true, data: { ...dto, content: '' } } },
+    { status: 200, data: { success: true, data: { ...dto, authorId: null } } },
+  ])('rejects invalid post edit responses: %o', async (response) => {
+    vi.mocked(apiClient.put).mockResolvedValue(response);
+    await expect(updateCommunityPost(dto.id, 'edited')).rejects.toThrow('게시글 수정 API 응답');
+  });
+
+  it.each([
+    ['APPROVED', 200], ['BLOCKED', 200], ['PENDING', 202],
+  ] as const)('preserves %s edit status and existing comment fields', async (status, httpStatus) => {
+    const data = { ...commentDto, status, parentCommentId: dto.id };
+    vi.mocked(apiClient.put).mockResolvedValue({ status: httpStatus, data: { success: true, data } });
+    await expect(updateCommunityComment(dto.id, commentDto.id, data.content)).resolves.toEqual(data);
+    expect(apiClient.put).toHaveBeenCalledExactlyOnceWith(
+      `/community/posts/${dto.id}/comments/${commentDto.id}`, { content: data.content },
+    );
+  });
+
+  it.each([
+    { ...commentDto, id: dto.id },
+    { ...commentDto, postId: commentDto.id },
+    { ...commentDto, status: 'DELETED' },
+    { ...commentDto, status: 'PENDING' }, // PENDING requires HTTP 202.
+    { ...commentDto, parentCommentId: 'invalid' },
+    { ...commentDto, createdAt: 'invalid' },
+  ])('rejects invalid comment edit responses: %o', async (data) => {
+    vi.mocked(apiClient.put).mockResolvedValue({ status: 200, data: { success: true, data } });
+    await expect(updateCommunityComment(dto.id, commentDto.id, 'edited')).rejects.toThrow('댓글 수정 API 응답');
+  });
+
+  it('rejects APPROVED returned with HTTP 202', async () => {
+    vi.mocked(apiClient.put).mockResolvedValue({ status: 202, data: { success: true, data: commentDto } });
+    await expect(updateCommunityComment(dto.id, commentDto.id, 'edited')).rejects.toThrow();
+  });
+
+  it('accepts approved replies without the deleted parent in the public list', async () => {
+    const reply = { ...commentDto, parentCommentId: dto.id };
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: { ...commentPageDto, content: [reply] } } });
+    await expect(fetchCommunityComments(dto.id)).resolves.toMatchObject({ items: [reply] });
+  });
+
+  it('rejects deleted comments in the public list', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: {
+      ...commentPageDto, content: [{ ...commentDto, status: 'DELETED' }],
+    } } });
+    await expect(fetchCommunityComments(dto.id)).rejects.toThrow();
+  });
+
+  it('deletes the exact post and comment with HTTP 204 and no envelope', async () => {
+    vi.mocked(apiClient.delete).mockResolvedValue({ status: 204, data: '' });
+    await expect(deleteCommunityPost(dto.id)).resolves.toBeUndefined();
+    await expect(deleteCommunityComment(dto.id, commentDto.id)).resolves.toBeUndefined();
+    expect(apiClient.delete).toHaveBeenNthCalledWith(1, `/community/posts/${dto.id}`);
+    expect(apiClient.delete).toHaveBeenNthCalledWith(2, `/community/posts/${dto.id}/comments/${commentDto.id}`);
+  });
+
+  it('does not accept unexpected delete success statuses', async () => {
+    vi.mocked(apiClient.delete).mockResolvedValue({ status: 200 });
+    await expect(deleteCommunityPost(dto.id)).rejects.toThrow();
+    await expect(deleteCommunityComment(dto.id, commentDto.id)).rejects.toThrow();
+  });
+
+  it('validates all owner mutation IDs before making requests', async () => {
+    await expect(updateCommunityPost('bad', 'edited')).rejects.toThrow();
+    await expect(deleteCommunityPost('bad')).rejects.toThrow();
+    await expect(updateCommunityComment('bad', commentDto.id, 'edited')).rejects.toThrow();
+    await expect(updateCommunityComment(dto.id, 'bad', 'edited')).rejects.toThrow();
+    await expect(deleteCommunityComment('bad', commentDto.id)).rejects.toThrow();
+    await expect(deleteCommunityComment(dto.id, 'bad')).rejects.toThrow();
+    expect(apiClient.put).not.toHaveBeenCalled();
+    expect(apiClient.delete).not.toHaveBeenCalled();
+  });
+
+  it.each(['', '   ', 'x'.repeat(5001)])('rejects invalid post content before sending', async (content) => {
+    await expect(updateCommunityPost(dto.id, content)).rejects.toThrow();
+    expect(apiClient.put).not.toHaveBeenCalled();
+  });
+
+  it.each(['', '   ', 'x'.repeat(1001)])('rejects invalid comment content before sending', async (content) => {
+    await expect(updateCommunityComment(dto.id, commentDto.id, content)).rejects.toThrow();
+    expect(apiClient.put).not.toHaveBeenCalled();
+  });
+
+  it('propagates transport and authorization failures instead of fabricating a result', async () => {
+    vi.mocked(apiClient.put).mockRejectedValue(new Error('403'));
+    vi.mocked(apiClient.delete).mockRejectedValue(new Error('404'));
+    await expect(updateCommunityPost(dto.id, 'edited')).rejects.toThrow('403');
+    await expect(updateCommunityComment(dto.id, commentDto.id, 'edited')).rejects.toThrow('403');
+    await expect(deleteCommunityPost(dto.id)).rejects.toThrow('404');
+    await expect(deleteCommunityComment(dto.id, commentDto.id)).rejects.toThrow('404');
+  });
+});
 
 describe('community comment API', () => {
   beforeEach(() => vi.clearAllMocks());

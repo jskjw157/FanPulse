@@ -4,12 +4,15 @@ import com.fanpulse.application.dto.comment.CommentListResponse
 import com.fanpulse.application.dto.comment.CommentResponse
 import com.fanpulse.domain.comment.CommentStatus
 import com.fanpulse.domain.comment.port.CommentPort
+import com.fanpulse.domain.community.CommunityPostStatus
 import com.fanpulse.infrastructure.common.PaginationConverter
+import com.fanpulse.infrastructure.persistence.community.CommunityPostJpaRepository
 import com.fanpulse.infrastructure.persistence.identity.UserJpaRepository
 import mu.KotlinLogging
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 private val logger = KotlinLogging.logger {}
 
@@ -20,10 +23,15 @@ private val logger = KotlinLogging.logger {}
 @Transactional(readOnly = true)
 class CommentQueryServiceImpl(
     private val commentPort: CommentPort,
-    private val userRepository: UserJpaRepository
+    private val userRepository: UserJpaRepository,
+    private val posts: CommunityPostJpaRepository
 ) : CommentQueryService {
 
     override fun getComments(postId: String, pageable: Pageable): CommentListResponse {
+        val id = runCatching { UUID.fromString(postId) }.getOrNull()
+        if (id != null && posts.findById(id).orElse(null)?.status != CommunityPostStatus.PUBLISHED) {
+            throw NoSuchElementException("게시글을 찾을 수 없습니다")
+        }
         logger.debug { "Getting APPROVED comments for post: $postId" }
         val pageRequest = PaginationConverter.toDomainPageRequest(pageable)
         val pageResult = commentPort.findByPostIdAndStatus(postId, CommentStatus.APPROVED, pageRequest)

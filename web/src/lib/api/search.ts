@@ -62,7 +62,7 @@ export interface SearchResponse {
 
 export async function searchAll(
   query: string,
-  limit = 20,
+  limit = 10,
   signal?: AbortSignal
 ): Promise<SearchResponse> {
   const response = await apiClient.get('/search', {

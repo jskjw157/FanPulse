@@ -4,11 +4,14 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import jakarta.persistence.UniqueConstraint
 import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
-@Table(name = "notifications")
+@Table(name = "notifications", uniqueConstraints = [UniqueConstraint(
+    name = "uq_notifications_source_key", columnNames = ["source_key"]
+)])
 class Notification private constructor(
     @Id
     @Column(columnDefinition = "uuid")
@@ -22,6 +25,15 @@ class Notification private constructor(
 
     @Column(name = "notification_type", length = 50)
     val type: String?,
+
+    @Column(name = "target_type", length = 50)
+    val targetType: String?,
+
+    @Column(name = "target_id", columnDefinition = "uuid")
+    val targetId: UUID?,
+
+    @Column(name = "source_key", length = 100)
+    val sourceKey: String?,
 
     @Column(name = "is_read", nullable = false)
     var isRead: Boolean,
@@ -40,7 +52,10 @@ class Notification private constructor(
             type: String? = null,
             isRead: Boolean = false,
             createdAt: LocalDateTime = LocalDateTime.now(),
-            id: UUID = UUID.randomUUID()
-        ): Notification = Notification(id, userId, message, type, isRead, createdAt)
+            id: UUID = UUID.randomUUID(),
+            targetType: String? = null,
+            targetId: UUID? = null,
+            sourceKey: String? = null
+        ): Notification = Notification(id, userId, message, type, targetType, targetId, sourceKey, isRead, createdAt)
     }
 }

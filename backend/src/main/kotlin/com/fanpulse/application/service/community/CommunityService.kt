@@ -18,6 +18,8 @@ data class CreateCommunityPostRequest(
     val content: String
 )
 
+data class UpdateCommunityPostRequest(val content: String)
+
 data class CommunityPostResponse(
     val id: UUID,
     val authorId: UUID,
@@ -48,6 +50,8 @@ data class CommunityPostState(
 
 interface CommunityService {
     fun createPost(userId: UUID, request: CreateCommunityPostRequest): CommunityPostResponse
+    fun updatePost(userId: UUID, postId: UUID, request: UpdateCommunityPostRequest): CommunityPostResponse
+    fun deletePost(userId: UUID, postId: UUID)
     fun getPosts(page: Int, size: Int, sort: CommunitySort): CommunityPostPageResponse
     fun getPost(postId: UUID): CommunityPostResponse
     fun like(userId: UUID, postId: UUID): CommunityPostState
