@@ -104,6 +104,10 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // The suite caches many Spring contexts (AI clients, review, notifications). With the
+    // default 512 MiB worker heap it exhausts memory and reports cascading context-load
+    // failures, so give the worker a heap that matches the suite size.
+    maxHeapSize = "2048m"
 }
 
 tasks.jacocoTestReport {
