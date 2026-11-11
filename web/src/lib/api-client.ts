@@ -3,9 +3,25 @@ import axios, {
   AxiosInstance,
   InternalAxiosRequestConfig,
 } from "axios";
+import { resolveApiBaseUrl } from "./api-base-url";
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.fanpulse.app/api/v1";
+export { LocalApiTargetError } from "./api-base-url";
+
+const pageHost = typeof window !== "undefined" ? window.location.hostname : null;
+const apiTarget = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL, pageHost);
+
+/**
+ * Empty when the build configuration would send a local page to a remote API. Requests then
+ * reject before reaching the network instead of leaking to production.
+ */
+export const API_BASE_URL = apiTarget.ok ? apiTarget.baseUrl : "";
+
+export const API_TARGET_BLOCKED_REASON = apiTarget.ok ? null : apiTarget.reason;
+
+if (!apiTarget.ok && typeof window !== "undefined") {
+  // One visible hint in the browser console; pages keep rendering and surface their own error.
+  console.error(apiTarget.reason.message);
+}
 
 const WEB_REFRESH_URL = `${API_BASE_URL.replace(/\/$/, "")}/auth/web/refresh`;
 const AUTO_REFRESH_EXCLUDED_PATHS = [
@@ -28,6 +44,10 @@ let refreshPromise: Promise<void> | null = null;
  * 기본 axios 클라이언트를 사용해 apiClient 응답 인터셉터의 재귀 호출을 피한다.
  */
 export function refreshWebSession(): Promise<void> {
+  if (!apiTarget.ok) {
+    return Promise.reject(apiTarget.reason);
+  }
+
   if (refreshPromise === null) {
     refreshPromise = axios
       .post<void>(WEB_REFRESH_URL, undefined, {
@@ -48,14 +68,23 @@ export function refreshWebSession(): Promise<void> {
  * - withCredentials: true로 httpOnly 쿠키 자동 전송
  * - 토큰은 쿠키로 관리되므로 Authorization 헤더 불필요
  */
-export const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+const client: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL || "/",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
   withCredentials: true,
 });
+
+if (!apiTarget.ok) {
+  const blocked = apiTarget.reason;
+  client.interceptors.request.use(() => {
+    throw blocked;
+  });
+}
+
+export const apiClient: AxiosInstance = client;
 
 function shouldSkipAutoRefresh(url?: string): boolean {
   if (!url) return true;

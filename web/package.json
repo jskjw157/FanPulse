@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:local": "node scripts/with-local-api.mjs dev",
     "build": "next build",
+    "build:local": "node scripts/with-local-api.mjs build",
     "start": "next start",
+    "start:local": "node scripts/with-local-api.mjs start",
     "lint": "eslint",
     "test": "vitest",
     "test:login": "vitest run src/app/login/page.test.tsx",

@@ -17,21 +17,42 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Local Backend
+## API target (local vs production)
 
-This app calls the FanPulse backend API. For local end-to-end testing, configure the API base URL.
+`NEXT_PUBLIC_API_BASE_URL` is inlined into the client bundle at **build** time, and the
+`/api/v1` rewrite target (`API_PROXY_TARGET`) is resolved by the same build. Both must be set
+before `next build` when the build will serve a local stack.
 
-Recommended (avoid browser CORS by using a Next.js rewrite proxy):
+Local (recommended):
 
 ```bash
-# In web/.env.local
-NEXT_PUBLIC_API_BASE_URL=/api/v1
+npm run dev:local      # NEXT_PUBLIC_API_BASE_URL=/api/v1, API_PROXY_TARGET=http://localhost:8080
+npm run build:local    # production build with the same defaults
+npm run start:local    # serves the build produced above
+```
 
-# Optional: override the proxy target (defaults to http://localhost:8080)
+Manual equivalent (`web/.env.local`, see `.env.example`):
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=/api/v1
+# Optional: point the rewrite proxy at a different backend (defaults to localhost:8080)
 API_PROXY_TARGET=http://localhost:8080
 ```
 
-With this setup, frontend requests to `/api/v1/*` are proxied to the backend.
+With a relative value, browser requests to `/api/v1/*` stay same-origin and are proxied to the
+backend by the Next.js rewrite.
+
+Safety rules when the value is missing or wrong:
+
+- Local page, nothing configured → same-origin `/api/v1` through the rewrite proxy. The client
+  never falls back to the production API just because the variable is missing.
+- Local page, explicitly configured with a **remote** API (for example the production domain) →
+  requests reject with `LocalApiTargetError` before any network call. Rebuild with `/api/v1`.
+- Non-local host → previous behaviour is unchanged: an explicit absolute URL is used as-is and an
+  unset value still defaults to `https://api.fanpulse.app/api/v1`, so existing deployments are
+  unaffected.
+
+Because `NEXT_PUBLIC_*` is inlined, changing it requires a new build, not just a restart.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

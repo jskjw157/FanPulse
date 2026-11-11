@@ -22,8 +22,9 @@ export default defineConfig({
     env: {
       NEXT_PUBLIC_GOOGLE_CLIENT_ID:
         process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? 'e2e-google-client-id',
-      NEXT_PUBLIC_API_BASE_URL:
-        process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1',
+      // Relative path keeps the browser same-origin so the Next rewrite reaches the local API.
+      NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api/v1',
+      API_PROXY_TARGET: process.env.API_PROXY_TARGET ?? 'http://localhost:8080',
     },
   },
   projects: [
