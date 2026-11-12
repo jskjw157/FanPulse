@@ -22,6 +22,10 @@ interface CommentJpaRepository : JpaRepository<Comment, UUID> {
     @Query("SELECT c FROM Comment c WHERE c.id = :id")
     fun findByIdForUpdate(@Param("id") id: UUID): Comment?
 
+    /** Native row lock that both PostgreSQL and the H2 test dialect accept. */
+    @Query(value = "SELECT * FROM comments WHERE id = :id FOR UPDATE", nativeQuery = true)
+    fun lockById(@Param("id") id: UUID): Comment?
+
     fun findByPostIdAndUserIdAndStatusIn(
         postId: String, userId: UUID, statuses: Collection<CommentStatus>, pageable: Pageable
     ): Page<Comment>

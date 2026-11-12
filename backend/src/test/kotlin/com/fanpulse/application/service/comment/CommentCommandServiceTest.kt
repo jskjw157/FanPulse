@@ -45,7 +45,8 @@ class CommentCommandServiceTest {
             filterLogPort = filterLogPort,
             meterRegistry = meterRegistry,
             posts = mockk(relaxed = true),
-            eventPublisher = mockk(relaxed = true)
+            eventPublisher = mockk(relaxed = true),
+            transactionManager = mockk(relaxed = true)
         )
     }
 

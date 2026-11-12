@@ -17,6 +17,9 @@ interface CommentPort {
     /** Finds a comment by its unique ID, or null if not found. */
     fun findById(id: UUID): Comment?
 
+    /** Finds a comment under a pessimistic row lock inside the caller's transaction. */
+    fun findByIdForUpdate(id: UUID): Comment?
+
     /** Finds comments by post and status with pagination. */
     fun findByPostIdAndStatus(postId: String, status: CommentStatus, pageRequest: PageRequest): PageResult<Comment>
 }

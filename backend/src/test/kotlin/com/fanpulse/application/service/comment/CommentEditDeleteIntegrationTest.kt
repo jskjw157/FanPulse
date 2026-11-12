@@ -1,5 +1,6 @@
 package com.fanpulse.application.service.comment
 
+import com.fanpulse.application.dto.comment.CommentResponse
 import com.fanpulse.application.service.community.*
 import com.fanpulse.domain.ai.FilterResult
 import com.fanpulse.domain.ai.ModerationResult
@@ -36,9 +37,15 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate
+import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 @DataJpaTest
 @ActiveProfiles("test")
@@ -191,6 +198,152 @@ class CommentEditDeleteIntegrationTest @Autowired constructor(
         assertThat(stored.content).isEqualTo("감사 실패 전 원문")
         assertThat(stored.status).isEqualTo(CommentStatus.PENDING)
         assertThat(logs.count()).isEqualTo(count)
+    }
+
+    @Test
+    fun `AI moderation runs with no transaction and no post lock held`() {
+        var activeDuringCreate: Boolean? = null
+        var activeDuringUpdate: Boolean? = null
+
+        every { filter.filterComment("경계 확인 생성") } answers {
+            activeDuringCreate = TransactionSynchronizationManager.isActualTransactionActive()
+            FilterResult(false, "LLM")
+        }
+        val created = commands.createComment(post.id.toString(), owner.id, "경계 확인 생성")
+
+        every { filter.filterComment("경계 확인 수정") } answers {
+            activeDuringUpdate = TransactionSynchronizationManager.isActualTransactionActive()
+            FilterResult(false, "LLM")
+        }
+        commands.updateComment(created.id, owner.id, "경계 확인 수정")
+
+        assertThat(activeDuringCreate).isFalse()
+        assertThat(activeDuringUpdate).isFalse()
+    }
+
+    @Test
+    fun `another transaction can lock the post row while moderation waits`() {
+        val started = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        every { filter.filterComment("락 경계 확인") } answers {
+            started.countDown()
+            release.await(10, TimeUnit.SECONDS)
+            FilterResult(false, "LLM")
+        }
+
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            val pending = executor.submit<CommentResponse> {
+                commands.createComment(post.id.toString(), owner.id, "락 경계 확인")
+            }
+            assertThat(started.await(10, TimeUnit.SECONDS)).isTrue()
+
+            // While the AI call is in flight the post row must be lockable by another transaction.
+            val locked = tx.execute { posts.findPublishedByIdForUpdate(post.id) != null }
+            assertThat(locked).isTrue()
+
+            release.countDown()
+            assertThat(pending.get(10, TimeUnit.SECONDS).status).isEqualTo(CommentStatus.APPROVED)
+        } finally {
+            release.countDown()
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `edit completed while moderation waits is not overwritten by the stale result`() {
+        val created = commands.createComment(post.id.toString(), owner.id, "원래 본문")
+        val started = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        every { filter.filterComment("느린 수정") } answers {
+            started.countDown()
+            release.await(10, TimeUnit.SECONDS)
+            FilterResult(false, "LLM")
+        }
+        every { filter.filterComment("빠른 수정") } returns FilterResult(false, "LLM")
+
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            val slow = executor.submit<CommentResponse> {
+                commands.updateComment(created.id, owner.id, "느린 수정")
+            }
+            assertThat(started.await(10, TimeUnit.SECONDS)).isTrue()
+            commands.updateComment(created.id, owner.id, "빠른 수정")
+            release.countDown()
+            assertThatThrownBy { slow.get(10, TimeUnit.SECONDS) }
+                .isInstanceOf(ExecutionException::class.java)
+                .hasCauseInstanceOf(ResponseStatusException::class.java)
+        } finally {
+            release.countDown()
+            executor.shutdownNow()
+        }
+
+        assertThat(comments.findById(created.id)!!.content).isEqualTo("빠른 수정")
+        assertThat(comments.findById(created.id)!!.status).isEqualTo(CommentStatus.APPROVED)
+    }
+
+    @Test
+    fun `deletion during moderation is not resurrected by the stale result`() {
+        val created = commands.createComment(post.id.toString(), owner.id, "삭제 경합 원문")
+        val started = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        every { filter.filterComment("삭제 경합 수정") } answers {
+            started.countDown()
+            release.await(10, TimeUnit.SECONDS)
+            FilterResult(false, "LLM")
+        }
+
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            val slow = executor.submit<CommentResponse> {
+                commands.updateComment(created.id, owner.id, "삭제 경합 수정")
+            }
+            assertThat(started.await(10, TimeUnit.SECONDS)).isTrue()
+            commands.deleteComment(created.id, owner.id)
+            release.countDown()
+            assertThatThrownBy { slow.get(10, TimeUnit.SECONDS) }
+                .isInstanceOf(ExecutionException::class.java)
+                .hasCauseInstanceOf(NoSuchElementException::class.java)
+        } finally {
+            release.countDown()
+            executor.shutdownNow()
+        }
+
+        val stored = comments.findById(created.id)!!
+        assertThat(stored.status).isEqualTo(CommentStatus.DELETED)
+        assertThat(stored.content).isEqualTo("삭제된 댓글입니다.")
+    }
+
+    @Test
+    fun `post removal during moderation rejects the pending create`() {
+        val started = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        every { filter.filterComment("삭제된 글에 남길 댓글") } answers {
+            started.countDown()
+            release.await(10, TimeUnit.SECONDS)
+            FilterResult(false, "LLM")
+        }
+
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            val slow = executor.submit<CommentResponse> {
+                commands.createComment(post.id.toString(), owner.id, "삭제된 글에 남길 댓글")
+            }
+            assertThat(started.await(10, TimeUnit.SECONDS)).isTrue()
+            community.deletePost(owner.id, post.id)
+            release.countDown()
+            assertThatThrownBy { slow.get(10, TimeUnit.SECONDS) }
+                .isInstanceOf(ExecutionException::class.java)
+                .hasCauseInstanceOf(NoSuchElementException::class.java)
+        } finally {
+            release.countDown()
+            executor.shutdownNow()
+        }
+
+        val stored = comments.findByPostIdAndStatus(
+            post.id.toString(), CommentStatus.APPROVED, com.fanpulse.domain.common.PageRequest(0, 20)
+        )
+        assertThat(stored.content).isEmpty()
     }
 
     class ApprovalEvents : DomainEventPublisher {

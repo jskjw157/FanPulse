@@ -29,6 +29,11 @@ class CommentAdapter(
         return repository.findById(id).orElse(null)
     }
 
+    @Transactional
+    override fun findByIdForUpdate(id: UUID): Comment? {
+        return repository.lockById(id)
+    }
+
     @Transactional(readOnly = true)
     override fun findByPostIdAndStatus(
         postId: String,
