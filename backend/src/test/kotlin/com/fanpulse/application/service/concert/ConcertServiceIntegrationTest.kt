@@ -24,12 +24,16 @@ class ConcertServiceIntegrationTest {
     @Autowired private lateinit var concerts: CrawledConcertJpaRepository
     @MockkBean private lateinit var source: KopisConcertSource
 
+    private val today: LocalDate = LocalDate.now(ZoneId.of("Asia/Seoul"))
+
+    private fun day(offset: Long): LocalDate = today.plusDays(offset)
+
     @Test
     fun `source snapshot is persisted and exposed in upcoming date order`() {
         every { source.fetchUpcomingPopularMusic(60) } returns KopisConcertSnapshot(
             records = listOf(
-                record("PF200002", "두 번째 공연", "2026-09-20", "120,000원"),
-                record("PF200001", "첫 번째 공연", "2026-09-10", "전석 99,000원"),
+                record("PF200002", "두 번째 공연", day(2), "120,000원"),
+                record("PF200001", "첫 번째 공연", day(1), "전석 99,000원"),
             ),
             detailFailures = emptyList(),
         )
@@ -51,13 +55,13 @@ class ConcertServiceIntegrationTest {
         every { source.fetchUpcomingPopularMusic(60) } returnsMany listOf(
             KopisConcertSnapshot(
                 records = listOf(
-                    record("PF200001", "남는 공연", "2026-09-10", null),
-                    record("PF200002", "사라지는 공연", "2026-09-20", null),
+                    record("PF200001", "남는 공연", day(1), null),
+                    record("PF200002", "사라지는 공연", day(2), null),
                 ),
                 detailFailures = emptyList(),
             ),
             KopisConcertSnapshot(
-                records = listOf(record("PF200001", "수정된 공연", "2026-09-11", "88,000원")),
+                records = listOf(record("PF200001", "수정된 공연", day(3), "88,000원")),
                 detailFailures = emptyList(),
             ),
         )
@@ -77,13 +81,13 @@ class ConcertServiceIntegrationTest {
         every { source.fetchUpcomingPopularMusic(60) } returnsMany listOf(
             KopisConcertSnapshot(
                 records = listOf(
-                    record("PF200001", "보존할 첫 공연", "2026-09-10", null),
-                    record("PF200002", "보존할 둘째 공연", "2026-09-20", null),
+                    record("PF200001", "보존할 첫 공연", day(1), null),
+                    record("PF200002", "보존할 둘째 공연", day(2), null),
                 ),
                 detailFailures = emptyList(),
             ),
             KopisConcertSnapshot(
-                records = listOf(record("PF200001", "불완전한 수정", "2026-09-11", null)),
+                records = listOf(record("PF200001", "불완전한 수정", day(3), null)),
                 detailFailures = listOf("PF200002"),
             ),
         )
@@ -103,7 +107,7 @@ class ConcertServiceIntegrationTest {
     @Test
     fun `source failure preserves the last good snapshot`() {
         every { source.fetchUpcomingPopularMusic(60) } returns KopisConcertSnapshot(
-            records = listOf(record("PF200001", "보존할 공연", "2026-09-10", null)),
+            records = listOf(record("PF200001", "보존할 공연", day(1), null)),
             detailFailures = emptyList(),
         ) andThenThrows KopisConcertSourceException("source unavailable")
 
@@ -121,7 +125,7 @@ class ConcertServiceIntegrationTest {
         val venueAddress = "나".repeat(756)
         every { source.fetchUpcomingPopularMusic(60) } returns KopisConcertSnapshot(
             records = listOf(
-                record("PF200003", "긴 필드 공연", "2026-09-30", null).copy(
+                record("PF200003", "긴 필드 공연", day(20), null).copy(
                     performers = performers,
                     venueAddress = venueAddress,
                 ),
@@ -144,6 +148,37 @@ class ConcertServiceIntegrationTest {
         val page = service.getUpcoming(page = 0, size = 20)
 
         assertThat(page.content).isEmpty()
+    }
+
+    @Test
+    fun `public list keeps rows ending today and drops rows that already ended`() {
+        val ended = concerts.saveAndFlush(
+            CrawledConcert(
+                source = CrawledConcert.SOURCE_KOPIS,
+                externalId = "PF200006",
+                name = "어제 종료된 공연",
+                startDate = today.minusDays(3),
+                endDate = today.minusDays(1),
+                status = "공연중",
+                ticketUrl = "https://kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=PF200006",
+            ),
+        )
+        val endingToday = concerts.saveAndFlush(
+            CrawledConcert(
+                source = CrawledConcert.SOURCE_KOPIS,
+                externalId = "PF200007",
+                name = "오늘 종료하는 공연",
+                startDate = today.minusDays(1),
+                endDate = today,
+                status = "공연중",
+                ticketUrl = "https://kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=PF200007",
+            ),
+        )
+
+        assertThat(ended.active).isTrue()
+
+        assertThat(service.getUpcoming(page = 0, size = 20).content.map { it.externalId })
+            .containsExactly(endingToday.externalId)
     }
 
     @Test
@@ -192,13 +227,13 @@ class ConcertServiceIntegrationTest {
         assertThat(service.getById(ongoing.id).externalId).isEqualTo("PF200005")
     }
 
-    private fun record(id: String, name: String, start: String, price: String?) = KopisConcertRecord(
+    private fun record(id: String, name: String, date: LocalDate, price: String?) = KopisConcertRecord(
         externalId = id,
         name = name,
         venueName = "테스트 공연장",
         venueHall = "메인홀",
-        startDate = LocalDate.parse(start),
-        endDate = LocalDate.parse(start),
+        startDate = date,
+        endDate = date,
         status = "공연예정",
         posterUrl = "https://kopis.or.kr/upload/$id.gif",
         performanceTime = "토요일(18:00)",
@@ -211,7 +246,7 @@ class ConcertServiceIntegrationTest {
     )
 
     private fun otherSourceConcert(): CrawledConcert {
-        val date = LocalDate.now().plusDays(30)
+        val date = day(30)
         return CrawledConcert(
             source = "OTHER",
             externalId = "OTHER-1",
