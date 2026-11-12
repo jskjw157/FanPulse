@@ -90,11 +90,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # 코드 파일 변경 없는 PR(문서/설정만)은 claude-code-review 컨텍스트를 자동 SUCCESS 처리.
+          # 코드 파일 변경 없는 PR(문서/설정만)은 opencode-go-review 컨텍스트를 자동 SUCCESS 처리.
           # 룰셋 'AI Review Protection'이 해당 컨텍스트를 요구하므로, 봇 호출이 스킵되면 영구 BLOCKED 됨.
           gh api repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }} \
             -f state=success \
-            -f context=claude-code-review \
+            -f context=opencode-go-review \
             -f description="Auto-approved: no reviewable code changes" \
             -f target_url="${{ github.event.pull_request.html_url }}"
 
