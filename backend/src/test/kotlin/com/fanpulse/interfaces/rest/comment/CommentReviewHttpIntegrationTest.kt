@@ -44,9 +44,10 @@ class CommentReviewHttpIntegrationTest @Autowired constructor(
             for (token in listOf(null, "forged", tokens.generateRefreshToken(admin))) {
                 val headers = HttpHeaders()
                 if (token != null) headers.setBearerAuth(token)
-                assertEquals(HttpStatus.UNAUTHORIZED,
-                    http.exchange(path, HttpMethod.GET, HttpEntity<Void>(headers), String::class.java).statusCode,
+                val response = http.exchange(path, HttpMethod.GET, HttpEntity<Void>(headers), String::class.java)
+                assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode,
                     "$path must stay 401 through the servlet container's error handling")
+                assertEquals("Bearer", response.headers.getFirst(HttpHeaders.WWW_AUTHENTICATE))
             }
         }
         assertEquals(HttpStatus.FORBIDDEN, http.getForEntity("/api/v1/me/settings", String::class.java).statusCode)
@@ -82,8 +83,10 @@ class CommentReviewHttpIntegrationTest @Autowired constructor(
         assertEquals(true, response.headers.accessControlAllowCredentials)
 
         val trusted = HttpHeaders().apply { origin = allowedOrigin }
-        assertEquals(HttpStatus.UNAUTHORIZED,
-            http.exchange("/api/v1/comments/mine", HttpMethod.GET, HttpEntity<Void>(trusted), String::class.java).statusCode)
+        val unauthorized = http.exchange("/api/v1/comments/mine", HttpMethod.GET, HttpEntity<Void>(trusted), String::class.java)
+        assertEquals(HttpStatus.UNAUTHORIZED, unauthorized.statusCode)
+        assertEquals(allowedOrigin, unauthorized.headers.accessControlAllowOrigin)
+        assertEquals(true, unauthorized.headers.accessControlAllowCredentials)
         val untrusted = HttpHeaders().apply {
             origin = "https://untrusted.example.invalid"
             setBearerAuth(tokens.generateAccessToken(admin))
