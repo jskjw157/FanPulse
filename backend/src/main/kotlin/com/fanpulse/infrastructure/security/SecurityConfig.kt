@@ -80,8 +80,12 @@ class SecurityConfig(
                 errors.authenticationEntryPoint { request, response, _ ->
                     val privateReview = AntPathRequestMatcher("/api/v1/comments/mine").matches(request) ||
                         AntPathRequestMatcher("/api/v1/admin/comment-reviews/**").matches(request)
-                    // Preserve the existing 403 contract outside the new private review endpoints.
-                    response.sendError(if (privateReview) 401 else 403)
+                    // Avoid ERROR redispatch to /error, whose anonymous contract is the legacy 403.
+                    if (privateReview) {
+                        response.status = 401
+                    } else {
+                        response.sendError(403)
+                    }
                 }
             }
 
