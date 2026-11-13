@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.security.authorization.AuthorizationDecision
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -80,8 +81,13 @@ class SecurityConfig(
                 errors.authenticationEntryPoint { request, response, _ ->
                     val privateReview = AntPathRequestMatcher("/api/v1/comments/mine").matches(request) ||
                         AntPathRequestMatcher("/api/v1/admin/comment-reviews/**").matches(request)
-                    // Preserve the existing 403 contract outside the new private review endpoints.
-                    response.sendError(if (privateReview) 401 else 403)
+                    // Avoid ERROR redispatch to /error, whose anonymous contract is the legacy 403.
+                    if (privateReview) {
+                        response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+                        response.status = 401
+                    } else {
+                        response.sendError(403)
+                    }
                 }
             }
 
