@@ -10,6 +10,8 @@ import com.fanpulse.infrastructure.security.SecurityConfig
 import com.fanpulse.interfaces.rest.GlobalExceptionHandler
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
+import io.mockk.just
+import io.mockk.Runs
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -21,6 +23,9 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.put
+import org.springframework.test.web.servlet.delete
+import org.springframework.security.access.AccessDeniedException
 import java.time.Instant
 import java.util.*
 
@@ -44,6 +49,35 @@ class CommentControllerTest {
     private val postId = "507f1f77bcf86cd799439011"
     private val userId = UUID.randomUUID()
     private val commentId = UUID.randomUUID()
+
+    @Test
+    @WithMockUser
+    fun `mobile edit preserves raw response and pending accepted status and delete returns no content`() {
+        every { commandService.updateComment(commentId, userId, "모바일 수정", null) } returns CommentResponse(
+            commentId, postId, userId, "모바일 수정", CommentStatus.PENDING, null, Instant.now()
+        )
+        every { commandService.deleteComment(commentId, userId, null) } just Runs
+        mockMvc.put("/api/v1/comments/$commentId") {
+            requestAttr("userId", userId)
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"content":"모바일 수정"}"""
+        }.andExpect {
+            status { isAccepted() }
+            jsonPath("$.id") { value(commentId.toString()) }
+            jsonPath("$.status") { value("PENDING") }
+            jsonPath("$.data") { doesNotExist() }
+        }
+        mockMvc.delete("/api/v1/comments/$commentId") { requestAttr("userId", userId) }
+            .andExpect { status { isNoContent() } }
+    }
+
+    @Test
+    @WithMockUser
+    fun `mobile direct delete does not bypass ownership`() {
+        every { commandService.deleteComment(commentId, userId, null) } throws AccessDeniedException("not owner")
+        mockMvc.delete("/api/v1/comments/$commentId") { requestAttr("userId", userId) }
+            .andExpect { status { isForbidden() } }
+    }
 
     @Nested
     @DisplayName("POST /api/v1/comments")

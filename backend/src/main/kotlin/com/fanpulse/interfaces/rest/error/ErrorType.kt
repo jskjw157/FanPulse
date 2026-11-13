@@ -82,6 +82,20 @@ enum class ErrorType(
         code = "INVALID_PASSWORD"
     ),
 
+    CONTENT_FORBIDDEN(
+        slug = "content-forbidden",
+        title = "Content Forbidden",
+        status = HttpStatus.FORBIDDEN.value(),
+        code = "CONTENT_FORBIDDEN"
+    ),
+
+    CONTENT_CONFLICT(
+        slug = "content-conflict",
+        title = "Content Changed",
+        status = HttpStatus.CONFLICT.value(),
+        code = "CONTENT_CONFLICT"
+    ),
+
     // === Not Found Errors (404) ===
     USER_NOT_FOUND(
         slug = "user-not-found",

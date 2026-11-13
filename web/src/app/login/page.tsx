@@ -110,7 +110,10 @@ export default function LoginPage() {
               await loginWithGoogle({ idToken: response.credential });
               // 쿠키가 설정되었으므로 인증 상태 새로고침
               await refreshAuth();
-              router.push("/");
+              const redirect = new URLSearchParams(window.location.search).get("redirect");
+              router.push(redirect && /^\/artists\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(redirect)
+                ? redirect
+                : "/");
             } catch (err) {
               setFormError(getErrorMessage(err));
             } finally {

@@ -20,6 +20,9 @@ spring:
     enabled: false  # Disable Flyway for H2-based tests (use integration-test profile for Flyway tests)
 
 fanpulse:
+  comment-review:
+    enabled: false
+
   security:
     rate-limit:
       enabled: false  # Disable rate limiting in tests

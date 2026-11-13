@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import PageHeader from '@/components/layout/PageHeader';
 import PageWrapper from '@/components/layout/PageWrapper';
@@ -16,8 +17,19 @@ function formatCreatedAt(value: string) {
 function NotificationsContent() {
   const [unreadOnly, setUnreadOnly] = useState(false);
   const { user } = useAuth();
-  const { notifications, state, error, retry, markAllRead, markingAll, mutationError } = useNotifications(unreadOnly, user?.id);
-  const unreadCount = notifications.filter((row) => !row.isRead).length;
+  const router = useRouter();
+  const {
+    notifications, state, error, retry, markAllRead, markingAll, mutationError,
+    markRead, readingId, notice, unreadCount, page, totalPages, last, goToPage,
+  } = useNotifications(unreadOnly, user?.id);
+  const busy = markingAll || readingId !== null;
+
+  const openNotification = async (id: string) => {
+    const fresh = await markRead(id);
+    if (fresh?.targetType === 'POST' && fresh.targetId && fresh.targetAvailable === true) {
+      router.push(`/post-detail?id=${encodeURIComponent(fresh.targetId)}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -28,7 +40,7 @@ function NotificationsContent() {
             <button
               type="button"
               onClick={() => void markAllRead()}
-              disabled={markingAll}
+              disabled={busy || state !== 'success'}
               className="text-sm font-semibold text-purple-700 disabled:opacity-50"
             >
               모두 읽음 처리
@@ -39,6 +51,8 @@ function NotificationsContent() {
       <PageWrapper>
         <main className="mx-auto max-w-3xl px-4 py-6">
           {mutationError && <p role="alert" className="mb-4 text-sm text-red-600">{mutationError}</p>}
+          {notice && <p role="status" className="mb-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">{notice}</p>}
+          {state === 'success' && <p className="mb-4 text-sm text-gray-600">읽지 않은 알림 {unreadCount}개</p>}
           <div className="mb-5 flex gap-2" role="group" aria-label="알림 필터">
             <button
               type="button"
@@ -87,10 +101,17 @@ function NotificationsContent() {
               {notifications.map((notification) => (
                 <li
                   key={notification.id}
-                  className={`rounded-2xl border p-4 ${notification.isRead ? 'border-gray-200 bg-white' : 'border-purple-200 bg-purple-50'}`}
+                  className={`overflow-hidden rounded-2xl border ${notification.isRead ? 'border-gray-200 bg-white' : 'border-purple-200 bg-purple-50'}`}
                 >
+                  <button
+                    type="button"
+                    onClick={() => void openNotification(notification.id)}
+                    disabled={busy}
+                    aria-busy={readingId === notification.id}
+                    className="w-full p-4 text-left transition-colors hover:bg-purple-100 focus-visible:outline-2 focus-visible:outline-purple-600 disabled:opacity-60"
+                  >
                   <div className="flex items-start justify-between gap-4">
-                    <div>
+                    <div className="min-w-0 break-words">
                       {notification.type && (
                         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-purple-700">{notification.type}</p>
                       )}
@@ -101,9 +122,22 @@ function NotificationsContent() {
                   <time className="mt-2 block text-xs text-gray-500" dateTime={notification.createdAt}>
                     {formatCreatedAt(notification.createdAt)}
                   </time>
+                  {notification.targetType === 'POST' && notification.targetAvailable === false && (
+                    <p className="mt-2 text-xs text-amber-800">삭제되었거나 사용할 수 없는 게시글입니다.</p>
+                  )}
+                  </button>
                 </li>
               ))}
             </ul>
+          )}
+          {state === 'success' && totalPages > 1 && (
+            <nav aria-label="알림 페이지" className="mt-6 flex items-center justify-center gap-4">
+              <button type="button" disabled={page === 0 || busy} onClick={() => void goToPage(page - 1)}
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-40">이전</button>
+              <span className="text-sm text-gray-600">{page + 1} / {totalPages}</span>
+              <button type="button" disabled={last || busy} onClick={() => void goToPage(page + 1)}
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-40">다음</button>
+            </nav>
           )}
         </main>
       </PageWrapper>

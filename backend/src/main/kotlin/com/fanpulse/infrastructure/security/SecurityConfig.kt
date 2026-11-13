@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
+import org.springframework.security.authorization.AuthorizationDecision
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -12,9 +13,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import java.util.UUID
 
 @ConfigurationProperties(prefix = "fanpulse.cors")
 data class CorsProperties(
@@ -24,6 +27,10 @@ data class CorsProperties(
     )
 )
 
+/** Server-controlled UUID allowlist. Empty by default; never read roles from request headers or JWT claims. */
+@ConfigurationProperties(prefix = "fanpulse.comment-review")
+data class CommentReviewAccessProperties(val adminUserIds: Set<UUID> = emptySet())
+
 /**
  * Spring Security Configuration.
  *
@@ -31,10 +38,11 @@ data class CorsProperties(
  */
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties(CorsProperties::class)
+@EnableConfigurationProperties(CorsProperties::class, CommentReviewAccessProperties::class)
 class SecurityConfig(
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
-    private val corsProperties: CorsProperties
+    private val corsProperties: CorsProperties,
+    private val commentReviewAccess: CommentReviewAccessProperties
 ) {
 
     @Bean
@@ -68,9 +76,25 @@ class SecurityConfig(
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
 
+            .exceptionHandling { errors ->
+                errors.authenticationEntryPoint { request, response, _ ->
+                    val privateReview = AntPathRequestMatcher("/api/v1/comments/mine").matches(request) ||
+                        AntPathRequestMatcher("/api/v1/admin/comment-reviews/**").matches(request)
+                    // Preserve the existing 403 contract outside the new private review endpoints.
+                    response.sendError(if (privateReview) 401 else 403)
+                }
+            }
+
             // Authorization rules
             .authorizeHttpRequests { auth ->
                 auth
+                    // Must precede the broad public comment GET rule below.
+                    .requestMatchers("/api/v1/comments/mine").authenticated()
+                    .requestMatchers("/api/v1/admin/comment-reviews/**").access { authentication, _ ->
+                        val principal = authentication.get()
+                        AuthorizationDecision(principal.isAuthenticated &&
+                            commentReviewAccess.adminUserIds.any { it.toString() == principal.name })
+                    }
                     // Public endpoints
                     .requestMatchers("/api/v1/auth/**").permitAll()
                     .requestMatchers("/api/v1/streaming-events/**").permitAll()

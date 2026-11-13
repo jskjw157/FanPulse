@@ -1,10 +1,15 @@
 package com.fanpulse.application.service.social
 
 import com.fanpulse.domain.social.UserFavorite
+import com.fanpulse.domain.social.Notification
+import com.fanpulse.domain.community.CommunityPostStatus
+import com.fanpulse.infrastructure.persistence.community.CommunityPostJpaRepository
 import com.fanpulse.infrastructure.persistence.content.ArtistJpaRepository
 import com.fanpulse.infrastructure.persistence.social.NotificationJpaRepository
 import com.fanpulse.infrastructure.persistence.social.UserFavoriteJpaRepository
 import com.fanpulse.infrastructure.persistence.social.UserFavoriteUpsertWriter
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -15,7 +20,8 @@ class SocialUserServiceImpl(
     private val favoriteRepository: UserFavoriteJpaRepository,
     private val favoriteUpsertWriter: UserFavoriteUpsertWriter,
     private val notificationRepository: NotificationJpaRepository,
-    private val artistRepository: ArtistJpaRepository
+    private val artistRepository: ArtistJpaRepository,
+    private val posts: CommunityPostJpaRepository
 ) : SocialUserService {
 
     override fun getFavorites(userId: UUID): List<FavoriteArtistResponse> {
@@ -54,22 +60,49 @@ class SocialUserServiceImpl(
         } else {
             notificationRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
         }
-        return rows.map(NotificationResponse::from)
+        return notificationResponses(rows)
     }
+
+    override fun getNotificationPage(userId: UUID, unreadOnly: Boolean, page: Int, size: Int): NotificationPageResponse {
+        require(page >= 0) { "페이지 번호는 0 이상이어야 합니다" }
+        val pageable = PageRequest.of(page, size.coerceIn(1, 100), Sort.by(
+            Sort.Order.desc("createdAt"), Sort.Order.desc("id")
+        ))
+        val result = if (unreadOnly) {
+            notificationRepository.findAllByUserIdAndIsReadFalse(userId, pageable)
+        } else {
+            notificationRepository.findAllByUserId(userId, pageable)
+        }
+        return NotificationPageResponse(
+            content = notificationResponses(result.content),
+            page = result.number,
+            size = result.size,
+            totalElements = result.totalElements,
+            totalPages = result.totalPages,
+            last = result.isLast,
+            unreadCount = getUnreadNotificationCount(userId)
+        )
+    }
+
+    override fun getUnreadNotificationCount(userId: UUID): Long =
+        notificationRepository.countByUserIdAndIsReadFalse(userId)
 
     @Transactional
     override fun markNotificationRead(userId: UUID, notificationId: UUID): NotificationResponse {
         val notification = notificationRepository.findByIdAndUserId(notificationId, userId)
             ?: throw NoSuchElementException("Notification not found: $notificationId")
         notification.markRead()
-        return NotificationResponse.from(notification)
+        return notificationResponses(listOf(notification)).single()
     }
 
     @Transactional
-    override fun markAllNotificationsRead(userId: UUID): Int {
-        val unread = notificationRepository.findAllByUserIdAndIsReadFalse(userId)
-        unread.forEach { it.markRead() }
-        return unread.size
+    override fun markAllNotificationsRead(userId: UUID): Int = notificationRepository.markAllRead(userId)
+
+    private fun notificationResponses(rows: List<Notification>): List<NotificationResponse> {
+        val postIds = rows.filter { it.targetType == "POST" }.mapNotNull { it.targetId }.toSet()
+        val available = if (postIds.isEmpty()) emptySet() else posts.findAllById(postIds)
+            .filter { it.status == CommunityPostStatus.PUBLISHED }.map { it.id }.toSet()
+        return rows.map { NotificationResponse.from(it, it.targetType == "POST" && it.targetId in available) }
     }
 
     private fun favoriteResponse(

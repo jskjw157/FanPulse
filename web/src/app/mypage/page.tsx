@@ -1,35 +1,34 @@
 "use client";
 
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import PageHeader from "@/components/layout/PageHeader";
 import PageWrapper from "@/components/layout/PageWrapper";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ProfileEditor from "@/components/profile/ProfileEditor";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyProfile } from "@/hooks/useMyProfile";
 import Link from "next/link";
 
 export default function MyPage() {
   const { logout, user: authUser } = useAuth();
-  const { profile, state } = useMyProfile();
-
-  const displayName =
-    profile?.username ??
-    authUser?.username ??
-    authUser?.email?.split("@")[0] ??
-    "사용자";
-  const displayEmail = profile?.email ?? authUser?.email ?? "";
+  const { profile, state, error, refresh } = useMyProfile();
+  const { t } = useTranslation();
+  const [savedForUser, setSavedForUser] = useState<string | null>(null);
 
   const menuItems = [
-    { icon: "ri-settings-3-line", label: "설정", link: "/settings" },
+    { icon: "ri-settings-3-line", label: t("settings.title"), link: "/settings" },
   ];
 
   return (
     <ProtectedRoute>
       <PageHeader
-        title="마이페이지"
+        title={t("profile.title")}
         showBack={false}
         rightAction={
           <Link
             href="/settings"
+            aria-label={t("settings.title")}
             className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100"
           >
             <i className="ri-settings-3-line text-xl text-gray-700"></i>
@@ -49,28 +48,48 @@ export default function MyPage() {
                   <i className="ri-user-3-fill text-3xl text-white/80"></i>
                 )}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 {state === "loading" ? (
-                  <>
+                  <div role="status" aria-label="프로필을 불러오는 중입니다">
                     <div className="h-6 w-24 bg-white/20 rounded mb-2 animate-pulse" />
                     <div className="h-4 w-36 bg-white/20 rounded animate-pulse" />
-                  </>
-                ) : (
+                  </div>
+                ) : state === "error" ? (
+                  <div role="alert">
+                    <p className="text-white font-medium">{error}</p>
+                    <button
+                      type="button"
+                      onClick={() => void refresh()}
+                      className="mt-3 rounded-full bg-white px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-50"
+                    >
+                      다시 시도
+                    </button>
+                  </div>
+                ) : state === "success" && profile ? (
                   <>
-                    <h2 className="text-white text-xl font-bold">
-                      {displayName}
+                    <h2 className="text-white text-xl font-bold break-all">
+                      {profile.username}
                     </h2>
-                    <p className="text-white/90 text-sm mt-1">
-                      {displayEmail}
+                    <p className="text-white/90 text-sm mt-1 break-all">
+                      {profile.email}
                     </p>
                   </>
-                )}
+                ) : null}
               </div>
             </div>
+            {state === "success" && profile && (
+              <ProfileEditor key={authUser?.id} username={profile.username ?? ""} onSaved={() => {
+                setSavedForUser(authUser?.id ?? null);
+                void refresh();
+              }} />
+            )}
           </div>
         </div>
 
         <div className="max-w-4xl mx-auto px-4 mt-4">
+          {savedForUser && savedForUser === authUser?.id && (
+            <p role="status" className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-800">{t("profile.saved")}</p>
+          )}
           {/* Menu List */}
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm mb-4 border border-gray-100">
             {menuItems.map((item, index) => (
@@ -102,7 +121,7 @@ export default function MyPage() {
               onClick={logout}
               className="w-full bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-medium hover:bg-gray-50 transition-colors"
             >
-              로그아웃
+              {t("settings.logout")}
             </button>
           </div>
         </div>

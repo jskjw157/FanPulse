@@ -26,6 +26,7 @@ interface UseSearchReturn {
   news: News[];
   state: AsyncState;
   error: string | null;
+  retry: () => void;
 }
 
 export function useSearch(): UseSearchReturn {
@@ -47,7 +48,7 @@ export function useSearch(): UseSearchReturn {
     setError(null);
 
     try {
-      const result = await searchAll(q, 20, controller.signal);
+      const result = await searchAll(q, 10, controller.signal);
 
       if (controller.signal.aborted) return;
 
@@ -55,13 +56,20 @@ export function useSearch(): UseSearchReturn {
       setNews(result.news?.items ?? []);
       setState('success');
     } catch (err) {
-      if (axios.isCancel(err) || (err instanceof DOMException && err.name === 'AbortError')) {
+      if (controller.signal.aborted || axios.isCancel(err) || (err instanceof DOMException && err.name === 'AbortError')) {
         return;
       }
       setError(getErrorMessage(err));
       setState('error');
     }
   }, []);
+
+  const retry = useCallback(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    void executeSearch(trimmed);
+  }, [query, executeSearch]);
 
   useEffect(() => {
     if (timerRef.current) {
@@ -70,33 +78,26 @@ export function useSearch(): UseSearchReturn {
 
     const trimmed = query.trim();
 
-    if (!trimmed) {
-      abortRef.current?.abort();
+    if (trimmed.length < 2) {
       timerRef.current = setTimeout(() => {
         setLives([]);
         setNews([]);
         setState('idle');
         setError(null);
       }, 0);
-      return;
+    } else {
+      timerRef.current = setTimeout(() => {
+        void executeSearch(trimmed);
+      }, DEBOUNCE_MS);
     }
-
-    timerRef.current = setTimeout(() => {
-      executeSearch(trimmed);
-    }, DEBOUNCE_MS);
 
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
+      abortRef.current?.abort();
     };
   }, [query, executeSearch]);
 
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, []);
-
-  return { query, setQuery, lives, news, state, error };
+  return { query, setQuery, lives, news, state, error, retry };
 }

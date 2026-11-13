@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 
 const { pushMock } = vi.hoisted(() => ({
@@ -13,6 +13,11 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ refreshAuth: vi.fn() }),
+}))
+
+vi.mock('@/lib/auth', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/auth')>(),
+  loginWithGoogle: vi.fn().mockResolvedValue({}),
 }))
 
 import LoginPage from './page'
@@ -50,5 +55,32 @@ describe('LoginPage', () => {
     render(<LoginPage />)
     expect(screen.queryByText('둘러보기')).not.toBeInTheDocument()
     expect(pushMock).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['/artists/11111111-1111-1111-1111-111111111111', '/artists/11111111-1111-1111-1111-111111111111'],
+    ['https://evil.example/artists/11111111-1111-1111-1111-111111111111', '/'],
+    ['//evil.example', '/'],
+    ['/artists/../login', '/'],
+  ])('returns only to a valid artist detail after login: %s', async (redirect, expected) => {
+    vi.stubEnv('NEXT_PUBLIC_GOOGLE_CLIENT_ID', 'unit-test-client')
+    window.history.replaceState({}, '', `/login?redirect=${encodeURIComponent(redirect)}`)
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    document.head.appendChild(script)
+    let callback!: (response: { credential?: string }) => void
+    const initialize = vi.fn((config: { callback: typeof callback }) => { callback = config.callback })
+    window.google = { accounts: { id: { initialize, renderButton: vi.fn() } } }
+    try {
+      render(<LoginPage />)
+      await waitFor(() => expect(initialize).toHaveBeenCalled())
+      await act(async () => { await callback({ credential: 'test-token' }) })
+      expect(pushMock).toHaveBeenCalledWith(expected)
+    } finally {
+      script.remove()
+      delete window.google
+      window.history.replaceState({}, '', '/')
+      vi.unstubAllEnvs()
+    }
   })
 })

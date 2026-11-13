@@ -5,6 +5,7 @@ import com.fanpulse.domain.ai.port.CommentFilterPort
 import com.fanpulse.domain.comment.Comment
 import com.fanpulse.domain.comment.CommentStatus
 import com.fanpulse.domain.comment.port.CommentPort
+import com.fanpulse.domain.common.DomainEventPublisher
 import com.fanpulse.application.port.out.CommentFilterLogPort
 import com.fanpulse.infrastructure.persistence.comment.CommentFilterLog
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -42,7 +43,10 @@ class CommentCommandServiceTest {
             commentFilterPort = commentFilterPort,
             commentPort = commentPort,
             filterLogPort = filterLogPort,
-            meterRegistry = meterRegistry
+            meterRegistry = meterRegistry,
+            posts = mockk(relaxed = true),
+            eventPublisher = mockk(relaxed = true),
+            transactionManager = mockk(relaxed = true)
         )
     }
 
@@ -168,21 +172,18 @@ class CommentCommandServiceTest {
         }
 
         @Test
-        @DisplayName("FilterLog 저장 실패해도 댓글 저장은 성공해야 한다 (runCatching 격리)")
-        fun `should not rollback comment when filter log save fails`() {
+        @DisplayName("FilterLog 저장 실패는 승인 트랜잭션에 전파한다")
+        fun `should propagate filter log failure for atomic rollback`() {
             // given
             val filterResult = FilterResult(isFiltered = false, filterType = "LLM")
             every { commentFilterPort.filterComment(any()) } returns filterResult
             every { commentPort.save(any()) } answers { firstArg() }
             every { filterLogPort.save(any()) } throws RuntimeException("DB 장애")
 
-            // when
-            val response = service.createComment(postId, userId, "댓글 내용")
-
-            // then - 댓글은 정상적으로 저장되고 응답이 반환되어야 한다
-            assertNotNull(response)
-            assertEquals(CommentStatus.APPROVED, response.status)
-            verify(exactly = 1) { commentPort.save(any()) }
+            // Transactional rollback is exercised through the real service integration tests.
+            assertThrows<RuntimeException> {
+                service.createComment(postId, userId, "댓글 내용")
+            }
         }
     }
 

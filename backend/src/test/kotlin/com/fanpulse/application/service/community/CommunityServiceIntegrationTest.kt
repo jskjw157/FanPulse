@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.security.access.AccessDeniedException
 
 @DataJpaTest
 @ActiveProfiles("test")
@@ -273,6 +274,56 @@ class CommunityServiceIntegrationTest {
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("5,000자")
         verify(exactly = 0) { moderation.checkContent(oversizedContent) }
+    }
+
+    @Test
+    fun `post mutations reject another author and only approved edits replace the body`() {
+        val owner = users.save(User(email = "post-edit@example.com", username = "post-edit"))
+        val intruder = users.save(User(email = "post-intruder@example.com", username = "post-intruder"))
+        every { moderation.checkContent(any()) } returns allow()
+        val created = service.createPost(owner.id, CreateCommunityPostRequest(null, "승인 원문"))
+        assertThatThrownBy { service.updatePost(intruder.id, created.id, UpdateCommunityPostRequest("타인 수정")) }
+            .isInstanceOf(AccessDeniedException::class.java)
+        assertThatThrownBy { service.deletePost(intruder.id, created.id) }
+            .isInstanceOf(AccessDeniedException::class.java)
+        verify(exactly = 0) { moderation.checkContent("타인 수정") }
+
+        val edited = service.updatePost(owner.id, created.id, UpdateCommunityPostRequest("  승인 수정  "))
+        assertThat(edited.content).isEqualTo("승인 수정")
+        assertThat(edited.id).isEqualTo(created.id)
+        assertThat(edited.createdAt).isEqualTo(created.createdAt)
+        every { moderation.checkContent("차단 수정") } returns allow().copy(isFlagged = true, action = "block")
+        assertThatThrownBy { service.updatePost(owner.id, created.id, UpdateCommunityPostRequest("차단 수정")) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+        every { moderation.checkContent("장애 수정") } returns allow().copy(modelUsed = "fallback")
+        assertThatThrownBy { service.updatePost(owner.id, created.id, UpdateCommunityPostRequest("장애 수정")) }
+            .isInstanceOf(CommunityModerationUnavailableException::class.java)
+        assertThat(service.getPost(created.id).content).isEqualTo("승인 수정")
+    }
+
+    @Test
+    fun `owner deletion hides post detail all list counts and other users saved pages`() {
+        val owner = users.save(User(email = "post-delete@example.com", username = "post-delete"))
+        val reader = users.save(User(email = "post-reader@example.com", username = "post-reader"))
+        every { moderation.checkContent(any()) } returns allow()
+        val removed = service.createPost(owner.id, CreateCommunityPostRequest(null, "삭제할 글"))
+        val visible = service.createPost(owner.id, CreateCommunityPostRequest(null, "남길 글"))
+        service.save(reader.id, removed.id)
+        service.save(reader.id, visible.id)
+        service.deletePost(owner.id, removed.id)
+        service.deletePost(owner.id, removed.id)
+        entityManager.flush()
+        entityManager.clear()
+        assertThatThrownBy { service.getPost(removed.id) }.isInstanceOf(NoSuchElementException::class.java)
+        assertThatThrownBy { service.updatePost(owner.id, removed.id, UpdateCommunityPostRequest("복구")) }
+            .isInstanceOf(NoSuchElementException::class.java)
+        val page = service.getPosts(0, 20, CommunitySort.LATEST)
+        assertThat(page.content.map { it.id }).containsExactly(visible.id)
+        assertThat(page.totalElements).isEqualTo(1)
+        val saved = service.getSavedPosts(reader.id, 0, 20)
+        assertThat(saved.content.map { it.id }).containsExactly(visible.id)
+        assertThat(saved.totalElements).isEqualTo(1)
+        assertThat(service.unsave(reader.id, removed.id).saved).isFalse()
     }
 
     @TestConfiguration

@@ -3,6 +3,7 @@ package com.fanpulse.interfaces.rest.social
 import com.fanpulse.application.service.social.FavoriteArtistResponse
 import com.fanpulse.application.service.social.FavoriteAddResult
 import com.fanpulse.application.service.social.NotificationResponse
+import com.fanpulse.application.service.social.NotificationPageResponse
 import com.fanpulse.application.service.social.SocialUserService
 import com.fanpulse.infrastructure.security.JwtTokenProvider
 import com.fanpulse.infrastructure.security.SecurityConfig
@@ -76,6 +77,18 @@ class SocialUserControllerTest {
 
     @Test
     @WithMockUser
+    fun `returns 404 when the requested artist does not exist`() {
+        every { service.addFavorite(userId, artistId) } throws NoSuchElementException("Artist not found: $artistId")
+
+        mockMvc.post("/api/v1/users/me/favorites/$artistId") { requestAttr("userId", userId) }
+            .andExpect {
+                status { isNotFound() }
+                jsonPath("$.status") { value(404) }
+            }
+    }
+
+    @Test
+    @WithMockUser
     fun `marks only the authenticated user's notification as read`() {
         every { service.markNotificationRead(userId, notificationId) } returns notification(read = true)
 
@@ -101,8 +114,61 @@ class SocialUserControllerTest {
     }
 
     @Test
+    @WithMockUser
+    fun `legacy list stays an array while paged list includes account wide unread count`() {
+        every { service.getNotifications(userId, false) } returns listOf(notification(false))
+        every { service.getNotificationPage(userId, true, 1, 2) } returns NotificationPageResponse(
+            listOf(notification(false)), 1, 2, 3, 2, true, 3
+        )
+        every { service.getUnreadNotificationCount(userId) } returns 3
+
+        mockMvc.get("/api/v1/users/me/notifications") { requestAttr("userId", userId) }
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.data[0].id") { value(notificationId.toString()) }
+                jsonPath("$.data[0].targetAvailable") { value(false) }
+            }
+        mockMvc.get("/api/v1/users/me/notifications/page?unreadOnly=true&page=1&size=2") {
+            requestAttr("userId", userId)
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.content[0].id") { value(notificationId.toString()) }
+            jsonPath("$.data.page") { value(1) }
+            jsonPath("$.data.totalElements") { value(3) }
+            jsonPath("$.data.unreadCount") { value(3) }
+        }
+        mockMvc.get("/api/v1/users/me/notifications/unread-count") { requestAttr("userId", userId) }
+            .andExpect {
+                status { isOk() }
+                jsonPath("$.data.unreadCount") { value(3) }
+            }
+    }
+
+    @Test
+    @WithMockUser
+    fun `foreign notification read returns not found`() {
+        every { service.markNotificationRead(userId, notificationId) } throws NoSuchElementException()
+        mockMvc.patch("/api/v1/users/me/notifications/$notificationId/read") {
+            requestAttr("userId", userId)
+        }.andExpect { status { isNotFound() } }
+    }
+
+    @Test
     fun `rejects unauthenticated access`() {
         mockMvc.get("/api/v1/users/me/favorites")
+            .andExpect { status { isForbidden() } }
+        mockMvc.post("/api/v1/users/me/favorites/$artistId")
+            .andExpect { status { isForbidden() } }
+        mockMvc.delete("/api/v1/users/me/favorites/$artistId")
+            .andExpect { status { isForbidden() } }
+        verify(exactly = 0) { service.getFavorites(any()) }
+        verify(exactly = 0) { service.addFavorite(any(), any()) }
+        verify(exactly = 0) { service.removeFavorite(any(), any()) }
+        mockMvc.get("/api/v1/users/me/notifications/page")
+            .andExpect { status { isForbidden() } }
+        mockMvc.get("/api/v1/users/me/notifications/unread-count")
+            .andExpect { status { isForbidden() } }
+        mockMvc.patch("/api/v1/users/me/notifications/$notificationId/read")
             .andExpect { status { isForbidden() } }
     }
 

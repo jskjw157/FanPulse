@@ -21,12 +21,17 @@ class CommentAdapter(
 
     @Transactional
     override fun save(comment: Comment): Comment {
-        return repository.save(comment)
+        return repository.saveAndFlush(comment)
     }
 
     @Transactional(readOnly = true)
     override fun findById(id: UUID): Comment? {
         return repository.findById(id).orElse(null)
+    }
+
+    @Transactional
+    override fun findByIdForUpdate(id: UUID): Comment? {
+        return repository.lockById(id)
     }
 
     @Transactional(readOnly = true)

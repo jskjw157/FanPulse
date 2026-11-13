@@ -308,6 +308,36 @@ export async function createCommunityPost(
   ));
 }
 
+function validateContent(content: string, maxLength: number): void {
+  if (!isNonEmptyString(content) || content.length > maxLength) {
+    throw new Error('내용이 올바르지 않습니다.');
+  }
+}
+
+export async function updateCommunityPost(postId: string, content: string): Promise<CommunityPost> {
+  if (!isUuid(postId)) throw new Error('게시글 ID가 올바르지 않습니다.');
+  validateContent(content, 5000);
+  const response = await apiClient.put<ApiResponse<CommunityPostDto>>(
+    `/community/posts/${postId}`,
+    { content },
+  );
+  const data = unwrapApiResponse(
+    response.data,
+    '게시글 수정 API 응답이 올바르지 않습니다.',
+    isCommunityPostDto,
+  );
+  if (response.status !== 200 || data.id !== postId) {
+    throw new Error('게시글 수정 API 응답이 올바르지 않습니다.');
+  }
+  return mapPost(data);
+}
+
+export async function deleteCommunityPost(postId: string): Promise<void> {
+  if (!isUuid(postId)) throw new Error('게시글 ID가 올바르지 않습니다.');
+  const response = await apiClient.delete(`/community/posts/${postId}`);
+  if (response.status !== 204) throw new Error('게시글 삭제 API 응답이 올바르지 않습니다.');
+}
+
 async function mutateState(method: 'post' | 'delete', path: string): Promise<CommunityPostState> {
   const response = await apiClient[method]<ApiResponse<CommunityPostState>>(path);
   return unwrapApiResponse(
@@ -410,4 +440,35 @@ export async function createCommunityComment(
     throw new Error('커뮤니티 댓글 작성 API 응답이 올바르지 않습니다.');
   }
   return mapComment(data);
+}
+
+export async function updateCommunityComment(
+  postId: string,
+  commentId: string,
+  content: string,
+): Promise<CommunityComment> {
+  if (!isUuid(postId) || !isUuid(commentId)) throw new Error('댓글 요청 ID가 올바르지 않습니다.');
+  validateContent(content, 1000);
+  const response = await apiClient.put<ApiResponse<CommunityCommentDto>>(
+    `/community/posts/${postId}/comments/${commentId}`,
+    { content },
+  );
+  const data = unwrapApiResponse(
+    response.data,
+    '댓글 수정 API 응답이 올바르지 않습니다.',
+    isCommunityCommentDto,
+  );
+  if (
+    data.postId !== postId || data.id !== commentId ||
+    response.status !== (data.status === 'PENDING' ? 202 : 200)
+  ) {
+    throw new Error('댓글 수정 API 응답이 올바르지 않습니다.');
+  }
+  return mapComment(data);
+}
+
+export async function deleteCommunityComment(postId: string, commentId: string): Promise<void> {
+  if (!isUuid(postId) || !isUuid(commentId)) throw new Error('댓글 요청 ID가 올바르지 않습니다.');
+  const response = await apiClient.delete(`/community/posts/${postId}/comments/${commentId}`);
+  if (response.status !== 204) throw new Error('댓글 삭제 API 응답이 올바르지 않습니다.');
 }

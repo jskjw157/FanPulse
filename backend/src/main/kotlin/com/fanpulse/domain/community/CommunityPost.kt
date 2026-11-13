@@ -29,7 +29,7 @@ class CommunityPost private constructor(
     val artistId: UUID?,
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    val content: String,
+    var content: String,
 
     @Column(name = "image_url", columnDefinition = "TEXT")
     val imageUrl: String?,
@@ -44,6 +44,20 @@ class CommunityPost private constructor(
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant
 ) {
+    fun edit(content: String) {
+        check(status == CommunityPostStatus.PUBLISHED) { "Removed posts cannot be edited" }
+        val normalized = content.trim()
+        require(normalized.isNotEmpty()) { "게시글 내용은 비어 있을 수 없습니다" }
+        require(normalized.length <= 5_000) { "게시글 내용은 5,000자를 초과할 수 없습니다" }
+        this.content = normalized
+        this.updatedAt = Instant.now()
+    }
+
+    fun remove() {
+        this.status = CommunityPostStatus.REMOVED
+        this.updatedAt = Instant.now()
+    }
+
     companion object {
         fun create(userId: UUID, artistId: UUID?, content: String): CommunityPost {
             val normalized = content.trim()

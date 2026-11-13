@@ -41,13 +41,13 @@ function addRecentSearch(term: string, current: string[]): string[] {
 
 export default function SearchPage() {
   const { t } = useTranslation();
-  const { query, setQuery, lives, news, state, error } = useSearch();
+  const { query, setQuery, lives, news, state, error, retry } = useSearch();
   const [recentSearches, setRecentSearches] = useState<string[]>(loadRecentSearches);
 
   const handleSearch = useCallback(
     (term: string) => {
       setQuery(term);
-      if (term.trim()) {
+      if (term.trim().length >= 2) {
         setRecentSearches((prev) => addRecentSearch(term.trim(), prev));
       }
     },
@@ -63,7 +63,7 @@ export default function SearchPage() {
 
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" && query.trim()) {
+      if (e.key === "Enter" && query.trim().length >= 2) {
         setRecentSearches((prev) => addRecentSearch(query.trim(), prev));
       }
     },
@@ -88,6 +88,7 @@ export default function SearchPage() {
   }, []);
 
   const hasQuery = query.trim().length > 0;
+  const canSearch = query.trim().length >= 2;
   const hasResults = lives.length > 0 || news.length > 0;
 
   return (
@@ -109,6 +110,7 @@ export default function SearchPage() {
                 onChange={(e) => handleInputChange(e.target.value)}
                 onKeyDown={handleInputKeyDown}
                 placeholder={t("search.placeholder")}
+                aria-describedby={hasQuery && !canSearch ? "search-input-hint" : undefined}
                 className="w-full bg-gray-100 rounded-full pl-10 pr-10 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-purple-600 lg:py-3 lg:text-base"
               />
               <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 lg:left-4" />
@@ -137,18 +139,24 @@ export default function SearchPage() {
           />
         )}
 
+        {hasQuery && !canSearch && (
+          <p id="search-input-hint" role="status" className="text-center text-sm text-gray-500 py-16 px-4">
+            {t("search.minLengthHint")}
+          </p>
+        )}
+
         {/* 로딩 상태 */}
-        {hasQuery && state === "loading" && <SearchSkeleton />}
+        {canSearch && state === "loading" && <SearchSkeleton />}
 
         {/* 에러 상태 */}
-        {hasQuery && state === "error" && (
+        {canSearch && state === "error" && (
           <div className="text-center py-16 px-4">
             <div className="w-16 h-16 mx-auto mb-4 bg-red-50 rounded-full flex items-center justify-center">
               <i className="ri-error-warning-line text-2xl text-red-400" />
             </div>
             <p className="text-gray-500 mb-4">{error}</p>
             <button
-              onClick={() => handleSearch(query)}
+              onClick={retry}
               className="px-6 py-2 bg-purple-600 text-white rounded-full text-sm font-medium hover:bg-purple-700 transition-colors"
             >
               {t("search.errorRetry")}
@@ -157,7 +165,7 @@ export default function SearchPage() {
         )}
 
         {/* 결과 없음 */}
-        {hasQuery && state === "success" && !hasResults && (
+        {canSearch && state === "success" && !hasResults && (
           <div className="text-center py-16 px-4">
             <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
               <i className="ri-search-line text-2xl text-gray-400" />
@@ -172,7 +180,7 @@ export default function SearchPage() {
         )}
 
         {/* 검색 결과 */}
-        {hasQuery && state === "success" && hasResults && (
+        {canSearch && state === "success" && hasResults && (
           <div className="space-y-6 pb-4">
             {/* Live 결과 */}
             {lives.length > 0 && (

@@ -18,9 +18,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isPublicPath) {
-      router.push("/login");
+      router.push(pathname.startsWith("/artists/")
+        ? `/login?redirect=${encodeURIComponent(pathname)}`
+        : "/login");
     }
-  }, [isAuthenticated, isLoading, isPublicPath, router]);
+  }, [isAuthenticated, isLoading, isPublicPath, pathname, router]);
 
   // 로딩 중
   if (isLoading) {

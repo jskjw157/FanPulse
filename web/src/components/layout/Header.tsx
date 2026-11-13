@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNotificationUnreadCount } from "@/hooks/useNotificationUnreadCount";
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
+  const { user } = useAuth();
+  const { count, error } = useNotificationUnreadCount(user?.id);
+  const notificationLabel = error ? '알림 (읽지 않은 알림 수 확인 불가)' : count === null ? '알림' : `알림, 읽지 않은 알림 ${count}개`;
   return (
     <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
@@ -45,9 +50,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <Link href="/search" className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100">
               <i className="ri-search-line text-xl text-gray-700"></i>
             </Link>
-            <Link href="/notifications" className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 relative">
-              <i className="ri-notification-line text-xl text-gray-700"></i>
-              <span className="absolute top-1.5 right-1.5 lg:top-2 lg:right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+            <Link href="/notifications" aria-label={notificationLabel} title={notificationLabel} className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 relative">
+              <i className="ri-notification-line text-xl text-gray-700" aria-hidden="true"></i>
+              {count !== null && count > 0 && (
+                <span aria-hidden="true" className="absolute -top-0.5 -right-1 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] font-bold leading-4 text-white">{count > 99 ? '99+' : count}</span>
+              )}
             </Link>
             <Link href="/mypage" className="hidden lg:flex w-10 h-10 items-center justify-center rounded-lg hover:bg-gray-100">
               <i className="ri-user-line text-xl text-gray-700"></i>

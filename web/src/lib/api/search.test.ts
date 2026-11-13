@@ -66,6 +66,10 @@ describe('searchAll news contract', () => {
         totalCount: 1,
       },
     });
+    expect(apiClient.get).toHaveBeenCalledWith('/search', {
+      params: { q: '검색', limit: 10 },
+      signal: undefined,
+    });
   });
 
   it('rejects malformed successful search news items', async () => {

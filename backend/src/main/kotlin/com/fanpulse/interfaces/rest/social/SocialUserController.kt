@@ -50,6 +50,19 @@ class SocialUserController(private val service: SocialUserService) {
         @RequestParam(defaultValue = "false") unreadOnly: Boolean
     ) = ResponseEntity.ok(ApiResponse.success(service.getNotifications(userId, unreadOnly)))
 
+    // Keep the legacy array endpoint intact for existing web/mobile clients.
+    @GetMapping("/notifications/page")
+    fun notificationPage(
+        @RequestAttribute("userId") userId: UUID,
+        @RequestParam(defaultValue = "false") unreadOnly: Boolean,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ) = ResponseEntity.ok(ApiResponse.success(service.getNotificationPage(userId, unreadOnly, page, size)))
+
+    @GetMapping("/notifications/unread-count")
+    fun unreadCount(@RequestAttribute("userId") userId: UUID) =
+        ResponseEntity.ok(ApiResponse.success(mapOf("unreadCount" to service.getUnreadNotificationCount(userId))))
+
     @PatchMapping("/notifications/{notificationId}/read")
     fun readNotification(
         @RequestAttribute("userId") userId: UUID,

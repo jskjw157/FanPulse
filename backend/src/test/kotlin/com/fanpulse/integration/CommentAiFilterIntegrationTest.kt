@@ -31,7 +31,10 @@ import java.util.*
  *
  * 핵심 검증: Fail-Pending 접합점 — WireMock 500 → CB fallback → filterType="fallback" → PENDING → 202
  */
-@SpringBootTest
+@SpringBootTest(properties = [
+    // H2 cannot parse the PostgreSQL row-lock clause (#299/#302 lock comment rows with PESSIMISTIC_WRITE).
+    "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+])
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("댓글 AI 필터링 E2E 테스트")

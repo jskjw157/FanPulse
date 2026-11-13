@@ -9,6 +9,7 @@ import io.mockk.every
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.MigrationVersion
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
@@ -57,7 +58,10 @@ class KopisConcertPostgresVerticalIntegrationTest {
             assertThat(connection.metaData.databaseProductName).isEqualTo("PostgreSQL")
         }
         assertThat(flyway.info().applied().map { it.version.toString() }).contains("124", "125")
-        assertThat(flyway.info().current().version.toString()).isEqualTo("125")
+        // Do not pin the exact head: every new migration moves it and would fail this
+        // ingestion test for an unrelated reason.
+        assertThat(flyway.info().current().version)
+            .isGreaterThanOrEqualTo(MigrationVersion.fromVersion("125"))
         assertThat(columnLength("artist")).isEqualTo(1_000)
         assertThat(columnLength("venue_address")).isEqualTo(756)
 

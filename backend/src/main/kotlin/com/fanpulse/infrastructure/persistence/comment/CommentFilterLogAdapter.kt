@@ -15,12 +15,12 @@ class CommentFilterLogAdapter(
 ) : CommentFilterLogPort {
 
     /**
-     * 필터 로그를 별도 트랜잭션으로 저장한다.
+     * 승인 및 알림과 같은 트랜잭션에 감사 로그를 저장한다.
      *
-     * [Propagation.REQUIRES_NEW]를 사용하여 호출자 트랜잭션과 완전히 분리된다.
-     * 이 메서드의 실패는 호출자의 트랜잭션(댓글 저장)에 영향을 주지 않는다.
+     * 미커밋 댓글을 참조하는 FK를 별도 트랜잭션에서 검사하지 않는다.
+     * 실패는 호출자에게 전파되어 댓글과 알림도 함께 롤백된다.
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRED)
     override fun save(log: CommentFilterLog): CommentFilterLog {
         return repository.save(log)
     }

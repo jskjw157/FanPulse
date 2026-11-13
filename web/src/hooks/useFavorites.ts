@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AsyncState } from '@/types/common';
-import { fetchFavorites, removeFavorite, type FavoriteArtist } from '@/lib/api/social';
+import { addFavorite, fetchFavorites, removeFavorite, type FavoriteArtist } from '@/lib/api/social';
 
 interface FavoritesSnapshot {
   userId: string | undefined;
@@ -29,6 +29,7 @@ export function useFavorites(userId: string | undefined) {
     mutatingId: null,
     error: null,
   });
+  const pending = useRef<{ userId: string; artistId: string } | null>(null);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     if (!userId) {
@@ -42,7 +43,6 @@ export function useFavorites(userId: string | undefined) {
     }
 
     setSnapshot({ userId, favorites: [], state: 'loading', error: null });
-    setMutation({ userId, mutatingId: null, error: null });
     try {
       const rows = await fetchFavorites(signal);
       if (signal?.aborted) return;
@@ -64,18 +64,35 @@ export function useFavorites(userId: string | undefined) {
     return () => controller.abort();
   }, [load]);
 
-  const unfollow = useCallback(async (artistId: string) => {
+  const mutate = useCallback(async (artistId: string, following: boolean) => {
+    if (!userId || snapshot.userId !== userId || snapshot.state !== 'success' || pending.current?.userId === userId) return;
+    const operation = { userId, artistId };
+    pending.current = operation;
     setMutation({ userId, mutatingId: artistId, error: null });
     try {
-      await removeFavorite(artistId);
+      let favorite: FavoriteArtist | null = null;
+      if (following) favorite = await addFavorite(artistId);
+      else await removeFavorite(artistId);
       setSnapshot((current) => current.userId === userId
-        ? { ...current, favorites: current.favorites.filter((artist) => artist.id !== artistId) }
+        ? {
+          ...current,
+          favorites: favorite
+            ? [favorite, ...current.favorites.filter((artist) => artist.id !== artistId)]
+            : current.favorites.filter((artist) => artist.id !== artistId),
+        }
         : current);
-      setMutation({ userId, mutatingId: null, error: null });
+      if (pending.current === operation) setMutation({ userId, mutatingId: null, error: null });
     } catch {
-      setMutation({ userId, mutatingId: null, error: '좋아요 취소에 실패했습니다' });
+      if (pending.current === operation) {
+        setMutation({ userId, mutatingId: null, error: following ? '팔로우에 실패했습니다' : '좋아요 취소에 실패했습니다' });
+      }
+    } finally {
+      if (pending.current === operation) pending.current = null;
     }
-  }, [userId]);
+  }, [userId, snapshot.userId, snapshot.state]);
+
+  const follow = useCallback((artistId: string) => mutate(artistId, true), [mutate]);
+  const unfollow = useCallback((artistId: string) => mutate(artistId, false), [mutate]);
 
   const isCurrentSnapshot = snapshot.userId === userId;
   const isCurrentMutation = mutation.userId === userId;
@@ -85,6 +102,7 @@ export function useFavorites(userId: string | undefined) {
     state: isCurrentSnapshot ? snapshot.state : 'loading' as AsyncState,
     error: isCurrentSnapshot ? snapshot.error : null,
     retry: load,
+    follow,
     unfollow,
     mutatingId: isCurrentMutation ? mutation.mutatingId : null,
     mutationError: isCurrentMutation ? mutation.error : null,

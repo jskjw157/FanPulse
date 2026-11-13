@@ -27,6 +27,8 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    // Evaluated at BUILD time and stored in the routes manifest, so a production build that
+    // serves a same-origin `/api/v1` must set API_PROXY_TARGET before `next build`.
     const apiProxyTarget = process.env.API_PROXY_TARGET ?? "http://localhost:8080";
 
     return [
