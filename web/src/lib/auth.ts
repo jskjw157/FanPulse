@@ -54,8 +54,7 @@ export async function logout(): Promise<void> {
   try {
     await apiClient.post("/auth/logout");
   } catch (error) {
-    // 서버 요청이 실패해도 클라이언트 인증 상태는 제거한다.
-    console.error("Logout failed:", error);
+    throw toFanPulseError(error);
   }
 }
 

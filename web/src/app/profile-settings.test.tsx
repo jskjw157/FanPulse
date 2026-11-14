@@ -8,7 +8,8 @@ import i18n from '@/i18n';
 import MyPage from './mypage/page';
 import SettingsPage from './settings/page';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), back: vi.fn() }) }));
+const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: pushMock, back: vi.fn() }) }));
 
 const alice = { id: '11111111-1111-4111-8111-111111111111', email: 'alice@example.com', username: 'Alice_1', hasPassword: false, createdAt: '2026-01-01T00:00:00Z' };
 const bob = { ...alice, id: '22222222-2222-4222-8222-222222222222', email: 'bob@example.com', username: 'Bob_2' };
@@ -21,6 +22,8 @@ let failSettingsGet: boolean;
 let failSettingsSave: boolean;
 let getGate: Promise<void> | null;
 let saveGate: Promise<void> | null;
+let logoutGate: Promise<void> | null;
+let failLogout: 'server' | 'network' | null;
 
 function deferred() {
   let resolve!: () => void;
@@ -60,11 +63,20 @@ beforeEach(async () => {
   failSettingsSave = false;
   getGate = null;
   saveGate = null;
+  logoutGate = null;
+  failLogout = null;
+  pushMock.mockClear();
   await i18n.changeLanguage('ko');
   apiClient.defaults.adapter = async (config) => {
     const user = current;
     if (config.url === '/auth/me') return reply(config, { authenticated: !!user, user: user ? { ...user, username: user.id === alice.id ? storedName : user.username } : undefined });
-    if (config.url === '/auth/logout') { current = null; return reply(config, {}); }
+    if (config.url === '/auth/logout') {
+      await logoutGate;
+      if (failLogout === 'server') reject(config, 500, 'INTERNAL_ERROR');
+      if (failLogout === 'network') throw new AxiosError('Network Error', 'ERR_NETWORK', config);
+      current = null;
+      return reply(config, {});
+    }
     // #296 owns the GET path change; keep this suite usable before and after its integration.
     if ((config.url === '/users/me' || config.url === '/me') && config.method === 'get') {
       return reply(config, { ...user, username: user?.id === alice.id ? storedName : user?.username });
@@ -150,6 +162,41 @@ describe('Nickname editing through the existing profile API', () => {
     await act(async () => gate.resolve());
     expect(screen.getByLabelText('auth username')).toHaveTextContent('signed out');
     expect(screen.queryByText('닉네임을 저장했습니다.')).not.toBeInTheDocument();
+  });
+});
+
+describe('Logout session outcome', () => {
+  it.each(['server', 'network'] as const)('keeps the session visible after %s failure and allows retry', async (failure) => {
+    failLogout = failure;
+    render(<App />);
+    await screen.findByRole('combobox', { name: '언어' });
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('세션이 유지될 수 있습니다');
+    expect(screen.getByLabelText('auth username')).toHaveTextContent(alice.username);
+    expect(screen.getByRole('button', { name: '로그아웃' })).toBeEnabled();
+    expect(pushMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh session' }));
+    await waitFor(() => expect(screen.getByLabelText('auth username')).toHaveTextContent(alice.username));
+    failLogout = null;
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }));
+    await waitFor(() => expect(screen.getByLabelText('auth username')).toHaveTextContent('signed out'));
+    expect(current).toBeNull();
+    expect(pushMock).toHaveBeenCalledWith('/login');
+  });
+
+  it('does not claim logout while the server request is pending', async () => {
+    const gate = deferred();
+    logoutGate = gate.promise;
+    render(<App />);
+    await screen.findByRole('combobox', { name: '언어' });
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }));
+    expect(screen.getByRole('button', { name: '로그아웃 중…' })).toBeDisabled();
+    expect(screen.getByLabelText('auth username')).toHaveTextContent(alice.username);
+    expect(pushMock).not.toHaveBeenCalled();
+    await act(async () => gate.resolve());
+    await waitFor(() => expect(screen.getByLabelText('auth username')).toHaveTextContent('signed out'));
+    expect(current).toBeNull();
+    expect(pushMock).toHaveBeenCalledWith('/login');
   });
 });
 

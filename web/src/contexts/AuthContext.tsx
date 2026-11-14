@@ -147,16 +147,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 로그아웃 함수
   const logout = useCallback(async () => {
+    const userId = currentUserId.current;
+    invalidateAuth();
+    // Keep the session visible until the server confirms it revoked the cookie session.
+    await apiLogout();
+    if (currentUserId.current !== userId) return;
     invalidateAuth();
     currentUserId.current = null;
     clearSettings();
     setIsAuthenticated(false);
     setUser(null);
-    try {
-      await apiLogout();
-    } finally {
-      router.push("/login");
-    }
+    router.push("/login");
   }, [router, clearSettings, invalidateAuth]);
 
   return (

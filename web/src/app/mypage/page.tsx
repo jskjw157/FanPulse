@@ -15,6 +15,21 @@ export default function MyPage() {
   const { profile, state, error, refresh } = useMyProfile();
   const { t } = useTranslation();
   const [savedForUser, setSavedForUser] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutFailed, setLogoutFailed] = useState(false);
+
+  async function handleLogout() {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    setLogoutFailed(false);
+    try {
+      await logout();
+    } catch {
+      setLogoutFailed(true);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
 
   const menuItems = [
     { icon: "ri-settings-3-line", label: t("settings.title"), link: "/settings" },
@@ -118,11 +133,16 @@ export default function MyPage() {
           {/* Logout Button */}
           <div className="mb-6">
             <button
-              onClick={logout}
-              className="w-full bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-medium hover:bg-gray-50 transition-colors"
+              onClick={() => void handleLogout()}
+              disabled={isLoggingOut}
+              aria-busy={isLoggingOut}
+              className="w-full bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
-              {t("settings.logout")}
+              {t(isLoggingOut ? "settings.loggingOut" : "settings.logout")}
             </button>
+            {logoutFailed && (
+              <p role="alert" className="mt-2 text-sm text-red-700">{t("settings.logoutFailed")}</p>
+            )}
           </div>
         </div>
       </PageWrapper>
