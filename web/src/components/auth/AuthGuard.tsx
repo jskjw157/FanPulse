@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { buildLoginUrl } from "@/lib/login-redirect";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -18,9 +19,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isPublicPath) {
-      router.push(pathname.startsWith("/artists/")
-        ? `/login?redirect=${encodeURIComponent(pathname)}`
-        : "/login");
+      // Read the query in the effect: useSearchParams here would make the root
+      // layout require a Suspense boundary even for otherwise static pages.
+      router.push(buildLoginUrl(`${pathname}${window.location.search}`));
     }
   }, [isAuthenticated, isLoading, isPublicPath, pathname, router]);
 

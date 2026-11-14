@@ -4,6 +4,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { resolveApiBaseUrl } from "./api-base-url";
+import { buildLoginUrl } from "./login-redirect";
 
 export { LocalApiTargetError } from "./api-base-url";
 
@@ -94,11 +95,10 @@ function shouldSkipAutoRefresh(url?: string): boolean {
 function redirectToLogin(): void {
   if (
     typeof window !== "undefined" &&
-    window.location.pathname !== "/login"
+    window.location.pathname !== "/login" &&
+    !window.location.pathname.startsWith("/login/")
   ) {
-    window.location.href = window.location.pathname.startsWith("/artists/")
-      ? `/login?redirect=${encodeURIComponent(window.location.pathname)}`
-      : "/login";
+    window.location.href = buildLoginUrl(`${window.location.pathname}${window.location.search}`);
   }
 }
 

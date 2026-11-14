@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
+import { SAFE_LOGIN_RETURNS, UNSAFE_LOGIN_RETURNS } from '@/lib/login-redirect.fixtures'
 
 const { pushMock } = vi.hoisted(() => ({
   pushMock: vi.fn(),
@@ -25,6 +26,7 @@ import LoginPage from './page'
 describe('LoginPage', () => {
   beforeEach(() => {
     pushMock.mockClear()
+    vi.stubEnv('NEXT_PUBLIC_GOOGLE_CLIENT_ID', '')
   })
 
   it('renders Google-only login UI', () => {
@@ -58,11 +60,10 @@ describe('LoginPage', () => {
   })
 
   it.each([
-    ['/artists/11111111-1111-1111-1111-111111111111', '/artists/11111111-1111-1111-1111-111111111111'],
-    ['https://evil.example/artists/11111111-1111-1111-1111-111111111111', '/'],
-    ['//evil.example', '/'],
-    ['/artists/../login', '/'],
-  ])('returns only to a valid artist detail after login: %s', async (redirect, expected) => {
+    ...SAFE_LOGIN_RETURNS,
+    ...UNSAFE_LOGIN_RETURNS.map((input): [string, string] => [input, '/']),
+    ['', '/'],
+  ])('returns only to a safe supported destination after login: %s', async (redirect, expected) => {
     vi.stubEnv('NEXT_PUBLIC_GOOGLE_CLIENT_ID', 'unit-test-client')
     window.history.replaceState({}, '', `/login?redirect=${encodeURIComponent(redirect)}`)
     const script = document.createElement('script')

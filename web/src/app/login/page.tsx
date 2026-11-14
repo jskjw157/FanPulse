@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { FanPulseApiError, loginWithGoogle } from "@/lib/auth";
+import { getSafeLoginReturnTo } from "@/lib/login-redirect";
 import { useAuth } from "@/contexts/AuthContext";
 
 type GoogleCredentialResponse = { credential?: string };
@@ -150,9 +151,7 @@ export default function LoginPage() {
             await refreshAuth();
             if (cancelled) return;
             const redirect = new URLSearchParams(window.location.search).get("redirect");
-            router.push(redirect && /^\/artists\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(redirect)
-              ? redirect
-              : "/");
+            router.push(getSafeLoginReturnTo(redirect) ?? "/");
           } catch (err) {
             if (!cancelled) setFormError(getErrorMessage(err));
           } finally {
