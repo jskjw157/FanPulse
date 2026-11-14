@@ -42,22 +42,25 @@ export function useNewsList(
 
   const fetchData = useCallback(
     async (isRefresh = false) => {
+      // Lock immediately, including repeated calls before the loading render.
+      if (!isRefresh && abortControllerRef.current) return;
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      abortControllerRef.current = new AbortController();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
+      setState('loading');
       if (isRefresh) {
-        setState('loading');
         offsetRef.current = 0;
       }
       setError(null);
 
       try {
         const offset = isRefresh ? 0 : offsetRef.current;
-        const result = await fetchNewsList(limit, offset, abortControllerRef.current.signal);
+        const result = await fetchNewsList(limit, offset, controller.signal);
 
-        if (abortControllerRef.current.signal.aborted) return;
+        if (controller.signal.aborted) return;
 
         if (isRefresh) {
           setItems(result.items);
@@ -70,10 +73,14 @@ export function useNewsList(
         setState('success');
       } catch (err) {
         if (axios.isCancel(err)) return;
-        if (abortControllerRef.current?.signal.aborted) return;
+        if (controller.signal.aborted) return;
 
         setError(getErrorMessage(err));
         setState('error');
+      } finally {
+        if (abortControllerRef.current === controller) {
+          abortControllerRef.current = null;
+        }
       }
     },
     [limit]
