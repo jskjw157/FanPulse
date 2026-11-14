@@ -52,7 +52,7 @@ export default function ConcertDetailPage() {
   return (
     <>
       <PageHeader title="공연 상세" />
-      <PageWrapper className="pb-24">
+      <PageWrapper className="pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-24">
         {!id ? (
           <div role="alert" className="py-16 text-center text-gray-700">공연 ID가 올바르지 않습니다.</div>
         ) : loading || resolvedId !== id ? (
@@ -91,7 +91,7 @@ export default function ConcertDetailPage() {
               </section>
               <p className="text-xs leading-relaxed text-gray-500">공연 정보와 예매처는 KOPIS 공식 상세 페이지에서 다시 확인해 주세요.</p>
             </div>
-            <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white px-4 py-4">
+            <div className="fixed bottom-[calc(4rem+1px+env(safe-area-inset-bottom))] lg:bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white px-4 py-4">
               <div className="mx-auto max-w-4xl">
                 <a href={concert.ticketUrl} target="_blank" rel="noopener noreferrer" className="block w-full rounded-full bg-purple-600 py-4 text-center font-bold text-white">KOPIS 공식 정보 확인</a>
               </div>
