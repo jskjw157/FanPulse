@@ -80,10 +80,10 @@ export default function ConcertDetailPage() {
                 <h2 className="font-bold text-gray-900">공연 정보</h2>
                 <dl className="mt-4 space-y-3 text-sm">
                   <div><dt className="text-gray-500">기간</dt><dd className="mt-1 text-gray-900">{formatDateRange(concert.startDate, concert.endDate)}</dd></div>
-                  {concert.performanceTime && <div><dt className="text-gray-500">시간</dt><dd className="mt-1 text-gray-900">{concert.performanceTime}</dd></div>}
+                  {concert.performanceTime && <div><dt className="text-gray-500">시간</dt><dd className="mt-1 text-gray-900 whitespace-pre-line">{concert.performanceTime}</dd></div>}
                   {concert.venue && <div><dt className="text-gray-500">장소</dt><dd className="mt-1 text-gray-900">{concert.venue}</dd></div>}
                   {concert.venueAddress && <div><dt className="text-gray-500">주소</dt><dd className="mt-1 text-gray-900">{concert.venueAddress}</dd></div>}
-                  <div><dt className="text-gray-500">가격</dt><dd className="mt-1 text-gray-900">{concert.priceText ?? "가격 정보 없음"}</dd></div>
+                  <div><dt className="text-gray-500">가격</dt><dd className="mt-1 text-gray-900 whitespace-pre-line">{concert.priceText ?? "가격 정보 없음"}</dd></div>
                   {concert.runtime && <div><dt className="text-gray-500">관람시간</dt><dd className="mt-1 text-gray-900">{concert.runtime}</dd></div>}
                   {concert.ageRating && <div><dt className="text-gray-500">관람연령</dt><dd className="mt-1 text-gray-900">{concert.ageRating}</dd></div>}
                   {concert.performers && <div><dt className="text-gray-500">출연진</dt><dd className="mt-1 text-gray-900">{concert.performers}</dd></div>}

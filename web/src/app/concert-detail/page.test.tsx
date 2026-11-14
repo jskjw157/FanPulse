@@ -28,9 +28,37 @@ describe('ConcertDetailPage', () => {
     render(<ConcertDetailPage />);
     expect(await screen.findByText(concert.title)).toBeInTheDocument();
     expect(screen.getByText(concert.priceText)).toBeInTheDocument();
+    expect(screen.getByText(concert.performanceTime)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'KOPIS 공식 정보 확인' }))
       .toHaveAttribute('href', concert.ticketUrl);
     expect(screen.queryByText('VIP석')).not.toBeInTheDocument();
+  });
+
+  it('preserves readable lines in normalized KOPIS prices and performance times', async () => {
+    const priceText = '시즌권 80,000원\n일반권 30,000원';
+    const performanceTime = '토요일(18:00)\n일요일(14:00)';
+    vi.mocked(fetchConcert).mockResolvedValue({ ...concert, priceText, performanceTime });
+    render(<ConcertDetailPage />);
+
+    for (const text of [priceText, performanceTime]) {
+      const value = await screen.findByText(text, { normalizer: (text) => text });
+      expect(value.textContent).toBe(text);
+      expect(value).toHaveClass('whitespace-pre-line');
+      expect(value.querySelector('br')).toBeNull();
+    }
+  });
+
+  it('keeps malicious price and performance time HTML inert instead of creating elements', async () => {
+    const priceText = '<img src=x onerror="alert(1)"><script>alert(2)</script>\n일반권 30,000원';
+    const performanceTime = '<svg onload="alert(3)"></svg>\n<br onclick="alert(4)">토요일(18:00)';
+    vi.mocked(fetchConcert).mockResolvedValue({ ...concert, priceText, performanceTime });
+    render(<ConcertDetailPage />);
+
+    for (const text of [priceText, performanceTime]) {
+      const value = await screen.findByText(text, { normalizer: (text) => text });
+      expect(value.textContent).toBe(text);
+      expect(value.children).toHaveLength(0);
+    }
   });
 
   it('never renders detail state that belongs to a previous UUID', async () => {

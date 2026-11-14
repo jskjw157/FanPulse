@@ -32,7 +32,7 @@ const page = {
 };
 
 describe('concert API contract', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   it('maps a strict upcoming concert page', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: page } });
@@ -65,6 +65,52 @@ describe('concert API contract', () => {
   it('loads a strict concert detail by UUID', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: dto } });
     await expect(fetchConcert(dto.id)).resolves.toMatchObject({ id: dto.id, title: dto.name });
+  });
+
+  it.each(['<br>', '<br/>', '<br />', '<BR>', '<BR/>', '<Br />', '<br   />', '<br\t/>'])(
+    'normalizes every bare %s in list and detail prices and performance times',
+    async (lineBreak) => {
+      const source = {
+        ...dto,
+        priceText: `시즌권 80,000원${lineBreak}일반권 30,000원${lineBreak}학생권 20,000원`,
+        performanceTime: `토요일(18:00)${lineBreak}일요일(14:00)${lineBreak}공휴일(14:00)`,
+      };
+      vi.mocked(apiClient.get)
+        .mockResolvedValueOnce({ data: { success: true, data: { ...page, content: [source] } } })
+        .mockResolvedValueOnce({ data: { success: true, data: source } });
+
+      const expected = {
+        priceText: '시즌권 80,000원\n일반권 30,000원\n학생권 20,000원',
+        performanceTime: '토요일(18:00)\n일요일(14:00)\n공휴일(14:00)',
+      };
+      await expect(fetchConcerts()).resolves.toMatchObject({ items: [expected] });
+      await expect(fetchConcert(dto.id)).resolves.toMatchObject(expected);
+      expect(source.priceText).toContain(lineBreak);
+      expect(source.performanceTime).toContain(lineBreak);
+    },
+  );
+
+  it.each([
+    { name: 'untagged text', priceText: dto.priceText, performanceTime: dto.performanceTime },
+    {
+      name: 'existing newlines',
+      priceText: '시즌권 80,000원\n일반권 30,000원',
+      performanceTime: '토요일(18:00)\n일요일(14:00)',
+    },
+    { name: 'nulls', priceText: null, performanceTime: null },
+    {
+      name: 'non-break HTML, attributed breaks, and encoded tags',
+      priceText: '<img src=x onerror="alert(1)"><script>alert(2)</script><br onclick="alert(3)">',
+      performanceTime: '<svg onload="alert(4)"></svg>&lt;br&gt;<strong>토요일(18:00)</strong>',
+    },
+  ])('preserves $name as plain text in both API mappings', async ({ priceText, performanceTime }) => {
+    const source = { ...dto, priceText, performanceTime };
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce({ data: { success: true, data: { ...page, content: [source] } } })
+      .mockResolvedValueOnce({ data: { success: true, data: source } });
+
+    await expect(fetchConcerts()).resolves.toMatchObject({ items: [{ priceText, performanceTime }] });
+    await expect(fetchConcert(dto.id)).resolves.toMatchObject({ priceText, performanceTime });
   });
 
   it('accepts ongoing concerts in page and detail contracts', async () => {

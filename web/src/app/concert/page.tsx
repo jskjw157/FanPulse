@@ -91,7 +91,7 @@ export default function ConcertPage() {
                       <dl className="mt-4 space-y-2 text-sm text-gray-600">
                         <div className="flex gap-2"><dt><i className="ri-calendar-line" /></dt><dd>{formatDateRange(concert.startDate, concert.endDate)}</dd></div>
                         {concert.venue && <div className="flex gap-2"><dt><i className="ri-map-pin-line" /></dt><dd>{concert.venue}</dd></div>}
-                        <div className="flex gap-2"><dt><i className="ri-ticket-line" /></dt><dd>{concert.priceText ?? "가격 정보 없음"}</dd></div>
+                        <div className="flex gap-2"><dt><i className="ri-ticket-line" /></dt><dd className="whitespace-pre-line">{concert.priceText ?? "가격 정보 없음"}</dd></div>
                       </dl>
                       <Link aria-label={`${concert.title} 상세 보기`} href={`/concert-detail?id=${concert.id}`} className="mt-5 block w-full text-center bg-purple-600 text-white font-medium py-3 rounded-full">상세 보기</Link>
                     </div>
