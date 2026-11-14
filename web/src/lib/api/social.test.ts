@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/api-client', () => ({ apiClient: { get: vi.fn(), post: vi.fn(), delete: vi.fn(), patch: vi.fn() } }));
+vi.mock('@/lib/api-client', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/api-client')>(),
+  apiClient: { get: vi.fn(), post: vi.fn(), delete: vi.fn(), patch: vi.fn() },
+}));
 
 import { apiClient } from '@/lib/api-client';
 import { addFavorite, fetchFavorites, removeFavorite, fetchNotifications, markAllNotificationsRead,
@@ -92,7 +95,7 @@ describe('social API', () => {
       data: { success: true, data: { updated: 2 } },
     });
     await expect(markAllNotificationsRead()).resolves.toBe(2);
-    expect(apiClient.patch).toHaveBeenCalledWith('/users/me/notifications/read-all');
+    expect(apiClient.patch).toHaveBeenCalledWith('/users/me/notifications/read-all', undefined, {});
   });
 
   it('rejects malformed mark-all payloads', async () => {
@@ -141,7 +144,26 @@ describe('social API', () => {
     const read = { ...notification, isRead: true, targetType: 'POST', targetId: favorite.id, targetAvailable: false };
     vi.mocked(apiClient.patch).mockResolvedValue({ data: { success: true, data: read } });
     await expect(markNotificationRead(notification.id)).resolves.toEqual(read);
-    expect(apiClient.patch).toHaveBeenCalledWith(`/users/me/notifications/${notification.id}/read`);
+    expect(apiClient.patch).toHaveBeenCalledWith(`/users/me/notifications/${notification.id}/read`, undefined, {});
+  });
+
+  it('binds notification pages counts and writes to the displayed account', async () => {
+    const headers = { 'X-Expected-User-Id': favorite.id };
+    const page = { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0, last: true, unreadCount: 0 };
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: { success: true, data: page } })
+      .mockResolvedValueOnce({ data: { success: true, data: { unreadCount: 0 } } });
+    await fetchNotificationPage(false, 0, 20, undefined, favorite.id);
+    expect(apiClient.get).toHaveBeenLastCalledWith('/users/me/notifications/page', {
+      params: { unreadOnly: false, page: 0, size: 20 }, signal: undefined, headers,
+    });
+    await fetchNotificationUnreadCount(undefined, favorite.id);
+    expect(apiClient.get).toHaveBeenLastCalledWith('/users/me/notifications/unread-count', { signal: undefined, headers });
+    vi.mocked(apiClient.patch).mockResolvedValueOnce({ data: { success: true, data: { updated: 0 } } })
+      .mockResolvedValueOnce({ data: { success: true, data: { ...notification, isRead: true } } });
+    await markAllNotificationsRead(favorite.id);
+    expect(apiClient.patch).toHaveBeenLastCalledWith('/users/me/notifications/read-all', undefined, { headers });
+    await markNotificationRead(notification.id, favorite.id);
+    expect(apiClient.patch).toHaveBeenLastCalledWith(`/users/me/notifications/${notification.id}/read`, undefined, { headers });
   });
 
   it.each([{ ...notification }, { ...notification, id: favorite.id, isRead: true }])(

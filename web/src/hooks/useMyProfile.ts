@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { fetchMyProfile, type UserProfile } from '@/lib/api/user';
 import type { AsyncState } from '@/types/common';
 
@@ -12,44 +13,47 @@ interface UseMyProfileReturn {
 }
 
 export function useMyProfile(): UseMyProfileReturn {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [state, setState] = useState<AsyncState>('loading');
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchProfile = useCallback((signal?: AbortSignal) =>
-    fetchMyProfile(signal).then(
-      (data) => {
-        if (signal?.aborted) return;
-        setProfile(data);
-        setState('success');
-      },
-      () => {
-        if (signal?.aborted) return;
-        setError('프로필을 불러올 수 없습니다');
-        setState('error');
-      }
-    ), []);
+  const { user, isLoading, sessionVersion } = useAuth();
+  const userId = isLoading ? undefined : user?.id;
+  const scope = useMemo(() => ({ userId, sessionVersion }), [userId, sessionVersion]);
+  const request = useRef<AbortController | null>(null);
+  const [snapshot, setSnapshot] = useState<{
+    scope: typeof scope; profile: UserProfile | null; state: AsyncState; error: string | null;
+  }>({ scope, profile: null, state: 'loading', error: null });
 
   const refresh = useCallback(async () => {
-    setProfile(null);
-    setState('loading');
-    setError(null);
-    await fetchProfile();
-  }, [fetchProfile]);
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
+    setSnapshot({ scope, profile: null, state: 'loading', error: null });
+    if (!userId) return;
+    try {
+      const profile = await fetchMyProfile(controller.signal, userId);
+      if (controller.signal.aborted) return;
+      if (profile.id !== userId) throw new Error('Profile user mismatch');
+      setSnapshot({ scope, profile, state: 'success', error: null });
+    } catch {
+      if (!controller.signal.aborted) {
+        setSnapshot({ scope, profile: null, state: 'error', error: '프로필을 불러올 수 없습니다' });
+      }
+    }
+  }, [scope, userId]);
 
   useEffect(() => {
-    const abortController = new AbortController();
-    void fetchProfile(abortController.signal);
-
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void refresh();
+    });
     return () => {
-      abortController.abort();
+      active = false;
+      request.current?.abort();
     };
-  }, [fetchProfile]);
+  }, [refresh]);
 
   return {
-    profile,
-    state,
-    error,
+    profile: snapshot.scope === scope && userId ? snapshot.profile : null,
+    state: snapshot.scope === scope && userId ? snapshot.state : 'loading',
+    error: snapshot.scope === scope && userId ? snapshot.error : null,
     refresh,
   };
 }

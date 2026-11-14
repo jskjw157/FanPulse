@@ -11,10 +11,11 @@ import { useMyProfile } from "@/hooks/useMyProfile";
 import Link from "next/link";
 
 export default function MyPage() {
-  const { logout, user: authUser } = useAuth();
+  const { logout, user: authUser, sessionVersion } = useAuth();
   const { profile, state, error, refresh } = useMyProfile();
   const { t } = useTranslation();
   const [savedForUser, setSavedForUser] = useState<string | null>(null);
+  const scope = `${authUser?.id}:${sessionVersion}`;
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutFailed, setLogoutFailed] = useState(false);
 
@@ -30,6 +31,7 @@ export default function MyPage() {
       setIsLoggingOut(false);
     }
   }
+
 
   const menuItems = [
     { icon: "ri-settings-3-line", label: t("settings.title"), link: "/settings" },
@@ -93,8 +95,8 @@ export default function MyPage() {
               </div>
             </div>
             {state === "success" && profile && (
-              <ProfileEditor key={authUser?.id} username={profile.username ?? ""} onSaved={() => {
-                setSavedForUser(authUser?.id ?? null);
+              <ProfileEditor key={scope} username={profile.username ?? ""} onSaved={() => {
+                setSavedForUser(scope);
                 void refresh();
               }} />
             )}
@@ -102,7 +104,7 @@ export default function MyPage() {
         </div>
 
         <div className="max-w-4xl mx-auto px-4 mt-4">
-          {savedForUser && savedForUser === authUser?.id && (
+          {savedForUser && savedForUser === scope && (
             <p role="status" className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-800">{t("profile.saved")}</p>
           )}
           {/* Menu List */}

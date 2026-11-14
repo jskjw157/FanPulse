@@ -35,7 +35,7 @@ describe('useNotifications', () => {
     await waitFor(() => expect(result.current.state).toBe('success'));
     expect(result.current.unreadCount).toBe(17);
     await act(() => result.current.goToPage(1));
-    expect(fetchNotificationPage).toHaveBeenLastCalledWith(false, 1, 20, expect.any(AbortSignal));
+    expect(fetchNotificationPage).toHaveBeenLastCalledWith(false, 1, 20, expect.any(AbortSignal), 'user-a');
   });
 
   it('resets the page when the unread filter changes and ignores late responses', async () => {
@@ -46,7 +46,7 @@ describe('useNotifications', () => {
     await waitFor(() => expect(result.current.state).toBe('success'));
     await act(async () => { late.resolve(page); });
     expect(result.current.notifications).toEqual([]);
-    expect(fetchNotificationPage).toHaveBeenLastCalledWith(true, 0, 20, expect.any(AbortSignal));
+    expect(fetchNotificationPage).toHaveBeenLastCalledWith(true, 0, 20, expect.any(AbortSignal), 'user-a');
   });
 
   it('marks all visible rows read only after API success and clears the account count', async () => {
@@ -70,7 +70,7 @@ describe('useNotifications', () => {
     await act(() => result.current.markAllRead());
     expect(result.current.notifications).toEqual([]);
     expect(result.current.page).toBe(0);
-    expect(fetchNotificationPage).toHaveBeenLastCalledWith(true, 0, 20, expect.any(AbortSignal));
+    expect(fetchNotificationPage).toHaveBeenLastCalledWith(true, 0, 20, expect.any(AbortSignal), 'user-a');
   });
 
   it('clears account rows synchronously and ignores A -> B -> A responses', async () => {
@@ -124,7 +124,7 @@ describe('useNotifications', () => {
     expect(result.current.readingId).toBeNull();
     let secondAction!: ReturnType<typeof result.current.markRead>;
     act(() => { secondAction = result.current.markRead(second.id); });
-    expect(vi.mocked(markNotificationRead).mock.calls).toEqual([[notification.id], [second.id]]);
+    expect(vi.mocked(markNotificationRead).mock.calls).toEqual([[notification.id, 'user-a'], [second.id, 'user-a']]);
 
     // A's stale completion emits the real reloadList event; no event is injected here.
     await act(async () => {
@@ -154,7 +154,7 @@ describe('useNotifications', () => {
     expect(result.current.mutationError).toBe(outcome === 'success' ? null : '알림 읽음 처리에 실패했습니다');
     expect(result.current.notice).toBeNull();
     expect(fetchNotificationPage).toHaveBeenCalledTimes(3);
-    expect(fetchNotificationPage).toHaveBeenLastCalledWith(false, 0, 20, expect.any(AbortSignal));
+    expect(fetchNotificationPage).toHaveBeenLastCalledWith(false, 0, 20, expect.any(AbortSignal), 'user-a');
   });
 
   it.each(['individual', 'all'])('coalesces matching reload invalidations while an %s read is pending', async (kind) => {
@@ -295,7 +295,7 @@ describe('useNotifications', () => {
     vi.mocked(fetchNotificationPage).mockResolvedValue(empty);
     await act(() => result.current.markRead(notification.id));
     expect(result.current.notifications).toEqual([]);
-    expect(fetchNotificationPage).toHaveBeenLastCalledWith(true, 0, 20, expect.any(AbortSignal));
+    expect(fetchNotificationPage).toHaveBeenLastCalledWith(true, 0, 20, expect.any(AbortSignal), 'user-a');
   });
 
   it.each(['individual', 'all'])('preserves unread rows and exposes a handled %s read failure', async (kind) => {
@@ -325,6 +325,28 @@ describe('useNotifications', () => {
     await act(() => result.current.goToPage(1));
     expect(result.current.page).toBe(0);
     expect(result.current.notifications).toEqual([]);
-    expect(fetchNotificationPage).toHaveBeenLastCalledWith(true, 0, 20, expect.any(AbortSignal));
+    expect(fetchNotificationPage).toHaveBeenLastCalledWith(true, 0, 20, expect.any(AbortSignal), 'user-a');
+  });
+
+  it('drops visible rows and pending navigation even when revalidation returns the same user ID', async () => {
+    const late = deferred<typeof notification>();
+    const next = deferred<NotificationPage>();
+    vi.mocked(markNotificationRead).mockReturnValueOnce(late.promise);
+    const { result, rerender } = renderHook(({ version }) => useNotifications(false, 'user-a', version), {
+      initialProps: { version: 1 },
+    });
+    await waitFor(() => expect(result.current.state).toBe('success'));
+    let action!: ReturnType<typeof result.current.markRead>;
+    act(() => { action = result.current.markRead(notification.id); });
+    expect(markNotificationRead).toHaveBeenCalledWith(notification.id, 'user-a');
+    vi.mocked(fetchNotificationPage).mockReturnValue(next.promise);
+    rerender({ version: 2 });
+    expect(result.current.notifications).toEqual([]);
+    let returned;
+    await act(async () => { late.resolve({ ...notification, isRead: true }); returned = await action; });
+    expect(returned).toBeNull();
+    expect(result.current.notifications).toEqual([]);
+    await act(async () => { next.resolve(empty); });
+    expect(result.current.unreadCount).toBe(0);
   });
 });

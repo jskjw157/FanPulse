@@ -68,6 +68,21 @@ describe("AuthGuard login return destinations", () => {
     expect(nav.router.replace).toHaveBeenCalledWith("/login?redirect=%2Fpost-detail%3Fid%3Dpost-123");
   });
 
+  it("keeps the public sign-in mounted during session revalidation", () => {
+    setReturnTo("/login?redirect=%2Fsettings");
+    const view = render(<AuthGuard><button>Continue sign-in</button></AuthGuard>);
+    const signIn = screen.getByRole("button", { name: "Continue sign-in" });
+    auth.isLoading = true;
+    view.rerender(<AuthGuard><button>Continue sign-in</button></AuthGuard>);
+    expect(signIn).toBeVisible();
+    expect(screen.getByRole("button", { name: "Continue sign-in" })).toBe(signIn);
+    expect(nav.router.replace).not.toHaveBeenCalled();
+    auth.isLoading = false;
+    auth.isAuthenticated = true;
+    view.rerender(<AuthGuard><button>Continue sign-in</button></AuthGuard>);
+    expect(signIn).toBeVisible();
+  });
+
   it("keeps authenticated content and never redirects it", () => {
     setReturnTo("/settings");
     auth.isAuthenticated = true;

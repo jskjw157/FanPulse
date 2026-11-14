@@ -4,7 +4,7 @@ import Header from './Header';
 import { fetchNotificationUnreadCount } from '@/lib/api/social';
 import { notifyUnreadCountChanged } from '@/hooks/useNotificationUnreadCount';
 
-const auth = vi.hoisted(() => ({ user: { id: 'account-a' } as { id: string } | null }));
+const auth = vi.hoisted(() => ({ user: { id: 'account-a' } as { id: string } | null, isLoading: false, sessionVersion: 0 }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => auth }));
 vi.mock('@/lib/api/social', () => ({ fetchNotificationUnreadCount: vi.fn() }));
 
@@ -12,6 +12,8 @@ describe('Header notification badge', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     auth.user = { id: 'account-a' };
+    auth.isLoading = false;
+    auth.sessionVersion = 0;
     vi.mocked(fetchNotificationUnreadCount).mockResolvedValue(27);
   });
 
@@ -34,12 +36,21 @@ describe('Header notification badge', () => {
     expect(await screen.findByRole('link', { name: '알림, 읽지 않은 알림 125개' })).toHaveTextContent('99+');
   });
 
-  it('does not fabricate a zero when unread count loading fails and retries on focus', async () => {
+  it('waits for identity revalidation instead of fetching a possibly different cookie user on focus', async () => {
     vi.mocked(fetchNotificationUnreadCount).mockRejectedValueOnce(new Error('offline'));
-    render(<Header onMenuClick={vi.fn()} />);
+    const { rerender } = render(<Header onMenuClick={vi.fn()} />);
     expect((await screen.findByRole('link', { name: '알림 (읽지 않은 알림 수 확인 불가)' })).textContent).toBe('');
     act(() => { window.dispatchEvent(new Event('focus')); });
+    expect(fetchNotificationUnreadCount).toHaveBeenCalledTimes(1);
+    auth.isLoading = true;
+    auth.sessionVersion++;
+    rerender(<Header onMenuClick={vi.fn()} />);
+    expect(screen.getByRole('link', { name: '알림' }).textContent).toBe('');
+    expect(fetchNotificationUnreadCount).toHaveBeenCalledTimes(1);
+    auth.isLoading = false;
+    rerender(<Header onMenuClick={vi.fn()} />);
     expect(await screen.findByRole('link', { name: '알림, 읽지 않은 알림 27개' })).toBeInTheDocument();
+    expect(fetchNotificationUnreadCount).toHaveBeenLastCalledWith(expect.any(AbortSignal), 'account-a');
   });
 
   it('refreshes after successful read events and ignores a late previous count', async () => {

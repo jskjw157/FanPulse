@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/api-client', () => ({ apiClient: { get: vi.fn() } }));
+vi.mock('@/lib/api-client', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/api-client')>(),
+  apiClient: { get: vi.fn(), patch: vi.fn() },
+}));
 
 import { apiClient } from '@/lib/api-client';
-import { fetchMyProfile } from './user';
+import { fetchMyProfile, updateMyLanguage, updateMyProfile } from './user';
 
 const profile = {
   id: '11111111-1111-1111-1111-111111111111',
@@ -49,5 +52,29 @@ describe('fetchMyProfile', () => {
     vi.mocked(apiClient.get).mockRejectedValue(new Error('network failure'));
 
     await expect(fetchMyProfile()).rejects.toThrow('network failure');
+  });
+
+  it('asserts the displayed identity on reads and both browser writes', async () => {
+    const signal = new AbortController().signal;
+    const headers = { 'X-Expected-User-Id': profile.id };
+    vi.mocked(apiClient.get).mockResolvedValue({ data: profile });
+    vi.mocked(apiClient.patch).mockResolvedValueOnce({ data: profile }).mockResolvedValueOnce({ data: { language: 'ko' } });
+    await fetchMyProfile(signal, profile.id);
+    expect(apiClient.get).toHaveBeenLastCalledWith('/me', { signal, headers });
+    await updateMyProfile('New_name', profile.id, signal);
+    expect(apiClient.patch).toHaveBeenLastCalledWith('/me', { username: 'New_name' }, { signal, headers });
+    await updateMyLanguage('ko', profile.id, signal);
+    expect(apiClient.patch).toHaveBeenLastCalledWith('/me/settings', { language: 'ko' }, { signal, headers });
+  });
+
+  it('does not send a browser write without an expected identity', async () => {
+    await expect(updateMyProfile('New_name', '')).rejects.toThrow('Expected user is required');
+    await expect(updateMyLanguage('en', '')).rejects.toThrow('Expected user is required');
+    expect(apiClient.patch).not.toHaveBeenCalled();
+  });
+
+  it('rejects a profile belonging to another cookie principal', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { ...profile, id: '22222222-2222-4222-8222-222222222222' } });
+    await expect(fetchMyProfile(undefined, profile.id)).rejects.toThrow('Profile user mismatch');
   });
 });

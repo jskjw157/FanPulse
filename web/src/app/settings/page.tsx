@@ -70,7 +70,7 @@ function LanguageSettings() {
 }
 
 export default function SettingsPage() {
-  const { logout, user } = useAuth();
+  const { logout, user, sessionVersion } = useAuth();
   const { t } = useTranslation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutFailed, setLogoutFailed] = useState(false);
@@ -121,7 +121,7 @@ export default function SettingsPage() {
             <p role="alert" className="mt-2 text-sm text-red-700">{t("settings.logoutFailed")}</p>
           )}
 
-          <LanguageSettings key={user?.id} />
+          <LanguageSettings key={`${user?.id}:${sessionVersion}`} />
 
           {/* App Info Section */}
           <div className="py-4">

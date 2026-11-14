@@ -1,9 +1,12 @@
 package com.fanpulse.interfaces.rest.social
 
 import com.fanpulse.application.service.social.FavoriteArtistResponse
+import com.fanpulse.application.service.social.NotificationPageResponse
 import com.fanpulse.application.service.social.NotificationResponse
 import com.fanpulse.application.service.social.SocialUserService
 import com.fanpulse.interfaces.rest.common.ApiResponse
+import com.fanpulse.interfaces.rest.identity.requireExpectedUser
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -47,8 +50,12 @@ class SocialUserController(private val service: SocialUserService) {
     @GetMapping("/notifications")
     fun notifications(
         @RequestAttribute("userId") userId: UUID,
-        @RequestParam(defaultValue = "false") unreadOnly: Boolean
-    ) = ResponseEntity.ok(ApiResponse.success(service.getNotifications(userId, unreadOnly)))
+        @RequestParam(defaultValue = "false") unreadOnly: Boolean,
+        request: HttpServletRequest
+    ): ResponseEntity<ApiResponse<List<NotificationResponse>>> {
+        requireExpectedUser(request, userId)
+        return ResponseEntity.ok(ApiResponse.success(service.getNotifications(userId, unreadOnly)))
+    }
 
     // Keep the legacy array endpoint intact for existing web/mobile clients.
     @GetMapping("/notifications/page")
@@ -56,21 +63,32 @@ class SocialUserController(private val service: SocialUserService) {
         @RequestAttribute("userId") userId: UUID,
         @RequestParam(defaultValue = "false") unreadOnly: Boolean,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int
-    ) = ResponseEntity.ok(ApiResponse.success(service.getNotificationPage(userId, unreadOnly, page, size)))
+        @RequestParam(defaultValue = "20") size: Int,
+        request: HttpServletRequest
+    ): ResponseEntity<ApiResponse<NotificationPageResponse>> {
+        requireExpectedUser(request, userId)
+        return ResponseEntity.ok(ApiResponse.success(service.getNotificationPage(userId, unreadOnly, page, size)))
+    }
 
     @GetMapping("/notifications/unread-count")
-    fun unreadCount(@RequestAttribute("userId") userId: UUID) =
-        ResponseEntity.ok(ApiResponse.success(mapOf("unreadCount" to service.getUnreadNotificationCount(userId))))
+    fun unreadCount(@RequestAttribute("userId") userId: UUID, request: HttpServletRequest): ResponseEntity<ApiResponse<Map<String, Long>>> {
+        requireExpectedUser(request, userId)
+        return ResponseEntity.ok(ApiResponse.success(mapOf("unreadCount" to service.getUnreadNotificationCount(userId))))
+    }
 
     @PatchMapping("/notifications/{notificationId}/read")
     fun readNotification(
         @RequestAttribute("userId") userId: UUID,
-        @PathVariable notificationId: UUID
-    ): ResponseEntity<ApiResponse<NotificationResponse>> =
-        ResponseEntity.ok(ApiResponse.success(service.markNotificationRead(userId, notificationId)))
+        @PathVariable notificationId: UUID,
+        request: HttpServletRequest
+    ): ResponseEntity<ApiResponse<NotificationResponse>> {
+        requireExpectedUser(request, userId)
+        return ResponseEntity.ok(ApiResponse.success(service.markNotificationRead(userId, notificationId)))
+    }
 
     @PatchMapping("/notifications/read-all")
-    fun readAll(@RequestAttribute("userId") userId: UUID) =
-        ResponseEntity.ok(ApiResponse.success(mapOf("updated" to service.markAllNotificationsRead(userId))))
+    fun readAll(@RequestAttribute("userId") userId: UUID, request: HttpServletRequest): ResponseEntity<ApiResponse<Map<String, Int>>> {
+        requireExpectedUser(request, userId)
+        return ResponseEntity.ok(ApiResponse.success(mapOf("updated" to service.markAllNotificationsRead(userId))))
+    }
 }

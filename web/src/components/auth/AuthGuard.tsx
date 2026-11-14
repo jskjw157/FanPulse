@@ -26,8 +26,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, isLoading, isPublicPath, pathname, router]);
 
-  // 로딩 중
-  if (isLoading) {
+  // Revalidation must hide private content without unmounting an active public login.
+  if (isLoading && !isPublicPath) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-pink-600">
         <div className="flex flex-col items-center gap-4">
