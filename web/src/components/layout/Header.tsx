@@ -47,7 +47,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
-            <Link href="/search" className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100">
+            <Link href="/search" aria-label="검색" className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100">
               <i className="ri-search-line text-xl text-gray-700"></i>
             </Link>
             <Link href="/notifications" aria-label={notificationLabel} title={notificationLabel} className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 relative">
@@ -60,6 +60,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
               <i className="ri-user-line text-xl text-gray-700"></i>
             </Link>
             <button 
+              type="button"
+              aria-label="메뉴 열기"
               onClick={onMenuClick}
               className="w-9 h-9 flex items-center justify-center lg:hidden"
             >
