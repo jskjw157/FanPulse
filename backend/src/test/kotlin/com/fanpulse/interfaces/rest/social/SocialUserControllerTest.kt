@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.context.annotation.Import
+import org.springframework.http.HttpHeaders
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
@@ -154,22 +155,40 @@ class SocialUserControllerTest {
     }
 
     @Test
-    fun `rejects unauthenticated access`() {
+    fun `rejects unauthenticated access with 401 Bearer`() {
         mockMvc.get("/api/v1/users/me/favorites")
-            .andExpect { status { isForbidden() } }
+            .andExpect {
+                status { isUnauthorized() }
+                header { string(HttpHeaders.WWW_AUTHENTICATE, "Bearer") }
+            }
         mockMvc.post("/api/v1/users/me/favorites/$artistId")
-            .andExpect { status { isForbidden() } }
+            .andExpect {
+                status { isUnauthorized() }
+                header { string(HttpHeaders.WWW_AUTHENTICATE, "Bearer") }
+            }
         mockMvc.delete("/api/v1/users/me/favorites/$artistId")
-            .andExpect { status { isForbidden() } }
+            .andExpect {
+                status { isUnauthorized() }
+                header { string(HttpHeaders.WWW_AUTHENTICATE, "Bearer") }
+            }
         verify(exactly = 0) { service.getFavorites(any()) }
         verify(exactly = 0) { service.addFavorite(any(), any()) }
         verify(exactly = 0) { service.removeFavorite(any(), any()) }
         mockMvc.get("/api/v1/users/me/notifications/page")
-            .andExpect { status { isForbidden() } }
+            .andExpect {
+                status { isUnauthorized() }
+                header { string(HttpHeaders.WWW_AUTHENTICATE, "Bearer") }
+            }
         mockMvc.get("/api/v1/users/me/notifications/unread-count")
-            .andExpect { status { isForbidden() } }
+            .andExpect {
+                status { isUnauthorized() }
+                header { string(HttpHeaders.WWW_AUTHENTICATE, "Bearer") }
+            }
         mockMvc.patch("/api/v1/users/me/notifications/$notificationId/read")
-            .andExpect { status { isForbidden() } }
+            .andExpect {
+                status { isUnauthorized() }
+                header { string(HttpHeaders.WWW_AUTHENTICATE, "Bearer") }
+            }
     }
 
     private fun favorite() = FavoriteArtistResponse(

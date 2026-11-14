@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.context.annotation.Import
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
@@ -167,9 +168,9 @@ class CommentControllerTest {
         }
 
         @Test
-        @DisplayName("인증되지 않은 요청은 403을 반환해야 한다")
-        fun `should return 403 when not authenticated`() {
-            // Spring Security JWT stateless: 인증 없이 보호된 엔드포인트 접근 시 403
+        @DisplayName("인증되지 않은 요청은 401과 Bearer 인증 챌린지를 반환해야 한다")
+        fun `should return 401 Bearer when not authenticated`() {
+            // Protected APIs use 401/Bearer so the web's 401-only session refresh can recover.
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
                 content = """
@@ -179,7 +180,8 @@ class CommentControllerTest {
                     }
                 """.trimIndent()
             }.andExpect {
-                status { isForbidden() }
+                status { isUnauthorized() }
+                header { string(HttpHeaders.WWW_AUTHENTICATE, "Bearer") }
             }
         }
 
