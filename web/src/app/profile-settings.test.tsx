@@ -8,8 +8,8 @@ import i18n from '@/i18n';
 import MyPage from './mypage/page';
 import SettingsPage from './settings/page';
 
-const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: pushMock, back: vi.fn() }) }));
+const { pushMock, replaceMock } = vi.hoisted(() => ({ pushMock: vi.fn(), replaceMock: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: pushMock, replace: replaceMock, back: vi.fn() }) }));
 
 const alice = { id: '11111111-1111-4111-8111-111111111111', email: 'alice@example.com', username: 'Alice_1', hasPassword: false, createdAt: '2026-01-01T00:00:00Z' };
 const bob = { ...alice, id: '22222222-2222-4222-8222-222222222222', email: 'bob@example.com', username: 'Bob_2' };
@@ -66,6 +66,7 @@ beforeEach(async () => {
   logoutGate = null;
   failLogout = null;
   pushMock.mockClear();
+  replaceMock.mockClear();
   await i18n.changeLanguage('ko');
   apiClient.defaults.adapter = async (config) => {
     const user = current;
@@ -110,6 +111,7 @@ beforeEach(async () => {
 afterEach(() => {
   cleanup();
   apiClient.defaults.adapter = originalAdapter;
+  expect(pushMock).not.toHaveBeenCalled();
 });
 
 async function editNickname(value: string) {
@@ -174,14 +176,14 @@ describe('Logout session outcome', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('세션이 유지될 수 있습니다');
     expect(screen.getByLabelText('auth username')).toHaveTextContent(alice.username);
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeEnabled();
-    expect(pushMock).not.toHaveBeenCalled();
+    expect(replaceMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Refresh session' }));
     await waitFor(() => expect(screen.getByLabelText('auth username')).toHaveTextContent(alice.username));
     failLogout = null;
     fireEvent.click(screen.getByRole('button', { name: '로그아웃' }));
     await waitFor(() => expect(screen.getByLabelText('auth username')).toHaveTextContent('signed out'));
     expect(current).toBeNull();
-    expect(pushMock).toHaveBeenCalledWith('/login');
+    expect(replaceMock).toHaveBeenCalledWith('/login');
   });
 
   it('does not claim logout while the server request is pending', async () => {
@@ -192,11 +194,11 @@ describe('Logout session outcome', () => {
     fireEvent.click(screen.getByRole('button', { name: '로그아웃' }));
     expect(screen.getByRole('button', { name: '로그아웃 중…' })).toBeDisabled();
     expect(screen.getByLabelText('auth username')).toHaveTextContent(alice.username);
-    expect(pushMock).not.toHaveBeenCalled();
+    expect(replaceMock).not.toHaveBeenCalled();
     await act(async () => gate.resolve());
     await waitFor(() => expect(screen.getByLabelText('auth username')).toHaveTextContent('signed out'));
     expect(current).toBeNull();
-    expect(pushMock).toHaveBeenCalledWith('/login');
+    expect(replaceMock).toHaveBeenCalledWith('/login');
   });
 });
 

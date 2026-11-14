@@ -2,13 +2,15 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import { SAFE_LOGIN_RETURNS, UNSAFE_LOGIN_RETURNS } from '@/lib/login-redirect.fixtures'
 
-const { pushMock } = vi.hoisted(() => ({
+const { pushMock, replaceMock } = vi.hoisted(() => ({
   pushMock: vi.fn(),
+  replaceMock: vi.fn(),
 }))
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: pushMock,
+    replace: replaceMock,
   }),
 }))
 
@@ -26,6 +28,7 @@ import LoginPage from './page'
 describe('LoginPage', () => {
   beforeEach(() => {
     pushMock.mockClear()
+    replaceMock.mockClear()
     vi.stubEnv('NEXT_PUBLIC_GOOGLE_CLIENT_ID', '')
   })
 
@@ -57,6 +60,7 @@ describe('LoginPage', () => {
     render(<LoginPage />)
     expect(screen.queryByText('둘러보기')).not.toBeInTheDocument()
     expect(pushMock).not.toHaveBeenCalled()
+    expect(replaceMock).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -76,7 +80,8 @@ describe('LoginPage', () => {
       render(<LoginPage />)
       await waitFor(() => expect(initialize).toHaveBeenCalled())
       await act(async () => { await callback({ credential: 'test-token' }) })
-      expect(pushMock).toHaveBeenCalledWith(expected)
+      expect(replaceMock).toHaveBeenCalledExactlyOnceWith(expected)
+      expect(pushMock).not.toHaveBeenCalled()
     } finally {
       script.remove()
       delete window.google

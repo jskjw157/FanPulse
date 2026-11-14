@@ -21,7 +21,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!isLoading && !isAuthenticated && !isPublicPath) {
       // Read the query in the effect: useSearchParams here would make the root
       // layout require a Suspense boundary even for otherwise static pages.
-      router.push(buildLoginUrl(`${pathname}${window.location.search}`));
+      // The blocked page and login are one transient history entry.
+      router.replace(buildLoginUrl(`${pathname}${window.location.search}`));
     }
   }, [isAuthenticated, isLoading, isPublicPath, pathname, router]);
 

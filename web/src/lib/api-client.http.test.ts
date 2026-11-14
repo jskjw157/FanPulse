@@ -23,7 +23,7 @@ const initialPage = "/settings";
 describe("401-only session recovery through the real Axios HTTP adapter", () => {
   let server: Server;
   let client: AxiosInstance;
-  let location: { hostname: string; pathname: string; href: string };
+  let location: { hostname: string; pathname: string; search: string; href: string; replace: (url: string) => void };
   let replies: Map<string, Reply[]>;
   let requests: { method: string; path: string; body: string }[];
   let restoreDefaults: (() => void) | undefined;
@@ -65,7 +65,10 @@ describe("401-only session recovery through the real Axios HTTP adapter", () => 
     });
     const { port } = server.address() as AddressInfo;
     vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", `http://127.0.0.1:${port}/api/v1`);
-    location = { hostname: "127.0.0.1", pathname: initialPage, href: initialPage };
+    location = {
+      hostname: "127.0.0.1", pathname: initialPage, search: "", href: initialPage,
+      replace: vi.fn((url: string) => { location.href = url; }),
+    };
     // Only enable the browser-only interceptor/redirect branch; no browser or UI is launched.
     vi.stubGlobal("window", { location });
     // This is Axios's shipped Node adapter, not a custom adapter that manufactures AxiosErrors.
@@ -136,6 +139,7 @@ describe("401-only session recovery through the real Axios HTTP adapter", () => 
     expect(order()).toEqual(["GET /api/v1/me", `POST /api/v1${refreshPath}`]);
     // Assert the boundary, not the redirect URL, which is owned by the login/navigation work.
     expect(location.href).not.toBe(initialPage);
+    expect(location.replace).toHaveBeenCalledTimes(1);
   });
 
   it("does not retry the protected request after a refresh network failure", async () => {
@@ -148,6 +152,7 @@ describe("401-only session recovery through the real Axios HTTP adapter", () => 
 
     expect(order()).toEqual(["GET /api/v1/me", `POST /api/v1${refreshPath}`]);
     expect(location.href).not.toBe(initialPage);
+    expect(location.replace).toHaveBeenCalledTimes(1);
   });
 
   it("does not refresh or retry again when the retried request is still 401", async () => {
@@ -160,6 +165,7 @@ describe("401-only session recovery through the real Axios HTTP adapter", () => 
 
     expect(order()).toEqual(["GET /api/v1/me/settings", `POST /api/v1${refreshPath}`, "GET /api/v1/me/settings"]);
     expect(location.href).not.toBe(initialPage);
+    expect(location.replace).toHaveBeenCalledTimes(1);
   });
 
   it("passes a retried 403 through without a second refresh or login redirect", async () => {

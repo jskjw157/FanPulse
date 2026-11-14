@@ -151,7 +151,8 @@ export default function LoginPage() {
             await refreshAuth();
             if (cancelled) return;
             const redirect = new URLSearchParams(window.location.search).get("redirect");
-            router.push(getSafeLoginReturnTo(redirect) ?? "/");
+            // A completed login must not become the destination of Back.
+            router.replace(getSafeLoginReturnTo(redirect) ?? "/");
           } catch (err) {
             if (!cancelled) setFormError(getErrorMessage(err));
           } finally {

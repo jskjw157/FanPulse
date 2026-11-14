@@ -5,7 +5,7 @@ import AuthGuard from "./AuthGuard";
 
 const { auth, nav } = vi.hoisted(() => ({
   auth: { isAuthenticated: false, isLoading: false },
-  nav: { pathname: "/", router: { push: vi.fn() } },
+  nav: { pathname: "/", router: { push: vi.fn(), replace: vi.fn() } },
 }));
 
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => auth }));
@@ -28,18 +28,20 @@ describe("AuthGuard login return destinations", () => {
     auth.isAuthenticated = false;
     auth.isLoading = false;
     nav.router.push.mockClear();
+    nav.router.replace.mockClear();
   });
 
   afterEach(() => {
     cleanup();
     window.history.replaceState({}, "", "/");
+    expect(nav.router.push).not.toHaveBeenCalled();
   });
 
   it.each(SAFE_LOGIN_RETURNS)("preserves the supported destination %s", (input, expected) => {
     setReturnTo(input);
     render(<AuthGuard><p>Private content</p></AuthGuard>);
-    expect(nav.router.push).toHaveBeenCalledTimes(1);
-    expect(nav.router.push).toHaveBeenCalledWith(`/login?redirect=${encodeURIComponent(expected)}`);
+    expect(nav.router.replace).toHaveBeenCalledTimes(1);
+    expect(nav.router.replace).toHaveBeenCalledWith(`/login?redirect=${encodeURIComponent(expected)}`);
     expect(screen.queryByText("Private content")).not.toBeInTheDocument();
   });
 
@@ -47,10 +49,10 @@ describe("AuthGuard login return destinations", () => {
     setReturnTo(input);
     render(<AuthGuard><p>Private content</p></AuthGuard>);
     if (nav.pathname === "/login" || nav.pathname.startsWith("/login/")) {
-      expect(nav.router.push).not.toHaveBeenCalled();
+      expect(nav.router.replace).not.toHaveBeenCalled();
     } else {
-      expect(nav.router.push).toHaveBeenCalledTimes(1);
-      expect(nav.router.push).toHaveBeenCalledWith("/login");
+      expect(nav.router.replace).toHaveBeenCalledTimes(1);
+      expect(nav.router.replace).toHaveBeenCalledWith("/login");
       expect(screen.queryByText("Private content")).not.toBeInTheDocument();
     }
   });
@@ -59,11 +61,11 @@ describe("AuthGuard login return destinations", () => {
     setReturnTo("/post-detail?id=post-123");
     auth.isLoading = true;
     const view = render(<AuthGuard><p>Private content</p></AuthGuard>);
-    expect(nav.router.push).not.toHaveBeenCalled();
+    expect(nav.router.replace).not.toHaveBeenCalled();
     expect(screen.queryByText("Private content")).not.toBeInTheDocument();
     auth.isLoading = false;
     view.rerender(<AuthGuard><p>Private content</p></AuthGuard>);
-    expect(nav.router.push).toHaveBeenCalledWith("/login?redirect=%2Fpost-detail%3Fid%3Dpost-123");
+    expect(nav.router.replace).toHaveBeenCalledWith("/login?redirect=%2Fpost-detail%3Fid%3Dpost-123");
   });
 
   it("keeps authenticated content and never redirects it", () => {
@@ -71,6 +73,6 @@ describe("AuthGuard login return destinations", () => {
     auth.isAuthenticated = true;
     render(<AuthGuard><p>Private content</p></AuthGuard>);
     expect(screen.getByText("Private content")).toBeInTheDocument();
-    expect(nav.router.push).not.toHaveBeenCalled();
+    expect(nav.router.replace).not.toHaveBeenCalled();
   });
 });

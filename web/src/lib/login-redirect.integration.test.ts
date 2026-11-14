@@ -30,6 +30,7 @@ async function expireSession(returnTo: string, refreshSucceeds: boolean) {
     pathname: queryIndex < 0 ? returnTo : returnTo.slice(0, queryIndex),
     search: queryIndex < 0 ? "" : returnTo.slice(queryIndex),
     href: "unchanged",
+    replace: vi.fn(),
   };
   // A writable location records real interceptor navigation without jsdom's
   // unimplemented navigation or the browser normalizing hostile input first.
@@ -56,12 +57,15 @@ describe.each([
 ] as const)("login return on %s", (_reason, refreshSucceeds) => {
   it.each(SAFE_LOGIN_RETURNS)("preserves the supported destination %s", async (input, expected) => {
     const location = await expireSession(input, refreshSucceeds);
-    expect(location.href).toBe(`/login?redirect=${encodeURIComponent(expected)}`);
+    expect(location.replace).toHaveBeenCalledExactlyOnceWith(`/login?redirect=${encodeURIComponent(expected)}`);
+    expect(location.href).toBe("unchanged");
   });
 
   it.each(UNSAFE_LOGIN_RETURNS)("never forwards the unsafe destination %j", async (input) => {
     const location = await expireSession(input, refreshSucceeds);
     const alreadyOnLogin = location.pathname === "/login" || location.pathname.startsWith("/login/");
-    expect(location.href).toBe(alreadyOnLogin ? "unchanged" : "/login");
+    if (alreadyOnLogin) expect(location.replace).not.toHaveBeenCalled();
+    else expect(location.replace).toHaveBeenCalledExactlyOnceWith("/login");
+    expect(location.href).toBe("unchanged");
   });
 });

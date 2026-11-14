@@ -98,7 +98,7 @@ function redirectToLogin(): void {
     window.location.pathname !== "/login" &&
     !window.location.pathname.startsWith("/login/")
   ) {
-    window.location.href = buildLoginUrl(`${window.location.pathname}${window.location.search}`);
+    window.location.replace(buildLoginUrl(`${window.location.pathname}${window.location.search}`));
   }
 }
 

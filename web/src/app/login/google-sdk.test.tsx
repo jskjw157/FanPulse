@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { vi } from 'vitest'
 
 const { router, refreshAuth, loginWithGoogle } = vi.hoisted(() => ({
-  router: { push: vi.fn() },
+  router: { push: vi.fn(), replace: vi.fn() },
   refreshAuth: vi.fn(),
   loginWithGoogle: vi.fn(),
 }))
@@ -75,6 +75,7 @@ describe('LoginPage Google SDK recovery', () => {
     vi.useRealTimers()
     vi.unstubAllEnvs()
     vi.restoreAllMocks()
+    expect(router.push).not.toHaveBeenCalled()
   })
 
   it.each(['error', 'load'] as const)(
@@ -90,7 +91,7 @@ describe('LoginPage Google SDK recovery', () => {
       expect(removeListener).toHaveBeenCalledWith('error', expect.any(Function))
       expect(screen.getByRole('alert')).toHaveTextContent('Google 로그인을 불러오지 못했습니다.')
       expect(loginWithGoogle).not.toHaveBeenCalled()
-      expect(router.push).not.toHaveBeenCalled()
+      expect(router.replace).not.toHaveBeenCalled()
 
       const retry = screen.getByRole('button', { name: retryName })
       fireEvent.click(retry)
@@ -115,7 +116,7 @@ describe('LoginPage Google SDK recovery', () => {
       expect(loginWithGoogle).not.toHaveBeenCalled()
 
       await act(async () => { sdk.credential({ credential: 'synthetic-id-token' }) })
-      await waitFor(() => expect(router.push).toHaveBeenCalledWith('/'))
+      await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'))
       expect(loginWithGoogle).toHaveBeenCalledExactlyOnceWith({ idToken: 'synthetic-id-token' })
       expect(refreshAuth).toHaveBeenCalledTimes(1)
     },
@@ -252,7 +253,7 @@ describe('LoginPage Google SDK recovery', () => {
 
     second.unmount()
     await act(async () => { sdk.credential({ credential: 'synthetic-id-token' }) })
-    await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(router.replace).toHaveBeenCalledTimes(1))
     expect(loginWithGoogle).toHaveBeenCalledTimes(1)
     first.unmount()
     await act(async () => { sdk.credential({ credential: 'stale-synthetic-token' }) })
@@ -271,7 +272,7 @@ describe('LoginPage Google SDK recovery', () => {
     expect(sdk.initialize).toHaveBeenCalledTimes(1)
     expect(document.querySelector(scriptSelector)).toBeNull()
     await act(async () => { sdk.credential({ credential: 'synthetic-id-token' }) })
-    await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(router.replace).toHaveBeenCalledTimes(1))
     expect(loginWithGoogle).toHaveBeenCalledTimes(1)
   })
 
@@ -291,7 +292,7 @@ describe('LoginPage Google SDK recovery', () => {
     page.unmount()
     await act(async () => { finishLogin() })
     expect(refreshAuth).not.toHaveBeenCalled()
-    expect(router.push).not.toHaveBeenCalled()
+    expect(router.replace).not.toHaveBeenCalled()
   })
 
   it('does not navigate if unmounted while authentication refresh is pending', async () => {
@@ -305,7 +306,7 @@ describe('LoginPage Google SDK recovery', () => {
 
     page.unmount()
     await act(async () => { finishRefresh() })
-    expect(router.push).not.toHaveBeenCalled()
+    expect(router.replace).not.toHaveBeenCalled()
   })
 
   it('preserves backend error handling without offering a loader retry or bypassing auth', async () => {
@@ -318,7 +319,7 @@ describe('LoginPage Google SDK recovery', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Synthetic authentication failure')
     expect(screen.queryByRole('button', { name: retryName })).not.toBeInTheDocument()
     expect(refreshAuth).not.toHaveBeenCalled()
-    expect(router.push).not.toHaveBeenCalled()
+    expect(router.replace).not.toHaveBeenCalled()
     expect(sdk.initialize).toHaveBeenCalledTimes(1)
   })
 })
