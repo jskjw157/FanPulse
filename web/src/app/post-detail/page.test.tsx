@@ -16,11 +16,13 @@ import {
   updateCommunityPost,
   type CommunityComment,
   type CommunityCommentPage,
+  type CommunityPostState,
 } from '@/lib/api/community';
 
 const auth = vi.hoisted(() => ({
   isAuthenticated: true,
   isLoading: false,
+  sessionVersion: 0,
   user: null as { id: string } | null,
 }));
 
@@ -101,6 +103,7 @@ describe('PostDetailPage', () => {
     vi.resetAllMocks();
     auth.isAuthenticated = true;
     auth.isLoading = false;
+    auth.sessionVersion = 0;
     auth.user = { id: post.author.id };
     Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
       configurable: true,
@@ -133,6 +136,7 @@ describe('PostDetailPage', () => {
     expect(screen.queryByText('ARMY_Forever')).not.toBeInTheDocument();
     expect(fetchCommunityPost).toHaveBeenCalledWith(post.id, expect.any(AbortSignal));
     expect(fetchCommunityComments).toHaveBeenCalledWith(post.id, 0, 20, expect.any(AbortSignal));
+    expect(fetchCommunityPostState).toHaveBeenCalledWith(post.id, expect.any(AbortSignal), post.author.id);
   });
 
   it('persists like and save mutations for the authenticated user', async () => {
@@ -140,9 +144,86 @@ describe('PostDetailPage', () => {
     await screen.findByText('실제 상세 게시글');
 
     fireEvent.click(screen.getByRole('button', { name: '좋아요' }));
-    await waitFor(() => expect(likeCommunityPost).toHaveBeenCalledWith(post.id));
+    await waitFor(() => expect(likeCommunityPost).toHaveBeenCalledWith(post.id, post.author.id));
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
-    await waitFor(() => expect(saveCommunityPost).toHaveBeenCalledWith(post.id));
+    await waitFor(() => expect(saveCommunityPost).toHaveBeenCalledWith(post.id, post.author.id));
+  });
+
+  it('isolates an in-flight A save from B state while fresh B likes and saves use B', async () => {
+    const oldSave = deferred<CommunityPostState>();
+    const userB = '66666666-6666-6666-6666-666666666666';
+    vi.mocked(saveCommunityPost).mockImplementation((_postId, expectedUserId) =>
+      expectedUserId === post.author.id ? oldSave.promise : Promise.resolve({ liked: true, saved: true }));
+    const view = render(<PostDetailPage />);
+    await screen.findByText(post.content);
+    await waitFor(() => expect(screen.getByRole('button', { name: '저장' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    expect(saveCommunityPost).toHaveBeenCalledWith(post.id, post.author.id);
+    expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+
+    auth.user = { id: userB };
+    view.rerender(<PostDetailPage />);
+    await screen.findByText(post.content);
+    await waitFor(() => expect(screen.getByRole('button', { name: '좋아요' })).toBeEnabled());
+    expect(screen.getByRole('button', { name: '저장' })).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(screen.getByRole('button', { name: '좋아요' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '좋아요' })).toHaveAttribute('aria-pressed', 'true'));
+    expect(likeCommunityPost).toHaveBeenCalledExactlyOnceWith(post.id, userB);
+    expect(fetchCommunityPostState).toHaveBeenCalledWith(post.id, expect.any(AbortSignal), userB);
+
+    await act(async () => { oldSave.resolve({ liked: false, saved: true }); await oldSave.promise; });
+    expect(screen.getByRole('button', { name: '좋아요' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '저장' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByText('게시글 저장 상태를 변경하지 못했습니다.')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '저장' })).toHaveAttribute('aria-pressed', 'true'));
+    expect(saveCommunityPost).toHaveBeenCalledWith(post.id, userB);
+    expect(saveCommunityPost).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(['revalidation', 'session-version'] as const)('clears same-account private state across %s and fences late delete navigation', async (boundary) => {
+    const deletion = deferred<void>();
+    const freshPrivateRead = deferred<ReviewCommentPage>();
+    const freshRow = { ...pending, id: '77777777-7777-7777-7777-777777777777', content: '재검증 후 다시 읽은 내 댓글' };
+    vi.mocked(fetchMyCommentReviews).mockResolvedValue(privatePage);
+    vi.mocked(fetchCommunityPostState).mockResolvedValue({ liked: true, saved: true });
+    vi.mocked(deleteCommunityPost).mockReturnValue(deletion.promise);
+    const view = render(<PostDetailPage />);
+    await screen.findByText(pending.content);
+    fireEvent.change(screen.getByLabelText('댓글 내용'), { target: { value: '이전 세션의 작성 초안' } });
+    chooseAction('게시글 작업', '삭제');
+    fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }));
+    expect(deleteCommunityPost).toHaveBeenCalledExactlyOnceWith(post.id, post.author.id);
+    expect(screen.getByRole('button', { name: '삭제 중' })).toBeDisabled();
+
+    vi.mocked(fetchMyCommentReviews).mockReturnValue(freshPrivateRead.promise);
+    vi.mocked(fetchCommunityPostState).mockResolvedValue({ liked: false, saved: false });
+    if (boundary === 'revalidation') {
+      auth.isLoading = true;
+      view.rerender(<PostDetailPage />);
+      expect(screen.queryByDisplayValue('이전 세션의 작성 초안')).not.toBeInTheDocument();
+      expect(screen.queryByText(pending.content)).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      auth.isLoading = false;
+    } else auth.sessionVersion += 1;
+    view.rerender(<PostDetailPage />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText(pending.content)).not.toBeInTheDocument();
+    expect(await screen.findByLabelText('댓글 내용')).toHaveValue('');
+    expect(screen.getByRole('button', { name: '저장' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: '좋아요' })).toHaveAttribute('aria-pressed', 'false');
+
+    await act(async () => { freshPrivateRead.resolve({ ...privatePage, items: [freshRow] }); await freshPrivateRead.promise; });
+    expect(await screen.findByText(freshRow.content)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('댓글 내용'), { target: { value: '현재 세션의 작성 초안' } });
+    await act(async () => { deletion.resolve(undefined); await deletion.promise; });
+    expect(nav.push).not.toHaveBeenCalled();
+    expect(screen.getByText(post.content)).toBeInTheDocument();
+    expect(screen.getByText(freshRow.content)).toBeInTheDocument();
+    expect(screen.getByLabelText('댓글 내용')).toHaveValue('현재 세션의 작성 초안');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
   });
 
   it('creates a real comment and reloads the persisted comment list', async () => {
@@ -155,7 +236,7 @@ describe('PostDetailPage', () => {
     fireEvent.change(screen.getByLabelText('댓글 내용'), { target: { value: '실제 저장 댓글' } });
     fireEvent.click(screen.getByRole('button', { name: '댓글 등록' }));
 
-    await waitFor(() => expect(createCommunityComment).toHaveBeenCalledWith(post.id, '실제 저장 댓글'));
+    await waitFor(() => expect(createCommunityComment).toHaveBeenCalledWith(post.id, '실제 저장 댓글', null, post.author.id));
     expect(await screen.findByText('실제 저장 댓글')).toBeInTheDocument();
     expect(fetchCommunityComments).toHaveBeenCalledTimes(2);
   });
@@ -214,7 +295,7 @@ describe('PostDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
     await waitFor(() => expect(screen.queryByLabelText('게시글 내용 수정')).not.toBeInTheDocument());
     expect(screen.getByText('수정된 게시글')).toBeInTheDocument();
-    expect(updateCommunityPost).toHaveBeenCalledWith(post.id, '수정된 게시글');
+    expect(updateCommunityPost).toHaveBeenCalledWith(post.id, '수정된 게시글', post.author.id);
     expect(screen.queryByLabelText('게시글 내용 수정')).not.toBeInTheDocument();
   });
 
@@ -242,7 +323,7 @@ describe('PostDetailPage', () => {
     chooseAction('게시글 작업', '삭제');
     fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }));
     await waitFor(() => expect(nav.push).toHaveBeenCalledWith('/community'));
-    expect(deleteCommunityPost).toHaveBeenCalledExactlyOnceWith(post.id);
+    expect(deleteCommunityPost).toHaveBeenCalledExactlyOnceWith(post.id, post.author.id);
   });
 
   it('keeps a failed deletion in the dialog without removing the post or navigating', async () => {
@@ -275,7 +356,7 @@ describe('PostDetailPage', () => {
     expect(await screen.findByText('서버 공개 댓글')).toBeInTheDocument();
     expect(screen.queryByText('수정된 댓글')).not.toBeInTheDocument();
     expect(fetchCommunityComments).toHaveBeenLastCalledWith(post.id, 0, 20, expect.any(AbortSignal));
-    expect(updateCommunityComment).toHaveBeenLastCalledWith(post.id, comment.id, '수정 요청');
+    expect(updateCommunityComment).toHaveBeenLastCalledWith(post.id, comment.id, '수정 요청', post.author.id);
   });
 
   it.each(['PENDING', 'BLOCKED'] as const)('removes %s edited comments and reloads the authoritative count', async (status) => {
@@ -315,7 +396,7 @@ describe('PostDetailPage', () => {
     await waitFor(() => expect(screen.queryByText(comment.content)).not.toBeInTheDocument());
     expect(screen.getByText(reply.content)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
-    expect(deleteCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, comment.id);
+    expect(deleteCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, comment.id, post.author.id);
   });
 
   it('retains comments and count on delete failure', async () => {
@@ -360,7 +441,7 @@ describe('PostDetailPage', () => {
     render(<PostDetailPage />);
     expect(await screen.findByText(pending.content)).toBeInTheDocument();
     expect(fetchMyCommentReviews).toHaveBeenCalledTimes(2);
-    expect(fetchMyCommentReviews).toHaveBeenLastCalledWith(post.id, 0, 20, expect.any(AbortSignal));
+    expect(fetchMyCommentReviews).toHaveBeenLastCalledWith(post.id, 0, 20, expect.any(AbortSignal), post.author.id);
     expect(storageWrite).not.toHaveBeenCalled();
     storageWrite.mockRestore();
   });
@@ -422,8 +503,8 @@ describe('PostDetailPage', () => {
       }
       fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
       await waitFor(() => expect(screen.queryByLabelText('댓글 내용 수정')).not.toBeInTheDocument());
-      expect(updateCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, row.id, '수정 요청');
-      expect(fetchMyCommentReviews).toHaveBeenLastCalledWith(post.id, 0, 20, expect.any(AbortSignal));
+      expect(updateCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, row.id, '수정 요청', post.author.id);
+      expect(fetchMyCommentReviews).toHaveBeenLastCalledWith(post.id, 0, 20, expect.any(AbortSignal), post.author.id);
       expect(fetchMyCommentReviews).toHaveBeenCalledTimes(2);
       expect(fetchCommunityComments).toHaveBeenCalledTimes(2);
       expect(await screen.findByText(saved.content)).toBeInTheDocument();
@@ -487,7 +568,7 @@ describe('PostDetailPage', () => {
       expect(screen.queryByText(row.content)).not.toBeInTheDocument();
       expect(screen.getByText(comment.content)).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
-      expect(deleteCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, row.id);
+      expect(deleteCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, row.id, post.author.id);
       expect(fetchMyCommentReviews).toHaveBeenCalledTimes(2);
       expect(fetchCommunityComments).toHaveBeenCalledTimes(2);
       expect(nav.push).not.toHaveBeenCalled();
@@ -545,7 +626,7 @@ describe('PostDetailPage', () => {
     expect(await screen.findByText(comment.content)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
     expect(screen.queryByText(pending.content)).not.toBeInTheDocument();
-    expect(deleteCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, pending.id);
+    expect(deleteCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, pending.id, post.author.id);
   });
 
   it('returns private pagination to page zero after deleting its last row without clearing the compose draft', async () => {
@@ -561,7 +642,7 @@ describe('PostDetailPage', () => {
     chooseAction(`댓글 작업: ${next.content}`, '삭제');
     fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }));
     expect(await screen.findByText(pending.content)).toBeInTheDocument();
-    expect(fetchMyCommentReviews).toHaveBeenLastCalledWith(post.id, 0, 20, expect.any(AbortSignal));
+    expect(fetchMyCommentReviews).toHaveBeenLastCalledWith(post.id, 0, 20, expect.any(AbortSignal), post.author.id);
     expect(screen.queryByText(next.content)).not.toBeInTheDocument();
     expect(screen.getByLabelText('댓글 내용')).toHaveValue('유지할 작성 초안');
     expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
@@ -697,10 +778,11 @@ describe('PostDetailPage', () => {
     const oldSignal = vi.mocked(fetchMyCommentReviews).mock.calls[1][3];
     auth.user = { id: other.userId };
     view.rerender(<PostDetailPage />);
-    expect(screen.getByLabelText('댓글 내용')).toHaveValue('');
+    expect(screen.queryByDisplayValue('이전 계정의 초안')).not.toBeInTheDocument();
     expect(screen.queryByText(pending.content)).not.toBeInTheDocument();
     expect(oldSignal?.aborted).toBe(true);
     await screen.findByText(other.content);
+    expect(screen.getByLabelText('댓글 내용')).toHaveValue('');
     await act(async () => { finish(privatePage); await late; });
     expect(screen.queryByText(pending.content)).not.toBeInTheDocument();
     auth.isAuthenticated = false;
@@ -722,10 +804,11 @@ describe('PostDetailPage', () => {
     auth.isAuthenticated = false;
     auth.user = null;
     view.rerender(<PostDetailPage />);
+    await screen.findByText(post.content);
     await act(async () => { finish(pending); await late; });
     expect(screen.queryByText('댓글이 검토 대기 상태로 저장되었습니다.')).not.toBeInTheDocument();
     expect(fetchMyCommentReviews).toHaveBeenCalledTimes(1);
-    expect(fetchCommunityComments).toHaveBeenCalledTimes(1);
+    expect(fetchCommunityComments).toHaveBeenCalledTimes(2);
   });
 
   it('paginates own comments separately from public comments', async () => {
@@ -735,7 +818,7 @@ describe('PostDetailPage', () => {
     await screen.findByText(pending.content);
     fireEvent.click(screen.getByRole('button', { name: '내 댓글 다음' }));
     expect(await screen.findByText('다음 페이지의 내 댓글')).toBeInTheDocument();
-    expect(fetchMyCommentReviews).toHaveBeenLastCalledWith(post.id, 1, 20, expect.any(AbortSignal));
+    expect(fetchMyCommentReviews).toHaveBeenLastCalledWith(post.id, 1, 20, expect.any(AbortSignal), post.author.id);
     expect(fetchCommunityComments).toHaveBeenCalledTimes(1);
   });
 

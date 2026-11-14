@@ -44,7 +44,7 @@ export default function AuthorCommentPanel({
   useEffect(() => {
     if (!userId) return;
     const controller = new AbortController();
-    fetchMyCommentReviews(postId, page, 20, controller.signal)
+    fetchMyCommentReviews(postId, page, 20, controller.signal, userId)
       .then((result) => {
         if (controller.signal.aborted) return;
         if (result.items.some((row) => row.userId !== userId)) throw new Error('댓글 작성자가 현재 계정과 다릅니다.');
@@ -91,7 +91,7 @@ export default function AuthorCommentPanel({
     setSubmitting(true);
     setMessage(null);
     try {
-      const result = await createCommunityComment(postId, text.trim());
+      const result = await createCommunityComment(postId, text.trim(), null, userId);
       if (signal.aborted) return;
       setText('');
       setMessage(result.status === 'PENDING'

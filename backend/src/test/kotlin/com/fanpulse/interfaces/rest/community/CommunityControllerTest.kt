@@ -73,6 +73,7 @@ class CommunityControllerTest {
 
         mockMvc.post("/api/v1/community/posts") {
             requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
             contentType = MediaType.APPLICATION_JSON
             content = """
                 {
@@ -97,6 +98,7 @@ class CommunityControllerTest {
 
         mockMvc.post("/api/v1/community/posts") {
             requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
             contentType = MediaType.APPLICATION_JSON
             content = """{"artistId":null,"content":"재시도할 게시글"}"""
         }.andExpect {
@@ -116,13 +118,21 @@ class CommunityControllerTest {
         every { service.unlike(userId, postId) } returns CommunityPostState(liked = false, saved = true)
         every { service.unsave(userId, postId) } returns CommunityPostState(liked = false, saved = false)
 
-        mockMvc.post("/api/v1/community/posts/$postId/likes") { requestAttr("userId", userId) }
+        mockMvc.post("/api/v1/community/posts/$postId/likes") {
+            requestAttr("userId", userId); header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isOk() }; jsonPath("$.data.liked") { value(true) } }
-        mockMvc.post("/api/v1/community/posts/$postId/saved") { requestAttr("userId", userId) }
+        mockMvc.post("/api/v1/community/posts/$postId/saved") {
+            requestAttr("userId", userId); header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isOk() }; jsonPath("$.data.saved") { value(true) } }
-        mockMvc.delete("/api/v1/community/posts/$postId/likes") { requestAttr("userId", userId) }
+        mockMvc.delete("/api/v1/community/posts/$postId/likes") {
+            requestAttr("userId", userId); header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isOk() }; jsonPath("$.data.liked") { value(false) } }
-        mockMvc.delete("/api/v1/community/posts/$postId/saved") { requestAttr("userId", userId) }
+        mockMvc.delete("/api/v1/community/posts/$postId/saved") {
+            requestAttr("userId", userId); header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isOk() }; jsonPath("$.data.saved") { value(false) } }
 
         verify(exactly = 1) { service.like(userId, postId) }
@@ -176,6 +186,7 @@ class CommunityControllerTest {
 
         mockMvc.post("/api/v1/community/posts/$postId/comments") {
             requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
             contentType = MediaType.APPLICATION_JSON
             content = """{"content":"실제 댓글","parentCommentId":null}"""
         }.andExpect {
@@ -196,13 +207,16 @@ class CommunityControllerTest {
         every { service.deletePost(userId, postId) } just Runs
         mockMvc.put("/api/v1/community/posts/$postId") {
             requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
             contentType = MediaType.APPLICATION_JSON
             content = """{"content":"수정된 게시글","userId":"${UUID.randomUUID()}"}"""
         }.andExpect {
             status { isOk() }
             jsonPath("$.data.content") { value("수정된 게시글") }
         }
-        mockMvc.delete("/api/v1/community/posts/$postId") { requestAttr("userId", userId) }
+        mockMvc.delete("/api/v1/community/posts/$postId") {
+            requestAttr("userId", userId); header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isNoContent() } }
     }
 
@@ -215,13 +229,16 @@ class CommunityControllerTest {
         every { commentCommandService.deleteComment(id, userId, postId.toString()) } just Runs
         mockMvc.put("/api/v1/community/posts/$postId/comments/$id") {
             requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
             contentType = MediaType.APPLICATION_JSON
             content = """{"content":"재검토"}"""
         }.andExpect {
             status { isAccepted() }
             jsonPath("$.data.status") { value("PENDING") }
         }
-        mockMvc.delete("/api/v1/community/posts/$postId/comments/$id") { requestAttr("userId", userId) }
+        mockMvc.delete("/api/v1/community/posts/$postId/comments/$id") {
+            requestAttr("userId", userId); header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isNoContent() } }
     }
 
@@ -229,12 +246,15 @@ class CommunityControllerTest {
     @WithMockUser
     fun `direct unauthorized and stale mutations return forbidden and conflict rather than server error`() {
         every { service.deletePost(userId, postId) } throws AccessDeniedException("작성자만 삭제 가능")
-        mockMvc.delete("/api/v1/community/posts/$postId") { requestAttr("userId", userId) }
+        mockMvc.delete("/api/v1/community/posts/$postId") {
+            requestAttr("userId", userId); header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isForbidden() }; jsonPath("$.errorCode") { value("CONTENT_FORBIDDEN") } }
         every { commentCommandService.updateComment(any(), userId, any(), any()) } throws
             OptimisticLockingFailureException("stale")
         mockMvc.put("/api/v1/community/posts/$postId/comments/${comment().id}") {
             requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
             contentType = MediaType.APPLICATION_JSON
             content = """{"content":"구버전"}"""
         }.andExpect { status { isConflict() } }

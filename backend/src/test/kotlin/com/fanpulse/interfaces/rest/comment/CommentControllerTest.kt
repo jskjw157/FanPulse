@@ -60,6 +60,7 @@ class CommentControllerTest {
         every { commandService.deleteComment(commentId, userId, null) } just Runs
         mockMvc.put("/api/v1/comments/$commentId") {
             requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
             contentType = MediaType.APPLICATION_JSON
             content = """{"content":"모바일 수정"}"""
         }.andExpect {
@@ -68,7 +69,9 @@ class CommentControllerTest {
             jsonPath("$.status") { value("PENDING") }
             jsonPath("$.data") { doesNotExist() }
         }
-        mockMvc.delete("/api/v1/comments/$commentId") { requestAttr("userId", userId) }
+        mockMvc.delete("/api/v1/comments/$commentId") {
+            requestAttr("userId", userId); header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isNoContent() } }
     }
 
@@ -76,7 +79,9 @@ class CommentControllerTest {
     @WithMockUser
     fun `mobile direct delete does not bypass ownership`() {
         every { commandService.deleteComment(commentId, userId, null) } throws AccessDeniedException("not owner")
-        mockMvc.delete("/api/v1/comments/$commentId") { requestAttr("userId", userId) }
+        mockMvc.delete("/api/v1/comments/$commentId") {
+            requestAttr("userId", userId); header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isForbidden() } }
     }
 
@@ -102,6 +107,7 @@ class CommentControllerTest {
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
                 requestAttr("userId", userId)
+                header("X-Expected-User-Id", userId.toString())
                 content = """
                     {
                         "postId": "$postId",
@@ -134,6 +140,7 @@ class CommentControllerTest {
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
                 requestAttr("userId", userId)
+                header("X-Expected-User-Id", userId.toString())
                 content = """
                     {
                         "postId": "$postId",
@@ -156,6 +163,7 @@ class CommentControllerTest {
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
                 requestAttr("userId", userId)
+                header("X-Expected-User-Id", userId.toString())
                 content = """
                     {
                         "postId": "$postId",
@@ -204,6 +212,7 @@ class CommentControllerTest {
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
                 requestAttr("userId", userId)
+                header("X-Expected-User-Id", userId.toString())
                 content = """
                     {
                         "postId": "$postId",

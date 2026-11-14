@@ -1,7 +1,10 @@
 package com.fanpulse.interfaces.rest.comment
 
 import com.fanpulse.application.dto.comment.CommentReviewDecision
+import com.fanpulse.application.dto.comment.ReviewCommentPage
 import com.fanpulse.application.service.comment.CommentReviewService
+import com.fanpulse.interfaces.rest.identity.requireExpectedUser
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.CacheControl
 import org.springframework.http.ResponseEntity
@@ -19,8 +22,12 @@ class CommentReviewController(private val reviews: CommentReviewService) {
         @RequestAttribute("userId") userId: UUID,
         @RequestParam postId: String,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int
-    ) = privateResponse(reviews.mine(userId, postId, page, size))
+        @RequestParam(defaultValue = "20") size: Int,
+        servletRequest: HttpServletRequest
+    ): ResponseEntity<ReviewCommentPage> {
+        requireExpectedUser(servletRequest, userId)
+        return privateResponse(reviews.mine(userId, postId, page, size))
+    }
 
     @GetMapping("/api/v1/admin/comment-reviews")
     fun pending(@RequestParam(defaultValue = "0") page: Int, @RequestParam(defaultValue = "20") size: Int) =

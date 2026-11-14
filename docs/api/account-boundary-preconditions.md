@@ -19,6 +19,9 @@ service, so a mismatch cannot save data or publish mutation events.
 | POST/DELETE `/api/v1/users/me/favorites/{artistId}`, cookie authentication (#326) | Required |
 | Same favorites writes, explicit `Authorization: Bearer ...` | Optional for existing native/API clients; enforced if supplied |
 | `GET /api/v1/users/me/favorites` | Optional; enforced if supplied |
+| Community post/comment create, update, delete; like/unlike, save/unsave; legacy `/api/v1/comments` mutations, cookie authentication (#327) | Required |
+| Same community/comment mutations, explicit `Authorization: Bearer ...` | Optional for existing native/API clients; enforced if supplied |
+| GET `/api/v1/community/me/posts/{postId}/state`, `/api/v1/community/me/saved`, `/api/v1/comments/mine` | Optional; enforced if supplied |
 | `GET /api/v1/me`, `GET /api/v1/me/settings` | Optional; enforced if supplied |
 | GET `/api/v1/users/me/notifications`, `/notifications/page`, `/notifications/unread-count` | Optional; enforced if supplied |
 | PATCH `/api/v1/users/me/notifications/{id}/read`, `/notifications/read-all` | Optional; enforced if supplied |
@@ -37,8 +40,8 @@ password changes) are outside this contract.
 * Neither failure may be retried automatically with a newly discovered user ID.
   Refresh identity, discard the draft, and require a new user action.
 
-Browser profile/settings/favorites writes always send the captured displayed
-user ID. Browser private profile/settings/favorites reads and notification
+Browser profile/settings/favorites and community/comment writes always send the
+captured displayed user ID. Browser private profile/settings/favorites/community reads and notification
 page/count/read-state requests also send it, preventing B's data from being
 labeled as A even if the cookie switch has not yet produced an event. A retried 401 request must preserve
 this header; if session refresh selects B, the original A operation fails 412.
@@ -48,7 +51,8 @@ this header; if session refresh selects B, the original A operation fails 412.
 Existing bearer clients need no changes. Legacy private GETs and notification
 clients may omit the assertion deliberately; they do not gain stale-tab
 protection until upgraded. Old cookie clients that omit it on profile/settings
-PATCH and favorites POST/DELETE now fail closed with 428; this is intentional, not silent backward
+PATCH, favorites POST/DELETE, and community/legacy-comment mutations now fail closed
+with 428; this is intentional, not silent backward
 compatibility. Reload/upgrade those browser clients. Deploy the updated web
 client **before server enforcement**. Older tabs still running the previous web
 bundle must reload before they can save again. Reverse proxies must
@@ -113,6 +117,19 @@ without a session event, rejects the old screen's unfollow, verifies no automati
 replay, and permits a fresh explicit operation as B while A remains unchanged.
 Its HTTP fixture enforces supplied assertions; missing cookie-write assertions
 are tested separately through the real JWT/filter/MVC suite.
+
+The five `community-account-boundary.spec.ts` cases (#327) silently replace the
+shared HttpOnly cookie through a second tab. Save, like, comment creation and
+post creation reject stale A assertions before any B mutation, never replay the
+operation, and allow a deliberate fresh B action. A saved-list retry is rejected
+before B's collection can enter A's scope; it becomes visible only after gated
+identity revalidation. Session-keyed detail, saved and composer state discards
+private snapshots, drafts, busy state and old navigation continuations, including
+same-account revalidation. The separate `CommunityExpectedUserPreconditionTest`
+uses signed JWTs and the actual filter/controllers/advice to check all ten
+community mutations, three legacy comment mutations and three private reads.
+Public reads, original ownership rules and omitted-bearer compatibility remain
+controls. No browser fixture is evidence of the Kotlin guard by itself.
 
 All browser API traffic is fulfilled in memory;
 unknown API requests fail 501 instead of reaching the Next backend proxy.

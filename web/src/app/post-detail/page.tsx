@@ -109,6 +109,12 @@ function formatTime(value: string) {
 }
 
 export default function PostDetailPage() {
+  const { user, isLoading, sessionVersion } = useAuth();
+  // Every private snapshot, draft and continuation belongs to one validated session.
+  return <PostDetailContent key={`${user?.id ?? 'anonymous'}:${isLoading}:${sessionVersion}`} />;
+}
+
+function PostDetailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const postId = searchParams.get("id");
@@ -206,7 +212,7 @@ export default function PostDetailPage() {
     const controller = new AbortController();
     setState(null);
     setStateError(null);
-    fetchCommunityPostState(postId, controller.signal)
+    fetchCommunityPostState(postId, controller.signal, privateUserId ?? undefined)
       .then((result) => {
         if (!controller.signal.aborted) setState(result);
       })
@@ -214,7 +220,7 @@ export default function PostDetailPage() {
         if (!controller.signal.aborted) setStateError("좋아요·저장 상태를 불러오지 못했습니다.");
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, user?.id, postId, retryKey]);
+  }, [authLoading, isAuthenticated, privateUserId, postId, retryKey]);
 
   const requireAuthentication = () => {
     if (isAuthenticated) return true;
@@ -223,13 +229,13 @@ export default function PostDetailPage() {
   };
 
   const handleLike = async () => {
-    if (!postId || !requireAuthentication() || !state || mutationLoading) return;
+    if (!postId || !requireAuthentication() || !privateUserId || !state || mutationLoading) return;
     setMutationLoading(true);
     setStateError(null);
     try {
       const next = state.liked
-        ? await unlikeCommunityPost(postId)
-        : await likeCommunityPost(postId);
+        ? await unlikeCommunityPost(postId, privateUserId)
+        : await likeCommunityPost(postId, privateUserId);
       setPost((current) => current ? {
         ...current,
         likeCount: Math.max(0, current.likeCount + (next.liked ? 1 : -1)),
@@ -243,13 +249,13 @@ export default function PostDetailPage() {
   };
 
   const handleSave = async () => {
-    if (!postId || !requireAuthentication() || !state || mutationLoading) return;
+    if (!postId || !requireAuthentication() || !privateUserId || !state || mutationLoading) return;
     setMutationLoading(true);
     setStateError(null);
     try {
       const next = state.saved
-        ? await unsaveCommunityPost(postId)
-        : await saveCommunityPost(postId);
+        ? await unsaveCommunityPost(postId, privateUserId)
+        : await saveCommunityPost(postId, privateUserId);
       setState(next);
     } catch {
       setStateError("게시글 저장 상태를 변경하지 못했습니다.");
@@ -312,12 +318,12 @@ export default function PostDetailPage() {
     setOwnerError(null);
     try {
       if (editing.kind === "post") {
-        const result = await updateCommunityPost(postId, draft.trim());
+        const result = await updateCommunityPost(postId, draft.trim(), privateUserId!);
         if (signal.aborted) return;
         setPost(result);
         setOwnerMessage("게시글을 수정했습니다.");
       } else {
-        const result = await updateCommunityComment(postId, editing.comment.id, draft.trim());
+        const result = await updateCommunityComment(postId, editing.comment.id, draft.trim(), privateUserId!);
         if (signal.aborted) return;
         setOwnerMessage(result.status === "PENDING"
           ? "수정한 댓글이 검토 대기 중이므로 공개 목록에서 제외되었습니다."
@@ -341,11 +347,11 @@ export default function PostDetailPage() {
     setOwnerError(null);
     try {
       if (deleting.kind === "post") {
-        await deleteCommunityPost(postId);
+        await deleteCommunityPost(postId, privateUserId!);
         if (signal.aborted) return;
         router.push("/community");
       } else {
-        await deleteCommunityComment(postId, deleting.comment.id);
+        await deleteCommunityComment(postId, deleting.comment.id, privateUserId!);
         if (signal.aborted) return;
         setOwnerMessage("댓글을 삭제했습니다. 작성된 답글은 유지됩니다.");
         await refreshChangedComments(signal);
