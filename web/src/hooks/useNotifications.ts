@@ -9,7 +9,7 @@ import {
 import { NOTIFICATION_CHANGED, notifyUnreadCountChanged, type NotificationChange } from './useNotificationUnreadCount';
 
 interface Scope { userId: string | undefined; unreadOnly: boolean }
-interface RequestContext { scope: Scope; signal: AbortSignal; sequence: number; busy: boolean }
+interface RequestContext { scope: Scope; signal: AbortSignal; sequence: number; busy: boolean; reloadPending: boolean }
 interface Snapshot {
   scope: Scope;
   data: NotificationPage | null;
@@ -32,6 +32,8 @@ export function useNotifications(unreadOnly: boolean, userId: string | undefined
   const [mutation, setMutation] = useState<Mutation>({ scope, id: null, error: null, notice: null });
 
   const load = useCallback(async (page: number, current: RequestContext) => {
+    // This request includes all invalidations received before it starts.
+    current.reloadPending = false;
     const sequence = ++current.sequence;
     setSnapshot({ scope, data: null, page, state: 'loading', error: null });
     if (!userId) {
@@ -56,12 +58,14 @@ export function useNotifications(unreadOnly: boolean, userId: string | undefined
 
   useEffect(() => {
     const controller = new AbortController();
-    const current = { scope, signal: controller.signal, sequence: 0, busy: false };
+    const current = { scope, signal: controller.signal, sequence: 0, busy: false, reloadPending: false };
     context.current = current;
     void load(0, current);
     const onChanged = (event: Event) => {
       const change = (event as CustomEvent<NotificationChange>).detail;
-      if (change.userId === userId && change.reloadList && !current.busy) void load(0, current);
+      if (change.userId !== userId || !change.reloadList || current.signal.aborted) return;
+      if (current.busy) current.reloadPending = true;
+      else void load(0, current);
     };
     window.addEventListener(NOTIFICATION_CHANGED, onChanged);
     return () => {
@@ -111,6 +115,9 @@ export function useNotifications(unreadOnly: boolean, userId: string | undefined
       return null;
     } finally {
       current.busy = false;
+      // A stale-scope write may have completed while this mutation was busy.
+      // Reconcile on success or failure, but never reload an abandoned scope.
+      if (current.reloadPending && !current.signal.aborted && context.current === current) void load(0, current);
     }
   }, [load, scope, unreadOnly, userId]);
 
