@@ -40,6 +40,7 @@ type RetriableRequestConfig = InternalAxiosRequestConfig & {
 const SESSION_LOCK = "fanpulse:web-cookie-session";
 const SESSION_GENERATION_KEY = "fanpulse:web-session-generation";
 let localGeneration = "initial";
+let useSharedGeneration = true;
 let lifecycleTail: Promise<void> | null = null;
 let refreshFlight: { generation: string; promise: Promise<void> } | null = null;
 
@@ -47,6 +48,7 @@ class WebSessionChangedError extends Error {}
 
 /** Only an opaque lifecycle marker is shared, never credentials or user data. */
 export function getWebSessionGeneration(): string {
+  if (!useSharedGeneration) return localGeneration;
   try {
     return window.localStorage.getItem(SESSION_GENERATION_KEY) ?? localGeneration;
   } catch {
@@ -59,7 +61,9 @@ function advanceWebSessionGeneration(): void {
   try {
     window.localStorage.setItem(SESSION_GENERATION_KEY, localGeneration);
   } catch {
-    // Storage can be unavailable (SSR, private storage policies). Keep local fencing.
+    // Reads may still return an old marker after a quota/write failure. Prefer
+    // this realm's fence for its remaining lifetime; cross-tab publishing is unavailable.
+    useSharedGeneration = false;
   }
 }
 

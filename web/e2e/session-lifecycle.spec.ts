@@ -29,6 +29,12 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
   const origin = new URL(baseURL).origin;
   expect(['127.0.0.1', 'localhost', '[::1]']).toContain(new URL(origin).hostname);
   const releaseRefresh = deferred();
+  const expiredSettingsArrived = deferred();
+  const releaseExpiredSettings = deferred();
+  const logoutArrived = deferred();
+  const releaseLogout = deferred();
+  let delayExpiredSettings = false;
+  let delayLogout = false;
   const events: { event: string; path: string; method?: string; refresh?: string; access?: string }[] = [];
   const refreshPosts: string[] = [];
   const logoutPosts: string[] = [];
@@ -97,13 +103,21 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
     }
     if (path === '/auth/logout' && request.method() === 'POST') {
       logoutPosts.push(refresh);
+      logoutArrived.resolve();
+      if (delayLogout) await releaseLogout.promise;
       if (refresh) revoked.add(refresh);
       if (activeRefresh === refresh) activeRefresh = null;
       events.push({ event: 'logout-clear-response', path, refresh });
       return route.fulfill({ status: 200, headers: authHeaders('', '', true), json: {} });
     }
     if (path === '/me/settings') {
-      if (!authenticated) return expired(route);
+      if (!authenticated) {
+        if (delayExpiredSettings && request.method() === 'PATCH') {
+          expiredSettingsArrived.resolve();
+          await releaseExpiredSettings.promise;
+        }
+        return expired(route);
+      }
       if (request.method() === 'PATCH') {
         ++acceptedMutations;
         return route.fulfill({ json: { ...settings, ...request.postDataJSON() } });
@@ -125,6 +139,12 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
     logoutPosts,
     unexpected,
     releaseRefresh: releaseRefresh.resolve,
+    holdExpiredSettings() { delayExpiredSettings = true; },
+    expiredSettingsArrived: expiredSettingsArrived.promise,
+    releaseExpiredSettings: releaseExpiredSettings.resolve,
+    holdLogout() { delayLogout = true; },
+    logoutArrived: logoutArrived.promise,
+    releaseLogout: releaseLogout.resolve,
     async seed(access: string) {
       await context.addCookies([
         { name: accessCookie, value: access, url: origin, httpOnly: true, sameSite: 'Lax' },
@@ -139,6 +159,8 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
     },
     async dispose() {
       releaseRefresh.resolve();
+      releaseExpiredSettings.resolve();
+      releaseLogout.resolve();
       await context.unrouteAll({ behavior: 'wait' });
     },
   };
@@ -207,6 +229,69 @@ test.describe('Cookie session coordination in two real Chromium tabs', () => {
         contentType: 'application/json',
       });
     } finally {
+      await api.dispose();
+    }
+  });
+
+  test('quota-exhausted storage cannot recover an old 401 after logout', async ({ context, baseURL }, testInfo) => {
+    const api = await mockCookieBackend(context, baseURL!);
+    const page = await context.newPage();
+    try {
+      await api.seed('A0');
+      await page.goto('/settings');
+      await expect(page.getByRole('combobox', { name: '언어', exact: true })).toHaveValue('ko');
+      // Exhaust actual Chromium storage; do not replace Storage methods or app code.
+      const quota = await page.evaluate(() => {
+        const key = 'fanpulse:web-session-generation';
+        localStorage.setItem(key, 's');
+        let chunk = 'x'.repeat(64 * 1024);
+        let index = 0;
+        let filled = 0;
+        while (chunk.length) {
+          try {
+            localStorage.setItem(`328:quota:${index++}`, chunk);
+            filled += chunk.length;
+          } catch {
+            chunk = chunk.slice(0, Math.floor(chunk.length / 2));
+          }
+        }
+        let writeError = '';
+        try { localStorage.setItem(key, 'a-new-session-generation-that-cannot-fit'); }
+        catch (error) { writeError = (error as DOMException).name; }
+        return { filled, writeError, readableGeneration: localStorage.getItem(key) };
+      });
+      expect(quota.filled).toBeGreaterThan(1024 * 1024);
+      expect(quota).toMatchObject({ writeError: 'QuotaExceededError', readableGeneration: 's' });
+      await testInfo.attach('actual-chromium-storage-quota', {
+        body: JSON.stringify(quota), contentType: 'application/json',
+      });
+      await context.addCookies([{ name: accessCookie, value: 'expired', url: api.origin, httpOnly: true, sameSite: 'Lax' }]);
+      api.holdExpiredSettings();
+      await page.getByRole('combobox', { name: '언어', exact: true }).selectOption('en');
+      await page.getByRole('button', { name: '저장', exact: true }).click();
+      await api.expiredSettingsArrived;
+      // Keep logout pending so AuthContext has not aborted settings work yet.
+      // The old 401 then reaches Axios while the real session lock is held.
+      api.holdLogout();
+      await page.getByRole('button', { name: '로그아웃', exact: true }).click();
+      await api.logoutArrived;
+      const staleResponse = page.waitForResponse((response) =>
+        response.url().endsWith('/api/v1/me/settings') && response.request().method() === 'PATCH');
+      api.releaseExpiredSettings();
+      expect((await staleResponse).status()).toBe(401);
+      api.releaseLogout();
+      await expect(page).toHaveURL(/\/login(?:\?|$)/);
+      expect(await api.cookies()).toEqual([]);
+      await page.waitForLoadState('networkidle');
+      expect(api.refreshPosts).toEqual([]);
+      expect(api.events.filter(({ path, method }) => path === '/me/settings' && method === 'PATCH')).toHaveLength(1);
+      expect(api.snapshot().acceptedMutations).toBe(0);
+      expect(api.unexpected).toEqual([]);
+    } finally {
+      await testInfo.attach('quota-session-boundary', {
+        body: JSON.stringify({ ...api.snapshot(), cookies: await api.cookies() }, null, 2),
+        contentType: 'application/json',
+      });
       await api.dispose();
     }
   });

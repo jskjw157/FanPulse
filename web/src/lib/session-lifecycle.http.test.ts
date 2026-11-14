@@ -73,15 +73,21 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
   // single-flights/globals, shared origin storage, Web Locks and browser cookie jar.
   // Only Axios's cookie transport is supplied; the real Node HTTP adapter handles
   // status codes, requests, response ordering and all deferred server responses.
-  function realm(): Realm {
+  function realm(storageFailure?: "writes" | "all"): Realm {
     const location = { hostname: "127.0.0.1", pathname: "/settings", search: "", href: "/settings" };
     const context = createContext({
       window: {
         location,
         navigator: { locks },
         localStorage: {
-          getItem: (key: string) => storage.get(key) ?? null,
-          setItem: (key: string, value: string) => { storage.set(key, value); },
+          getItem: (key: string) => {
+            if (storageFailure === "all") throw new Error("Storage read denied");
+            return storage.get(key) ?? null;
+          },
+          setItem: (key: string, value: string) => {
+            if (storageFailure) throw new Error("Storage write denied");
+            storage.set(key, value);
+          },
         },
       },
       navigator: { locks },
@@ -282,6 +288,25 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
     expect(count("/auth/web/refresh")).toBe(0);
     expect(count("/me/settings")).toBe(1);
     expect(a.location.href).toBe("/settings");
+  });
+
+  it.each(["writes", "all"] as const)("fences old-session 401s when storage %s are denied but a persisted marker remains", async (failure) => {
+    storage.set("fanpulse:web-session-generation", "persisted-before-storage-failure");
+    const a = realm(failure);
+    delayProtected = true;
+    const failed = a.api.apiClient.get("/me/settings").catch((error) => error);
+    await protectedArrived.promise;
+    await a.auth.logout();
+    await a.auth.loginWithGoogle({ idToken: "test-id-token" });
+    releaseProtected.resolve();
+    releaseRefresh.resolve();
+
+    const result = await failed;
+    expect(count("/me/settings")).toBe(1);
+    expect(result.response?.status).toBe(401);
+    expect(count("/auth/web/refresh")).toBe(0);
+    expect(a.location.href).toBe("/settings");
+    expect((await a.auth.checkAuthStatus()).authenticated).toBe(true);
   });
 
   it("fences protected retries and redirects when logout begins during their refresh", async () => {
