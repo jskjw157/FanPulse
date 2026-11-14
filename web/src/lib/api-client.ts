@@ -34,34 +34,125 @@ const AUTO_REFRESH_EXCLUDED_PATHS = [
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
   _fanPulseRetried?: boolean;
+  _fanPulseSessionGeneration?: string;
 };
 
-let refreshPromise: Promise<void> | null = null;
+const SESSION_LOCK = "fanpulse:web-cookie-session";
+const SESSION_GENERATION_KEY = "fanpulse:web-session-generation";
+let localGeneration = "initial";
+let lifecycleTail: Promise<void> | null = null;
+let refreshFlight: { generation: string; promise: Promise<void> } | null = null;
+
+class WebSessionChangedError extends Error {}
+
+/** Only an opaque lifecycle marker is shared, never credentials or user data. */
+export function getWebSessionGeneration(): string {
+  try {
+    return window.localStorage.getItem(SESSION_GENERATION_KEY) ?? localGeneration;
+  } catch {
+    return localGeneration;
+  }
+}
+
+function advanceWebSessionGeneration(): void {
+  localGeneration = `${Date.now()}-${Math.random()}`;
+  try {
+    window.localStorage.setItem(SESSION_GENERATION_KEY, localGeneration);
+  } catch {
+    // Storage can be unavailable (SSR, private storage policies). Keep local fencing.
+  }
+}
+
+function assertWebSessionGeneration(generation: string): void {
+  if (generation !== getWebSessionGeneration()) {
+    throw new WebSessionChangedError("The cookie session changed while this request was pending");
+  }
+}
+
+function browserSessionLocks(): LockManager | undefined {
+  return typeof window !== "undefined" ? window.navigator?.locks : undefined;
+}
+
+async function withWebSessionLock<T>(operation: () => Promise<T>): Promise<T> {
+  const locks = browserSessionLocks();
+  if (locks) return await locks.request(SESSION_LOCK, operation);
+
+  // Older/insecure browsers have no origin-wide Web Locks. Still serialize this
+  // realm's cookie writers; do not pretend a racy expiring storage lease is a lock.
+  const result = lifecycleTail ? lifecycleTail.then(operation) : operation();
+  const settled = result.then(() => undefined, () => undefined);
+  lifecycleTail = settled;
+  void settled.then(() => {
+    if (lifecycleTail === settled) lifecycleTail = null;
+  });
+  return result;
+}
+
+/**
+ * Login/logout are cookie writers too. Fence old recovery immediately, then wait
+ * for any refresh response (including Set-Cookie) before sending the mutation.
+ * Advance again on failure as well: callers may retry, but pre-outcome work may not.
+ */
+export function runWebSessionMutation<T>(operation: () => Promise<T>): Promise<T> {
+  advanceWebSessionGeneration();
+  return withWebSessionLock(async () => {
+    try {
+      return await operation();
+    } finally {
+      advanceWebSessionGeneration();
+    }
+  });
+}
 
 /**
  * 웹 httpOnly Refresh Cookie를 사용해 인증 쿠키를 회전한다.
  *
- * 동시에 여러 요청이 401을 반환해도 실제 갱신 요청은 하나만 실행한다.
+ * 같은 origin의 탭들은 쿠키 응답까지 잠금을 유지하고 인증 상태를 다시 확인한다.
  * 기본 axios 클라이언트를 사용해 apiClient 응답 인터셉터의 재귀 호출을 피한다.
  */
-export function refreshWebSession(): Promise<void> {
+export function refreshWebSession(generation = getWebSessionGeneration()): Promise<void> {
   if (!apiTarget.ok) {
     return Promise.reject(apiTarget.reason);
   }
 
-  if (refreshPromise === null) {
-    refreshPromise = axios
-      .post<void>(WEB_REFRESH_URL, undefined, {
-        withCredentials: true,
-        timeout: 30000,
-      })
-      .then(() => undefined)
-      .finally(() => {
-        refreshPromise = null;
-      });
+  if (generation !== getWebSessionGeneration()) {
+    return Promise.reject(new WebSessionChangedError("The cookie session changed before recovery"));
   }
+  if (refreshFlight?.generation === generation) return refreshFlight.promise;
 
-  return refreshPromise;
+  const promise = withWebSessionLock(async () => {
+    assertWebSessionGeneration(generation);
+    if (browserSessionLocks()) {
+      // Another tab may have already rotated R0 while we waited. A mutex alone
+      // prevents overlap but not redundant/stale recovery decisions.
+      const status = await axios.get<{ authenticated: boolean }>(
+        `${API_BASE_URL.replace(/\/$/, "")}/auth/me`,
+        { withCredentials: true, timeout: 30000 },
+      );
+      assertWebSessionGeneration(generation);
+      if (status.data.authenticated) return;
+    }
+    await axios.post<void>(WEB_REFRESH_URL, undefined, {
+      withCredentials: true,
+      timeout: 30000,
+    });
+    assertWebSessionGeneration(generation);
+  }).finally(() => {
+    if (refreshFlight?.promise === promise) refreshFlight = null;
+  });
+  refreshFlight = { generation, promise };
+  return promise;
+}
+
+function stampSessionGeneration(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
+  const request = config as RetriableRequestConfig;
+  request._fanPulseSessionGeneration ??= getWebSessionGeneration();
+  if (request._fanPulseRetried) {
+    // Another async interceptor can yield between scheduling a retry and
+    // dispatching it. Recheck here too, before the adapter receives the config.
+    assertWebSessionGeneration(request._fanPulseSessionGeneration);
+  }
+  return request;
 }
 
 /**
@@ -77,6 +168,14 @@ const client: AxiosInstance = axios.create({
   },
   withCredentials: true,
 });
+
+// Stamping/fencing is synchronous. Keep Axios's synchronous dispatch path: its
+// async interceptor chain can discard a response recovered by an error handler.
+client.interceptors.request.use(
+  stampSessionGeneration,
+  (error: unknown) => { throw error; },
+  { synchronous: true },
+);
 
 if (!apiTarget.ok) {
   const blocked = apiTarget.reason;
@@ -118,6 +217,9 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    const generation = requestConfig._fanPulseSessionGeneration;
+    if (!generation || generation !== getWebSessionGeneration()) return Promise.reject(error);
+
     if (requestConfig._fanPulseRetried) {
       redirectToLogin();
       return Promise.reject(error);
@@ -126,10 +228,15 @@ apiClient.interceptors.response.use(
     requestConfig._fanPulseRetried = true;
 
     try {
-      await refreshWebSession();
-      return apiClient.request(requestConfig);
+      await refreshWebSession(generation);
+      assertWebSessionGeneration(generation);
+      return apiClient.request(requestConfig).catch((retryError: unknown) => {
+        // Preserve the original 401 if the retry was fenced before dispatch;
+        // actual retry responses (in particular 403) retain their own semantics.
+        throw retryError instanceof WebSessionChangedError ? error : retryError;
+      });
     } catch {
-      redirectToLogin();
+      if (generation === getWebSessionGeneration()) redirectToLogin();
       return Promise.reject(error);
     }
   }

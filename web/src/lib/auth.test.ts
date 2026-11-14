@@ -5,7 +5,9 @@ vi.mock("./api-client", () => ({
     get: vi.fn(),
     post: vi.fn(),
   },
+  getWebSessionGeneration: vi.fn(() => "test-session"),
   refreshWebSession: vi.fn(),
+  runWebSessionMutation: vi.fn((operation: () => Promise<unknown>) => operation()),
   toFanPulseError: vi.fn((error: unknown) => error),
   FanPulseApiError: class FanPulseApiError extends Error {},
 }));
