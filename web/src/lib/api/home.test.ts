@@ -35,9 +35,12 @@ const mappedNews = {
 describe('fetchLatestNews', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('validates the API envelope and maps the production news DTO', async () => {
+  it.each([
+    'https://news.google.com/articles/real',
+    'http://news.google.com/articles/real',
+  ])('validates and maps the production news DTO with an HTTP(S) source: %s', async (sourceUrl) => {
     vi.mocked(apiClient.get).mockResolvedValue({
-      data: { success: true, data: [apiNews] },
+      data: { success: true, data: [{ ...apiNews, sourceUrl }] },
     });
 
     await expect(fetchLatestNews(5)).resolves.toEqual([mappedNews]);
@@ -66,6 +69,8 @@ describe('fetchLatestNews', () => {
     { ...apiNews, thumbnailUrl: 42 },
     { ...apiNews, thumbnailUrl: 'http://images.example.com/news.jpg' },
     { ...apiNews, sourceUrl: 'javascript:alert(1)' },
+    { ...apiNews, sourceUrl: 'http://user:secret@news.example.com/article' },
+    { ...apiNews, sourceUrl: 'https://user:secret@news.example.com/article' },
     { ...apiNews, publishedAt: 'not-a-date' },
   ])('rejects malformed successful news payloads: %o', async (item) => {
     vi.mocked(apiClient.get).mockResolvedValue({
