@@ -4,14 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { FanPulseApiError, loginWithGoogle } from "@/lib/auth";
+import { getSafeLoginReturnTo } from "@/lib/login-redirect";
 import { useAuth } from "@/contexts/AuthContext";
+
+type GoogleCredentialResponse = { credential?: string };
+type GoogleCredentialCallback = (response: GoogleCredentialResponse) => void;
 
 type GoogleIdentity = {
   accounts?: {
     id?: {
       initialize: (config: {
         client_id: string;
-        callback: (response: { credential?: string }) => void;
+        callback: GoogleCredentialCallback;
       }) => void;
       renderButton: (
         container: HTMLElement,
@@ -37,30 +41,60 @@ declare global {
 const GOOGLE_IDENTITY_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
 let googleIdentityScriptPromise: Promise<void> | null = null;
+let initializedGoogleIdentity: {
+  api: NonNullable<NonNullable<GoogleIdentity["accounts"]>["id"]>;
+  clientId: string;
+} | null = null;
+const googleCredentialCallbacks = new Set<GoogleCredentialCallback>();
+
+// GIS keeps one global callback. Route it to the latest live login mount only.
+function dispatchGoogleCredential(response: GoogleCredentialResponse) {
+  return [...googleCredentialCallbacks].at(-1)?.(response);
+}
 
 function loadGoogleIdentityScript(): Promise<void> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("Google script can only be loaded in browser"));
   }
 
+  if (window.google?.accounts?.id) return Promise.resolve();
   if (googleIdentityScriptPromise) return googleIdentityScriptPromise;
 
-  googleIdentityScriptPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector(
+  googleIdentityScriptPromise = new Promise<void>((resolve, reject) => {
+    const script = document.querySelector<HTMLScriptElement>(
       `script[src="${GOOGLE_IDENTITY_SCRIPT_SRC}"]`,
-    );
-    if (existing) {
+    ) ?? document.createElement("script");
+    const cleanup = () => {
+      script.removeEventListener("load", onLoad);
+      script.removeEventListener("error", onError);
+      window.clearTimeout(timeout);
+    };
+    const onError = () => {
+      cleanup();
+      script.remove();
+      reject(new Error("Google Identity script load failed"));
+    };
+    const onLoad = () => {
+      if (!window.google?.accounts?.id) {
+        onError();
+        return;
+      }
+      cleanup();
       resolve();
-      return;
+    };
+    // Also recover if an existing script has already failed or never settles.
+    const timeout = window.setTimeout(onError, 15_000);
+    script.addEventListener("load", onLoad);
+    script.addEventListener("error", onError);
+    if (!script.isConnected) {
+      script.src = GOOGLE_IDENTITY_SCRIPT_SRC;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
     }
-
-    const script = document.createElement("script");
-    script.src = GOOGLE_IDENTITY_SCRIPT_SRC;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Google Identity script load failed"));
-    document.head.appendChild(script);
+  }).finally(() => {
+    // Only share in-flight work; neither failures nor stale successes are cached.
+    googleIdentityScriptPromise = null;
   });
 
   return googleIdentityScriptPromise;
@@ -77,6 +111,8 @@ export default function LoginPage() {
   const { refreshAuth } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [googleLoadFailed, setGoogleLoadFailed] = useState(false);
+  const [googleLoadAttempt, setGoogleLoadAttempt] = useState(0);
 
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -88,39 +124,53 @@ export default function LoginPage() {
     if (!container) return;
 
     let cancelled = false;
+    let submitting = false;
+    let credentialCallback: GoogleCredentialCallback | undefined;
 
     loadGoogleIdentityScript()
       .then(() => {
         if (cancelled) return;
 
         const google = window.google;
-        if (!google?.accounts?.id) return;
+        if (!google?.accounts?.id) throw new Error("Google Identity SDK unavailable");
 
-        google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: async (response: { credential?: string }) => {
-            if (!response?.credential) {
-              setFormError("Google 로그인 토큰을 받지 못했습니다.");
-              return;
-            }
+        credentialCallback = async (response) => {
+          if (cancelled || submitting) return;
+          if (!response?.credential) {
+            setFormError("Google 로그인 토큰을 받지 못했습니다.");
+            return;
+          }
 
-            setIsSubmitting(true);
-            setFormError(null);
-            try {
-              await loginWithGoogle({ idToken: response.credential });
-              // 쿠키가 설정되었으므로 인증 상태 새로고침
-              await refreshAuth();
-              const redirect = new URLSearchParams(window.location.search).get("redirect");
-              router.push(redirect && /^\/artists\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(redirect)
-                ? redirect
-                : "/");
-            } catch (err) {
-              setFormError(getErrorMessage(err));
-            } finally {
-              setIsSubmitting(false);
-            }
-          },
-        });
+          submitting = true;
+          setIsSubmitting(true);
+          setFormError(null);
+          try {
+            await loginWithGoogle({ idToken: response.credential });
+            if (cancelled) return;
+            // 쿠키가 설정되었으므로 인증 상태 새로고침
+            await refreshAuth();
+            if (cancelled) return;
+            const redirect = new URLSearchParams(window.location.search).get("redirect");
+            // A completed login must not become the destination of Back.
+            router.replace(getSafeLoginReturnTo(redirect) ?? "/");
+          } catch (err) {
+            if (!cancelled) setFormError(getErrorMessage(err));
+          } finally {
+            submitting = false;
+            if (!cancelled) setIsSubmitting(false);
+          }
+        };
+        googleCredentialCallbacks.add(credentialCallback);
+        if (
+          initializedGoogleIdentity?.api !== google.accounts.id ||
+          initializedGoogleIdentity?.clientId !== googleClientId
+        ) {
+          google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: dispatchGoogleCredential,
+          });
+          initializedGoogleIdentity = { api: google.accounts.id, clientId: googleClientId };
+        }
 
         // Google SDK expects to own the button markup.
         const containerWidth = container.getBoundingClientRect().width;
@@ -139,13 +189,18 @@ export default function LoginPage() {
       })
       .catch(() => {
         if (cancelled) return;
+        if (credentialCallback) googleCredentialCallbacks.delete(credentialCallback);
+        container.replaceChildren();
+        setGoogleLoadFailed(true);
         setFormError("Google 로그인을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
       });
 
     return () => {
       cancelled = true;
+      if (credentialCallback) googleCredentialCallbacks.delete(credentialCallback);
+      container.replaceChildren();
     };
-  }, [googleClientId, router]);
+  }, [googleClientId, googleLoadAttempt, refreshAuth, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 flex items-center justify-center px-4">
@@ -170,7 +225,22 @@ export default function LoginPage() {
           {/* Google Login */}
           <div className="space-y-3">
             {canUseGoogleLogin ? (
-              <div className="flex justify-center" ref={googleButtonRef} />
+              <>
+                <div className="flex justify-center" ref={googleButtonRef} />
+                {googleLoadFailed && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormError(null);
+                      setGoogleLoadFailed(false);
+                      setGoogleLoadAttempt((attempt) => attempt + 1);
+                    }}
+                    className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 rounded-full py-3 font-medium text-gray-700 hover:border-purple-300 transition-colors"
+                  >
+                    Google 로그인 다시 시도
+                  </button>
+                )}
+              </>
             ) : (
               <button
                 type="button"

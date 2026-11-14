@@ -1,5 +1,6 @@
-import { apiClient, toFanPulseError } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import { isIsoInstant, isNonEmptyString, isRecord, isUuid } from '@/lib/api-response';
+import { expectedUserHeaders, privateRequestError } from '@/lib/session-sync';
 
 export interface UserProfile {
   id: string;
@@ -31,9 +32,15 @@ export function parseUserProfile(data: unknown): UserProfile {
   };
 }
 
-export async function fetchMyProfile(signal?: AbortSignal): Promise<UserProfile> {
-  const { data } = await apiClient.get<unknown>('/me', { signal });
-  return parseUserProfile(data);
+export async function fetchMyProfile(signal?: AbortSignal, expectedUserId?: string): Promise<UserProfile> {
+  try {
+    const { data } = await apiClient.get<unknown>('/me', { signal, ...expectedUserHeaders(expectedUserId) });
+    const profile = parseUserProfile(data);
+    if (expectedUserId && profile.id !== expectedUserId) throw new Error('Profile user mismatch');
+    return profile;
+  } catch (error) {
+    throw privateRequestError(error);
+  }
 }
 
 export type UserLanguage = 'ko' | 'en';
@@ -52,30 +59,32 @@ function readSettings(settings: UserSettings): UserSettings {
   return settings;
 }
 
-export async function updateMyProfile(username: string, signal?: AbortSignal): Promise<UserProfile> {
+export async function updateMyProfile(username: string, expectedUserId: string, signal?: AbortSignal): Promise<UserProfile> {
   try {
-    const { data } = await apiClient.patch<unknown>('/me', { username }, { signal });
+    if (!expectedUserId) throw new Error('Expected user is required');
+    const { data } = await apiClient.patch<unknown>('/me', { username }, { signal, ...expectedUserHeaders(expectedUserId) });
     return parseUserProfile(data);
   } catch (error) {
-    throw toFanPulseError(error);
+    throw privateRequestError(error);
   }
 }
 
-export async function fetchMySettings(signal?: AbortSignal): Promise<UserSettings> {
+export async function fetchMySettings(signal?: AbortSignal, expectedUserId?: string): Promise<UserSettings> {
   try {
-    const { data } = await apiClient.get<UserSettings>('/me/settings', { signal });
+    const { data } = await apiClient.get<UserSettings>('/me/settings', { signal, ...expectedUserHeaders(expectedUserId) });
     return readSettings(data);
   } catch (error) {
-    throw toFanPulseError(error);
+    throw privateRequestError(error);
   }
 }
 
-export async function updateMyLanguage(language: UserLanguage, signal?: AbortSignal): Promise<UserSettings> {
+export async function updateMyLanguage(language: UserLanguage, expectedUserId: string, signal?: AbortSignal): Promise<UserSettings> {
   try {
     if (language !== 'ko' && language !== 'en') throw new Error('Unsupported language');
-    const { data } = await apiClient.patch<UserSettings>('/me/settings', { language }, { signal });
+    if (!expectedUserId) throw new Error('Expected user is required');
+    const { data } = await apiClient.patch<UserSettings>('/me/settings', { language }, { signal, ...expectedUserHeaders(expectedUserId) });
     return readSettings(data);
   } catch (error) {
-    throw toFanPulseError(error);
+    throw privateRequestError(error);
   }
 }

@@ -4,6 +4,7 @@ import com.fanpulse.application.identity.*
 import com.fanpulse.application.service.community.CommunityModerationUnavailableException
 import com.fanpulse.application.service.search.SearchServiceException
 import com.fanpulse.interfaces.rest.error.*
+import com.fanpulse.interfaces.rest.identity.ExpectedUserPreconditionException
 import mu.KotlinLogging
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -25,6 +26,10 @@ private val logger = KotlinLogging.logger {}
  */
 @RestControllerAdvice
 class GlobalExceptionHandler {
+
+    @ExceptionHandler(ExpectedUserPreconditionException::class)
+    fun handleExpectedUser(ex: ExpectedUserPreconditionException, request: WebRequest): ResponseEntity<ProblemDetail> =
+        createResponse(ex.errorType, detail = "Refresh the session before continuing. No operation was performed.", request = request)
 
     // === Authentication Exceptions ===
 

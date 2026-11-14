@@ -1,5 +1,6 @@
 package com.fanpulse.infrastructure.security
 
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -14,7 +15,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
@@ -78,16 +78,16 @@ class SecurityConfig(
             }
 
             .exceptionHandling { errors ->
-                errors.authenticationEntryPoint { request, response, _ ->
-                    val privateReview = AntPathRequestMatcher("/api/v1/comments/mine").matches(request) ||
-                        AntPathRequestMatcher("/api/v1/admin/comment-reviews/**").matches(request)
-                    // Avoid ERROR redispatch to /error, whose anonymous contract is the legacy 403.
-                    if (privateReview) {
-                        response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
-                        response.status = 401
-                    } else {
-                        response.sendError(403)
-                    }
+                errors.authenticationEntryPoint { _, response, _ ->
+                    // Missing/invalid access credentials are recoverable by the web's 401-only refresh.
+                    // Set the status directly: sendError can redispatch to the protected /error path.
+                    response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+                    response.status = HttpServletResponse.SC_UNAUTHORIZED
+                }
+                errors.accessDeniedHandler { _, response, _ ->
+                    // An authenticated identity without permission must not trigger session refresh,
+                    // including after servlet error handling has cleared the SecurityContext.
+                    response.status = HttpServletResponse.SC_FORBIDDEN
                 }
             }
 

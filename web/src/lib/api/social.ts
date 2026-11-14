@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import { expectedUserHeaders, privateRequestError } from '@/lib/session-sync';
 import {
   isIsoDateTime,
   isNonEmptyString,
@@ -79,8 +80,10 @@ function isUpdatedResult(value: unknown): value is { updated: number } {
   return isRecord(value) && Number.isInteger(value.updated) && (value.updated as number) >= 0;
 }
 
-export async function fetchFavorites(signal?: AbortSignal): Promise<FavoriteArtist[]> {
-  const response = await apiClient.get<ApiResponse<FavoriteArtist[]>>('/users/me/favorites', { signal });
+export async function fetchFavorites(signal?: AbortSignal, expectedUserId?: string): Promise<FavoriteArtist[]> {
+  const response = await apiClient.get<ApiResponse<FavoriteArtist[]>>('/users/me/favorites', {
+    signal, ...expectedUserHeaders(expectedUserId),
+  }).catch((error) => { throw privateRequestError(error); });
   return unwrapApiResponse(
     response.data,
     '즐겨찾기 API 응답이 올바르지 않습니다.',
@@ -88,8 +91,10 @@ export async function fetchFavorites(signal?: AbortSignal): Promise<FavoriteArti
   );
 }
 
-export async function addFavorite(artistId: string): Promise<FavoriteArtist> {
-  const response = await apiClient.post<ApiResponse<FavoriteArtist>>(`/users/me/favorites/${artistId}`);
+export async function addFavorite(artistId: string, expectedUserId: string): Promise<FavoriteArtist> {
+  const response = await apiClient.post<ApiResponse<FavoriteArtist>>(
+    `/users/me/favorites/${artistId}`, undefined, expectedUserHeaders(expectedUserId),
+  ).catch((error) => { throw privateRequestError(error); });
   return unwrapApiResponse(
     response.data,
     '즐겨찾기 API 응답이 올바르지 않습니다.',
@@ -97,8 +102,9 @@ export async function addFavorite(artistId: string): Promise<FavoriteArtist> {
   );
 }
 
-export async function removeFavorite(artistId: string): Promise<void> {
-  await apiClient.delete(`/users/me/favorites/${artistId}`);
+export async function removeFavorite(artistId: string, expectedUserId: string): Promise<void> {
+  await apiClient.delete(`/users/me/favorites/${artistId}`, expectedUserHeaders(expectedUserId))
+    .catch((error) => { throw privateRequestError(error); });
 }
 
 export async function fetchNotifications(
@@ -116,10 +122,10 @@ export async function fetchNotifications(
   );
 }
 
-export async function markAllNotificationsRead(): Promise<number> {
+export async function markAllNotificationsRead(expectedUserId?: string): Promise<number> {
   const response = await apiClient.patch<ApiResponse<{ updated: number }>>(
-    '/users/me/notifications/read-all'
-  );
+    '/users/me/notifications/read-all', undefined, expectedUserHeaders(expectedUserId)
+  ).catch((error) => { throw privateRequestError(error); });
   const result = unwrapApiResponse(
     response.data,
     '알림 API 응답이 올바르지 않습니다.',
@@ -147,27 +153,30 @@ export async function fetchNotificationPage(
   page = 0,
   size = 20,
   signal?: AbortSignal,
+  expectedUserId?: string,
 ): Promise<NotificationPage> {
   const response = await apiClient.get<ApiResponse<NotificationPage>>('/users/me/notifications/page', {
-    params: { unreadOnly, page, size }, signal,
-  });
+    params: { unreadOnly, page, size }, signal, ...expectedUserHeaders(expectedUserId),
+  }).catch((error) => { throw privateRequestError(error); });
   const data = unwrapApiResponse(response.data, '알림 API 응답이 올바르지 않습니다.', isNotificationPage);
   if (data.page !== page || data.size !== size) throw new Error('알림 페이지 응답이 올바르지 않습니다.');
   return data;
 }
 
-export async function fetchNotificationUnreadCount(signal?: AbortSignal): Promise<number> {
+export async function fetchNotificationUnreadCount(signal?: AbortSignal, expectedUserId?: string): Promise<number> {
   const response = await apiClient.get<ApiResponse<{ unreadCount: number }>>(
-    '/users/me/notifications/unread-count', { signal },
-  );
+    '/users/me/notifications/unread-count', { signal, ...expectedUserHeaders(expectedUserId) },
+  ).catch((error) => { throw privateRequestError(error); });
   const data = unwrapApiResponse(response.data, '알림 API 응답이 올바르지 않습니다.',
     (value): value is { unreadCount: number } => isRecord(value) && isCount(value.unreadCount));
   return data.unreadCount;
 }
 
-export async function markNotificationRead(id: string): Promise<UserNotification> {
+export async function markNotificationRead(id: string, expectedUserId?: string): Promise<UserNotification> {
   if (!isUuid(id)) throw new Error('알림 ID가 올바르지 않습니다.');
-  const response = await apiClient.patch<ApiResponse<UserNotification>>(`/users/me/notifications/${id}/read`);
+  const response = await apiClient.patch<ApiResponse<UserNotification>>(
+    `/users/me/notifications/${id}/read`, undefined, expectedUserHeaders(expectedUserId),
+  ).catch((error) => { throw privateRequestError(error); });
   const data = unwrapApiResponse(response.data, '알림 API 응답이 올바르지 않습니다.', isUserNotification);
   if (data.id !== id || !data.isRead) throw new Error('알림 읽음 응답이 올바르지 않습니다.');
   return data;

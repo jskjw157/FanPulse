@@ -11,10 +11,27 @@ import { useMyProfile } from "@/hooks/useMyProfile";
 import Link from "next/link";
 
 export default function MyPage() {
-  const { logout, user: authUser } = useAuth();
+  const { logout, user: authUser, sessionVersion } = useAuth();
   const { profile, state, error, refresh } = useMyProfile();
   const { t } = useTranslation();
   const [savedForUser, setSavedForUser] = useState<string | null>(null);
+  const scope = `${authUser?.id}:${sessionVersion}`;
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutFailed, setLogoutFailed] = useState(false);
+
+  async function handleLogout() {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    setLogoutFailed(false);
+    try {
+      await logout();
+    } catch {
+      setLogoutFailed(true);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
+
 
   const menuItems = [
     { icon: "ri-settings-3-line", label: t("settings.title"), link: "/settings" },
@@ -78,8 +95,8 @@ export default function MyPage() {
               </div>
             </div>
             {state === "success" && profile && (
-              <ProfileEditor key={authUser?.id} username={profile.username ?? ""} onSaved={() => {
-                setSavedForUser(authUser?.id ?? null);
+              <ProfileEditor key={scope} username={profile.username ?? ""} onSaved={() => {
+                setSavedForUser(scope);
                 void refresh();
               }} />
             )}
@@ -87,7 +104,7 @@ export default function MyPage() {
         </div>
 
         <div className="max-w-4xl mx-auto px-4 mt-4">
-          {savedForUser && savedForUser === authUser?.id && (
+          {savedForUser && savedForUser === scope && (
             <p role="status" className="mb-4 rounded-xl bg-green-50 p-3 text-sm text-green-800">{t("profile.saved")}</p>
           )}
           {/* Menu List */}
@@ -118,11 +135,16 @@ export default function MyPage() {
           {/* Logout Button */}
           <div className="mb-6">
             <button
-              onClick={logout}
-              className="w-full bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-medium hover:bg-gray-50 transition-colors"
+              onClick={() => void handleLogout()}
+              disabled={isLoggingOut}
+              aria-busy={isLoggingOut}
+              className="w-full bg-white border border-gray-200 text-gray-700 py-3 rounded-2xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
-              {t("settings.logout")}
+              {t(isLoggingOut ? "settings.loggingOut" : "settings.logout")}
             </button>
+            {logoutFailed && (
+              <p role="alert" className="mt-2 text-sm text-red-700">{t("settings.logoutFailed")}</p>
+            )}
           </div>
         </div>
       </PageWrapper>

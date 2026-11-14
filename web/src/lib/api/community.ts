@@ -6,6 +6,7 @@ import {
   isUuid,
   unwrapApiResponse,
 } from '@/lib/api-response';
+import { expectedUserHeaders, privateRequestError } from '@/lib/session-sync';
 import type { ApiResponse } from '@/types/api';
 
 export type CommunitySort = 'LATEST' | 'POPULAR';
@@ -299,8 +300,11 @@ export async function fetchCommunityPost(
 
 export async function createCommunityPost(
   input: CreateCommunityPostInput,
+  expectedUserId: string,
 ): Promise<CommunityPost> {
-  const response = await apiClient.post<ApiResponse<CommunityPostDto>>('/community/posts', input);
+  const response = await apiClient.post<ApiResponse<CommunityPostDto>>(
+    '/community/posts', input, mutationHeaders(expectedUserId),
+  ).catch((error) => { throw privateRequestError(error); });
   return mapPost(unwrapApiResponse(
     response.data,
     '커뮤니티 작성 API 응답이 올바르지 않습니다.',
@@ -314,13 +318,21 @@ function validateContent(content: string, maxLength: number): void {
   }
 }
 
-export async function updateCommunityPost(postId: string, content: string): Promise<CommunityPost> {
+function mutationHeaders(expectedUserId: string) {
+  if (!isNonEmptyString(expectedUserId)) throw new Error('Expected user is required');
+  return expectedUserHeaders(expectedUserId);
+}
+
+export async function updateCommunityPost(
+  postId: string, content: string, expectedUserId: string,
+): Promise<CommunityPost> {
   if (!isUuid(postId)) throw new Error('게시글 ID가 올바르지 않습니다.');
   validateContent(content, 5000);
   const response = await apiClient.put<ApiResponse<CommunityPostDto>>(
     `/community/posts/${postId}`,
     { content },
-  );
+    mutationHeaders(expectedUserId),
+  ).catch((error) => { throw privateRequestError(error); });
   const data = unwrapApiResponse(
     response.data,
     '게시글 수정 API 응답이 올바르지 않습니다.',
@@ -332,14 +344,21 @@ export async function updateCommunityPost(postId: string, content: string): Prom
   return mapPost(data);
 }
 
-export async function deleteCommunityPost(postId: string): Promise<void> {
+export async function deleteCommunityPost(postId: string, expectedUserId: string): Promise<void> {
   if (!isUuid(postId)) throw new Error('게시글 ID가 올바르지 않습니다.');
-  const response = await apiClient.delete(`/community/posts/${postId}`);
+  const response = await apiClient.delete(`/community/posts/${postId}`, mutationHeaders(expectedUserId))
+    .catch((error) => { throw privateRequestError(error); });
   if (response.status !== 204) throw new Error('게시글 삭제 API 응답이 올바르지 않습니다.');
 }
 
-async function mutateState(method: 'post' | 'delete', path: string): Promise<CommunityPostState> {
-  const response = await apiClient[method]<ApiResponse<CommunityPostState>>(path);
+async function mutateState(
+  method: 'post' | 'delete', path: string, expectedUserId: string,
+): Promise<CommunityPostState> {
+  const config = mutationHeaders(expectedUserId);
+  const request = method === 'post'
+    ? apiClient.post<ApiResponse<CommunityPostState>>(path, undefined, config)
+    : apiClient.delete<ApiResponse<CommunityPostState>>(path, config);
+  const response = await request.catch((error) => { throw privateRequestError(error); });
   return unwrapApiResponse(
     response.data,
     '커뮤니티 상태 API 응답이 올바르지 않습니다.',
@@ -347,23 +366,24 @@ async function mutateState(method: 'post' | 'delete', path: string): Promise<Com
   );
 }
 
-export const likeCommunityPost = (postId: string) =>
-  mutateState('post', `/community/posts/${postId}/likes`);
-export const unlikeCommunityPost = (postId: string) =>
-  mutateState('delete', `/community/posts/${postId}/likes`);
-export const saveCommunityPost = (postId: string) =>
-  mutateState('post', `/community/posts/${postId}/saved`);
-export const unsaveCommunityPost = (postId: string) =>
-  mutateState('delete', `/community/posts/${postId}/saved`);
+export const likeCommunityPost = (postId: string, expectedUserId: string) =>
+  mutateState('post', `/community/posts/${postId}/likes`, expectedUserId);
+export const unlikeCommunityPost = (postId: string, expectedUserId: string) =>
+  mutateState('delete', `/community/posts/${postId}/likes`, expectedUserId);
+export const saveCommunityPost = (postId: string, expectedUserId: string) =>
+  mutateState('post', `/community/posts/${postId}/saved`, expectedUserId);
+export const unsaveCommunityPost = (postId: string, expectedUserId: string) =>
+  mutateState('delete', `/community/posts/${postId}/saved`, expectedUserId);
 
 export async function fetchCommunityPostState(
   postId: string,
   signal?: AbortSignal,
+  expectedUserId?: string,
 ): Promise<CommunityPostState> {
   const response = await apiClient.get<ApiResponse<CommunityPostState>>(
     `/community/me/posts/${postId}/state`,
-    { signal },
-  );
+    { signal, ...expectedUserHeaders(expectedUserId) },
+  ).catch((error) => { throw privateRequestError(error); });
   return unwrapApiResponse(
     response.data,
     '커뮤니티 상태 API 응답이 올바르지 않습니다.',
@@ -375,11 +395,13 @@ export async function fetchSavedCommunityPosts(
   page = 0,
   size = 20,
   signal?: AbortSignal,
+  expectedUserId?: string,
 ): Promise<CommunityPage> {
   const response = await apiClient.get<ApiResponse<CommunityPageDto>>('/community/me/saved', {
     params: { page, size },
     signal,
-  });
+    ...expectedUserHeaders(expectedUserId),
+  }).catch((error) => { throw privateRequestError(error); });
   const data = unwrapApiResponse(
     response.data,
     '저장한 게시글 API 응답이 올바르지 않습니다.',
@@ -422,7 +444,8 @@ export async function fetchCommunityComments(
 export async function createCommunityComment(
   postId: string,
   content: string,
-  parentCommentId: string | null = null,
+  parentCommentId: string | null,
+  expectedUserId: string,
 ): Promise<CommunityComment> {
   if (!isUuid(postId) || (parentCommentId !== null && !isUuid(parentCommentId))) {
     throw new Error('댓글 요청 ID가 올바르지 않습니다.');
@@ -430,7 +453,8 @@ export async function createCommunityComment(
   const response = await apiClient.post<ApiResponse<CommunityCommentDto>>(
     `/community/posts/${postId}/comments`,
     { content, parentCommentId },
-  );
+    mutationHeaders(expectedUserId),
+  ).catch((error) => { throw privateRequestError(error); });
   const data = unwrapApiResponse(
     response.data,
     '커뮤니티 댓글 작성 API 응답이 올바르지 않습니다.',
@@ -446,13 +470,15 @@ export async function updateCommunityComment(
   postId: string,
   commentId: string,
   content: string,
+  expectedUserId: string,
 ): Promise<CommunityComment> {
   if (!isUuid(postId) || !isUuid(commentId)) throw new Error('댓글 요청 ID가 올바르지 않습니다.');
   validateContent(content, 1000);
   const response = await apiClient.put<ApiResponse<CommunityCommentDto>>(
     `/community/posts/${postId}/comments/${commentId}`,
     { content },
-  );
+    mutationHeaders(expectedUserId),
+  ).catch((error) => { throw privateRequestError(error); });
   const data = unwrapApiResponse(
     response.data,
     '댓글 수정 API 응답이 올바르지 않습니다.',
@@ -467,8 +493,12 @@ export async function updateCommunityComment(
   return mapComment(data);
 }
 
-export async function deleteCommunityComment(postId: string, commentId: string): Promise<void> {
+export async function deleteCommunityComment(
+  postId: string, commentId: string, expectedUserId: string,
+): Promise<void> {
   if (!isUuid(postId) || !isUuid(commentId)) throw new Error('댓글 요청 ID가 올바르지 않습니다.');
-  const response = await apiClient.delete(`/community/posts/${postId}/comments/${commentId}`);
+  const response = await apiClient.delete(
+    `/community/posts/${postId}/comments/${commentId}`, mutationHeaders(expectedUserId),
+  ).catch((error) => { throw privateRequestError(error); });
   if (response.status !== 204) throw new Error('댓글 삭제 API 응답이 올바르지 않습니다.');
 }

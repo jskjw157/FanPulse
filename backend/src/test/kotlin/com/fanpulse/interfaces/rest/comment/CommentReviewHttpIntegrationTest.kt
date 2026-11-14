@@ -6,6 +6,7 @@ import com.fanpulse.infrastructure.security.JwtTokenProvider
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -37,7 +38,7 @@ class CommentReviewHttpIntegrationTest @Autowired constructor(
     }
 
     @Test
-    fun `real HTTP preserves private 401 while legacy anonymous endpoints remain 403`() {
+    fun `real HTTP preserves private review 401 through servlet error handling`() {
         val paths = listOf("/api/v1/comments/mine", "/api/v1/admin/comment-reviews",
             "/api/v1/admin/comment-reviews/${UUID.randomUUID()}/history")
         for (path in paths) {
@@ -50,14 +51,16 @@ class CommentReviewHttpIntegrationTest @Autowired constructor(
                 assertEquals("Bearer", response.headers.getFirst(HttpHeaders.WWW_AUTHENTICATE))
             }
         }
-        assertEquals(HttpStatus.FORBIDDEN, http.getForEntity("/api/v1/me/settings", String::class.java).statusCode)
+        // Profile/settings and social endpoints share the same contract; see SessionAuthenticationHttpIntegrationTest.
     }
 
     @Test
     fun `authenticated identity and operator allowlist remain enforced over HTTP`() {
         val ordinary = HttpHeaders().apply { setBearerAuth(tokens.generateAccessToken(author)); set("X-Role", "ADMIN") }
-        assertEquals(HttpStatus.FORBIDDEN,
-            http.exchange("/api/v1/admin/comment-reviews", HttpMethod.GET, HttpEntity<Void>(ordinary), String::class.java).statusCode)
+        val forbidden = http.exchange("/api/v1/admin/comment-reviews", HttpMethod.GET,
+            HttpEntity<Void>(ordinary), String::class.java)
+        assertEquals(HttpStatus.FORBIDDEN, forbidden.statusCode)
+        assertNull(forbidden.headers.getFirst(HttpHeaders.WWW_AUTHENTICATE))
 
         every { reviews.pending(0, 20) } returns ReviewCommentPage(emptyList(), 0, 0, 20, 0)
         val postId = UUID.randomUUID().toString()

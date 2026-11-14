@@ -108,6 +108,89 @@ describe('news API', () => {
   });
 
   it.each([
+    'http://sports.chosun.com/article/real?lang=ko&ref=%2Fnews#original',
+    'https://sports.chosun.com/article/real?lang=ko&ref=%2Fnews#original',
+  ])('opens a listed article with its original HTTP(S) source URL unchanged: %s', async (sourceUrl) => {
+    const thumbnailUrl = 'https://images.example.com/news.jpg';
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            ...apiPage,
+            content: [{ ...apiNewsSummary, thumbnailUrl }],
+            page: 0,
+            totalElements: 1,
+            totalPages: 1,
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: { success: true, data: { ...apiNews, sourceUrl, thumbnailUrl } },
+      });
+
+    const list = await fetchNewsList();
+    expect(list.items).toEqual([{ ...mappedSummary, thumbnailUrl }]);
+    await expect(fetchNewsDetail(list.items[0].id)).resolves.toEqual({
+      ...mappedDetail,
+      sourceUrl,
+      thumbnailUrl,
+    });
+    expect(apiClient.get).toHaveBeenNthCalledWith(1, '/news', {
+      params: { page: 0, size: 20, sortBy: 'publishedAt', sortDir: 'desc' },
+      signal: undefined,
+    });
+    expect(apiClient.get).toHaveBeenNthCalledWith(2, `/news/${apiNews.id}`, {
+      signal: undefined,
+    });
+  });
+
+  it.each([
+    '',
+    '   ',
+    'not-a-url',
+    '//news.example.com/article',
+    '/news/article',
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'file:///news/article',
+    'ftp://news.example.com/article',
+    'http://user:secret@news.example.com/article',
+    'https://user:secret@news.example.com/article',
+    'http://user@news.example.com/article',
+    'https://:secret@news.example.com/article',
+    'https://us%65r:p%40ss@news.example.com/article',
+  ])('rejects unsafe or malformed source URLs: %s', async (sourceUrl) => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { success: true, data: { ...apiNews, sourceUrl } },
+    });
+
+    await expect(fetchNewsDetail(apiNews.id)).rejects.toThrow(
+      '뉴스 상세 API 응답이 올바르지 않습니다.'
+    );
+  });
+
+  it.each([
+    'http://images.example.com/news.jpg',
+    'javascript:alert(1)',
+    'data:image/png;base64,aW1hZ2U=',
+  ])('still rejects non-HTTPS thumbnails in both list and detail: %s', async (thumbnailUrl) => {
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: { ...apiPage, content: [{ ...apiNewsSummary, thumbnailUrl }] },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: { success: true, data: { ...apiNews, thumbnailUrl } },
+      });
+
+    await expect(fetchNewsList(20, 20)).rejects.toThrow('뉴스 API 응답이 올바르지 않습니다.');
+    await expect(fetchNewsDetail(apiNews.id)).rejects.toThrow('뉴스 상세 API 응답이 올바르지 않습니다.');
+  });
+
+  it.each([
     { ...apiPage, content: [{ ...apiNewsSummary, artistId: 'not-a-uuid' }] },
     { ...apiPage, totalElements: -1 },
     { ...apiPage, page: '1' },

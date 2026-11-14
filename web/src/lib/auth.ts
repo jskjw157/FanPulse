@@ -1,7 +1,9 @@
 import {
   apiClient,
   FanPulseApiError,
+  getWebSessionGeneration,
   refreshWebSession,
+  runWebSessionMutation,
   toFanPulseError,
 } from "./api-client";
 
@@ -36,9 +38,8 @@ export async function loginWithGoogle(params: {
   idToken: string;
 }): Promise<GoogleLoginResponse> {
   try {
-    const response = await apiClient.post<GoogleLoginResponse>(
-      "/auth/google",
-      params
+    const response = await runWebSessionMutation(() =>
+      apiClient.post<GoogleLoginResponse>("/auth/google", params)
     );
     return response.data;
   } catch (error) {
@@ -52,10 +53,9 @@ export async function loginWithGoogle(params: {
  */
 export async function logout(): Promise<void> {
   try {
-    await apiClient.post("/auth/logout");
+    await runWebSessionMutation(() => apiClient.post("/auth/logout"));
   } catch (error) {
-    // 서버 요청이 실패해도 클라이언트 인증 상태는 제거한다.
-    console.error("Logout failed:", error);
+    throw toFanPulseError(error);
   }
 }
 
@@ -71,15 +71,19 @@ async function requestAuthStatus(): Promise<AuthStatusResponse> {
  * httpOnly Refresh Cookie로 세션을 한 번 갱신한 뒤 상태를 다시 확인한다.
  */
 export async function checkAuthStatus(): Promise<AuthStatusResponse> {
+  const generation = getWebSessionGeneration();
   try {
     const current = await requestAuthStatus();
+    if (generation !== getWebSessionGeneration()) return { authenticated: false };
     if (current.authenticated) {
       return current;
     }
 
     try {
-      await refreshWebSession();
-      return await requestAuthStatus();
+      await refreshWebSession(generation);
+      if (generation !== getWebSessionGeneration()) return { authenticated: false };
+      const recovered = await requestAuthStatus();
+      return generation === getWebSessionGeneration() ? recovered : { authenticated: false };
     } catch {
       return current;
     }

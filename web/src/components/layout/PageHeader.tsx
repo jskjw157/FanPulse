@@ -15,12 +15,16 @@ export default function PageHeader({
 }: PageHeaderProps) {
   const router = useRouter();
 
+  // MainLayout reserves the first 4rem for global navigation. PageWrapper
+  // reserves the next 4rem for this mobile back/title/actions row.
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pt-8 lg:pb-4">
+    <header className="fixed top-16 left-0 right-0 bg-white border-b border-gray-200 z-50 lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pt-8 lg:pb-4">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between lg:h-auto lg:px-8">
         <div className="flex items-center gap-2">
           {showBack && (
             <button 
+              type="button"
+              aria-label="뒤로 가기"
               onClick={() => router.back()}
               className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors lg:hidden"
             >

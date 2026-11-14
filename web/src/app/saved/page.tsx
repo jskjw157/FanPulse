@@ -10,6 +10,7 @@ import {
 } from "@/lib/api/community";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -19,6 +20,13 @@ function formatTime(value: string) {
 }
 
 export default function SavedPage() {
+  const { user, isLoading, sessionVersion } = useAuth();
+  return <ProtectedRoute>{!isLoading && user && (
+    <SavedPosts key={`${user.id}:${sessionVersion}`} userId={user.id} />
+  )}</ProtectedRoute>;
+}
+
+function SavedPosts({ userId }: { userId: string }) {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -40,7 +48,7 @@ export default function SavedPage() {
     setLoadingMore(false);
     setError(null);
     setPosts([]);
-    fetchSavedCommunityPosts(0, 20, controller.signal)
+    fetchSavedCommunityPosts(0, 20, controller.signal, userId)
       .then((result) => {
         if (controller.signal.aborted || generationRef.current !== generation) return;
         setPosts(result.items);
@@ -58,9 +66,10 @@ export default function SavedPage() {
       });
     return () => {
       controller.abort();
+      generationRef.current += 1;
       loadMoreControllerRef.current?.abort();
     };
-  }, [retryKey]);
+  }, [retryKey, userId]);
 
   const handleUnsave = async (postId: string) => {
     if (unsavingId) return;
@@ -70,10 +79,10 @@ export default function SavedPage() {
     loadMoreControllerRef.current?.abort();
     setLoadingMore(false);
     try {
-      const result = await unsaveCommunityPost(postId);
+      const result = await unsaveCommunityPost(postId, userId);
       if (result.saved) throw new Error("unsave failed");
       if (generationRef.current !== generation) return;
-      const refreshed = await fetchSavedCommunityPosts(0, 20);
+      const refreshed = await fetchSavedCommunityPosts(0, 20, undefined, userId);
       if (generationRef.current !== generation) return;
       setPosts(refreshed.items);
       setPage(refreshed.page);
@@ -95,7 +104,7 @@ export default function SavedPage() {
     setLoadingMore(true);
     setActionError(null);
     try {
-      const result = await fetchSavedCommunityPosts(page + 1, 20, controller.signal);
+      const result = await fetchSavedCommunityPosts(page + 1, 20, controller.signal, userId);
       if (controller.signal.aborted || generationRef.current !== generation) return;
       setPosts((current) => {
         const seen = new Set(current.map((post) => post.id));
@@ -115,7 +124,7 @@ export default function SavedPage() {
   };
 
   return (
-    <ProtectedRoute>
+    <>
       <PageHeader title="저장한 게시물" showBack />
       <PageWrapper className="mx-auto max-w-3xl px-4 py-6">
         {loading && <p className="py-16 text-center text-gray-500">저장한 게시글을 불러오는 중입니다.</p>}
@@ -206,6 +215,6 @@ export default function SavedPage() {
           </>
         )}
       </PageWrapper>
-    </ProtectedRoute>
+    </>
   );
 }

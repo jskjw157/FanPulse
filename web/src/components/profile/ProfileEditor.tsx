@@ -10,7 +10,7 @@ export default function ProfileEditor({ username, onSaved }: {
   username: string;
   onSaved: () => void;
 }) {
-  const { user, updateUser } = useAuth();
+  const { user, isLoading, updateUser } = useAuth();
   const { t } = useTranslation();
   const inputId = useId();
   const [editing, setEditing] = useState(false);
@@ -19,6 +19,7 @@ export default function ProfileEditor({ username, onSaved }: {
   const [saving, setSaving] = useState(false);
   const request = useRef<AbortController | null>(null);
 
+  // MyPage keys the editor by account + sessionVersion, discarding drafts on revalidation.
   useEffect(() => () => request.current?.abort(), []);
 
   async function save(event: FormEvent) {
@@ -28,13 +29,13 @@ export default function ProfileEditor({ username, onSaved }: {
       setError("profile.invalid");
       return;
     }
-    if (saving) return;
+    if (saving || isLoading || !user) return;
     const controller = new AbortController();
     request.current = controller;
     setSaving(true);
     setError(null);
     try {
-      const updated = await updateMyProfile(normalized, controller.signal);
+      const updated = await updateMyProfile(normalized, user.id, controller.signal);
       if (controller.signal.aborted) return;
       if (updated.id !== user?.id) throw new Error("Profile user mismatch");
       updateUser(updated);
@@ -51,6 +52,8 @@ export default function ProfileEditor({ username, onSaved }: {
       if (!controller.signal.aborted) setSaving(false);
     }
   }
+
+  if (isLoading || !user) return null;
 
   if (!editing) {
     return <button type="button" className="mt-3 rounded-xl border border-white/60 px-4 py-2 text-sm font-medium text-white hover:bg-white/10"

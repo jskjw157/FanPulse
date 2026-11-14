@@ -6,7 +6,7 @@ const push = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({ useRouter: () => ({ back: vi.fn(), push }) }));
 vi.mock('@/hooks/useNotifications', () => ({ useNotifications: vi.fn() }));
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'user-a', email: 'a@example.com' } }),
+  useAuth: () => ({ user: { id: 'user-a', email: 'a@example.com' }, isLoading: false, sessionVersion: 0 }),
 }));
 
 import NotificationsPage from './page';
@@ -36,7 +36,7 @@ describe('NotificationsPage', () => {
     hook.mockReturnValue({ ...defaults(), markAllRead });
     render(<NotificationsPage />);
     fireEvent.click(screen.getByRole('button', { name: '읽지 않음' }));
-    expect(hook).toHaveBeenLastCalledWith(true, 'user-a');
+    expect(hook).toHaveBeenLastCalledWith(true, 'user-a', 0);
     fireEvent.click(screen.getByRole('button', { name: '모두 읽음 처리' }));
     expect(markAllRead).toHaveBeenCalled();
   });

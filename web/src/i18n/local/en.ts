@@ -18,6 +18,8 @@ const enTranslations = {
   "settings.title": "Settings",
   "settings.account": "Account",
   "settings.logout": "Log out",
+  "settings.loggingOut": "Logging out…",
+  "settings.logoutFailed": "Could not log out. Your session may still be active. Please try again.",
   "settings.language": "Language",
   "settings.languageHint": "Saved to your account and restored when you sign in.",
   "settings.loadFailed": "Could not load your language setting.",

@@ -44,7 +44,7 @@ export function useFavorites(userId: string | undefined) {
 
     setSnapshot({ userId, favorites: [], state: 'loading', error: null });
     try {
-      const rows = await fetchFavorites(signal);
+      const rows = await fetchFavorites(signal, userId);
       if (signal?.aborted) return;
       setSnapshot({ userId, favorites: rows, state: 'success', error: null });
     } catch {
@@ -71,8 +71,8 @@ export function useFavorites(userId: string | undefined) {
     setMutation({ userId, mutatingId: artistId, error: null });
     try {
       let favorite: FavoriteArtist | null = null;
-      if (following) favorite = await addFavorite(artistId);
-      else await removeFavorite(artistId);
+      if (following) favorite = await addFavorite(artistId, userId);
+      else await removeFavorite(artistId, userId);
       setSnapshot((current) => current.userId === userId
         ? {
           ...current,

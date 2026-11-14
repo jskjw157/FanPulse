@@ -5,7 +5,9 @@ vi.mock("./api-client", () => ({
     get: vi.fn(),
     post: vi.fn(),
   },
+  getWebSessionGeneration: vi.fn(() => "test-session"),
   refreshWebSession: vi.fn(),
+  runWebSessionMutation: vi.fn((operation: () => Promise<unknown>) => operation()),
   toFanPulseError: vi.fn((error: unknown) => error),
   FanPulseApiError: class FanPulseApiError extends Error {},
 }));
@@ -75,18 +77,8 @@ describe("auth client", () => {
     expect(apiClient.get).toHaveBeenCalledTimes(1);
   });
 
-  it("로그아웃 API가 실패해도 클라이언트 로그아웃 흐름은 완료한다", async () => {
-    const consoleSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-    vi.mocked(apiClient.post).mockRejectedValueOnce(
-      new Error("network failed")
-    );
-
-    await expect(logout()).resolves.toBeUndefined();
-
-    expect(apiClient.post).toHaveBeenCalledWith("/auth/logout");
-    expect(consoleSpy).toHaveBeenCalledTimes(1);
-    consoleSpy.mockRestore();
+  it("로그아웃 실패를 호출자에게 전달해 성공으로 표시하지 않는다", async () => {
+    vi.mocked(apiClient.post).mockRejectedValueOnce(new Error("network failed"));
+    await expect(logout()).rejects.toThrow("network failed");
   });
 });

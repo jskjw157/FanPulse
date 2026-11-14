@@ -20,6 +20,8 @@ const koTranslations: Record<keyof typeof en, string> = {
   'settings.title': '설정',
   'settings.account': '계정',
   'settings.logout': '로그아웃',
+  'settings.loggingOut': '로그아웃 중…',
+  'settings.logoutFailed': '로그아웃하지 못했습니다. 세션이 유지될 수 있습니다. 다시 시도해 주세요.',
   'settings.language': '언어',
   'settings.languageHint': '계정에 저장되어 다시 로그인할 때 복원됩니다.',
   'settings.loadFailed': '언어 설정을 불러오지 못했습니다.',

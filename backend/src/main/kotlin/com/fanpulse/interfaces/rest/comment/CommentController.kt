@@ -6,6 +6,7 @@ import com.fanpulse.application.dto.comment.CreateCommentRequest
 import com.fanpulse.application.service.comment.CommentCommandService
 import com.fanpulse.application.service.comment.CommentQueryService
 import com.fanpulse.domain.comment.CommentStatus
+import com.fanpulse.interfaces.rest.identity.requireExpectedUser
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import mu.KotlinLogging
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -38,8 +40,10 @@ class CommentController(
     fun updateComment(
         @RequestAttribute("userId") userId: UUID,
         @PathVariable commentId: UUID,
-        @RequestBody request: UpdateCommentRequest
+        @RequestBody request: UpdateCommentRequest,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<CommentResponse> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
         val response = commandService.updateComment(commentId, userId, request.content)
         val status = if (response.status == CommentStatus.PENDING) HttpStatus.ACCEPTED else HttpStatus.OK
         return ResponseEntity.status(status).body(response)
@@ -48,8 +52,10 @@ class CommentController(
     @DeleteMapping("/{commentId}")
     fun deleteComment(
         @RequestAttribute("userId") userId: UUID,
-        @PathVariable commentId: UUID
+        @PathVariable commentId: UUID,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<Void> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
         commandService.deleteComment(commentId, userId)
         return ResponseEntity.noContent().build()
     }
@@ -75,8 +81,10 @@ class CommentController(
     )
     fun createComment(
         @RequestAttribute("userId") userId: UUID,
-        @RequestBody request: CreateCommentRequest
+        @RequestBody request: CreateCommentRequest,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<CommentResponse> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
         logger.debug { "POST /api/v1/comments for post=${request.postId}, user=$userId" }
         val response = commandService.createComment(
             postId = request.postId,

@@ -109,6 +109,12 @@ function formatTime(value: string) {
 }
 
 export default function PostDetailPage() {
+  const { user, isLoading, sessionVersion } = useAuth();
+  // Every private snapshot, draft and continuation belongs to one validated session.
+  return <PostDetailContent key={`${user?.id ?? 'anonymous'}:${isLoading}:${sessionVersion}`} />;
+}
+
+function PostDetailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const postId = searchParams.get("id");
@@ -132,6 +138,9 @@ export default function PostDetailPage() {
   const [ownerBusy, setOwnerBusy] = useState(false);
   const [ownerError, setOwnerError] = useState<string | null>(null);
   const [ownerMessage, setOwnerMessage] = useState<string | null>(null);
+  const [commentRevision, setCommentRevision] = useState(0);
+  const ownerLifetime = useRef<AbortController | null>(null);
+  const commentRequest = useRef(0);
   const generationRef = useRef(0);
   const owns = (authorId: string) => !authLoading && isAuthenticated && user?.id === authorId;
   const ownsTarget = (target: ActionTarget) => target.kind === "post"
@@ -140,12 +149,19 @@ export default function PostDetailPage() {
   const ownerDisabled = ownerBusy || commentsLoadingMore || mutationLoading;
 
   useEffect(() => {
-    const generation = ++generationRef.current;
+    const controller = new AbortController();
+    ownerLifetime.current = controller;
     setEditing(null);
+    setDraft("");
     setDeleting(null);
     setOwnerError(null);
     setOwnerMessage(null);
     setOwnerBusy(false);
+    return () => controller.abort();
+  }, [postId, privateUserId, authLoading, retryKey]);
+
+  useEffect(() => {
+    const generation = ++generationRef.current;
     setCommentsLoadingMore(false);
     if (!postId) {
       setError("게시글을 불러오지 못했습니다.");
@@ -196,7 +212,7 @@ export default function PostDetailPage() {
     const controller = new AbortController();
     setState(null);
     setStateError(null);
-    fetchCommunityPostState(postId, controller.signal)
+    fetchCommunityPostState(postId, controller.signal, privateUserId ?? undefined)
       .then((result) => {
         if (!controller.signal.aborted) setState(result);
       })
@@ -204,7 +220,7 @@ export default function PostDetailPage() {
         if (!controller.signal.aborted) setStateError("좋아요·저장 상태를 불러오지 못했습니다.");
       });
     return () => controller.abort();
-  }, [authLoading, isAuthenticated, user?.id, postId, retryKey]);
+  }, [authLoading, isAuthenticated, privateUserId, postId, retryKey]);
 
   const requireAuthentication = () => {
     if (isAuthenticated) return true;
@@ -213,13 +229,13 @@ export default function PostDetailPage() {
   };
 
   const handleLike = async () => {
-    if (!postId || !requireAuthentication() || !state || mutationLoading) return;
+    if (!postId || !requireAuthentication() || !privateUserId || !state || mutationLoading) return;
     setMutationLoading(true);
     setStateError(null);
     try {
       const next = state.liked
-        ? await unlikeCommunityPost(postId)
-        : await likeCommunityPost(postId);
+        ? await unlikeCommunityPost(postId, privateUserId)
+        : await likeCommunityPost(postId, privateUserId);
       setPost((current) => current ? {
         ...current,
         likeCount: Math.max(0, current.likeCount + (next.liked ? 1 : -1)),
@@ -233,13 +249,13 @@ export default function PostDetailPage() {
   };
 
   const handleSave = async () => {
-    if (!postId || !requireAuthentication() || !state || mutationLoading) return;
+    if (!postId || !requireAuthentication() || !privateUserId || !state || mutationLoading) return;
     setMutationLoading(true);
     setStateError(null);
     try {
       const next = state.saved
-        ? await unsaveCommunityPost(postId)
-        : await saveCommunityPost(postId);
+        ? await unsaveCommunityPost(postId, privateUserId)
+        : await saveCommunityPost(postId, privateUserId);
       setState(next);
     } catch {
       setStateError("게시글 저장 상태를 변경하지 못했습니다.");
@@ -251,10 +267,11 @@ export default function PostDetailPage() {
   const reloadComments = async (signal?: AbortSignal) => {
     if (!postId) return;
     const generation = generationRef.current;
+    const request = ++commentRequest.current;
     const result = signal
       ? await fetchCommunityComments(postId, 0, 20, signal)
       : await fetchCommunityComments(postId, 0, 20);
-    if (signal?.aborted || generation !== generationRef.current) return;
+    if (signal?.aborted || generation !== generationRef.current || request !== commentRequest.current) return;
     setComments(result.items);
     setCommentPage({
       page: result.page,
@@ -280,12 +297,13 @@ export default function PostDetailPage() {
     setOwnerMessage(null);
   };
 
-  const refreshChangedComments = async () => {
-    const generation = generationRef.current;
+  const refreshChangedComments = async (signal: AbortSignal) => {
+    // Re-read private status as well as the APPROVED-only list; never publish mutation content.
+    setCommentRevision((value) => value + 1);
     try {
-      await reloadComments();
+      await reloadComments(signal);
     } catch {
-      if (generation !== generationRef.current) return;
+      if (signal.aborted) return;
       // The mutation succeeded. Hide stale public content and retry reads, not the mutation.
       setComments([]);
       setError("댓글 변경은 저장되었지만 목록을 불러오지 못했습니다. 다시 시도해 주세요.");
@@ -295,56 +313,67 @@ export default function PostDetailPage() {
   const handleEdit = async (event: FormEvent) => {
     event.preventDefault();
     if (!postId || !editing || !ownsTarget(editing) || ownerDisabled || !draft.trim()) return;
-    const generation = generationRef.current;
+    const signal = ownerLifetime.current!.signal;
     setOwnerBusy(true);
     setOwnerError(null);
     try {
       if (editing.kind === "post") {
-        const result = await updateCommunityPost(postId, draft.trim());
-        if (generation !== generationRef.current) return;
+        const result = await updateCommunityPost(postId, draft.trim(), privateUserId!);
+        if (signal.aborted) return;
         setPost(result);
         setOwnerMessage("게시글을 수정했습니다.");
       } else {
-        const result = await updateCommunityComment(postId, editing.comment.id, draft.trim());
-        if (generation !== generationRef.current) return;
+        const result = await updateCommunityComment(postId, editing.comment.id, draft.trim(), privateUserId!);
+        if (signal.aborted) return;
         setOwnerMessage(result.status === "PENDING"
           ? "수정한 댓글이 검토 대기 중이므로 공개 목록에서 제외되었습니다."
           : result.status === "BLOCKED"
             ? "수정한 댓글이 게시 기준을 통과하지 못해 공개 목록에서 제외되었습니다."
             : "댓글을 수정했습니다.");
-        await refreshChangedComments();
+        await refreshChangedComments(signal);
       }
-      if (generation === generationRef.current) setEditing(null);
+      if (!signal.aborted) setEditing(null);
     } catch {
-      if (generation === generationRef.current) setOwnerError("수정하지 못했습니다. 내용을 확인한 뒤 다시 시도해 주세요.");
+      if (!signal.aborted) setOwnerError("수정하지 못했습니다. 내용을 확인한 뒤 다시 시도해 주세요.");
     } finally {
-      if (generation === generationRef.current) setOwnerBusy(false);
+      if (!signal.aborted) setOwnerBusy(false);
     }
   };
 
   const handleDelete = async () => {
     if (!postId || !deleting || !ownsTarget(deleting) || ownerDisabled) return;
-    const generation = generationRef.current;
+    const signal = ownerLifetime.current!.signal;
     setOwnerBusy(true);
     setOwnerError(null);
     try {
       if (deleting.kind === "post") {
-        await deleteCommunityPost(postId);
-        if (generation !== generationRef.current) return;
+        await deleteCommunityPost(postId, privateUserId!);
+        if (signal.aborted) return;
         router.push("/community");
       } else {
-        await deleteCommunityComment(postId, deleting.comment.id);
-        if (generation !== generationRef.current) return;
+        await deleteCommunityComment(postId, deleting.comment.id, privateUserId!);
+        if (signal.aborted) return;
         setOwnerMessage("댓글을 삭제했습니다. 작성된 답글은 유지됩니다.");
-        await refreshChangedComments();
+        await refreshChangedComments(signal);
       }
-      if (generation === generationRef.current) setDeleting(null);
+      if (!signal.aborted) setDeleting(null);
     } catch {
-      if (generation === generationRef.current) setOwnerError("삭제하지 못했습니다. 다시 시도해 주세요.");
+      if (!signal.aborted) setOwnerError("삭제하지 못했습니다. 다시 시도해 주세요.");
     } finally {
-      if (generation === generationRef.current) setOwnerBusy(false);
+      if (!signal.aborted) setOwnerBusy(false);
     }
   };
+
+  const renderCommentActions = (comment: CommunityComment, disabled = false) => owns(comment.userId) && (
+    <OwnerActions label={`댓글 작업: ${comment.content}`} disabled={ownerDisabled || disabled}
+      onEdit={() => beginEdit({ kind: "comment", comment })} onDelete={() => beginDelete({ kind: "comment", comment })} />
+  );
+
+  const renderCommentEditor = (comment: CommunityComment) => editing?.kind === "comment"
+    && editing.comment.id === comment.id && owns(comment.userId) ? (
+      <ContentEditor kind="comment" value={draft} busy={ownerBusy} error={ownerError}
+        onChange={setDraft} onCancel={() => { setEditing(null); setOwnerError(null); }} onSubmit={handleEdit} />
+    ) : null;
 
   const loadMoreComments = async () => {
     if (!postId || commentsLoadingMore || ownerBusy || commentPage.page + 1 >= commentPage.totalPages) return;
@@ -463,6 +492,10 @@ export default function PostDetailPage() {
                 postId={post.id}
                 userId={privateUserId}
                 authLoading={authLoading}
+                ownerBusy={ownerDisabled || editing !== null || deleting !== null}
+                commentRevision={commentRevision}
+                renderOwnerActions={renderCommentActions}
+                renderCommentEditor={renderCommentEditor}
                 requireAuthentication={requireAuthentication}
                 refreshPublicComments={reloadComments}
               />
@@ -482,13 +515,9 @@ export default function PostDetailPage() {
                           {comment.authorName ?? "탈퇴한 사용자"}
                         </p>
                         <time className="ml-auto text-xs text-gray-500">{formatTime(comment.createdAt)}</time>
-                        {owns(comment.userId) && <OwnerActions label={`댓글 작업: ${comment.content}`} disabled={ownerDisabled}
-                          onEdit={() => beginEdit({ kind: "comment", comment })} onDelete={() => beginDelete({ kind: "comment", comment })} />}
+                        {renderCommentActions(comment)}
                       </div>
-                      {editing?.kind === "comment" && editing.comment.id === comment.id && owns(comment.userId) ? (
-                        <ContentEditor kind="comment" value={draft} busy={ownerBusy} error={ownerError}
-                          onChange={setDraft} onCancel={() => { setEditing(null); setOwnerError(null); }} onSubmit={handleEdit} />
-                      ) : <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">{comment.content}</p>}
+                      {renderCommentEditor(comment) ?? <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">{comment.content}</p>}
                     </article>
                   ))}
                 </div>

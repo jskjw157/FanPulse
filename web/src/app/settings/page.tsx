@@ -70,8 +70,23 @@ function LanguageSettings() {
 }
 
 export default function SettingsPage() {
-  const { logout, user } = useAuth();
+  const { logout, user, sessionVersion } = useAuth();
   const { t } = useTranslation();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutFailed, setLogoutFailed] = useState(false);
+
+  async function handleLogout() {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    setLogoutFailed(false);
+    try {
+      await logout();
+    } catch {
+      setLogoutFailed(true);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
 
   return (
     <ProtectedRoute>
@@ -84,15 +99,17 @@ export default function SettingsPage() {
 
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
               <button
-                onClick={logout}
-                className="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition-colors"
+                onClick={() => void handleLogout()}
+                disabled={isLoggingOut}
+                aria-busy={isLoggingOut}
+                className="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center">
                     <i className="ri-logout-box-r-line text-red-600"></i>
                   </div>
                   <span className="text-sm text-gray-900 font-medium">
-                    {t("settings.logout")}
+                    {t(isLoggingOut ? "settings.loggingOut" : "settings.logout")}
                   </span>
                 </div>
                 <i className="ri-arrow-right-s-line text-gray-400 text-lg"></i>
@@ -100,7 +117,11 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <LanguageSettings key={user?.id} />
+          {logoutFailed && (
+            <p role="alert" className="mt-2 text-sm text-red-700">{t("settings.logoutFailed")}</p>
+          )}
+
+          <LanguageSettings key={`${user?.id}:${sessionVersion}`} />
 
           {/* App Info Section */}
           <div className="py-4">
