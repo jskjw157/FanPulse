@@ -16,13 +16,16 @@ service, so a mismatch cannot save data or publish mutation events.
 | --- | --- |
 | `PATCH /api/v1/me` and `PATCH /api/v1/me/settings`, cookie authentication | Required |
 | Same PATCH requests, explicit `Authorization: Bearer ...` | Optional for existing native/API clients; enforced if supplied |
+| POST/DELETE `/api/v1/users/me/favorites/{artistId}`, cookie authentication (#326) | Required |
+| Same favorites writes, explicit `Authorization: Bearer ...` | Optional for existing native/API clients; enforced if supplied |
+| `GET /api/v1/users/me/favorites` | Optional; enforced if supplied |
 | `GET /api/v1/me`, `GET /api/v1/me/settings` | Optional; enforced if supplied |
 | GET `/api/v1/users/me/notifications`, `/notifications/page`, `/notifications/unread-count` | Optional; enforced if supplied |
 | PATCH `/api/v1/users/me/notifications/{id}/read`, `/notifications/read-all` | Optional; enforced if supplied |
 
 The last two rows use the `/api/v1/users/me` prefix. Existing response bodies and
 legacy notification array endpoints are unchanged. Other endpoints (including
-password changes and favorites) are outside this contract.
+password changes) are outside this contract.
 
 * Missing required header: **428**, RFC 7807 `errorCode: EXPECTED_USER_REQUIRED`.
 * Present but blank, malformed, combined, or different from the authenticated
@@ -34,10 +37,10 @@ password changes and favorites) are outside this contract.
 * Neither failure may be retried automatically with a newly discovered user ID.
   Refresh identity, discard the draft, and require a new user action.
 
-Browser profile/settings writes always send the captured displayed user ID.
-Browser private profile/settings reads and notification page/count/read-state
-requests also send it, preventing B's data from being labeled as A even if the
-cookie switch has not yet produced an event. A retried 401 request must preserve
+Browser profile/settings/favorites writes always send the captured displayed
+user ID. Browser private profile/settings/favorites reads and notification
+page/count/read-state requests also send it, preventing B's data from being
+labeled as A even if the cookie switch has not yet produced an event. A retried 401 request must preserve
 this header; if session refresh selects B, the original A operation fails 412.
 
 ## Compatibility and rollout
@@ -45,7 +48,7 @@ this header; if session refresh selects B, the original A operation fails 412.
 Existing bearer clients need no changes. Legacy private GETs and notification
 clients may omit the assertion deliberately; they do not gain stale-tab
 protection until upgraded. Old cookie clients that omit it on profile/settings
-PATCH now fail closed with 428; this is intentional, not silent backward
+PATCH and favorites POST/DELETE now fail closed with 428; this is intentional, not silent backward
 compatibility. Reload/upgrade those browser clients. Deploy the updated web
 client **before server enforcement**. Older tabs still running the previous web
 bundle must reload before they can save again. Reverse proxies must
@@ -104,7 +107,14 @@ with synthetic HTTP provided by `web/e2e/fixtures/account-boundary.ts`:
   fails 412 instead of exposing B rows under A, and hides private rows/counts
   while identity is revalidated.
 
-There are 12 Chromium cases. All browser API traffic is fulfilled in memory;
+There are 12 Chromium cases in the original account-boundary suite. The additional
+`favorites-account-boundary.spec.ts` regression (#326) replaces the shared cookie
+without a session event, rejects the old screen's unfollow, verifies no automatic
+replay, and permits a fresh explicit operation as B while A remains unchanged.
+Its HTTP fixture enforces supplied assertions; missing cookie-write assertions
+are tested separately through the real JWT/filter/MVC suite.
+
+All browser API traffic is fulfilled in memory;
 unknown API requests fail 501 instead of reaching the Next backend proxy.
 External browser HTTP/WebSockets and image-optimizer requests are blocked, and
 service workers are disabled. The fixture does not use Google, a production

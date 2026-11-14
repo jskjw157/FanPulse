@@ -25,14 +25,18 @@ import java.util.UUID
 class SocialUserController(private val service: SocialUserService) {
 
     @GetMapping("/favorites")
-    fun favorites(@RequestAttribute("userId") userId: UUID) =
-        ResponseEntity.ok(ApiResponse.success(service.getFavorites(userId)))
+    fun favorites(@RequestAttribute("userId") userId: UUID, request: HttpServletRequest): ResponseEntity<ApiResponse<List<FavoriteArtistResponse>>> {
+        requireExpectedUser(request, userId)
+        return ResponseEntity.ok(ApiResponse.success(service.getFavorites(userId)))
+    }
 
     @PostMapping("/favorites/{artistId}")
     fun addFavorite(
         @RequestAttribute("userId") userId: UUID,
-        @PathVariable artistId: UUID
+        @PathVariable artistId: UUID,
+        request: HttpServletRequest
     ): ResponseEntity<ApiResponse<FavoriteArtistResponse>> {
+        requireExpectedUser(request, userId, cookieWrite = true)
         val result = service.addFavorite(userId, artistId)
         val status = if (result.created) HttpStatus.CREATED else HttpStatus.OK
         return ResponseEntity.status(status).body(ApiResponse.success(result.favorite))
@@ -41,8 +45,10 @@ class SocialUserController(private val service: SocialUserService) {
     @DeleteMapping("/favorites/{artistId}")
     fun removeFavorite(
         @RequestAttribute("userId") userId: UUID,
-        @PathVariable artistId: UUID
+        @PathVariable artistId: UUID,
+        request: HttpServletRequest
     ): ResponseEntity<Void> {
+        requireExpectedUser(request, userId, cookieWrite = true)
         service.removeFavorite(userId, artistId)
         return ResponseEntity.noContent().build()
     }

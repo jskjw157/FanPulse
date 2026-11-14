@@ -80,8 +80,10 @@ function isUpdatedResult(value: unknown): value is { updated: number } {
   return isRecord(value) && Number.isInteger(value.updated) && (value.updated as number) >= 0;
 }
 
-export async function fetchFavorites(signal?: AbortSignal): Promise<FavoriteArtist[]> {
-  const response = await apiClient.get<ApiResponse<FavoriteArtist[]>>('/users/me/favorites', { signal });
+export async function fetchFavorites(signal?: AbortSignal, expectedUserId?: string): Promise<FavoriteArtist[]> {
+  const response = await apiClient.get<ApiResponse<FavoriteArtist[]>>('/users/me/favorites', {
+    signal, ...expectedUserHeaders(expectedUserId),
+  }).catch((error) => { throw privateRequestError(error); });
   return unwrapApiResponse(
     response.data,
     '즐겨찾기 API 응답이 올바르지 않습니다.',
@@ -89,8 +91,10 @@ export async function fetchFavorites(signal?: AbortSignal): Promise<FavoriteArti
   );
 }
 
-export async function addFavorite(artistId: string): Promise<FavoriteArtist> {
-  const response = await apiClient.post<ApiResponse<FavoriteArtist>>(`/users/me/favorites/${artistId}`);
+export async function addFavorite(artistId: string, expectedUserId: string): Promise<FavoriteArtist> {
+  const response = await apiClient.post<ApiResponse<FavoriteArtist>>(
+    `/users/me/favorites/${artistId}`, undefined, expectedUserHeaders(expectedUserId),
+  ).catch((error) => { throw privateRequestError(error); });
   return unwrapApiResponse(
     response.data,
     '즐겨찾기 API 응답이 올바르지 않습니다.',
@@ -98,8 +102,9 @@ export async function addFavorite(artistId: string): Promise<FavoriteArtist> {
   );
 }
 
-export async function removeFavorite(artistId: string): Promise<void> {
-  await apiClient.delete(`/users/me/favorites/${artistId}`);
+export async function removeFavorite(artistId: string, expectedUserId: string): Promise<void> {
+  await apiClient.delete(`/users/me/favorites/${artistId}`, expectedUserHeaders(expectedUserId))
+    .catch((error) => { throw privateRequestError(error); });
 }
 
 export async function fetchNotifications(

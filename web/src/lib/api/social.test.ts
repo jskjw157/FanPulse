@@ -19,6 +19,8 @@ const favorite = {
   followedAt: '2026-08-13T12:00:00',
 };
 
+const expectedUserId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
 const notification = {
   id: '22222222-2222-2222-2222-222222222222',
   type: 'NEWS',
@@ -32,8 +34,10 @@ describe('social API', () => {
 
   it('loads real favorites from the authenticated user endpoint', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: { success: true, data: [favorite] } });
-    await expect(fetchFavorites()).resolves.toEqual([favorite]);
-    expect(apiClient.get).toHaveBeenCalledWith('/users/me/favorites', { signal: undefined });
+    await expect(fetchFavorites(undefined, expectedUserId)).resolves.toEqual([favorite]);
+    expect(apiClient.get).toHaveBeenCalledWith('/users/me/favorites', {
+      signal: undefined, headers: { 'X-Expected-User-Id': expectedUserId },
+    });
   });
 
   it('rejects an unsuccessful favorites response instead of treating the envelope as data', async () => {
@@ -50,19 +54,42 @@ describe('social API', () => {
 
   it.each([201, 200])('accepts a favorite from new or duplicate POST (%s)', async (status) => {
     vi.mocked(apiClient.post).mockResolvedValue({ status, data: { success: true, data: favorite } });
-    await expect(addFavorite(favorite.id)).resolves.toEqual(favorite);
-    expect(apiClient.post).toHaveBeenCalledWith(`/users/me/favorites/${favorite.id}`);
+    await expect(addFavorite(favorite.id, expectedUserId)).resolves.toEqual(favorite);
+    expect(apiClient.post).toHaveBeenCalledWith(`/users/me/favorites/${favorite.id}`, undefined, {
+      headers: { 'X-Expected-User-Id': expectedUserId },
+    });
   });
 
   it('rejects malformed POST results rather than claiming follow succeeded', async () => {
     vi.mocked(apiClient.post).mockResolvedValue({ data: { success: true, data: { ...favorite, followedAt: null } } });
-    await expect(addFavorite(favorite.id)).rejects.toThrow('즐겨찾기 API 응답이 올바르지 않습니다.');
+    await expect(addFavorite(favorite.id, expectedUserId)).rejects.toThrow('즐겨찾기 API 응답이 올바르지 않습니다.');
   });
 
   it('removes a favorite through the API', async () => {
     vi.mocked(apiClient.delete).mockResolvedValue({});
-    await removeFavorite(favorite.id);
-    expect(apiClient.delete).toHaveBeenCalledWith(`/users/me/favorites/${favorite.id}`);
+    await removeFavorite(favorite.id, expectedUserId);
+    expect(apiClient.delete).toHaveBeenCalledWith(`/users/me/favorites/${favorite.id}`, {
+      headers: { 'X-Expected-User-Id': expectedUserId },
+    });
+  });
+
+  it.each([
+    ['read', () => fetchFavorites(undefined, expectedUserId)],
+    ['follow', () => addFavorite(favorite.id, expectedUserId)],
+    ['unfollow', () => removeFavorite(favorite.id, expectedUserId)],
+  ] as const)('invalidates the displayed identity after a rejected favorite %s', async (_name, request) => {
+    const error = { isAxiosError: true, response: { status: 412, data: { title: 'Expected User Precondition', status: 412, errorCode: 'EXPECTED_USER_MISMATCH' } } };
+    vi.mocked(apiClient.get).mockRejectedValue(error);
+    vi.mocked(apiClient.post).mockRejectedValue(error);
+    vi.mocked(apiClient.delete).mockRejectedValue(error);
+    const invalidated = vi.fn();
+    window.addEventListener('fanpulse:session-invalidated', invalidated);
+    try {
+      await expect(request()).rejects.toMatchObject({ code: 'EXPECTED_USER_MISMATCH' });
+      expect(invalidated).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener('fanpulse:session-invalidated', invalidated);
+    }
   });
 
   it('loads notifications using the unread filter', async () => {

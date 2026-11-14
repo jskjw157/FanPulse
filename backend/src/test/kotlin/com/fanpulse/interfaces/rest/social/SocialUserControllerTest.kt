@@ -58,9 +58,15 @@ class SocialUserControllerTest {
         every { service.addFavorite(userId, artistId) } returns FavoriteAddResult(favorite(), created = true)
         every { service.removeFavorite(userId, artistId) } returns Unit
 
-        mockMvc.post("/api/v1/users/me/favorites/$artistId") { requestAttr("userId", userId) }
+        mockMvc.post("/api/v1/users/me/favorites/$artistId") {
+            requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isCreated() } }
-        mockMvc.delete("/api/v1/users/me/favorites/$artistId") { requestAttr("userId", userId) }
+        mockMvc.delete("/api/v1/users/me/favorites/$artistId") {
+            requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect { status { isNoContent() } }
     }
 
@@ -69,7 +75,10 @@ class SocialUserControllerTest {
     fun `returns 200 for an already existing favorite`() {
         every { service.addFavorite(userId, artistId) } returns FavoriteAddResult(favorite(), created = false)
 
-        mockMvc.post("/api/v1/users/me/favorites/$artistId") { requestAttr("userId", userId) }
+        mockMvc.post("/api/v1/users/me/favorites/$artistId") {
+            requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect {
                 status { isOk() }
                 jsonPath("$.data.id") { value(artistId.toString()) }
@@ -81,7 +90,10 @@ class SocialUserControllerTest {
     fun `returns 404 when the requested artist does not exist`() {
         every { service.addFavorite(userId, artistId) } throws NoSuchElementException("Artist not found: $artistId")
 
-        mockMvc.post("/api/v1/users/me/favorites/$artistId") { requestAttr("userId", userId) }
+        mockMvc.post("/api/v1/users/me/favorites/$artistId") {
+            requestAttr("userId", userId)
+            header("X-Expected-User-Id", userId.toString())
+        }
             .andExpect {
                 status { isNotFound() }
                 jsonPath("$.status") { value(404) }

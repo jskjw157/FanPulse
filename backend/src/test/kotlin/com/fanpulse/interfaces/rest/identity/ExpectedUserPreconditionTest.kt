@@ -3,6 +3,13 @@ package com.fanpulse.interfaces.rest.identity
 import com.fanpulse.application.dto.identity.*
 import com.fanpulse.application.service.identity.UserService
 import com.fanpulse.application.service.social.SocialUserService
+import com.fanpulse.application.service.social.FavoriteAddResult
+import com.fanpulse.application.service.social.FavoriteArtistResponse
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.http.HttpMethod
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request
+import java.time.LocalDateTime
 import com.fanpulse.infrastructure.security.JwtAuthenticationFilter
 import com.fanpulse.infrastructure.security.JwtTokenProvider
 import com.fanpulse.interfaces.rest.GlobalExceptionHandler
@@ -149,6 +156,58 @@ class ExpectedUserPreconditionTest {
         mvc.perform(get("/api/v1/me/settings").cookie(cookie(bob))).andExpect(status().isOk())
         mvc.perform(get("/api/v1/users/me/notifications/unread-count").cookie(cookie(bob)))
             .andExpect(status().isOk()).andExpect(jsonPath("$.data.unreadCount").value(3))
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["GET", "POST", "DELETE"])
+    fun `favorite requests reject a stale account assertion before service entry`(method: String) {
+        val artistId = UUID.fromString("33333333-3333-4333-8333-333333333333")
+        every { social.getFavorites(bob) } returns emptyList()
+        every { social.addFavorite(bob, artistId) } returns FavoriteAddResult(
+            FavoriteArtistResponse(artistId, "Artist", null, null, null, true, LocalDateTime.of(2026, 1, 1, 0, 0)), true)
+        every { social.removeFavorite(bob, artistId) } returns Unit
+        val path = "/api/v1/users/me/favorites" + if (method == "GET") "" else "/$artistId"
+        for (bearer in listOf(false, true)) {
+            val call = request(HttpMethod.valueOf(method), path).cookie(cookie(bob))
+                .header("X-Expected-User-Id", alice.toString())
+            if (bearer) call.header("Authorization", "Bearer ${tokens.generateAccessToken(bob)}")
+            mvc.perform(call).andExpect(status().isPreconditionFailed())
+                .andExpect(jsonPath("$.errorCode").value("EXPECTED_USER_MISMATCH"))
+        }
+        verify { social wasNot Called }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["POST", "DELETE"])
+    fun `favorite cookie mutations without an assertion fail closed`(method: String) {
+        val artistId = UUID.fromString("33333333-3333-4333-8333-333333333333")
+        every { social.addFavorite(bob, artistId) } returns FavoriteAddResult(
+            FavoriteArtistResponse(artistId, "Artist", null, null, null, true, LocalDateTime.of(2026, 1, 1, 0, 0)), true)
+        every { social.removeFavorite(bob, artistId) } returns Unit
+        mvc.perform(request(HttpMethod.valueOf(method), "/api/v1/users/me/favorites/$artistId").cookie(cookie(bob)))
+            .andExpect(status().`is`(428))
+            .andExpect(jsonPath("$.errorCode").value("EXPECTED_USER_REQUIRED"))
+        verify { social wasNot Called }
+    }
+
+    @Test
+    fun `favorite matching cookie and legacy bearer clients retain successful operations`() {
+        val artistId = UUID.fromString("33333333-3333-4333-8333-333333333333")
+        val favorite = FavoriteArtistResponse(artistId, "Artist", null, null, null, true, LocalDateTime.of(2026, 1, 1, 0, 0))
+        every { social.getFavorites(bob) } returns listOf(favorite)
+        every { social.addFavorite(bob, artistId) } returns FavoriteAddResult(favorite, true)
+        every { social.removeFavorite(bob, artistId) } returns Unit
+        for (bearer in listOf(false, true)) {
+            for (method in listOf("GET", "POST", "DELETE")) {
+                val path = "/api/v1/users/me/favorites" + if (method == "GET") "" else "/$artistId"
+                val call = request(HttpMethod.valueOf(method), path)
+                if (bearer) call.cookie(cookie(alice)).header("Authorization", "Bearer ${tokens.generateAccessToken(bob)}")
+                else call.cookie(cookie(bob)).header("X-Expected-User-Id", bob.toString())
+                mvc.perform(call).andExpect(status().`is`(when (method) { "POST" -> 201; "DELETE" -> 204; else -> 200 }))
+            }
+        }
+        verify(exactly = 2) { social.getFavorites(bob); social.addFavorite(bob, artistId); social.removeFavorite(bob, artistId) }
+        verify(exactly = 0) { social.getFavorites(alice); social.addFavorite(alice, any()); social.removeFavorite(alice, any()) }
     }
 
     private fun stubWrites(id: UUID) {
