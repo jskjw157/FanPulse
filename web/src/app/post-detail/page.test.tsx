@@ -14,6 +14,8 @@ import {
   saveCommunityPost,
   updateCommunityComment,
   updateCommunityPost,
+  type CommunityComment,
+  type CommunityCommentPage,
 } from '@/lib/api/community';
 
 const auth = vi.hoisted(() => ({
@@ -81,10 +83,18 @@ const comments = {
   totalPages: 1,
 };
 const pending = {
-  ...comment, content: '나만 볼 수 있는 대기 댓글', status: 'PENDING' as const, authorName: null,
+  ...comment, id: '88888888-8888-8888-8888-888888888888',
+  content: '나만 볼 수 있는 대기 댓글', status: 'PENDING' as const, authorName: null,
   version: 2, blockReason: null, reviewAttempts: 3, nextReviewAt: null, requiresManualReview: true,
 };
 const privatePage: ReviewCommentPage = { ...comments, items: [pending] };
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<T>((done, fail) => { resolve = done; reject = fail; });
+  return { promise, resolve, reject };
+}
 
 describe('PostDetailPage', () => {
   beforeEach(() => {
@@ -264,12 +274,14 @@ describe('PostDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
     expect(await screen.findByText('서버 공개 댓글')).toBeInTheDocument();
     expect(screen.queryByText('수정된 댓글')).not.toBeInTheDocument();
-    expect(fetchCommunityComments).toHaveBeenLastCalledWith(post.id, 0, 20);
+    expect(fetchCommunityComments).toHaveBeenLastCalledWith(post.id, 0, 20, expect.any(AbortSignal));
     expect(updateCommunityComment).toHaveBeenLastCalledWith(post.id, comment.id, '수정 요청');
   });
 
   it.each(['PENDING', 'BLOCKED'] as const)('removes %s edited comments and reloads the authoritative count', async (status) => {
     vi.mocked(updateCommunityComment).mockResolvedValue({ ...comment, status, content: '비공개 수정' });
+    vi.mocked(fetchMyCommentReviews).mockResolvedValueOnce({ ...privatePage, items: [], totalElements: 0, totalPages: 0 })
+      .mockResolvedValue({ ...privatePage, items: [{ ...pending, id: comment.id, status, content: '비공개 수정' }] });
     render(<PostDetailPage />);
     await screen.findByText(comment.content);
     vi.mocked(fetchCommunityComments).mockResolvedValue({ ...comments, items: [], totalElements: 0, totalPages: 0 });
@@ -277,9 +289,15 @@ describe('PostDetailPage', () => {
     fireEvent.change(screen.getByLabelText('댓글 내용 수정'), { target: { value: '비공개 수정' } });
     fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
     expect(await screen.findByRole('heading', { name: '댓글 0' })).toBeInTheDocument();
+    expect(await screen.findByText('비공개 수정')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('button', { name: '상태 새로고침' })).toBeEnabled());
     expect(screen.getByRole('status')).toHaveTextContent('공개 목록에서 제외되었습니다.');
     expect(screen.queryByText(comment.content)).not.toBeInTheDocument();
-    expect(screen.queryByText('비공개 수정')).not.toBeInTheDocument();
+    const panel = within(screen.getByRole('region', { name: '내 댓글 검토 상태' }));
+    expect(panel.getByText('비공개 수정')).toBeInTheDocument();
+    expect(panel.getByLabelText('댓글 작업: 비공개 수정')).toBeInTheDocument();
+    expect(screen.getAllByText('비공개 수정')).toHaveLength(1);
+    expect(fetchMyCommentReviews).toHaveBeenCalledTimes(2);
     expect(fetchCommunityComments).toHaveBeenCalledTimes(2);
   });
 
@@ -374,6 +392,295 @@ describe('PostDetailPage', () => {
     expect(await screen.findByText('댓글이 검토 대기 상태로 저장되었습니다.')).toBeInTheDocument();
     expect(await screen.findByText(pending.content)).toBeInTheDocument();
     expect(fetchCommunityComments).toHaveBeenCalledTimes(1);
+  });
+
+  describe.each(['PENDING', 'BLOCKED'] as const)('own rendered %s rows', (status) => {
+    const row = { ...pending, status, blockReason: status === 'BLOCKED' ? '게시 기준 위반' : null };
+
+    it.each(['PENDING', 'BLOCKED', 'APPROVED'] as const)('edits with the existing UX and reloads authoritative %s state', async (nextStatus) => {
+      const saved = { ...row, status: nextStatus, content: '서버에서 다시 읽은 댓글' };
+      vi.mocked(fetchMyCommentReviews).mockResolvedValueOnce({ ...privatePage, items: [row] })
+        .mockResolvedValue({ ...privatePage, items: [saved] });
+      vi.mocked(updateCommunityComment).mockResolvedValue({ ...saved, content: '공개하면 안 되는 변경 응답' });
+      render(<PostDetailPage />);
+      await screen.findByText(row.content);
+      fireEvent.change(screen.getByLabelText('댓글 내용'), { target: { value: '새 댓글 작성 초안' } });
+      chooseAction(`댓글 작업: ${row.content}`, '수정');
+      expect(screen.getByLabelText('댓글 내용 수정')).toHaveValue(row.content);
+      expect(screen.getByLabelText('댓글 내용 수정')).toHaveAttribute('maxlength', '1000');
+      expect(screen.getByRole('button', { name: '댓글 등록' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: '상태 새로고침' })).toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: '취소' }));
+      expect(updateCommunityComment).not.toHaveBeenCalled();
+      expect(screen.getByText(row.content)).toBeInTheDocument();
+      chooseAction(`댓글 작업: ${row.content}`, '수정');
+      fireEvent.change(screen.getByLabelText('댓글 내용 수정'), { target: { value: '   ' } });
+      expect(screen.getByRole('button', { name: '수정 저장' })).toBeDisabled();
+      fireEvent.change(screen.getByLabelText('댓글 내용 수정'), { target: { value: '  수정 요청  ' } });
+      if (nextStatus === 'APPROVED') {
+        vi.mocked(fetchCommunityComments).mockResolvedValue({ ...comments, items: [comment, saved], totalElements: 2 });
+      }
+      fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+      await waitFor(() => expect(screen.queryByLabelText('댓글 내용 수정')).not.toBeInTheDocument());
+      expect(updateCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, row.id, '수정 요청');
+      expect(fetchMyCommentReviews).toHaveBeenLastCalledWith(post.id, 0, 20, expect.any(AbortSignal));
+      expect(fetchMyCommentReviews).toHaveBeenCalledTimes(2);
+      expect(fetchCommunityComments).toHaveBeenCalledTimes(2);
+      expect(await screen.findByText(saved.content)).toBeInTheDocument();
+      const panel = screen.getByRole('region', { name: '내 댓글 검토 상태' });
+      expect(panel.contains(screen.getByText(saved.content))).toBe(nextStatus !== 'APPROVED');
+      expect(screen.getAllByText(saved.content)).toHaveLength(1);
+      expect(screen.queryByText('공개하면 안 되는 변경 응답')).not.toBeInTheDocument();
+      expect(screen.queryByText('수정 요청')).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: `댓글 ${nextStatus === 'APPROVED' ? 2 : 1}` })).toBeInTheDocument();
+      expect(screen.getByText(comment.content)).toBeInTheDocument();
+      expect(screen.getByLabelText('댓글 내용')).toHaveValue('새 댓글 작성 초안');
+    });
+
+    it('keeps the edit draft and existing counts on failure without reloading or publishing it', async () => {
+      vi.mocked(fetchMyCommentReviews).mockResolvedValue({ ...privatePage, items: [row] });
+      vi.mocked(updateCommunityComment).mockRejectedValue(new Error('network'));
+      render(<PostDetailPage />);
+      await screen.findByText(row.content);
+      chooseAction(`댓글 작업: ${row.content}`, '수정');
+      fireEvent.change(screen.getByLabelText('댓글 내용 수정'), { target: { value: '저장 실패 초안' } });
+      fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('수정하지 못했습니다.');
+      expect(screen.getByLabelText('댓글 내용 수정')).toHaveValue('저장 실패 초안');
+      expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
+      expect(screen.getByText(comment.content)).toBeInTheDocument();
+      expect(fetchMyCommentReviews).toHaveBeenCalledTimes(1);
+      expect(fetchCommunityComments).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole('button', { name: '취소' }));
+      expect(screen.getByText(row.content)).toBeInTheDocument();
+      expect(screen.queryByText('저장 실패 초안')).not.toBeInTheDocument();
+    });
+
+    it('cancels deletion without a write, prevents duplicate mutations while busy, and reloads both lists after confirmation', async () => {
+      const deletion = deferred<void>();
+      vi.mocked(deleteCommunityComment).mockReturnValue(deletion.promise);
+      vi.mocked(fetchMyCommentReviews).mockResolvedValueOnce({ ...privatePage, items: [row] })
+        .mockResolvedValue({ ...privatePage, items: [], totalElements: 0, totalPages: 0 });
+      render(<PostDetailPage />);
+      await screen.findByText(row.content);
+      chooseAction(`댓글 작업: ${row.content}`, '삭제');
+      expect(screen.getByRole('dialog', { name: '댓글을 삭제할까요?' })).toHaveTextContent('작성된 답글은 유지됩니다.');
+      expect(deleteCommunityComment).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: '취소' }));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      chooseAction(`댓글 작업: ${row.content}`, '삭제');
+      fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }));
+      expect(screen.getByRole('button', { name: '삭제 중' })).toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: '삭제 중' }));
+      expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: '상태 새로고침' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: '댓글 등록' })).toBeDisabled();
+      const actions = screen.getByLabelText(`댓글 작업: ${row.content}`).closest('details')!;
+      fireEvent.click(screen.getByLabelText(`댓글 작업: ${row.content}`));
+      expect(within(actions).getByRole('button', { name: '수정' })).toBeDisabled();
+      fireEvent.click(within(actions).getByRole('button', { name: '수정' }));
+      expect(updateCommunityComment).not.toHaveBeenCalled();
+      expect(screen.getByText(row.content)).toBeInTheDocument();
+      expect(fetchMyCommentReviews).toHaveBeenCalledTimes(1);
+      await act(async () => { deletion.resolve(undefined); await deletion.promise; });
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      expect(screen.queryByText(row.content)).not.toBeInTheDocument();
+      expect(screen.getByText(comment.content)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
+      expect(deleteCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, row.id);
+      expect(fetchMyCommentReviews).toHaveBeenCalledTimes(2);
+      expect(fetchCommunityComments).toHaveBeenCalledTimes(2);
+      expect(nav.push).not.toHaveBeenCalled();
+    });
+
+    it('keeps a failed deletion in the confirmation with the private row and public count intact', async () => {
+      vi.mocked(fetchMyCommentReviews).mockResolvedValue({ ...privatePage, items: [row] });
+      vi.mocked(deleteCommunityComment).mockRejectedValue(new Error('forbidden'));
+      render(<PostDetailPage />);
+      await screen.findByText(row.content);
+      chooseAction(`댓글 작업: ${row.content}`, '삭제');
+      fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('삭제하지 못했습니다.');
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByText(row.content)).toBeInTheDocument();
+      expect(screen.getByText(comment.content)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
+      expect(fetchMyCommentReviews).toHaveBeenCalledTimes(1);
+      expect(fetchCommunityComments).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('retries a failed private reload after successful private editing without resubmitting the edit', async () => {
+    vi.mocked(fetchMyCommentReviews).mockResolvedValueOnce(privatePage)
+      .mockRejectedValueOnce(new Error('reload failed'))
+      .mockResolvedValue({ ...privatePage, items: [{ ...pending, content: '다시 읽은 수정 댓글' }] });
+    vi.mocked(updateCommunityComment).mockResolvedValue({ ...pending, content: '비공개 변경 응답' });
+    render(<PostDetailPage />);
+    await screen.findByText(pending.content);
+    chooseAction(`댓글 작업: ${pending.content}`, '수정');
+    fireEvent.change(screen.getByLabelText('댓글 내용 수정'), { target: { value: '수정 요청' } });
+    fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('내 댓글 검토 상태를 불러오지 못했습니다.');
+    expect(screen.queryByText(pending.content)).not.toBeInTheDocument();
+    expect(screen.queryByText('비공개 변경 응답')).not.toBeInTheDocument();
+    expect(screen.getByText(comment.content)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('button', { name: '상태 새로고침' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: '상태 새로고침' }));
+    expect(await screen.findByText('다시 읽은 수정 댓글')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
+    expect(updateCommunityComment).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries reads rather than a successful private deletion when the public reload fails', async () => {
+    vi.mocked(fetchMyCommentReviews).mockResolvedValueOnce(privatePage)
+      .mockResolvedValue({ ...privatePage, items: [], totalElements: 0, totalPages: 0 });
+    render(<PostDetailPage />);
+    await screen.findByText(pending.content);
+    vi.mocked(fetchCommunityComments).mockRejectedValueOnce(new Error('reload failed'));
+    chooseAction(`댓글 작업: ${pending.content}`, '삭제');
+    fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }));
+    expect(await screen.findByText(/댓글 변경은 저장되었지만 목록을 불러오지 못했습니다/)).toBeInTheDocument();
+    expect(screen.queryByText(pending.content)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    expect(await screen.findByText(comment.content)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
+    expect(screen.queryByText(pending.content)).not.toBeInTheDocument();
+    expect(deleteCommunityComment).toHaveBeenCalledExactlyOnceWith(post.id, pending.id);
+  });
+
+  it('returns private pagination to page zero after deleting its last row without clearing the compose draft', async () => {
+    const next = { ...pending, content: '마지막 페이지의 비공개 댓글' };
+    vi.mocked(fetchMyCommentReviews).mockResolvedValueOnce({ ...privatePage, totalElements: 21, totalPages: 2 })
+      .mockResolvedValueOnce({ ...privatePage, items: [next], page: 1, totalElements: 21, totalPages: 2 })
+      .mockResolvedValue({ ...privatePage, totalElements: 20 });
+    render(<PostDetailPage />);
+    await screen.findByText(pending.content);
+    fireEvent.change(screen.getByLabelText('댓글 내용'), { target: { value: '유지할 작성 초안' } });
+    fireEvent.click(screen.getByRole('button', { name: '내 댓글 다음' }));
+    await screen.findByText(next.content);
+    chooseAction(`댓글 작업: ${next.content}`, '삭제');
+    fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }));
+    expect(await screen.findByText(pending.content)).toBeInTheDocument();
+    expect(fetchMyCommentReviews).toHaveBeenLastCalledWith(post.id, 0, 20, expect.any(AbortSignal));
+    expect(screen.queryByText(next.content)).not.toBeInTheDocument();
+    expect(screen.getByLabelText('댓글 내용')).toHaveValue('유지할 작성 초안');
+    expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
+  });
+
+  it('does not let an older status-refresh public read overwrite the newer private-mutation count', async () => {
+    const oldRead = deferred<CommunityCommentPage>();
+    vi.mocked(fetchMyCommentReviews).mockResolvedValue(privatePage);
+    vi.mocked(fetchCommunityComments).mockResolvedValueOnce(comments).mockReturnValueOnce(oldRead.promise)
+      .mockResolvedValue({ ...comments, items: [], totalElements: 0, totalPages: 0 });
+    render(<PostDetailPage />);
+    await screen.findByText(pending.content);
+    fireEvent.click(screen.getByRole('button', { name: '상태 새로고침' }));
+    await waitFor(() => expect(fetchMyCommentReviews).toHaveBeenCalledTimes(2));
+    await screen.findByText(pending.content);
+    vi.mocked(fetchMyCommentReviews).mockResolvedValue({ ...privatePage, items: [], totalElements: 0, totalPages: 0 });
+    chooseAction(`댓글 작업: ${pending.content}`, '삭제');
+    fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }));
+    expect(await screen.findByRole('heading', { name: '댓글 0' })).toBeInTheDocument();
+    await act(async () => { oldRead.resolve(comments); await oldRead.promise; });
+    expect(screen.getByRole('heading', { name: '댓글 0' })).toBeInTheDocument();
+    expect(screen.queryByText(comment.content)).not.toBeInTheDocument();
+    expect(screen.queryByText(pending.content)).not.toBeInTheDocument();
+    expect(deleteCommunityComment).toHaveBeenCalledTimes(1);
+    expect(fetchCommunityComments).toHaveBeenCalledTimes(3);
+  });
+
+  describe.each(['edit', 'delete'] as const)('stale private %s', (action) => {
+    it.each([
+      ['account', 'success'], ['account', 'failure'],
+      ['logout', 'success'], ['logout', 'failure'],
+      ['auth-loading', 'success'], ['auth-loading', 'failure'],
+      ['post', 'success'], ['post', 'failure'],
+    ] as const)('ignores %s-boundary %s responses and clears old drafts/dialogs', async (boundary, outcome) => {
+      const mutation = deferred<CommunityComment>();
+      if (action === 'edit') vi.mocked(updateCommunityComment).mockReturnValue(mutation.promise);
+      else vi.mocked(deleteCommunityComment).mockImplementation(() => mutation.promise.then(() => undefined));
+      vi.mocked(fetchMyCommentReviews).mockResolvedValue(privatePage);
+      const view = render(<PostDetailPage />);
+      await screen.findByText(pending.content);
+      chooseAction(`댓글 작업: ${pending.content}`, action === 'edit' ? '수정' : '삭제');
+      if (action === 'edit') {
+        fireEvent.change(screen.getByLabelText('댓글 내용 수정'), { target: { value: '이전 계정의 수정 초안' } });
+        fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+      } else fireEvent.click(screen.getByRole('button', { name: '삭제 확인' }));
+
+      const nextRow = { ...pending, id: '77777777-7777-7777-7777-777777777777', content: '현재 계정 게시글의 비공개 댓글' };
+      if (boundary === 'account') {
+        nextRow.userId = '66666666-6666-6666-6666-666666666666';
+        auth.user = { id: nextRow.userId };
+      } else if (boundary === 'logout') {
+        auth.isAuthenticated = false;
+        auth.user = null;
+      } else if (boundary === 'auth-loading') {
+        auth.isLoading = true;
+      } else {
+        nav.id = '99999999-9999-9999-9999-999999999999';
+        nextRow.postId = nav.id;
+        vi.mocked(fetchCommunityPost).mockResolvedValue({ ...post, id: nav.id });
+        vi.mocked(fetchCommunityComments).mockResolvedValue({ ...comments, items: [{ ...comment, postId: nav.id }] });
+      }
+      vi.mocked(fetchMyCommentReviews).mockResolvedValue({ ...privatePage, items: [nextRow] });
+      view.rerender(<PostDetailPage />);
+      expect(screen.queryByLabelText('댓글 내용 수정')).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(screen.queryByText(pending.content)).not.toBeInTheDocument();
+      if (boundary === 'account' || boundary === 'post') {
+        await screen.findByText(nextRow.content);
+        chooseAction(`댓글 작업: ${nextRow.content}`, '수정');
+        fireEvent.change(screen.getByLabelText('댓글 내용 수정'), { target: { value: '현재 수정 초안' } });
+      } else expect(screen.queryByRole('region', { name: '내 댓글 검토 상태' })).not.toBeInTheDocument();
+      const privateReads = vi.mocked(fetchMyCommentReviews).mock.calls.length;
+      const publicReads = vi.mocked(fetchCommunityComments).mock.calls.length;
+      await act(async () => {
+        if (outcome === 'success') mutation.resolve({ ...pending, content: '늦은 비공개 변경 응답' });
+        else mutation.reject(new Error('late failure'));
+        await mutation.promise.catch(() => undefined);
+      });
+      expect(fetchMyCommentReviews).toHaveBeenCalledTimes(privateReads);
+      expect(fetchCommunityComments).toHaveBeenCalledTimes(publicReads);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(screen.queryByText(/댓글을 삭제했습니다|수정한 댓글이/)).not.toBeInTheDocument();
+      expect(screen.queryByText('늦은 비공개 변경 응답')).not.toBeInTheDocument();
+      if (boundary === 'account' || boundary === 'post') {
+        expect(screen.getByLabelText('댓글 내용 수정')).toHaveValue('현재 수정 초안');
+        expect(screen.getByRole('button', { name: '수정 저장' })).toBeEnabled();
+      }
+      expect(nav.push).not.toHaveBeenCalled();
+    });
+  });
+
+  it.each(['success', 'failure'] as const)('ignores a stale %s public reload after a private edit and account change', async (outcome) => {
+    const reload = deferred<CommunityCommentPage>();
+    vi.mocked(fetchMyCommentReviews).mockResolvedValue(privatePage);
+    vi.mocked(fetchCommunityComments).mockResolvedValueOnce(comments).mockReturnValueOnce(reload.promise);
+    vi.mocked(updateCommunityComment).mockResolvedValue(pending);
+    const view = render(<PostDetailPage />);
+    await screen.findByText(pending.content);
+    chooseAction(`댓글 작업: ${pending.content}`, '수정');
+    fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+    await waitFor(() => expect(fetchCommunityComments).toHaveBeenCalledTimes(2));
+    const signal = vi.mocked(fetchCommunityComments).mock.calls[1][3];
+    const other = { ...pending, content: '새 계정의 댓글', userId: '66666666-6666-6666-6666-666666666666' };
+    vi.mocked(fetchMyCommentReviews).mockResolvedValue({ ...privatePage, items: [other] });
+    auth.user = { id: other.userId };
+    view.rerender(<PostDetailPage />);
+    await screen.findByText(other.content);
+    expect(signal?.aborted).toBe(true);
+    await act(async () => {
+      if (outcome === 'success') reload.resolve({ ...comments, items: [], totalElements: 0, totalPages: 0 });
+      else reload.reject(new Error('stale reload failure'));
+      await reload.promise.catch(() => undefined);
+    });
+    expect(screen.getByText(comment.content)).toBeInTheDocument();
+    expect(screen.getByText(other.content)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '댓글 1' })).toBeInTheDocument();
+    expect(screen.queryByText(/댓글 변경은 저장되었지만/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/수정한 댓글이/)).not.toBeInTheDocument();
   });
 
   it('clears private rows and drafts on account change/logout and ignores an old refresh result', async () => {
