@@ -58,7 +58,7 @@ export default function PostCreatePage() {
 
   return (
     <ProtectedRoute>
-      <header className="fixed left-0 right-0 top-0 z-50 border-b border-gray-200 bg-white lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pb-4 lg:pt-8">
+      <header className="fixed left-0 right-0 top-16 z-50 border-b border-gray-200 bg-white lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pb-4 lg:pt-8">
         <div className="flex h-16 items-center justify-between px-4 py-3 lg:mx-auto lg:h-auto lg:max-w-4xl lg:px-0">
           <Link href="/community" className="text-sm text-gray-600 transition-colors hover:text-gray-900 lg:rounded-lg lg:bg-gray-100 lg:px-4 lg:py-2 lg:text-base">
             취소

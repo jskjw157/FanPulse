@@ -94,7 +94,7 @@ export default function SearchPage() {
   return (
     <>
       {/* 검색 헤더 */}
-      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pt-8 lg:pb-4">
+      <header className="fixed top-16 left-0 right-0 bg-white border-b border-gray-200 z-50 lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pt-8 lg:pb-4">
         <div className="px-4 py-3 lg:px-0 lg:max-w-4xl lg:mx-auto">
           <div className="flex items-center gap-2">
             <Link
