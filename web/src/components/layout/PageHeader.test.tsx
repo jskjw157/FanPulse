@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { vi } from 'vitest'
+import '@/i18n'
 import PageHeader from './PageHeader'
 
 // Mock useRouter
