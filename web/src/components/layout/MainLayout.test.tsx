@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import i18n from '@/i18n';
 import MainLayout from './MainLayout';
 import PageHeader from './PageHeader';
 import PageWrapper from './PageWrapper';
@@ -15,9 +16,23 @@ vi.mock('@/hooks/useNotificationUnreadCount', () => ({
 }));
 
 describe('MainLayout mobile header ownership', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     navigation.pathname = '/settings';
+    await i18n.changeLanguage('ko');
+  });
+
+  it.each([
+    { language: 'ko', search: '검색', menu: '메뉴 열기', back: '뒤로 가기' },
+    { language: 'en', search: 'Search', menu: 'Open menu', back: 'Go back' },
+  ])('updates accessible header names for $language without losing actions', async ({ language, search, menu, back }) => {
+    render(<MainLayout><PageHeader title="Page title" /></MainLayout>);
+    await act(async () => { await i18n.changeLanguage(language); });
+    expect(screen.getByRole('link', { name: search })).toHaveAttribute('href', '/search');
+    fireEvent.click(screen.getByRole('button', { name: back }));
+    expect(navigation.back).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: menu }));
+    expect(screen.getByRole('heading', { name: '메뉴' })).toBeInTheDocument();
   });
 
   it.each(['/settings', '/notifications'])('keeps global and page controls in separate rows on %s', (pathname) => {

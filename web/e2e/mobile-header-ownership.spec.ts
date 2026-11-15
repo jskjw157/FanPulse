@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-async function mockBackend(page: Page) {
+async function mockBackend(page: Page, language = 'ko') {
   let unreadCount = 1;
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request();
@@ -14,7 +14,7 @@ async function mockBackend(page: Page) {
     }
     if (endpoint === '/me/settings') {
       return route.fulfill({ json: {
-        theme: 'light', language: 'ko', pushEnabled: true, updatedAt: '2026-11-01T09:00:00Z',
+        theme: 'light', language, pushEnabled: true, updatedAt: '2026-11-01T09:00:00Z',
       } });
     }
     if (endpoint === '/streaming-events') return json({ items: [], hasMore: false });
@@ -41,6 +41,24 @@ async function mockBackend(page: Page) {
 
 test.describe('Mobile header ownership', () => {
   test.use({ viewport: { width: 390, height: 844 } });
+
+  for (const labels of [
+    { language: 'ko', title: '설정', search: '검색', menu: '메뉴 열기', back: '뒤로 가기' },
+    { language: 'en', title: 'Settings', search: 'Search', menu: 'Open menu', back: 'Go back' },
+  ]) {
+    test(`accessible header actions follow ${labels.language} account language`, async ({ page }) => {
+      await mockBackend(page, labels.language);
+      await page.goto('/settings');
+      await expect(page.getByRole('heading', { name: labels.title, exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: labels.back, exact: true })).toBeVisible();
+      await page.getByRole('link', { name: labels.search, exact: true }).click();
+      await expect(page).toHaveURL('/search');
+      await page.goBack();
+      await expect(page).toHaveURL('/settings');
+      await page.getByRole('button', { name: labels.menu, exact: true }).click();
+      await expect(page.getByRole('heading', { name: '메뉴', exact: true })).toBeVisible();
+    });
+  }
 
   test('home and settings menus, page back/actions, search and notifications remain clickable', async ({ page }) => {
     await mockBackend(page);

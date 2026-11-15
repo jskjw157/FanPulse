@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 interface PageHeaderProps {
   title: string;
@@ -14,6 +15,7 @@ export default function PageHeader({
   rightAction 
 }: PageHeaderProps) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   // MainLayout reserves the first 4rem for global navigation. PageWrapper
   // reserves the next 4rem for this mobile back/title/actions row.
@@ -24,7 +26,7 @@ export default function PageHeader({
           {showBack && (
             <button 
               type="button"
-              aria-label="뒤로 가기"
+              aria-label={t("common.goBack")}
               onClick={() => router.back()}
               className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors lg:hidden"
             >
