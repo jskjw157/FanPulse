@@ -214,11 +214,13 @@ describe('Logout session outcome', () => {
     failLogout = failure;
     render(<App />);
     await screen.findByRole('combobox', { name: '언어' });
+    const announced = localStorage.getItem(SESSION_CHANGED);
     fireEvent.click(screen.getByRole('button', { name: '로그아웃' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('세션이 유지될 수 있습니다');
     expect(screen.getByLabelText('auth username')).toHaveTextContent(alice.username);
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeEnabled();
     expect(replaceMock).not.toHaveBeenCalled();
+    expect(localStorage.getItem(SESSION_CHANGED)).toBe(announced);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh session' }));
     await waitFor(() => expect(screen.getByLabelText('auth username')).toHaveTextContent(alice.username));
     failLogout = null;
@@ -241,6 +243,25 @@ describe('Logout session outcome', () => {
     await waitFor(() => expect(screen.getByLabelText('auth username')).toHaveTextContent('signed out'));
     expect(current).toBeNull();
     expect(replaceMock).toHaveBeenCalledWith('/login');
+  });
+
+  it('announces confirmed logout without clearing a newer local account or redirecting it', async () => {
+    const gate = deferred();
+    logoutGate = gate.promise;
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+    await waitFor(() => expect(result.current.settingsState).toBe('success'));
+    let loggingOut!: Promise<void>;
+    act(() => { loggingOut = result.current.logout(); });
+    current = { ...bob };
+    await act(async () => { await result.current.refreshAuth(); });
+    await waitFor(() => expect(result.current.settings?.language).toBe('en'));
+    const announced = localStorage.getItem(SESSION_CHANGED);
+    await act(async () => { gate.resolve(); await loggingOut; });
+    expect(localStorage.getItem(SESSION_CHANGED)).not.toBe(announced);
+    expect(result.current.user?.id).toBe(bob.id);
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.settings?.language).toBe('en');
+    expect(replaceMock).not.toHaveBeenCalled();
   });
 });
 

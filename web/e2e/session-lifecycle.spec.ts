@@ -33,6 +33,7 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
   const releaseExpiredSettings = deferred();
   const logoutArrived = deferred();
   const releaseLogout = deferred();
+  const identityGates = new Map<Page, ReturnType<typeof deferred> & { arrived: ReturnType<typeof deferred> }>();
   let delayExpiredSettings = false;
   let delayLogout = false;
   const events: { event: string; path: string; method?: string; refresh?: string; access?: string }[] = [];
@@ -77,6 +78,11 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
     events.push({ event: 'request', path, method: request.method(), refresh, access });
 
     if (path === '/auth/me' && request.method() === 'GET') {
+      const gate = identityGates.get(request.frame().page());
+      if (gate) {
+        gate.arrived.resolve();
+        await gate.promise;
+      }
       return route.fulfill({ headers: { 'cache-control': 'no-store' }, json: {
         authenticated, ...(authenticated ? { user: syntheticUser } : {}),
       } });
@@ -145,6 +151,11 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
     holdLogout() { delayLogout = true; },
     logoutArrived: logoutArrived.promise,
     releaseLogout: releaseLogout.resolve,
+    holdIdentity(page: Page) {
+      const gate = { ...deferred(), arrived: deferred() };
+      identityGates.set(page, gate);
+      return { arrived: gate.arrived.promise, release() { identityGates.delete(page); gate.resolve(); } };
+    },
     async seed(access: string) {
       await context.addCookies([
         { name: accessCookie, value: access, url: origin, httpOnly: true, sameSite: 'Lax' },
@@ -161,6 +172,7 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
       releaseRefresh.resolve();
       releaseExpiredSettings.resolve();
       releaseLogout.resolve();
+      for (const gate of identityGates.values()) gate.resolve();
       await context.unrouteAll({ behavior: 'wait' });
     },
   };
@@ -190,6 +202,58 @@ async function assertBrowserPrimitives(a: Page, b: Page) {
 
 test.describe('Cookie session coordination in two real Chromium tabs', () => {
   test.setTimeout(60_000);
+
+  test('confirmed logout notifies a new tab while the originating identity recheck is pending', async ({ context, baseURL }, testInfo) => {
+    await context.addInitScript(() => {
+      const events: { type: string; key?: string | null; trusted: boolean }[] = [];
+      Object.assign(window, { logoutBoundaryEvents: events });
+      window.addEventListener('storage', (event) => events.push({ type: event.type, key: event.key, trusted: event.isTrusted }));
+      window.addEventListener('focus', (event) => events.push({ type: event.type, trusted: event.isTrusted }));
+      document.addEventListener('visibilitychange', (event) => events.push({ type: event.type, trusted: event.isTrusted }));
+    });
+    const browserEvents = (page: Page) => page.evaluate(() =>
+      (window as typeof window & { logoutBoundaryEvents: { type: string; key?: string | null; trusted: boolean }[] }).logoutBoundaryEvents);
+    const api = await mockCookieBackend(context, baseURL!);
+    const left = await context.newPage();
+    const right = await context.newPage();
+    try {
+      await api.seed('A0');
+      await left.goto('/settings');
+      await expect(left.locator('#language')).toHaveValue('ko');
+      api.holdLogout();
+      await left.getByRole('button', { name: '로그아웃', exact: true }).click();
+      await api.logoutArrived;
+      const identity = api.holdIdentity(left);
+      const leftCursor = (await browserEvents(left)).length;
+      // The new real AuthProvider announces A; no StorageEvent is synthesized.
+      await right.goto('/settings');
+      await expect(right.locator('#language')).toHaveValue('ko');
+      await identity.arrived;
+      expect((await browserEvents(left)).slice(leftCursor)).toContainEqual({
+        type: 'storage', key: 'fanpulse:session-changed', trusted: true,
+      });
+      await expect(left.locator('#language')).toHaveCount(0);
+      const rightCursor = (await browserEvents(right)).length;
+      const generation = await left.evaluate(() => localStorage.getItem('fanpulse:web-session-generation'));
+      api.releaseLogout();
+      // Wait for the actual response's lifecycle boundary before releasing the old A read.
+      await expect.poll(() => left.evaluate(() => localStorage.getItem('fanpulse:web-session-generation'))).not.toBe(generation);
+      expect(await api.cookies()).toEqual([]);
+      identity.release();
+      await expect(left).toHaveURL(/\/login(?:\?|$)/);
+      await expect(right).toHaveURL(/\/login(?:\?|$)/);
+      const received = (await browserEvents(right)).slice(rightCursor);
+      expect(received).toContainEqual({ type: 'storage', key: 'fanpulse:session-changed', trusted: true });
+      expect(received.filter(({ type }) => type === 'focus' || type === 'visibilitychange')).toEqual([]);
+      expect(api.unexpected).toEqual([]);
+    } finally {
+      await testInfo.attach('held-logout-native-storage', {
+        body: JSON.stringify({ ...api.snapshot(), left: await browserEvents(left).catch(() => []), right: await browserEvents(right).catch(() => []) }, null, 2),
+        contentType: 'application/json',
+      });
+      await api.dispose();
+    }
+  });
 
   test('expired R0 in two tabs rotates once, without backend reuse revocation', async ({ context, baseURL }, testInfo) => {
     const api = await mockCookieBackend(context, baseURL!);

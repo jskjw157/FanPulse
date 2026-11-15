@@ -186,6 +186,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     invalidateAuth();
     // Keep the session visible until the server confirms it revoked the cookie session.
     await apiLogout();
+    // Notify other tabs even if revalidation or a newer account replaced this local identity.
+    announceSessionChange();
     if (currentUserId.current !== userId) return;
     invalidateAuth();
     currentUserId.current = null;
@@ -194,7 +196,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearSettings();
     setIsAuthenticated(false);
     setUser(null);
-    announceSessionChange();
     router.replace("/login");
   }, [router, clearSettings, invalidateAuth]);
 
