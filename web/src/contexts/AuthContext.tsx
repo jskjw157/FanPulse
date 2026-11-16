@@ -188,7 +188,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await apiLogout();
     // Notify other tabs even if revalidation or a newer account replaced this local identity.
     announceSessionChange();
-    if (currentUserId.current !== userId) return;
+    if (currentUserId.current !== userId) {
+      // Our cookie response may also have cleared that newer principal. Recheck,
+      // rather than preserving stale UI or blindly clearing a later valid login.
+      await refreshSession(false);
+      return;
+    }
     invalidateAuth();
     currentUserId.current = null;
     knownUserId.current = null;
@@ -197,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
     setUser(null);
     router.replace("/login");
-  }, [router, clearSettings, invalidateAuth]);
+  }, [router, clearSettings, invalidateAuth, refreshSession]);
 
   return (
     <AuthContext.Provider

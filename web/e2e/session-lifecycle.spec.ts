@@ -10,6 +10,11 @@ const syntheticUser = {
   email: 'session-317@example.test',
   username: 'Session_317',
 };
+const secondUser = {
+  id: '33200000-0000-4000-8000-000000000002',
+  email: 'session-332@example.test',
+  username: 'Session_B',
+};
 const settings = {
   theme: 'light', language: 'ko', pushEnabled: true, updatedAt: '2026-11-01T00:00:00Z',
 };
@@ -33,9 +38,11 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
   const releaseExpiredSettings = deferred();
   const logoutArrived = deferred();
   const releaseLogout = deferred();
+  const releaseLogin = deferred();
   const identityGates = new Map<Page, ReturnType<typeof deferred> & { arrived: ReturnType<typeof deferred> }>();
   let delayExpiredSettings = false;
   let delayLogout = false;
+  let failLogout = false;
   const events: { event: string; path: string; method?: string; refresh?: string; access?: string }[] = [];
   const refreshPosts: string[] = [];
   const logoutPosts: string[] = [];
@@ -62,6 +69,18 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
   await context.route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
+    if (url.href === 'https://accounts.google.com/gsi/client') return route.fulfill({
+      contentType: 'application/javascript',
+      body: `window.google = { accounts: { id: {
+        initialize(config) { this.callback = config.callback; },
+        renderButton(container) {
+          const button = document.createElement('button');
+          button.textContent = 'Synthetic Google sign-in';
+          button.onclick = () => this.callback({ credential: 'synthetic-writer-order' });
+          container.replaceChildren(button);
+        }
+      } } };`,
+    });
     if (url.origin !== origin) {
       blockedExternal.push(request.url());
       return route.abort('blockedbyclient');
@@ -74,7 +93,8 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
     }));
     const refresh = cookies.get(refreshCookie) ?? '';
     const access = cookies.get(accessCookie) ?? '';
-    const authenticated = /^A\d+$/.test(access);
+    const user = access === 'B0' ? secondUser : /^A\d+$/.test(access) ? syntheticUser : null;
+    const authenticated = !!user;
     events.push({ event: 'request', path, method: request.method(), refresh, access });
 
     if (path === '/auth/me' && request.method() === 'GET') {
@@ -84,7 +104,15 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
         await gate.promise;
       }
       return route.fulfill({ headers: { 'cache-control': 'no-store' }, json: {
-        authenticated, ...(authenticated ? { user: syntheticUser } : {}),
+        authenticated, ...(user ? { user } : {}),
+      } });
+    }
+    if (path === '/auth/google' && request.method() === 'POST') {
+      await releaseLogin.promise;
+      activeRefresh = 'RB0';
+      events.push({ event: 'login-cookie-response', path, refresh: 'RB0' });
+      return route.fulfill({ headers: authHeaders('B0', 'RB0'), json: {
+        userId: secondUser.id, email: secondUser.email, username: secondUser.username,
       } });
     }
     if (path === '/auth/web/refresh' && request.method() === 'POST') {
@@ -111,10 +139,15 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
       logoutPosts.push(refresh);
       logoutArrived.resolve();
       if (delayLogout) await releaseLogout.promise;
+      if (failLogout) return route.fulfill({ status: 500, json: { error: 'synthetic-logout-failed' } });
       if (refresh) revoked.add(refresh);
       if (activeRefresh === refresh) activeRefresh = null;
       events.push({ event: 'logout-clear-response', path, refresh });
       return route.fulfill({ status: 200, headers: authHeaders('', '', true), json: {} });
+    }
+    if (path === '/me' && request.method() === 'GET') {
+      if (!user) return expired(route);
+      return route.fulfill({ json: { ...user, hasPassword: false, createdAt: settings.updatedAt } });
     }
     if (path === '/me/settings') {
       if (!authenticated) {
@@ -128,7 +161,7 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
         ++acceptedMutations;
         return route.fulfill({ json: { ...settings, ...request.postDataJSON() } });
       }
-      return route.fulfill({ json: settings });
+      return route.fulfill({ json: { ...settings, language: user?.id === secondUser.id ? 'en' : 'ko' } });
     }
     if (path === '/users/me/notifications/unread-count') {
       if (!authenticated) return expired(route);
@@ -148,9 +181,10 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
     holdExpiredSettings() { delayExpiredSettings = true; },
     expiredSettingsArrived: expiredSettingsArrived.promise,
     releaseExpiredSettings: releaseExpiredSettings.resolve,
-    holdLogout() { delayLogout = true; },
+    holdLogout(fail = false) { delayLogout = true; failLogout = fail; },
     logoutArrived: logoutArrived.promise,
     releaseLogout: releaseLogout.resolve,
+    releaseLogin: releaseLogin.resolve,
     holdIdentity(page: Page) {
       const gate = { ...deferred(), arrived: deferred() };
       identityGates.set(page, gate);
@@ -172,6 +206,7 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
       releaseRefresh.resolve();
       releaseExpiredSettings.resolve();
       releaseLogout.resolve();
+      releaseLogin.resolve();
       for (const gate of identityGates.values()) gate.resolve();
       await context.unrouteAll({ behavior: 'wait' });
     },
@@ -202,6 +237,115 @@ async function assertBrowserPrimitives(a: Page, b: Page) {
 
 test.describe('Cookie session coordination in two real Chromium tabs', () => {
   test.setTimeout(60_000);
+
+  for (const order of ['login-logout', 'logout-login', 'login-failed-logout', 'login-logout-login'] as const) {
+    test(`cookie writers ${order} reconcile both surviving providers`, async ({ context, baseURL }, testInfo) => {
+      await context.addInitScript(() => {
+        const events: { type: string; key?: string | null; trusted: boolean }[] = [];
+        Object.assign(window, { writerEvents: events, writerDocument: Math.random() });
+        window.addEventListener('storage', (event) => events.push({ type: event.type, key: event.key, trusted: event.isTrusted }));
+        window.addEventListener('focus', (event) => events.push({ type: event.type, trusted: event.isTrusted }));
+        document.addEventListener('visibilitychange', (event) => events.push({ type: event.type, trusted: event.isTrusted }));
+      });
+      const events = (page: Page) => page.evaluate(() =>
+        (window as typeof window & { writerEvents: { type: string; key?: string | null; trusted: boolean }[] }).writerEvents);
+      const documentId = (page: Page) => page.evaluate(() =>
+        (window as typeof window & { writerDocument: number }).writerDocument);
+      const api = await mockCookieBackend(context, baseURL!);
+      const a = await context.newPage();
+      const b = await context.newPage();
+      try {
+        await api.seed('A0');
+        await a.goto('/mypage');
+        await expect(a.getByRole('heading', { name: syntheticUser.username, exact: true })).toBeVisible();
+        await a.getByRole('link', { name: '설정', exact: true }).first().click();
+        await b.goto('/login?redirect=%2Fsettings');
+        await expect(b.getByRole('button', { name: 'Synthetic Google sign-in' })).toBeVisible();
+        await expect(a.locator('#language')).toHaveValue('ko');
+        await assertBrowserPrimitives(a, b);
+        const documents = await Promise.all([a, b].map(documentId));
+        api.holdLogout(order === 'login-failed-logout');
+        if (order === 'logout-login') {
+          await a.getByRole('button', { name: '로그아웃', exact: true }).click();
+          await api.logoutArrived;
+          await b.getByRole('button', { name: 'Synthetic Google sign-in' }).click();
+          await expect.poll(async () => (await locks(b)).pending.length).toBe(1);
+          expect(api.events.filter(({ path }) => path === '/auth/google')).toEqual([]);
+          api.releaseLogout();
+          await expect(a).toHaveURL(/\/login(?:\?|$)/);
+          await expect.poll(() => api.events.filter(({ path }) => path === '/auth/google').length).toBe(1);
+          expect(await api.cookies()).toEqual([]);
+        } else {
+          await b.getByRole('button', { name: 'Synthetic Google sign-in' }).click();
+          await expect.poll(() => api.events.filter(({ path }) => path === '/auth/google').length).toBe(1);
+          await a.getByRole('button', { name: '로그아웃', exact: true }).click();
+          await expect.poll(async () => (await locks(a)).pending.length).toBe(1);
+          expect(api.logoutPosts).toEqual([]);
+        }
+        const cursors = await Promise.all([a, b].map(async (page) => (await events(page)).length));
+        api.releaseLogin();
+        await expect(b.locator('#language')).toHaveValue('en');
+        if (order !== 'logout-login') {
+          await api.logoutArrived;
+          expect(api.logoutPosts).toEqual(['RB0']);
+          // B's real completion nonce refreshes A while logout still holds its cookie response.
+          await expect(a.locator('#language')).toHaveValue('en');
+          expect((await events(a)).slice(cursors[0])).toContainEqual({ type: 'storage', key: 'fanpulse:session-changed', trusted: true });
+          const nonce = await a.evaluate(() => localStorage.getItem('fanpulse:session-changed'));
+          const generation = await a.evaluate(() => localStorage.getItem('fanpulse:web-session-generation'));
+          const identity = order === 'login-logout-login' ? api.holdIdentity(a) : null;
+          api.releaseLogout();
+          await expect.poll(() => a.evaluate(() => localStorage.getItem('fanpulse:web-session-generation'))).not.toBe(generation);
+          if (order === 'login-logout') {
+            expect(await api.cookies()).toEqual([]);
+            await expect(b).toHaveURL(/\/login(?:\?|$)/);
+            await expect(a).toHaveURL(/\/login(?:\?|$)/);
+            for (const page of [a, b]) await expect(page.locator('#language')).toHaveCount(0);
+          } else if (identity) {
+            // Let a later real cookie writer overtake A's post-logout identity read.
+            // Its stale anonymous result must not overwrite the new B session.
+            await identity.arrived;
+            await expect(b).toHaveURL(/\/login(?:\?|$)/);
+            expect(await api.cookies()).toEqual([]);
+            await b.getByRole('button', { name: 'Synthetic Google sign-in' }).click();
+            await expect(b.locator('#language')).toHaveValue('en');
+            identity.release();
+            await expect(a.locator('#language')).toHaveValue('en');
+          } else {
+            await expect(a.locator('#language')).toHaveValue('en');
+            await expect(a.getByRole('button', { name: 'Log out', exact: true })).toBeEnabled();
+            expect(await a.evaluate(() => localStorage.getItem('fanpulse:session-changed'))).toBe(nonce);
+          }
+        } else {
+          // Back is a same-document route, not a reload that could hide a stale provider.
+          await expect.poll(async () => (await events(a)).slice(cursors[0]).some(({ key }) => key === 'fanpulse:session-changed')).toBe(true);
+          const reads = api.events.filter(({ path }) => path === '/auth/me').length;
+          await a.goBack();
+          await expect(a.getByRole('heading', { name: secondUser.username, exact: true })).toBeVisible();
+          expect(api.events.filter(({ path }) => path === '/auth/me')).toHaveLength(reads);
+        }
+        if (order !== 'login-logout') {
+          expect(await api.cookies()).toEqual(expect.arrayContaining([
+            expect.objectContaining({ name: accessCookie, value: 'B0', httpOnly: true }),
+            expect.objectContaining({ name: refreshCookie, value: 'RB0', httpOnly: true }),
+          ]));
+          await expect(b.locator('#language')).toHaveValue('en');
+        }
+        expect(await Promise.all([a, b].map(documentId))).toEqual(documents);
+        for (const [index, page] of [a, b].entries()) {
+          expect((await events(page)).slice(cursors[index]).filter(({ type }) => type === 'focus' || type === 'visibilitychange')).toEqual([]);
+        }
+        expect(api.unexpected).toEqual([]);
+        const cookieOrder = api.events.filter(({ event }) => event.endsWith('cookie-response') || event === 'logout-clear-response').map(({ event }) => event);
+        expect(cookieOrder).toEqual(order === 'logout-login' ? ['logout-clear-response', 'login-cookie-response']
+          : order === 'login-logout' ? ['login-cookie-response', 'logout-clear-response']
+          : order === 'login-logout-login' ? ['login-cookie-response', 'logout-clear-response', 'login-cookie-response'] : ['login-cookie-response']);
+      } finally {
+        await testInfo.attach('writer-order-state', { body: JSON.stringify({ order, ...api.snapshot(), cookies: await api.cookies(), a: await events(a), b: await events(b) }, null, 2), contentType: 'application/json' });
+        await api.dispose();
+      }
+    });
+  }
 
   test('confirmed logout notifies a new tab while the originating identity recheck is pending', async ({ context, baseURL }, testInfo) => {
     await context.addInitScript(() => {

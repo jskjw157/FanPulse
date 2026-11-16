@@ -245,7 +245,7 @@ describe('Logout session outcome', () => {
     expect(replaceMock).toHaveBeenCalledWith('/login');
   });
 
-  it('announces confirmed logout without clearing a newer local account or redirecting it', async () => {
+  it('rechecks the cookie principal after logout clears a newer displayed account', async () => {
     const gate = deferred();
     logoutGate = gate.promise;
     const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
@@ -258,9 +258,11 @@ describe('Logout session outcome', () => {
     const announced = localStorage.getItem(SESSION_CHANGED);
     await act(async () => { gate.resolve(); await loggingOut; });
     expect(localStorage.getItem(SESSION_CHANGED)).not.toBe(announced);
-    expect(result.current.user?.id).toBe(bob.id);
-    expect(result.current.isAuthenticated).toBe(true);
-    expect(result.current.settings?.language).toBe('en');
+    expect(current).toBeNull();
+    expect(result.current.user).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.settings).toBeNull();
     expect(replaceMock).not.toHaveBeenCalled();
   });
 });
