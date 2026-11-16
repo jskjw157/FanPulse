@@ -155,7 +155,7 @@ export default function SupportPage() {
         </div>
 
         {/* Tab Menu - 통계 카드 아래 고정 */}
-        <div className="sticky top-16 bg-white/95 backdrop-blur-sm z-40 border-b border-gray-200 mt-4">
+        <div className="sticky top-32 lg:top-16 bg-white/95 backdrop-blur-sm z-40 border-b border-gray-200 mt-4">
           <div className="flex px-4">
             {tabs.map(tab => (
               <button

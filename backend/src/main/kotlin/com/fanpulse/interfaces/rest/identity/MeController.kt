@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -44,8 +45,10 @@ class MeController(
     )
     fun getMe(
         @Parameter(hidden = true)
-        @RequestAttribute("userId") userId: UUID
+        @RequestAttribute("userId") userId: UUID,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<UserResponse> {
+        requireExpectedUser(servletRequest, userId)
         val user = userService.getUser(userId)
         return ResponseEntity.ok(user)
     }
@@ -53,7 +56,7 @@ class MeController(
     @PatchMapping
     @Operation(
         summary = "Update current user profile",
-        description = "Updates the authenticated user's profile information"
+        description = "Updates the authenticated user's profile. Cookie clients must send X-Expected-User-Id matching the authenticated UUID; optional for bearer clients."
     )
     @ApiResponses(
         ApiResponse(
@@ -62,13 +65,17 @@ class MeController(
             content = [Content(schema = Schema(implementation = UserResponse::class))]
         ),
         ApiResponse(responseCode = "400", description = "Invalid request or username taken"),
-        ApiResponse(responseCode = "401", description = "Not authenticated")
+        ApiResponse(responseCode = "401", description = "Not authenticated"),
+        ApiResponse(responseCode = "412", description = "Expected user mismatch; no write performed"),
+        ApiResponse(responseCode = "428", description = "Cookie write requires X-Expected-User-Id")
     )
     fun updateMe(
         @Parameter(hidden = true)
         @RequestAttribute("userId") userId: UUID,
-        @Valid @RequestBody request: UpdateProfileRequest
+        @Valid @RequestBody request: UpdateProfileRequest,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<UserResponse> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
         val user = userService.updateProfile(userId, request)
         return ResponseEntity.ok(user)
     }
@@ -108,8 +115,10 @@ class MeController(
     )
     fun getSettings(
         @Parameter(hidden = true)
-        @RequestAttribute("userId") userId: UUID
+        @RequestAttribute("userId") userId: UUID,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<UserSettingsResponse> {
+        requireExpectedUser(servletRequest, userId)
         val settings = userService.getSettings(userId)
         return ResponseEntity.ok(settings)
     }
@@ -117,7 +126,7 @@ class MeController(
     @PatchMapping("/settings")
     @Operation(
         summary = "Update user settings",
-        description = "Updates the authenticated user's settings"
+        description = "Updates the authenticated user's settings. Cookie clients must send X-Expected-User-Id matching the authenticated UUID; optional for bearer clients."
     )
     @ApiResponses(
         ApiResponse(
@@ -126,13 +135,17 @@ class MeController(
             content = [Content(schema = Schema(implementation = UserSettingsResponse::class))]
         ),
         ApiResponse(responseCode = "400", description = "Invalid settings values"),
-        ApiResponse(responseCode = "401", description = "Not authenticated")
+        ApiResponse(responseCode = "401", description = "Not authenticated"),
+        ApiResponse(responseCode = "412", description = "Expected user mismatch; no write performed"),
+        ApiResponse(responseCode = "428", description = "Cookie write requires X-Expected-User-Id")
     )
     fun updateSettings(
         @Parameter(hidden = true)
         @RequestAttribute("userId") userId: UUID,
-        @Valid @RequestBody request: UpdateSettingsRequest
+        @Valid @RequestBody request: UpdateSettingsRequest,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<UserSettingsResponse> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
         val settings = userService.updateSettings(userId, request)
         return ResponseEntity.ok(settings)
     }

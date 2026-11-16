@@ -6,10 +6,24 @@ import { fetchActiveArtists, type ArtistSummary } from "@/lib/api/artist";
 import { createCommunityPost } from "@/lib/api/community";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function PostCreatePage() {
+  const { user, isLoading, sessionVersion } = useAuth();
+  return <ProtectedRoute>{!isLoading && user && (
+    <PostCreateForm key={`${user.id}:${sessionVersion}`} userId={user.id} />
+  )}</ProtectedRoute>;
+}
+
+function PostCreateForm({ userId }: { userId: string }) {
   const router = useRouter();
+  const lifetime = useRef<AbortController | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    lifetime.current = controller;
+    return () => controller.abort();
+  }, []);
   const [content, setContent] = useState("");
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   const [artists, setArtists] = useState<ArtistSummary[]>([]);
@@ -41,24 +55,25 @@ export default function PostCreatePage() {
 
   const handlePost = async () => {
     if (!canSubmit) return;
+    const signal = lifetime.current!.signal;
     setSubmitting(true);
     setSubmitError(false);
     try {
       const post = await createCommunityPost({
         artistId: selectedArtistId,
         content: content.trim(),
-      });
-      router.push(`/post-detail?id=${post.id}`);
+      }, userId);
+      if (!signal.aborted) router.push(`/post-detail?id=${post.id}`);
     } catch {
-      setSubmitError(true);
+      if (!signal.aborted) setSubmitError(true);
     } finally {
-      setSubmitting(false);
+      if (!signal.aborted) setSubmitting(false);
     }
   };
 
   return (
-    <ProtectedRoute>
-      <header className="fixed left-0 right-0 top-0 z-50 border-b border-gray-200 bg-white lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pb-4 lg:pt-8">
+    <>
+      <header className="fixed left-0 right-0 top-16 z-50 border-b border-gray-200 bg-white lg:static lg:z-auto lg:border-none lg:bg-transparent lg:pb-4 lg:pt-8">
         <div className="flex h-16 items-center justify-between px-4 py-3 lg:mx-auto lg:h-auto lg:max-w-4xl lg:px-0">
           <Link href="/community" className="text-sm text-gray-600 transition-colors hover:text-gray-900 lg:rounded-lg lg:bg-gray-100 lg:px-4 lg:py-2 lg:text-base">
             취소
@@ -156,6 +171,6 @@ export default function PostCreatePage() {
           </div>
         </div>
       </PageWrapper>
-    </ProtectedRoute>
+    </>
   );
 }

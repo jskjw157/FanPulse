@@ -13,6 +13,8 @@ import com.fanpulse.application.service.community.CreateCommunityPostRequest
 import com.fanpulse.application.service.community.UpdateCommunityPostRequest
 import com.fanpulse.domain.comment.CommentStatus
 import com.fanpulse.interfaces.rest.common.ApiResponse
+import com.fanpulse.interfaces.rest.identity.requireExpectedUser
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
@@ -68,23 +70,32 @@ class CommunityController(
     @PostMapping("/posts")
     fun createPost(
         @RequestAttribute("userId") userId: UUID,
-        @RequestBody request: CreateCommunityPostRequest
-    ): ResponseEntity<ApiResponse<CommunityPostResponse>> = ResponseEntity
-        .status(HttpStatus.CREATED)
-        .body(ApiResponse.success(service.createPost(userId, request)))
+        @RequestBody request: CreateCommunityPostRequest,
+        servletRequest: HttpServletRequest
+    ): ResponseEntity<ApiResponse<CommunityPostResponse>> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponse.success(service.createPost(userId, request)))
+    }
 
     @PutMapping("/posts/{postId}")
     fun updatePost(
         @RequestAttribute("userId") userId: UUID,
         @PathVariable postId: UUID,
-        @RequestBody request: UpdateCommunityPostRequest
-    ): ApiResponse<CommunityPostResponse> = ApiResponse.success(service.updatePost(userId, postId, request))
+        @RequestBody request: UpdateCommunityPostRequest,
+        servletRequest: HttpServletRequest
+    ): ApiResponse<CommunityPostResponse> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
+        return ApiResponse.success(service.updatePost(userId, postId, request))
+    }
 
     @DeleteMapping("/posts/{postId}")
     fun deletePost(
         @RequestAttribute("userId") userId: UUID,
-        @PathVariable postId: UUID
+        @PathVariable postId: UUID,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<Void> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
         service.deletePost(userId, postId)
         return ResponseEntity.noContent().build()
     }
@@ -94,8 +105,10 @@ class CommunityController(
         @RequestAttribute("userId") userId: UUID,
         @PathVariable postId: UUID,
         @PathVariable commentId: UUID,
-        @RequestBody request: UpdateCommunityCommentRequest
+        @RequestBody request: UpdateCommunityCommentRequest,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<ApiResponse<CommentResponse>> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
         val response = commentCommandService.updateComment(commentId, userId, request.content, postId.toString())
         val status = if (response.status == CommentStatus.PENDING) HttpStatus.ACCEPTED else HttpStatus.OK
         return ResponseEntity.status(status).body(ApiResponse.success(response))
@@ -105,8 +118,10 @@ class CommunityController(
     fun deleteComment(
         @RequestAttribute("userId") userId: UUID,
         @PathVariable postId: UUID,
-        @PathVariable commentId: UUID
+        @PathVariable commentId: UUID,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<Void> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
         commentCommandService.deleteComment(commentId, userId, postId.toString())
         return ResponseEntity.noContent().build()
     }
@@ -115,8 +130,10 @@ class CommunityController(
     fun createComment(
         @RequestAttribute("userId") userId: UUID,
         @PathVariable postId: UUID,
-        @RequestBody request: CreateCommunityCommentRequest
+        @RequestBody request: CreateCommunityCommentRequest,
+        servletRequest: HttpServletRequest
     ): ResponseEntity<ApiResponse<CommentResponse>> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
         service.getPost(postId)
         val response = commentCommandService.createComment(
             postId = postId.toString(),
@@ -131,41 +148,63 @@ class CommunityController(
     @PostMapping("/posts/{postId}/likes")
     fun like(
         @RequestAttribute("userId") userId: UUID,
-        @PathVariable postId: UUID
-    ): ApiResponse<CommunityPostState> = ApiResponse.success(service.like(userId, postId))
+        @PathVariable postId: UUID,
+        servletRequest: HttpServletRequest
+    ): ApiResponse<CommunityPostState> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
+        return ApiResponse.success(service.like(userId, postId))
+    }
 
     @DeleteMapping("/posts/{postId}/likes")
     fun unlike(
         @RequestAttribute("userId") userId: UUID,
-        @PathVariable postId: UUID
-    ): ApiResponse<CommunityPostState> = ApiResponse.success(service.unlike(userId, postId))
+        @PathVariable postId: UUID,
+        servletRequest: HttpServletRequest
+    ): ApiResponse<CommunityPostState> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
+        return ApiResponse.success(service.unlike(userId, postId))
+    }
 
     @PostMapping("/posts/{postId}/saved")
     fun save(
         @RequestAttribute("userId") userId: UUID,
-        @PathVariable postId: UUID
-    ): ApiResponse<CommunityPostState> = ApiResponse.success(service.save(userId, postId))
+        @PathVariable postId: UUID,
+        servletRequest: HttpServletRequest
+    ): ApiResponse<CommunityPostState> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
+        return ApiResponse.success(service.save(userId, postId))
+    }
 
     @DeleteMapping("/posts/{postId}/saved")
     fun unsave(
         @RequestAttribute("userId") userId: UUID,
-        @PathVariable postId: UUID
-    ): ApiResponse<CommunityPostState> = ApiResponse.success(service.unsave(userId, postId))
+        @PathVariable postId: UUID,
+        servletRequest: HttpServletRequest
+    ): ApiResponse<CommunityPostState> {
+        requireExpectedUser(servletRequest, userId, cookieWrite = true)
+        return ApiResponse.success(service.unsave(userId, postId))
+    }
 
     @GetMapping("/me/posts/{postId}/state")
     fun getState(
         @RequestAttribute("userId") userId: UUID,
-        @PathVariable postId: UUID
-    ): ApiResponse<CommunityPostState> = ApiResponse.success(service.getState(userId, postId))
+        @PathVariable postId: UUID,
+        servletRequest: HttpServletRequest
+    ): ApiResponse<CommunityPostState> {
+        requireExpectedUser(servletRequest, userId)
+        return ApiResponse.success(service.getState(userId, postId))
+    }
 
     @GetMapping("/me/saved")
     fun getSavedPosts(
         @RequestAttribute("userId") userId: UUID,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int
-    ): ApiResponse<CommunityPostPageResponse> = ApiResponse.success(
-        service.getSavedPosts(userId, page, size)
-    )
+        @RequestParam(defaultValue = "20") size: Int,
+        servletRequest: HttpServletRequest
+    ): ApiResponse<CommunityPostPageResponse> {
+        requireExpectedUser(servletRequest, userId)
+        return ApiResponse.success(service.getSavedPosts(userId, page, size))
+    }
 
     private fun parseSort(value: String): CommunitySort = runCatching {
         CommunitySort.valueOf(value.uppercase(Locale.ROOT))

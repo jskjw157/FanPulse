@@ -42,7 +42,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </Link>
 
             <Link 
-              href="/news-detail" 
+              href="/news"
               onClick={onClose}
               className="flex items-center gap-3 p-3 rounded-xl hover:bg-purple-50 transition-colors"
             >

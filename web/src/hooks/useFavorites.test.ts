@@ -33,7 +33,7 @@ describe('useFavorites', () => {
     expect(result.current.favorites).toEqual([favorite]);
 
     await act(() => result.current.unfollow(favorite.id));
-    expect(removeFavorite).toHaveBeenCalledWith(favorite.id);
+    expect(removeFavorite).toHaveBeenCalledWith(favorite.id, 'user-a');
     expect(result.current.favorites).toEqual([]);
   });
 

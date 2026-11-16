@@ -1,9 +1,12 @@
 import {
   apiClient,
   FanPulseApiError,
+  getWebSessionGeneration,
   refreshWebSession,
+  runWebSessionMutation,
   toFanPulseError,
 } from "./api-client";
+import { announceSessionChange } from "./session-sync";
 
 // Re-export for backward compatibility
 export { FanPulseApiError } from "./api-client";
@@ -36,10 +39,11 @@ export async function loginWithGoogle(params: {
   idToken: string;
 }): Promise<GoogleLoginResponse> {
   try {
-    const response = await apiClient.post<GoogleLoginResponse>(
-      "/auth/google",
-      params
+    const response = await runWebSessionMutation(() =>
+      apiClient.post<GoogleLoginResponse>("/auth/google", params)
     );
+    // A successful cookie writer matters even when the principal ID is unchanged.
+    announceSessionChange();
     return response.data;
   } catch (error) {
     throw toFanPulseError(error);
@@ -52,10 +56,9 @@ export async function loginWithGoogle(params: {
  */
 export async function logout(): Promise<void> {
   try {
-    await apiClient.post("/auth/logout");
+    await runWebSessionMutation(() => apiClient.post("/auth/logout"));
   } catch (error) {
-    // 서버 요청이 실패해도 클라이언트 인증 상태는 제거한다.
-    console.error("Logout failed:", error);
+    throw toFanPulseError(error);
   }
 }
 
@@ -69,21 +72,26 @@ async function requestAuthStatus(): Promise<AuthStatusResponse> {
  *
  * Access Cookie가 만료되어 `/auth/me`가 비인증 상태를 반환하면
  * httpOnly Refresh Cookie로 세션을 한 번 갱신한 뒤 상태를 다시 확인한다.
+ * null means the generation changed: neither the old user nor anonymous is confirmed.
  */
-export async function checkAuthStatus(): Promise<AuthStatusResponse> {
+export async function checkAuthStatus(): Promise<AuthStatusResponse | null> {
+  const generation = getWebSessionGeneration();
   try {
     const current = await requestAuthStatus();
+    if (generation !== getWebSessionGeneration()) return null;
     if (current.authenticated) {
       return current;
     }
 
     try {
-      await refreshWebSession();
-      return await requestAuthStatus();
+      await refreshWebSession(generation);
+      if (generation !== getWebSessionGeneration()) return null;
+      const recovered = await requestAuthStatus();
+      return generation === getWebSessionGeneration() ? recovered : null;
     } catch {
-      return current;
+      return generation === getWebSessionGeneration() ? current : null;
     }
   } catch {
-    return { authenticated: false };
+    return generation === getWebSessionGeneration() ? { authenticated: false } : null;
   }
 }

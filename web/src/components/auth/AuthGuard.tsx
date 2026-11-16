@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { buildLoginUrl } from "@/lib/login-redirect";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -18,14 +19,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isPublicPath) {
-      router.push(pathname.startsWith("/artists/")
-        ? `/login?redirect=${encodeURIComponent(pathname)}`
-        : "/login");
+      // Read the query in the effect: useSearchParams here would make the root
+      // layout require a Suspense boundary even for otherwise static pages.
+      // The blocked page and login are one transient history entry.
+      router.replace(buildLoginUrl(`${pathname}${window.location.search}`));
     }
   }, [isAuthenticated, isLoading, isPublicPath, pathname, router]);
 
-  // 로딩 중
-  if (isLoading) {
+  // Revalidation must hide private content without unmounting an active public login.
+  if (isLoading && !isPublicPath) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-pink-600">
         <div className="flex flex-col items-center gap-4">

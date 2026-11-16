@@ -196,7 +196,7 @@ export default function AdsPage() {
 
             {/* Sidebar (Recent Earnings) */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24">
+              <div className="sticky top-32 lg:top-24">
                 <h2 className="text-lg font-bold text-gray-900 mb-4 px-1">Recent Earnings</h2>
                 <Card className="divide-y divide-gray-100 border border-gray-100">
                   {recentEarnings.map((earning) => (

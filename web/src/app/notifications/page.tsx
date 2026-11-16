@@ -16,12 +16,12 @@ function formatCreatedAt(value: string) {
 
 function NotificationsContent() {
   const [unreadOnly, setUnreadOnly] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoading, sessionVersion } = useAuth();
   const router = useRouter();
   const {
     notifications, state, error, retry, markAllRead, markingAll, mutationError,
     markRead, readingId, notice, unreadCount, page, totalPages, last, goToPage,
-  } = useNotifications(unreadOnly, user?.id);
+  } = useNotifications(unreadOnly, isLoading ? undefined : user?.id, sessionVersion);
   const busy = markingAll || readingId !== null;
 
   const openNotification = async (id: string) => {

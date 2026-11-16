@@ -52,7 +52,7 @@ export default function ConcertDetailPage() {
   return (
     <>
       <PageHeader title="공연 상세" />
-      <PageWrapper className="pb-24">
+      <PageWrapper className="pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-24">
         {!id ? (
           <div role="alert" className="py-16 text-center text-gray-700">공연 ID가 올바르지 않습니다.</div>
         ) : loading || resolvedId !== id ? (
@@ -80,10 +80,10 @@ export default function ConcertDetailPage() {
                 <h2 className="font-bold text-gray-900">공연 정보</h2>
                 <dl className="mt-4 space-y-3 text-sm">
                   <div><dt className="text-gray-500">기간</dt><dd className="mt-1 text-gray-900">{formatDateRange(concert.startDate, concert.endDate)}</dd></div>
-                  {concert.performanceTime && <div><dt className="text-gray-500">시간</dt><dd className="mt-1 text-gray-900">{concert.performanceTime}</dd></div>}
+                  {concert.performanceTime && <div><dt className="text-gray-500">시간</dt><dd className="mt-1 text-gray-900 whitespace-pre-line">{concert.performanceTime}</dd></div>}
                   {concert.venue && <div><dt className="text-gray-500">장소</dt><dd className="mt-1 text-gray-900">{concert.venue}</dd></div>}
                   {concert.venueAddress && <div><dt className="text-gray-500">주소</dt><dd className="mt-1 text-gray-900">{concert.venueAddress}</dd></div>}
-                  <div><dt className="text-gray-500">가격</dt><dd className="mt-1 text-gray-900">{concert.priceText ?? "가격 정보 없음"}</dd></div>
+                  <div><dt className="text-gray-500">가격</dt><dd className="mt-1 text-gray-900 whitespace-pre-line">{concert.priceText ?? "가격 정보 없음"}</dd></div>
                   {concert.runtime && <div><dt className="text-gray-500">관람시간</dt><dd className="mt-1 text-gray-900">{concert.runtime}</dd></div>}
                   {concert.ageRating && <div><dt className="text-gray-500">관람연령</dt><dd className="mt-1 text-gray-900">{concert.ageRating}</dd></div>}
                   {concert.performers && <div><dt className="text-gray-500">출연진</dt><dd className="mt-1 text-gray-900">{concert.performers}</dd></div>}
@@ -91,7 +91,7 @@ export default function ConcertDetailPage() {
               </section>
               <p className="text-xs leading-relaxed text-gray-500">공연 정보와 예매처는 KOPIS 공식 상세 페이지에서 다시 확인해 주세요.</p>
             </div>
-            <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white px-4 py-4">
+            <div className="fixed bottom-[calc(4rem+1px+env(safe-area-inset-bottom))] lg:bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white px-4 py-4">
               <div className="mx-auto max-w-4xl">
                 <a href={concert.ticketUrl} target="_blank" rel="noopener noreferrer" className="block w-full rounded-full bg-purple-600 py-4 text-center font-bold text-white">KOPIS 공식 정보 확인</a>
               </div>

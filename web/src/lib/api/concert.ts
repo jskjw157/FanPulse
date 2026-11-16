@@ -170,6 +170,11 @@ function isConcertPageDto(value: unknown): value is ConcertPageDto {
   return expectedContentLength > 0 && value.content.length === expectedContentLength;
 }
 
+function normalizeConcertText(value: string | null): string | null {
+  // Only bare KOPIS line breaks are special; all other markup remains plain text.
+  return value?.replace(/<br\s*\/?>/gi, '\n') ?? null;
+}
+
 function mapConcert(dto: ConcertDto): Concert {
   const venue = [dto.venueName, dto.venueHall].filter((value): value is string => value !== null).join(' · ') || null;
   return {
@@ -182,8 +187,8 @@ function mapConcert(dto: ConcertDto): Concert {
     endDate: dto.endDate,
     status: dto.status,
     posterUrl: dto.posterUrl,
-    performanceTime: dto.performanceTime,
-    priceText: dto.priceText,
+    performanceTime: normalizeConcertText(dto.performanceTime),
+    priceText: normalizeConcertText(dto.priceText),
     performers: dto.performers,
     runtime: dto.runtime,
     ageRating: dto.ageRating,
