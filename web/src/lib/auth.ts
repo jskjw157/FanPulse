@@ -6,6 +6,7 @@ import {
   runWebSessionMutation,
   toFanPulseError,
 } from "./api-client";
+import { announceSessionChange } from "./session-sync";
 
 // Re-export for backward compatibility
 export { FanPulseApiError } from "./api-client";
@@ -41,6 +42,8 @@ export async function loginWithGoogle(params: {
     const response = await runWebSessionMutation(() =>
       apiClient.post<GoogleLoginResponse>("/auth/google", params)
     );
+    // A successful cookie writer matters even when the principal ID is unchanged.
+    announceSessionChange();
     return response.data;
   } catch (error) {
     throw toFanPulseError(error);

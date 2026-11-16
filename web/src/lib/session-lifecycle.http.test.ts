@@ -96,9 +96,11 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
       URL,
       URLSearchParams,
     });
+    context.localStorage = context.window.localStorage;
     const modules = new Map<string, { exports: unknown }>();
     function load(name: string): unknown {
       if (name === "axios") return axios;
+      name = name.replace(/^@\/lib\//, "./");
       const cached = modules.get(name);
       if (cached) return cached.exports;
       // Optional read-only baseline replay: same tests, HTTP and realm harness,

@@ -13,11 +13,31 @@ vi.mock("./api-client", () => ({
 }));
 
 import { apiClient, refreshWebSession } from "./api-client";
-import { checkAuthStatus, logout } from "./auth";
+import { checkAuthStatus, loginWithGoogle, logout } from "./auth";
+import { SESSION_CHANGED } from "./session-sync";
 
 describe("auth client", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+  });
+
+  it("같은 계정의 성공 login writer도 통지하지만 읽기와 실패 login은 통지하지 않는다", async () => {
+    const user = { id: "same-account", email: "same@example.test", username: "Same" };
+    vi.mocked(apiClient.post).mockResolvedValue({ data: { userId: user.id, ...user } } as never);
+    await loginWithGoogle({ idToken: "synthetic-first" });
+    const first = localStorage.getItem(SESSION_CHANGED);
+    expect(first).not.toBeNull();
+    await loginWithGoogle({ idToken: "synthetic-second" });
+    const second = localStorage.getItem(SESSION_CHANGED);
+    expect(second).not.toBe(first);
+
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { authenticated: true, user } } as never);
+    await expect(checkAuthStatus()).resolves.toEqual({ authenticated: true, user });
+    expect(localStorage.getItem(SESSION_CHANGED)).toBe(second);
+    vi.mocked(apiClient.post).mockRejectedValueOnce(new Error("login failed"));
+    await expect(loginWithGoogle({ idToken: "synthetic-failure" })).rejects.toThrow("login failed");
+    expect(localStorage.getItem(SESSION_CHANGED)).toBe(second);
   });
 
   it("이미 인증된 상태면 Refresh Cookie를 사용하지 않는다", async () => {

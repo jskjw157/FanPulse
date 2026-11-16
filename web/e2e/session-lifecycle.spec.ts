@@ -39,7 +39,10 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
   const logoutArrived = deferred();
   const releaseLogout = deferred();
   const releaseLogin = deferred();
-  const identityGates = new Map<Page, ReturnType<typeof deferred> & { arrived: ReturnType<typeof deferred> }>();
+  let nextLoginGate: ReturnType<typeof deferred> & { arrived: ReturnType<typeof deferred> } | undefined;
+  const identityGates = new Map<Page, ReturnType<typeof deferred> & {
+    arrived: ReturnType<typeof deferred>; once: boolean; access?: string;
+  }>();
   let delayExpiredSettings = false;
   let delayLogout = false;
   let failLogout = false;
@@ -100,14 +103,20 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
     if (path === '/auth/me' && request.method() === 'GET') {
       const gate = identityGates.get(request.frame().page());
       if (gate) {
+        if (gate.once) identityGates.delete(request.frame().page());
+        gate.access = access;
         gate.arrived.resolve();
         await gate.promise;
       }
+      events.push({ event: 'identity-response', path, access });
       return route.fulfill({ headers: { 'cache-control': 'no-store' }, json: {
         authenticated, ...(user ? { user } : {}),
       } });
     }
     if (path === '/auth/google' && request.method() === 'POST') {
+      const gate = nextLoginGate;
+      nextLoginGate = undefined;
+      if (gate) { gate.arrived.resolve(); await gate.promise; }
       await releaseLogin.promise;
       activeRefresh = 'RB0';
       events.push({ event: 'login-cookie-response', path, refresh: 'RB0' });
@@ -185,10 +194,19 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
     logoutArrived: logoutArrived.promise,
     releaseLogout: releaseLogout.resolve,
     releaseLogin: releaseLogin.resolve,
-    holdIdentity(page: Page) {
+    holdNextLogin() {
       const gate = { ...deferred(), arrived: deferred() };
+      nextLoginGate = gate;
+      return { arrived: gate.arrived.promise, release: gate.resolve };
+    },
+    holdIdentity(page: Page, once = false) {
+      const gate = { ...deferred(), arrived: deferred(), once, access: undefined as string | undefined };
       identityGates.set(page, gate);
-      return { arrived: gate.arrived.promise, release() { identityGates.delete(page); gate.resolve(); } };
+      return {
+        arrived: gate.arrived.promise,
+        access: () => gate.access,
+        release() { if (identityGates.get(page) === gate) identityGates.delete(page); gate.resolve(); },
+      };
     },
     async seed(access: string) {
       await context.addCookies([
@@ -346,6 +364,106 @@ test.describe('Cookie session coordination in two real Chromium tabs', () => {
       }
     });
   }
+
+  test('same-account queued login notifies a surviving provider before old anonymous reads finish', async ({ context, baseURL }, testInfo) => {
+    await context.addInitScript(() => {
+      const events: { type: string; key?: string | null; trusted: boolean }[] = [];
+      Object.assign(window, { sameAccountEvents: events, sameAccountDocument: Math.random() });
+      window.addEventListener('storage', (event) => events.push({ type: event.type, key: event.key, trusted: event.isTrusted }));
+      window.addEventListener('focus', (event) => events.push({ type: event.type, trusted: event.isTrusted }));
+      document.addEventListener('visibilitychange', (event) => events.push({ type: event.type, trusted: event.isTrusted }));
+    });
+    const browserState = (page: Page) => page.evaluate(() => {
+      const observed = window as typeof window & { sameAccountEvents: { type: string; key?: string | null; trusted: boolean }[]; sameAccountDocument: number };
+      return { events: [...observed.sameAccountEvents], document: observed.sameAccountDocument };
+    });
+    const api = await mockCookieBackend(context, baseURL!);
+    const a = await context.newPage();
+    const b = await context.newPage();
+    let aRead: ReturnType<typeof api.holdIdentity> | undefined;
+    let bRead: ReturnType<typeof api.holdIdentity> | undefined;
+    let login: ReturnType<typeof api.holdNextLogin> | undefined;
+    try {
+      await api.seed('A0');
+      await a.goto('/settings');
+      await expect(a.locator('#language')).toHaveValue('ko');
+      await b.goto('/login?redirect=%2Fsettings');
+      await expect(b.getByRole('button', { name: 'Synthetic Google sign-in' })).toBeVisible();
+      api.holdLogout();
+      await b.getByRole('button', { name: 'Synthetic Google sign-in' }).click();
+      await expect.poll(() => api.events.filter(({ path }) => path === '/auth/google').length).toBe(1);
+      await a.getByRole('button', { name: '로그아웃', exact: true }).click();
+      await expect.poll(async () => (await locks(a)).pending.length).toBe(1);
+      api.releaseLogin();
+      await api.logoutArrived;
+      expect(api.logoutPosts).toEqual(['RB0']);
+      await expect(b.locator('#language')).toHaveValue('en');
+      await expect(a.locator('#language')).toHaveValue('en');
+
+      // Establish a public login peer whose surviving provider already knows B.
+      // All subsequent history/navigation is inside these same two documents.
+      await b.goto('/login?redirect=%2Fsettings');
+      await expect(b.getByRole('button', { name: 'Synthetic Google sign-in' })).toBeVisible();
+      await b.waitForLoadState('networkidle');
+      await expect(a.locator('#language')).toHaveValue('en');
+      await assertBrowserPrimitives(a, b);
+      const before = await Promise.all([a, b].map(browserState));
+      const nonce = await a.evaluate(() => localStorage.getItem('fanpulse:session-changed'));
+      aRead = api.holdIdentity(a, true);
+      bRead = api.holdIdentity(b, true);
+      login = api.holdNextLogin();
+      await b.getByRole('button', { name: 'Synthetic Google sign-in' }).click();
+      await expect.poll(async () => (await locks(b)).pending.length).toBe(1);
+      expect(api.events.filter(({ event, path }) => event === 'request' && path === '/auth/google')).toHaveLength(1);
+      api.releaseLogout();
+      await login.arrived;
+      await Promise.all([aRead.arrived, bRead.arrived]);
+      expect(aRead.access()).toBe('');
+      expect(bRead.access()).toBe('');
+      expect(await api.cookies()).toEqual([]);
+      expect(await a.evaluate(() => localStorage.getItem('fanpulse:session-changed'))).not.toBe(nonce);
+
+      // Complete the writer and B's fresh confirmation FIRST. Each old anonymous
+      // response is a separate gate and cannot accidentally release a new B read.
+      const afterLogoutNonce = await a.evaluate(() => localStorage.getItem('fanpulse:session-changed'));
+      login.release();
+      await expect(b.locator('#language')).toHaveValue('en');
+      expect(await api.cookies()).toEqual(expect.arrayContaining([
+        expect.objectContaining({ name: accessCookie, value: 'B0', httpOnly: true }),
+        expect.objectContaining({ name: refreshCookie, value: 'RB0', httpOnly: true }),
+      ]));
+      bRead.release();
+      await b.waitForLoadState('networkidle');
+      aRead.release();
+      await a.waitForLoadState('networkidle');
+      // Decisive assertion: baseline has B cookies/peer B but an anonymous sender.
+      await expect(a.locator('#language')).toHaveValue('en');
+      await expect(b.locator('#language')).toHaveValue('en');
+      expect(await a.evaluate(() => localStorage.getItem('fanpulse:session-changed'))).not.toBe(afterLogoutNonce);
+      const after = await Promise.all([a, b].map(browserState));
+      expect(after.map(({ document }) => document)).toEqual(before.map(({ document }) => document));
+      for (const [index, state] of after.entries()) {
+        const received = state.events.slice(before[index].events.length);
+        expect(received.filter(({ type }) => type === 'focus' || type === 'visibilitychange')).toEqual([]);
+      }
+      expect(after[0].events.slice(before[0].events.length).filter(({ type, key, trusted }) =>
+        type === 'storage' && key === 'fanpulse:session-changed' && trusted)).toHaveLength(1);
+      expect(after[1].events.slice(before[1].events.length).filter(({ type, key, trusted }) =>
+        type === 'storage' && key === 'fanpulse:session-changed' && trusted)).toHaveLength(1);
+      expect(api.events.filter(({ event }) => event === 'login-cookie-response' || event === 'logout-clear-response').map(({ event }) => event))
+        .toEqual(['login-cookie-response', 'logout-clear-response', 'login-cookie-response']);
+      expect(api.unexpected).toEqual([]);
+    } finally {
+      await testInfo.attach('same-account-queued-writer-state', {
+        body: JSON.stringify({ ...api.snapshot(), cookies: await api.cookies(), a: await browserState(a), b: await browserState(b) }, null, 2),
+        contentType: 'application/json',
+      });
+      aRead?.release();
+      bRead?.release();
+      login?.release();
+      await api.dispose();
+    }
+  });
 
   test('confirmed logout notifies a new tab while the originating identity recheck is pending', async ({ context, baseURL }, testInfo) => {
     await context.addInitScript(() => {
