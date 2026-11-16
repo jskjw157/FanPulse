@@ -276,7 +276,7 @@ describe('LoginPage Google SDK recovery', () => {
     expect(loginWithGoogle).toHaveBeenCalledTimes(1)
   })
 
-  it('deduplicates credential submissions and ignores completion after unmount', async () => {
+  it('deduplicates submissions and reconciles successful cookies after unmount without navigating', async () => {
     let finishLogin!: () => void
     loginWithGoogle.mockReturnValue(new Promise<void>((resolve) => { finishLogin = resolve }))
     const sdk = installSdk()
@@ -291,7 +291,7 @@ describe('LoginPage Google SDK recovery', () => {
 
     page.unmount()
     await act(async () => { finishLogin() })
-    expect(refreshAuth).not.toHaveBeenCalled()
+    expect(refreshAuth).toHaveBeenCalledTimes(1)
     expect(router.replace).not.toHaveBeenCalled()
   })
 

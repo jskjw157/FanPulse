@@ -146,8 +146,7 @@ export default function LoginPage() {
           setFormError(null);
           try {
             await loginWithGoogle({ idToken: response.credential });
-            if (cancelled) return;
-            // 쿠키가 설정되었으므로 인증 상태 새로고침
+            // A successful cookie change outlives this form; only local UI/navigation is cancelled.
             await refreshAuth();
             if (cancelled) return;
             const redirect = new URLSearchParams(window.location.search).get("redirect");
