@@ -39,9 +39,11 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
   const logoutArrived = deferred();
   const releaseLogout = deferred();
   const releaseLogin = deferred();
-  let nextLoginGate: ReturnType<typeof deferred> & { arrived: ReturnType<typeof deferred> } | undefined;
+  let nextLoginGate: ReturnType<typeof deferred> & {
+    arrived: ReturnType<typeof deferred>; fail: boolean; account: 'A' | 'B';
+  } | undefined;
   const identityGates = new Map<Page, ReturnType<typeof deferred> & {
-    arrived: ReturnType<typeof deferred>; once: boolean; access?: string;
+    arrived: ReturnType<typeof deferred>; once: boolean; fail: boolean; access?: string;
   }>();
   let delayExpiredSettings = false;
   let delayLogout = false;
@@ -108,6 +110,7 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
         gate.arrived.resolve();
         await gate.promise;
       }
+      if (gate?.fail) return route.abort('failed');
       events.push({ event: 'identity-response', path, access });
       return route.fulfill({ headers: { 'cache-control': 'no-store' }, json: {
         authenticated, ...(user ? { user } : {}),
@@ -118,10 +121,16 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
       nextLoginGate = undefined;
       if (gate) { gate.arrived.resolve(); await gate.promise; }
       await releaseLogin.promise;
+      if (gate?.fail) {
+        events.push({ event: 'login-failure-no-cookie', path });
+        return route.fulfill({ status: 401, json: { error: 'synthetic-invalid-google-token' } });
+      }
+      const loginUser = gate?.account === 'A' ? syntheticUser : secondUser;
+      const loginAccess = gate?.account === 'A' ? 'A0' : 'B0';
       activeRefresh = 'RB0';
       events.push({ event: 'login-cookie-response', path, refresh: 'RB0' });
-      return route.fulfill({ headers: authHeaders('B0', 'RB0'), json: {
-        userId: secondUser.id, email: secondUser.email, username: secondUser.username,
+      return route.fulfill({ headers: authHeaders(loginAccess, 'RB0'), json: {
+        userId: loginUser.id, email: loginUser.email, username: loginUser.username,
       } });
     }
     if (path === '/auth/web/refresh' && request.method() === 'POST') {
@@ -194,13 +203,13 @@ async function mockCookieBackend(context: BrowserContext, baseURL: string) {
     logoutArrived: logoutArrived.promise,
     releaseLogout: releaseLogout.resolve,
     releaseLogin: releaseLogin.resolve,
-    holdNextLogin() {
-      const gate = { ...deferred(), arrived: deferred() };
+    holdNextLogin(fail = false, account: 'A' | 'B' = 'B') {
+      const gate = { ...deferred(), arrived: deferred(), fail, account };
       nextLoginGate = gate;
       return { arrived: gate.arrived.promise, release: gate.resolve };
     },
-    holdIdentity(page: Page, once = false) {
-      const gate = { ...deferred(), arrived: deferred(), once, access: undefined as string | undefined };
+    holdIdentity(page: Page, once = false, fail = false) {
+      const gate = { ...deferred(), arrived: deferred(), once, fail, access: undefined as string | undefined };
       identityGates.set(page, gate);
       return {
         arrived: gate.arrived.promise,
@@ -464,6 +473,127 @@ test.describe('Cookie session coordination in two real Chromium tabs', () => {
       await api.dispose();
     }
   });
+
+  for (const outcome of ['preserved', 'anonymous', 'network', 'later-account'] as const) {
+    test(`failed login fences a focused identity read and converges on ${outcome}`, async ({ context, baseURL }, testInfo) => {
+      await context.addInitScript(() => {
+        const events: { type: string; key?: string | null; trusted: boolean }[] = [];
+        Object.assign(window, { failedWriterEvents: events, failedWriterDocument: Math.random() });
+        window.addEventListener('storage', (event) => events.push({ type: event.type, key: event.key, trusted: event.isTrusted }));
+        window.addEventListener('focus', (event) => events.push({ type: event.type, trusted: event.isTrusted }));
+        document.addEventListener('visibilitychange', (event) => events.push({ type: event.type, trusted: event.isTrusted }));
+      });
+      const browserState = (page: Page) => page.evaluate(() => {
+        const observed = window as typeof window & { failedWriterEvents: { type: string; key?: string | null; trusted: boolean }[]; failedWriterDocument: number };
+        return { events: [...observed.failedWriterEvents], document: observed.failedWriterDocument };
+      });
+      const api = await mockCookieBackend(context, baseURL!);
+      const a = await context.newPage();
+      const b = await context.newPage();
+      let old: ReturnType<typeof api.holdIdentity> | undefined;
+      let correction: ReturnType<typeof api.holdIdentity> | undefined;
+      let login: ReturnType<typeof api.holdNextLogin> | undefined;
+      // Match the native-focus account-boundary fixture, not Playwright's
+      // default emulation that reports every document as focused.
+      for (const page of [a, b]) {
+        await (await context.newCDPSession(page)).send('Emulation.setFocusEmulationEnabled', { enabled: false });
+      }
+      const loginResponses: { status: number; setCookie: string | null }[] = [];
+      b.on('response', async (response) => {
+        if (response.url().endsWith('/auth/google')) loginResponses.push({ status: response.status(), setCookie: await response.headerValue('set-cookie') });
+      });
+      try {
+        await api.seed('B0');
+        await a.goto('/settings');
+        await expect(a.locator('#language')).toHaveValue('en');
+        await b.bringToFront();
+        await b.goto('/login?redirect=%2Fsettings');
+        await expect(b.getByRole('button', { name: 'Synthetic Google sign-in' })).toBeVisible();
+        await b.waitForLoadState('networkidle');
+        await expect(a.locator('#language')).toHaveValue('en');
+        await expect.poll(() => a.evaluate(() => document.hasFocus())).toBe(false);
+        const documents = await Promise.all([a, b].map(browserState));
+        const nonce = await a.evaluate(() => localStorage.getItem('fanpulse:session-changed'));
+        const cookies = await api.cookies();
+        const generation = await a.evaluate(() => localStorage.getItem('fanpulse:web-session-generation'));
+        login = api.holdNextLogin(true);
+        api.releaseLogin();
+        await b.getByRole('button', { name: 'Synthetic Google sign-in' }).click();
+        await login.arrived;
+        expect((await locks(b)).held).toHaveLength(1);
+        const started = await a.evaluate(() => localStorage.getItem('fanpulse:web-session-generation'));
+        expect(started).not.toBe(generation);
+        old = api.holdIdentity(a);
+        const beforeFocus = await browserState(a);
+        await a.bringToFront();
+        await old.arrived;
+        expect(old.access()).toBe('B0');
+        await expect(a.locator('#language')).toHaveCount(0);
+        expect((await browserState(a)).events.slice(beforeFocus.events.length)).toContainEqual(expect.objectContaining({ type: 'focus', trusted: true }));
+        login.release();
+        await expect.poll(() => loginResponses.length).toBe(1);
+        expect(loginResponses).toEqual([{ status: 401, setCookie: null }]);
+        await expect.poll(() => a.evaluate(() => localStorage.getItem('fanpulse:web-session-generation'))).not.toBe(started);
+        expect(await api.cookies()).toEqual(cookies);
+        expect(await a.evaluate(() => localStorage.getItem('fanpulse:session-changed'))).toBe(nonce);
+        const afterFailure = await Promise.all([a, b].map(browserState));
+
+        // Releasing the old gate must not release the fresh corrective request.
+        // No further focus, visibility, reload or success nonce drives this read.
+        if (outcome === 'anonymous') await context.clearCookies();
+        old.release();
+        correction = api.holdIdentity(a, true, outcome === 'network');
+        await Promise.race([correction.arrived, a.waitForURL(/\/login(?:\?|$)/)]);
+        // Baseline reaches /login without issuing any corrective read.
+        expect(a.url()).toMatch(/\/settings$/);
+        await correction.arrived;
+        expect(correction.access()).toBe(outcome === 'anonymous' ? '' : 'B0');
+        await expect(a.locator('#language')).toHaveCount(0);
+        await expect(a.getByText('로딩 중...', { exact: true })).toBeVisible();
+        if (outcome === 'anonymous') {
+          correction.release();
+          await expect(a).toHaveURL(/\/login(?:\?|$)/);
+          await expect(b).toHaveURL(/\/login(?:\?|$)/);
+          expect(await api.cookies()).toEqual([]);
+        } else if (outcome === 'later-account') {
+          const later = api.holdNextLogin(false, 'A');
+          await b.getByRole('button', { name: 'Synthetic Google sign-in' }).click();
+          await later.arrived;
+          later.release();
+          await expect(b.locator('#language')).toHaveValue('ko');
+          await expect(a.locator('#language')).toHaveValue('ko');
+          correction.release();
+          await expect(a.locator('#language')).toHaveValue('ko');
+          expect((await api.cookies()).find(({ name }) => name === accessCookie)?.value).toBe('A0');
+        } else if (outcome === 'network') {
+          correction.release();
+          await expect(a).toHaveURL(/\/login(?:\?|$)/);
+          expect(await api.cookies()).toEqual(cookies);
+        } else {
+          correction.release();
+          await expect(a.locator('#language')).toHaveValue('en');
+          await expect(a).toHaveURL(/\/settings$/);
+          await expect(b.getByRole('button', { name: 'Synthetic Google sign-in' })).toBeEnabled();
+          expect(await api.cookies()).toEqual(cookies);
+          expect(await a.evaluate(() => localStorage.getItem('fanpulse:session-changed'))).toBe(nonce);
+          const after = await Promise.all([a, b].map(browserState));
+          for (const [index, state] of after.entries()) {
+            expect(state.document).toBe(documents[index].document);
+            expect(state.events.slice(afterFailure[index].events.length)).toEqual([]);
+          }
+          expect(api.events.filter(({ event, path }) => event === 'request' && path === '/auth/google')).toHaveLength(1);
+          expect(api.refreshPosts).toEqual([]);
+        }
+        expect(api.unexpected).toEqual([]);
+      } finally {
+        await testInfo.attach('failed-writer-revalidation', { body: JSON.stringify({ outcome, ...api.snapshot(), cookies: await api.cookies(), loginResponses, a: await browserState(a), b: await browserState(b) }, null, 2), contentType: 'application/json' });
+        old?.release();
+        correction?.release();
+        login?.release();
+        await api.dispose();
+      }
+    });
+  }
 
   test('confirmed logout notifies a new tab while the originating identity recheck is pending', async ({ context, baseURL }, testInfo) => {
     await context.addInitScript(() => {

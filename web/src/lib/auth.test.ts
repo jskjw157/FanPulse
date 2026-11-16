@@ -12,14 +12,50 @@ vi.mock("./api-client", () => ({
   FanPulseApiError: class FanPulseApiError extends Error {},
 }));
 
-import { apiClient, refreshWebSession } from "./api-client";
+import { apiClient, getWebSessionGeneration, refreshWebSession } from "./api-client";
 import { checkAuthStatus, loginWithGoogle, logout } from "./auth";
 import { SESSION_CHANGED } from "./session-sync";
 
 describe("auth client", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(apiClient.get).mockReset();
+    vi.mocked(apiClient.post).mockReset();
+    vi.mocked(refreshWebSession).mockReset();
+    vi.mocked(getWebSessionGeneration).mockReturnValue("test-session");
     localStorage.clear();
+  });
+
+  it.each(["identity", "recovery", "recovered", "network"] as const)("세대가 바뀐 %s 결과는 확인된 익명이 아니라 unknown이다", async (stage) => {
+    let generation = "before-writer-outcome";
+    vi.mocked(getWebSessionGeneration).mockImplementation(() => generation);
+    const user = { id: "valid-B", email: "b@example.test" };
+    vi.mocked(apiClient.get).mockImplementationOnce(async () => {
+      if (stage === "identity" || stage === "network") generation = "after-writer-outcome";
+      if (stage === "network") throw new Error("old identity network failure");
+      return { data: stage === "identity" ? { authenticated: true, user } : { authenticated: false } } as never;
+    });
+    vi.mocked(refreshWebSession).mockImplementationOnce(async () => {
+      if (stage === "recovery") {
+        generation = "after-writer-outcome";
+        throw new Error("old recovery invalidated");
+      }
+    });
+    if (stage === "recovered") vi.mocked(apiClient.get).mockImplementationOnce(async () => {
+      generation = "after-writer-outcome";
+      return { data: { authenticated: true, user } } as never;
+    });
+
+    await expect(checkAuthStatus()).resolves.toBeNull();
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: { authenticated: true, user } } as never);
+    await expect(checkAuthStatus()).resolves.toEqual({ authenticated: true, user });
+    expect(localStorage.getItem(SESSION_CHANGED)).toBeNull();
+  });
+
+  it("동일 세대의 네트워크 실패는 재시도나 성공 통지 없이 보호한다", async () => {
+    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error("network failed"));
+    await expect(checkAuthStatus()).resolves.toEqual({ authenticated: false });
+    expect(localStorage.getItem(SESSION_CHANGED)).toBeNull();
   });
 
   it("같은 계정의 성공 login writer도 통지하지만 읽기와 실패 login은 통지하지 않는다", async () => {

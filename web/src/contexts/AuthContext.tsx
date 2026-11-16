@@ -76,7 +76,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     clearSettings();
     try {
-      const status = await checkAuthStatus();
+      let status = await checkAuthStatus();
+      // Only an observed generation change warrants another read. Keep private
+      // UI guarded; stable anonymous/network failures terminate without retries.
+      while (status === null) {
+        if (request !== authRequest.current) return;
+        status = await checkAuthStatus();
+      }
       if (request !== authRequest.current) return;
       const nextUser = status.authenticated ? status.user ?? null : null;
       if (announce && knownUserId.current !== (nextUser?.id ?? null)) announceSessionChange();

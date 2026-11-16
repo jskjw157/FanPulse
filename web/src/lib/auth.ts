@@ -72,25 +72,26 @@ async function requestAuthStatus(): Promise<AuthStatusResponse> {
  *
  * Access Cookie가 만료되어 `/auth/me`가 비인증 상태를 반환하면
  * httpOnly Refresh Cookie로 세션을 한 번 갱신한 뒤 상태를 다시 확인한다.
+ * null means the generation changed: neither the old user nor anonymous is confirmed.
  */
-export async function checkAuthStatus(): Promise<AuthStatusResponse> {
+export async function checkAuthStatus(): Promise<AuthStatusResponse | null> {
   const generation = getWebSessionGeneration();
   try {
     const current = await requestAuthStatus();
-    if (generation !== getWebSessionGeneration()) return { authenticated: false };
+    if (generation !== getWebSessionGeneration()) return null;
     if (current.authenticated) {
       return current;
     }
 
     try {
       await refreshWebSession(generation);
-      if (generation !== getWebSessionGeneration()) return { authenticated: false };
+      if (generation !== getWebSessionGeneration()) return null;
       const recovered = await requestAuthStatus();
-      return generation === getWebSessionGeneration() ? recovered : { authenticated: false };
+      return generation === getWebSessionGeneration() ? recovered : null;
     } catch {
-      return current;
+      return generation === getWebSessionGeneration() ? current : null;
     }
   } catch {
-    return { authenticated: false };
+    return generation === getWebSessionGeneration() ? { authenticated: false } : null;
   }
 }

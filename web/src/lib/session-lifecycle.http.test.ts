@@ -62,6 +62,7 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
   let delayLogout: boolean;
   let refreshFailure: boolean;
   let logoutFailure: boolean;
+  let loginFailure: boolean;
   let reuseCount: number;
   let restoreAdapter: () => void;
 
@@ -142,7 +143,7 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
     releaseProtected = deferred();
     logoutArrived = deferred();
     releaseLogout = deferred();
-    delayStatus = delayProtected = delayLogout = refreshFailure = logoutFailure = false;
+    delayStatus = delayProtected = delayLogout = refreshFailure = logoutFailure = loginFailure = false;
     reuseCount = 0;
 
     server = createServer(async (request, response) => {
@@ -183,7 +184,8 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
           reply(200, undefined, ["fanpulse_access_token=; Max-Age=0; Path=/", "fanpulse_refresh_token=; Max-Age=0; Path=/"]);
         }
       } else if (path === "/auth/google") {
-        reply(200, { userId: "user-1", email: "user@example.com", username: "user" }, ["fanpulse_access_token=A1; Path=/", "fanpulse_refresh_token=R1; Path=/"]);
+        if (loginFailure) reply(401, { error: "invalid-google-token" });
+        else reply(200, { userId: "user-1", email: "user@example.com", username: "user" }, ["fanpulse_access_token=A1; Path=/", "fanpulse_refresh_token=R1; Path=/"]);
       } else if (path === "/me/settings") {
         protectedArrived.resolve();
         if (delayProtected) await releaseProtected.promise;
@@ -242,7 +244,7 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
     expect(count("/auth/web/refresh")).toBe(1);
     expect(reuseCount).toBe(0);
     expect(revoked.has("R1")).toBe(false);
-    expect((await b.auth.checkAuthStatus()).authenticated).toBe(true);
+    expect((await b.auth.checkAuthStatus())?.authenticated).toBe(true);
   });
 
   it("drains delayed refresh Set-Cookie before successful logout clears and revokes R1", async () => {
@@ -271,8 +273,26 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
     await b.auth.logout();
     releaseStatus.resolve();
 
-    expect(await checking).toEqual({ authenticated: false });
+    // A fenced response establishes no principal, including anonymous.
+    expect(await checking).toBeNull();
     expect(count("/auth/web/refresh")).toBe(0);
+  });
+
+  it("distinguishes a failed real cookie writer's discarded read from verified anonymous", async () => {
+    cookies.set("fanpulse_access_token", "A1");
+    loginFailure = delayStatus = true;
+    const a = realm();
+    const b = realm();
+    const checking = a.auth.checkAuthStatus();
+    await statusArrived.promise;
+    await expect(b.auth.loginWithGoogle({ idToken: "synthetic-invalid" })).rejects.toBeDefined();
+    releaseStatus.resolve();
+    expect(await checking).toBeNull();
+    expect((await a.auth.checkAuthStatus())?.authenticated).toBe(true);
+    expect(cookies.get("fanpulse_access_token")).toBe("A1");
+    expect(count("/auth/google")).toBe(1);
+    expect(count("/auth/web/refresh")).toBe(0);
+    expect(storage.get("fanpulse:session-changed")).toBeUndefined();
   });
 
   it("does not refresh, replay or redirect a late old-session 401 after logout and a new login", async () => {
@@ -308,7 +328,7 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
     expect(result.response?.status).toBe(401);
     expect(count("/auth/web/refresh")).toBe(0);
     expect(a.location.href).toBe("/settings");
-    expect((await a.auth.checkAuthStatus()).authenticated).toBe(true);
+    expect((await a.auth.checkAuthStatus())?.authenticated).toBe(true);
   });
 
   it("fences protected retries and redirects when logout begins during their refresh", async () => {
@@ -337,7 +357,7 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
     releaseRefresh.resolve();
     await loggingOut;
 
-    expect(await checking).toEqual({ authenticated: false });
+    expect(await checking).toBeNull();
     expect(cookies.size).toBe(0);
   });
 
@@ -386,7 +406,7 @@ describe("browser-wide cookie session lifecycle through public APIs and deferred
     refreshFailure = logoutFailure = false;
     releaseRefresh.resolve();
 
-    expect((await a.auth.checkAuthStatus()).authenticated).toBe(true);
+    expect((await a.auth.checkAuthStatus())?.authenticated).toBe(true);
     await b.auth.logout();
     expect(count("/auth/web/refresh")).toBe(2);
     expect(count("/auth/logout")).toBe(2);
