@@ -9,7 +9,7 @@ const at = '2026-01-01T00:00:00Z';
 type Call = { method: string; path: string; principal: Account; expected: string | null; status: number; body: unknown };
 
 // Browser/cookies/app are real; only local HTTP is synthetic. Kotlin has separate JWT/MVC tests.
-async function communityBoundary(context: BrowserContext, baseURL: string, failFirstSavedRead = false) {
+async function communityBoundary(context: BrowserContext, baseURL: string, failSavedReadsForA = false) {
   const boundary = await createAccountBoundary(context, baseURL);
   const post = { id: postId, authorId: ids.A, authorName: 'Alice_1', artistId: null, artistName: null,
     artistProfileImageUrl: null, content: 'Public community fixture', imageUrl: null, likeCount: 0,
@@ -17,7 +17,6 @@ async function communityBoundary(context: BrowserContext, baseURL: string, failF
   const states = { A: { liked: false, saved: false }, B: { liked: false, saved: false } };
   const calls: Call[] = [];
   const writes: Call[] = [];
-  let failedSavedRead = false;
   await context.route('**/api/v1/**', async route => {
     const request = route.request();
     const url = new URL(request.url());
@@ -45,8 +44,9 @@ async function communityBoundary(context: BrowserContext, baseURL: string, failF
     if (path === `/community/posts/${postId}` && call.method === 'GET') return reply(post);
     if (path === `/community/me/posts/${postId}/state`) return reply(states[principal]);
     if (path === '/community/me/saved') {
-      if (failFirstSavedRead && principal === 'A' && !failedSavedRead) {
-        failedSavedRead = true;
+      // Model the initial A error phase, not an ordinal request that Strict Mode
+      // can cancel before the page ever receives its response.
+      if (failSavedReadsForA && principal === 'A') {
         return reply({ title: 'Temporarily unavailable', status: 503 }, 503, true);
       }
       const rows = principal === 'B' ? [{ ...post, content: 'B saved collection item' }] : [];
@@ -140,13 +140,17 @@ test('stale composer cannot publish as B and revalidation discards its A draft',
 test('stale saved-list retry cannot display B collection before identity revalidation', async ({ context, baseURL }, testInfo) => {
   const boundary = await communityBoundary(context, baseURL!, true);
   try {
+    const initialFailure = boundary.oldTab.waitForResponse(response =>
+      new URL(response.url()).pathname === '/api/v1/community/me/saved' && response.status() === 503);
     await boundary.oldTab.goto('/saved');
+    expect(await (await initialFailure).finished()).toBeNull();
     await expect(boundary.oldTab.getByText('저장한 게시글을 불러오지 못했습니다.')).toBeVisible();
     const gate = boundary.holdAuth();
     await boundary.replaceCookie('B');
     await boundary.oldTab.getByRole('button', { name: '다시 시도', exact: true }).click();
-    await expect.poll(() => boundary.calls.filter(call => call.path === '/community/me/saved').length).toBe(2);
-    expect(boundary.calls.filter(call => call.path === '/community/me/saved')[1]).toMatchObject({ principal: 'B', expected: ids.A, status: 412 });
+    const staleRetries = () => boundary.calls.filter(call => call.path === '/community/me/saved' && call.principal === 'B' && call.expected === ids.A);
+    await expect.poll(() => staleRetries().length).toBe(1);
+    expect(staleRetries()[0]).toMatchObject({ principal: 'B', expected: ids.A, status: 412 });
     await expect.poll(() => gate.entered).toBeGreaterThan(0);
     await expect(boundary.oldTab.getByText('B saved collection item')).toHaveCount(0);
     await testInfo.attach('identity-pending-no-private-collection', { body: await boundary.oldTab.screenshot(), contentType: 'image/png' });
