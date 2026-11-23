@@ -23,6 +23,11 @@
 
 ## 시스템 아키텍처
 
+![FanPulse 시스템 아키텍처 및 AI 댓글 처리 흐름](docs/images/architecture.png)
+
+<details>
+<summary>상세 구성 다이어그램 (Mermaid)</summary>
+
 ```mermaid
 graph TB
     subgraph Client["클라이언트"]
@@ -58,6 +63,7 @@ graph TB
     Backend --> DB
     AI --> DB
 ```
+</details>
 
 ### 서비스 구성
 
@@ -109,7 +115,7 @@ graph LR
 
 - **identity**: 사용자, OAuth 계정, JWT 인증, 사용자 설정
 - **content**: 아티스트, 뉴스, 차트
-- **comment**: 댓글, AI 필터링 상태 관리 (DRAFT -> PUBLISHED / FILTERED_BY_AI)
+- **comment**: 댓글, AI 필터링 상태 관리 (`PENDING` · `APPROVED` · `BLOCKED` · `DELETED`)
 - **streaming**: 라이브 스트리밍 이벤트, 플랫폼 연동
 - **discovery**: 아티스트 채널 자동 탐지 (yt-dlp)
 - **ai**: 모더레이션/필터링 포트 (도메인 추상화)
@@ -133,7 +139,7 @@ sequenceDiagram
         CB->>AI: POST /api/ai/filter
         AI-->>CB: {action: "allow"} or {action: "block"}
         CB-->>Spring: 필터링 결과
-        Spring->>DB: 댓글 저장 (PUBLISHED / FILTERED_BY_AI)
+        Spring->>DB: 댓글 저장 (APPROVED / BLOCKED)
         Spring-->>Client: 201 Created
     else CircuitBreaker OPEN (AI 장애)
         CB-->>Spring: Fallback 실행
@@ -146,7 +152,7 @@ sequenceDiagram
 ### 장애 대응 전략
 
 - **Fail-Open** (모더레이션, 뉴스 요약): AI 서비스 장애 시 콘텐츠 허용 -- 가용성 우선
-- **Fail-Pending** (댓글 필터링): AI 서비스 장애 시 PENDING 상태 -- 안전성 우선
+- **Fail-Pending & 트랜잭션 분리** (댓글 필터링): AI 인증 실패(401)는 즉시 차단하고, 일시 장애(500/타임아웃/서킷 오픈)만 `PENDING`(비공개, 5분 lease · 최대 5회 재심사)으로 격리. 외부 AI 호출 대기 중에는 DB 트랜잭션을 열지 않으며(`isActualTransactionActive == false`), 대기 중 댓글 수정·운영자 판정 시 `@Version`과 내용 비교로 늦은 AI 결과(`STALE_RESULT`)를 폐기
 - **CircuitBreaker 설정**: 실패율 60% 이상 -> 회로 개방, 30초 대기 후 Half-Open
 - **Retry**: 최대 2회, 500ms 간격, 지수 백오프
 - **TimeLimiter**: AI 응답 5초 제한 (요약은 30초)
@@ -184,7 +190,7 @@ K-POP 뉴스 기사를 AI가 읽고 핵심 내용을 자동 요약합니다.
   - `POST /api/ai/filter` — 단건 필터링
   - `POST /api/ai/filter/batch` — 배치 필터링
 - **장애 전략**: Fail-Pending — AI 실패 시 PENDING 상태로 저장, 관리자 검토 대기 (안전성 우선)
-- **댓글 상태 흐름**: `DRAFT` → AI 필터링 → `PUBLISHED` (허용) 또는 `FILTERED_BY_AI` (차단) 또는 `PENDING` (AI 장애)
+- **댓글 상태 (`CommentStatus`)**: `APPROVED` (허용 · 공개 목록 노출) / `BLOCKED` (차단) / `PENDING` (AI 일시 장애 · 비공개 재심사 대기) / `DELETED` (삭제)
 - **Spring 어댑터**: `AiCommentFilterAdapter` / `NoOpCommentFilterAdapter` (fallback)
 
 ### 3. 콘텐츠 모더레이션 (Content Moderation)
@@ -297,6 +303,11 @@ graph BT
 - **통합 테스트**: WireMock (AI Sidecar HTTP 스텁), TestContainers (PostgreSQL)
 - **JaCoCo 커버리지 게이트**: Application 80%, Domain 50%, Infrastructure 40%
 - **비동기 테스트**: Awaitility Kotlin
+- **핵심 장애·동시성·인증 통합 테스트 근거**:
+  - AI 500 → `202 Accepted` / `PENDING` 비공개 격리 (`APPROVED`만 노출): [`CommentAiFilterIntegrationTest.kt`](backend/src/test/kotlin/com/fanpulse/integration/CommentAiFilterIntegrationTest.kt)
+  - 대기 중 수정·운영자 판정 시 늦은 AI 결과 `STALE_RESULT` 폐기: [`CommentReviewServiceIntegrationTest.kt`](backend/src/test/kotlin/com/fanpulse/application/service/comment/CommentReviewServiceIntegrationTest.kt)
+  - AI 호출 대기 중 DB 트랜잭션 비활성화(`isActualTransactionActive == false`): [`CommentAiBoundaryPostgresIntegrationTest.kt`](backend/src/test/kotlin/com/fanpulse/application/service/comment/CommentAiBoundaryPostgresIntegrationTest.kt)
+  - Refresh Token 1회용 교체(CAS) 및 재사용 감지 시 계정 전체 토큰 무효화: [`RefreshTokenRotationTest.kt`](backend/src/test/kotlin/com/fanpulse/application/identity/RefreshTokenRotationTest.kt)
 
 ### Frontend 테스트
 
@@ -335,7 +346,7 @@ PostgreSQL 단일 DB, Flyway 마이그레이션으로 스키마 관리.
 
 ```bash
 # 1) 저장소 클론
-git clone https://github.com/FanPulse/FanPulse.git
+git clone https://github.com/jskjw157/FanPulse.git
 cd FanPulse
 
 # 2) 환경변수 설정
