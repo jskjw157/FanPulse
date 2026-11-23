@@ -1,6 +1,5 @@
 package com.fanpulse.domain.concert
 
-import com.fanpulse.infrastructure.external.kopis.KopisConcertRecord
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
@@ -93,7 +92,7 @@ class CrawledConcert(
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant = Instant.now(),
 ) {
-    fun updateFrom(record: KopisConcertRecord, fetchedAt: Instant) {
+    fun updateFrom(record: ExternalConcertSnapshot, fetchedAt: Instant) {
         require(source == SOURCE_KOPIS && externalId == record.externalId)
         name = record.name
         artist = record.performers
@@ -125,7 +124,7 @@ class CrawledConcert(
     companion object {
         const val SOURCE_KOPIS = "KOPIS"
 
-        fun from(record: KopisConcertRecord, now: Instant = Instant.now()) = CrawledConcert(
+        fun from(record: ExternalConcertSnapshot, now: Instant = Instant.now()) = CrawledConcert(
             source = SOURCE_KOPIS,
             externalId = record.externalId,
             name = record.name,

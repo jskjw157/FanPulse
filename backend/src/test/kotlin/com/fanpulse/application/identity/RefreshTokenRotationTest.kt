@@ -20,17 +20,9 @@ import org.junit.jupiter.api.Assertions.*
 import java.util.*
 
 /**
- * Refresh Token Rotation TDD Tests
+ * Refresh Token Rotation 검증 테스트.
  *
- * NOTE: 이 테스트들은 TDD RED Phase 테스트입니다.
- * AuthService에 RefreshTokenPort가 통합되었으므로 테스트를 완성해야 합니다.
- * 현재는 @Disabled 처리하여 CI를 통과시키고, 추후 완성합니다.
- *
- * Phase 2: JWT Security Hardening
- * Refresh Token Rotation은 refresh token 사용 시 새 token을 발급하고
- * 이전 token을 무효화하여 token 탈취 시 피해를 최소화합니다.
- *
- * RED Phase: 이 테스트들은 RefreshTokenRotation 구현 전 먼저 실패해야 합니다.
+ * 토큰 갱신 시 1회용 교체(CAS)와 재사용 감지 시 계정 전체 토큰 일괄 무효화 동작을 검증한다.
  */
 @DisplayName("Refresh Token Rotation")
 class RefreshTokenRotationTest {
