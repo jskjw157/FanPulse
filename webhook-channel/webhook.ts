@@ -10,12 +10,12 @@ import { createHmac, timingSafeEqual } from "crypto";
 
 const PORT = Number(process.env.WEBHOOK_PORT) || 8788;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "";
-const CLAUDE_BIN = process.env.CLAUDE_BIN || "/Users/ohchaeeun/.local/bin/claude";
-const PROJECT_DIR = process.env.PROJECT_DIR || "/Users/ohchaeeun/source/FanPulse";
+const CLAUDE_BIN = process.env.CLAUDE_BIN || "claude";
+const PROJECT_DIR = process.env.PROJECT_DIR || process.cwd();
 
-// HMAC 서명 검증
+// HMAC 서명 검증 (fail-closed)
 function verifySignature(payload: string, signature: string): boolean {
-  if (!WEBHOOK_SECRET) return true;
+  if (!WEBHOOK_SECRET || !signature) return false;
   const expected =
     "sha256=" +
     createHmac("sha256", WEBHOOK_SECRET).update(payload).digest("hex");
@@ -61,11 +61,7 @@ async function runReview(prompt: string, prNum: number): Promise<void> {
   try {
     const proc = Bun.spawn([CLAUDE_BIN, "-p", "--no-session-persistence"], {
       cwd: PROJECT_DIR,
-      env: {
-        ...process.env,
-        HOME: "/Users/ohchaeeun",
-        PATH: "/Users/ohchaeeun/.local/bin:/Users/ohchaeeun/.bun/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
-      },
+      env: { ...process.env },
       stdin: new Response(prompt).body!,
       stdout: "pipe",
       stderr: "pipe",
@@ -115,9 +111,13 @@ const server = Bun.serve({
 
     const body = await req.text();
 
-    // HMAC 검증
+    // HMAC 검증 (fail-closed)
+    if (!WEBHOOK_SECRET) {
+      log("WEBHOOK_SECRET is not configured, rejecting");
+      return Response.json({ status: "error", message: "webhook secret not configured" }, { status: 500 });
+    }
     const sig = req.headers.get("X-Hub-Signature-256") || "";
-    if (WEBHOOK_SECRET && !verifySignature(body, sig)) {
+    if (!verifySignature(body, sig)) {
       log("Invalid signature, rejecting");
       return Response.json({ status: "error", message: "invalid signature" }, { status: 403 });
     }

@@ -1,5 +1,6 @@
 package com.fanpulse.infrastructure.external.kopis
 
+import com.fanpulse.domain.concert.ExternalConcertSnapshot
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import org.springframework.beans.factory.annotation.Value
@@ -220,7 +221,25 @@ data class KopisConcertRecord(
     val ageRating: String?,
     val venueAddress: String?,
     val ticketUrl: String,
-)
+) {
+    fun toDomainSnapshot() = ExternalConcertSnapshot(
+        externalId = externalId,
+        name = name,
+        venueName = venueName,
+        venueHall = venueHall,
+        startDate = startDate,
+        endDate = endDate,
+        status = status,
+        posterUrl = posterUrl,
+        performanceTime = performanceTime,
+        priceText = priceText,
+        performers = performers,
+        runtime = runtime,
+        ageRating = ageRating,
+        venueAddress = venueAddress,
+        ticketUrl = ticketUrl,
+    )
+}
 
 data class KopisConcertSnapshot(
     val records: List<KopisConcertRecord>,

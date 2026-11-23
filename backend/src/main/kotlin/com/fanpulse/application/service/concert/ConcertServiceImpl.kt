@@ -29,10 +29,11 @@ class ConcertSnapshotWriter(
         existing.forEach { it.deactivate(now) }
         records.forEach { record ->
             val entity = byExternalId[record.externalId]
+            val snapshot = record.toDomainSnapshot()
             if (entity == null) {
-                concerts.save(CrawledConcert.from(record, now))
+                concerts.save(CrawledConcert.from(snapshot, now))
             } else {
-                entity.updateFrom(record, now)
+                entity.updateFrom(snapshot, now)
             }
         }
         concerts.flush()
