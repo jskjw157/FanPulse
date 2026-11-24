@@ -96,6 +96,19 @@ enum class ErrorType(
         code = "CONTENT_CONFLICT"
     ),
 
+    EXPECTED_USER_REQUIRED(
+        slug = "expected-user-required",
+        title = "Expected User Required",
+        status = HttpStatus.PRECONDITION_REQUIRED.value(),
+        code = "EXPECTED_USER_REQUIRED"
+    ),
+    EXPECTED_USER_MISMATCH(
+        slug = "expected-user-mismatch",
+        title = "Session Identity Changed",
+        status = HttpStatus.PRECONDITION_FAILED.value(),
+        code = "EXPECTED_USER_MISMATCH"
+    ),
+
     // === Not Found Errors (404) ===
     USER_NOT_FOUND(
         slug = "user-not-found",

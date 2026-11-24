@@ -8,8 +8,8 @@ import {
 } from '@/lib/api/social';
 import { NOTIFICATION_CHANGED, notifyUnreadCountChanged, type NotificationChange } from './useNotificationUnreadCount';
 
-interface Scope { userId: string | undefined; unreadOnly: boolean }
-interface RequestContext { scope: Scope; signal: AbortSignal; sequence: number; busy: boolean }
+interface Scope { userId: string | undefined; unreadOnly: boolean; sessionVersion: number }
+interface RequestContext { scope: Scope; signal: AbortSignal; sequence: number; busy: boolean; reloadPending: boolean }
 interface Snapshot {
   scope: Scope;
   data: NotificationPage | null;
@@ -24,14 +24,16 @@ interface Mutation {
   notice: string | null;
 }
 
-export function useNotifications(unreadOnly: boolean, userId: string | undefined) {
+export function useNotifications(unreadOnly: boolean, userId: string | undefined, sessionVersion = 0) {
   // Identity, not just equality of IDs, prevents A -> B -> A request replay.
-  const scope = useMemo(() => ({ userId, unreadOnly }), [userId, unreadOnly]);
+  const scope = useMemo(() => ({ userId, unreadOnly, sessionVersion }), [userId, unreadOnly, sessionVersion]);
   const context = useRef<RequestContext | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot>({ scope, data: null, page: 0, state: 'loading', error: null });
   const [mutation, setMutation] = useState<Mutation>({ scope, id: null, error: null, notice: null });
 
   const load = useCallback(async (page: number, current: RequestContext) => {
+    // This request includes all invalidations received before it starts.
+    current.reloadPending = false;
     const sequence = ++current.sequence;
     setSnapshot({ scope, data: null, page, state: 'loading', error: null });
     if (!userId) {
@@ -39,11 +41,11 @@ export function useNotifications(unreadOnly: boolean, userId: string | undefined
       return;
     }
     try {
-      let data = await fetchNotificationPage(unreadOnly, page, 20, current.signal);
+      let data = await fetchNotificationPage(unreadOnly, page, 20, current.signal, userId);
       if (current.signal.aborted || sequence !== current.sequence) return;
       // Another session can read rows while an offset page is loading.
       if (page > 0 && page >= data.totalPages) {
-        data = await fetchNotificationPage(unreadOnly, 0, 20, current.signal);
+        data = await fetchNotificationPage(unreadOnly, 0, 20, current.signal, userId);
         if (current.signal.aborted || sequence !== current.sequence) return;
       }
       setSnapshot({ scope, data, page: data.page, state: 'success', error: null });
@@ -56,12 +58,14 @@ export function useNotifications(unreadOnly: boolean, userId: string | undefined
 
   useEffect(() => {
     const controller = new AbortController();
-    const current = { scope, signal: controller.signal, sequence: 0, busy: false };
+    const current = { scope, signal: controller.signal, sequence: 0, busy: false, reloadPending: false };
     context.current = current;
     void load(0, current);
     const onChanged = (event: Event) => {
       const change = (event as CustomEvent<NotificationChange>).detail;
-      if (change.userId === userId && change.reloadList && !current.busy) void load(0, current);
+      if (change.userId !== userId || !change.reloadList || current.signal.aborted) return;
+      if (current.busy) current.reloadPending = true;
+      else void load(0, current);
     };
     window.addEventListener(NOTIFICATION_CHANGED, onChanged);
     return () => {
@@ -83,7 +87,7 @@ export function useNotifications(unreadOnly: boolean, userId: string | undefined
     ++current.sequence; // Invalidate any older list request before changing read state.
     setMutation({ scope, id: id ?? 'all', error: null, notice: null });
     try {
-      const row = id ? await markNotificationRead(id) : (await markAllNotificationsRead(), null);
+      const row = id ? await markNotificationRead(id, userId) : (await markAllNotificationsRead(userId), null);
       if (current.signal.aborted) {
         // The server still applied the write. Refresh the active account/filter,
         // but never replay old row data or navigation into the new view.
@@ -111,6 +115,9 @@ export function useNotifications(unreadOnly: boolean, userId: string | undefined
       return null;
     } finally {
       current.busy = false;
+      // A stale-scope write may have completed while this mutation was busy.
+      // Reconcile on success or failure, but never reload an abandoned scope.
+      if (current.reloadPending && !current.signal.aborted && context.current === current) void load(0, current);
     }
   }, [load, scope, unreadOnly, userId]);
 

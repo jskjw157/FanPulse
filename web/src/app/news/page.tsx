@@ -54,6 +54,12 @@ export default function NewsListPage() {
             </div>
           )}
 
+          {state === 'error' && items.length > 0 && (
+            <p className="text-center text-gray-500 mt-4" role="alert">
+              {error}
+            </p>
+          )}
+
           {/* 더보기 버튼 */}
           {items.length > 0 && hasMore && (
             <div className="flex justify-center py-8">
@@ -62,7 +68,11 @@ export default function NewsListPage() {
                 disabled={state === 'loading'}
                 className="px-6 py-2 bg-purple-600 text-white rounded-full text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {state === 'loading' ? t('news.loading') : t('news.loadMore')}
+                {state === 'loading'
+                  ? t('news.loading')
+                  : state === 'error'
+                    ? t('news.error.retry')
+                    : t('news.loadMore')}
               </button>
             </div>
           )}

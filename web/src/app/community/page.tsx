@@ -111,7 +111,7 @@ export default function CommunityPage() {
         }
       />
       <PageWrapper>
-        <div className="sticky top-16 z-30 border-b border-gray-200 bg-white">
+        <div className="sticky top-32 lg:top-16 z-30 border-b border-gray-200 bg-white">
           <div className="mx-auto flex max-w-7xl">
             <button
               onClick={() => changeSort("LATEST")}

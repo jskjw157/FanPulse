@@ -27,9 +27,35 @@ describe('ConcertPage', () => {
     render(<ConcertPage />);
     expect(await screen.findByText(concert.title)).toBeInTheDocument();
     expect(screen.getByText(concert.venue)).toBeInTheDocument();
+    expect(screen.getByText(concert.priceText)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: `${concert.title} 상세 보기` }))
       .toHaveAttribute('href', `/concert-detail?id=${concert.id}`);
     expect(screen.queryByText('BTS World Tour Seoul')).not.toBeInTheDocument();
+  });
+
+  it('preserves readable lines in normalized KOPIS prices', async () => {
+    const priceText = '시즌권 80,000원\n일반권 30,000원';
+    vi.mocked(fetchConcerts).mockResolvedValue({
+      ...response, items: [{ ...concert, priceText }],
+    });
+    render(<ConcertPage />);
+
+    const price = await screen.findByText(priceText, { normalizer: (text) => text });
+    expect(price.textContent).toBe(priceText);
+    expect(price).toHaveClass('whitespace-pre-line');
+    expect(price.querySelector('br')).toBeNull();
+  });
+
+  it('keeps malicious price HTML inert instead of creating elements', async () => {
+    const priceText = '<img src=x onerror="alert(1)"><script>alert(2)</script>\n<br onclick="alert(3)">일반권 30,000원';
+    vi.mocked(fetchConcerts).mockResolvedValue({
+      ...response, items: [{ ...concert, priceText }],
+    });
+    render(<ConcertPage />);
+
+    const price = await screen.findByText(priceText, { normalizer: (text) => text });
+    expect(price.textContent).toBe(priceText);
+    expect(price.children).toHaveLength(0);
   });
 
   it('formats KOPIS date-only values in the Seoul timezone', async () => {

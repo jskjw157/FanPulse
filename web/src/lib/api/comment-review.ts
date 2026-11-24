@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 import { isIsoInstant, isNonEmptyString, isRecord, isUuid } from '@/lib/api-response';
+import { expectedUserHeaders, privateRequestError } from '@/lib/session-sync';
 import type { CommunityComment } from './community';
 
 // Private endpoints deliberately do not use the public APPROVED-only parser or caches.
@@ -79,13 +80,14 @@ function validateId(id: string) {
 }
 
 export async function fetchMyCommentReviews(
-  postId: string, page = 0, size = 20, signal?: AbortSignal,
+  postId: string, page = 0, size = 20, signal?: AbortSignal, expectedUserId?: string,
 ): Promise<ReviewCommentPage> {
   validateId(postId);
   validatePage(page, size);
   const response = await apiClient.get<unknown>('/comments/mine', {
-    params: { postId, page, size }, signal, headers: privateHeaders,
-  });
+    params: { postId, page, size }, signal,
+    headers: { ...privateHeaders, ...expectedUserHeaders(expectedUserId).headers },
+  }).catch((error) => { throw privateRequestError(error); });
   const result = parsePage(response.data, page, size);
   if (result.items.some((comment) => comment.postId !== postId)) throw new Error(invalidResponse);
   return result;

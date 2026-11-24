@@ -122,6 +122,7 @@ class CommentAiFilterIntegrationTest {
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
                 requestAttr("userId", userId)
+                header("X-Expected-User-Id", userId.toString())
                 content = """
                     {
                         "postId": "$postId",
@@ -182,6 +183,7 @@ class CommentAiFilterIntegrationTest {
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
                 requestAttr("userId", userId)
+                header("X-Expected-User-Id", userId.toString())
                 content = """
                     {
                         "postId": "$postId",
@@ -227,6 +229,7 @@ class CommentAiFilterIntegrationTest {
             mockMvc.post("/api/v1/comments") {
                 contentType = MediaType.APPLICATION_JSON
                 requestAttr("userId", userId)
+                header("X-Expected-User-Id", userId.toString())
                 content = """
                     {
                         "postId": "$postId",
@@ -299,6 +302,7 @@ class CommentAiFilterIntegrationTest {
                 mockMvc.post("/api/v1/comments") {
                     contentType = MediaType.APPLICATION_JSON
                     requestAttr("userId", userId)
+                    header("X-Expected-User-Id", userId.toString())
                     content = """
                         {
                             "postId": "$postId",

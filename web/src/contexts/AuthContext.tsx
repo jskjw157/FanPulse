@@ -16,6 +16,7 @@ import {
   AuthUser,
 } from "@/lib/auth";
 import { fetchMySettings, updateMyLanguage, type UserLanguage, type UserSettings } from "@/lib/api/user";
+import { announceSessionChange, SESSION_CHANGED, SESSION_INVALIDATED } from "@/lib/session-sync";
 import i18n from "@/i18n";
 
 function applyLanguage(language: UserLanguage) {
@@ -26,6 +27,7 @@ function applyLanguage(language: UserLanguage) {
 interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
+  sessionVersion: number;
   user: AuthUser | null;
   logout: () => Promise<void>;
   refreshAuth: () => Promise<void>;
@@ -42,12 +44,14 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionVersion, setSessionVersion] = useState(0);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [settingsState, setSettingsState] = useState<AuthContextValue["settingsState"]>("idle");
   const [isSavingLanguage, setIsSavingLanguage] = useState(false);
   const authRequest = useRef(0);
   const currentUserId = useRef<string | null>(null);
+  const knownUserId = useRef<string | null | undefined>(undefined);
   const settingsRequest = useRef<AbortController | null>(null);
   const router = useRouter();
 
@@ -62,15 +66,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // 인증 상태 새로고침
-  const refreshAuth = useCallback(async () => {
+  const refreshSession = useCallback(async (announce: boolean) => {
     const request = ++authRequest.current;
+    // Invalidate before awaiting the cookie principal. No old private scope may fetch or save.
+    currentUserId.current = null;
+    setSessionVersion((version) => version + 1);
+    setIsLoading(true);
+    setIsAuthenticated(false);
+    setUser(null);
+    clearSettings();
     try {
-      const status = await checkAuthStatus();
+      let status = await checkAuthStatus();
+      // Only an observed generation change warrants another read. Keep private
+      // UI guarded; stable anonymous/network failures terminate without retries.
+      while (status === null) {
+        if (request !== authRequest.current) return;
+        status = await checkAuthStatus();
+      }
       if (request !== authRequest.current) return;
       const nextUser = status.authenticated ? status.user ?? null : null;
-      if (currentUserId.current !== (nextUser?.id ?? null)) clearSettings();
+      if (announce && knownUserId.current !== (nextUser?.id ?? null)) announceSessionChange();
+      knownUserId.current = nextUser?.id ?? null;
       currentUserId.current = nextUser?.id ?? null;
-      setIsAuthenticated(status.authenticated);
+      setIsAuthenticated(!!nextUser);
       setUser(nextUser);
     } catch {
       if (request !== authRequest.current) return;
@@ -83,6 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [clearSettings]);
 
+  const refreshAuth = useCallback(() => refreshSession(true), [refreshSession]);
+
   // 초기 인증 상태 확인
   useEffect(() => {
     void refreshAuth();
@@ -91,6 +111,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       settingsRequest.current?.abort();
     };
   }, [refreshAuth, invalidateAuth]);
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === SESSION_CHANGED || event.key === null) void refreshSession(false);
+    };
+    const onFocus = () => { void refreshAuth(); };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refreshAuth();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener(SESSION_INVALIDATED, onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener(SESSION_INVALIDATED, onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [refreshAuth, refreshSession]);
 
   const updateUser = useCallback((updated: AuthUser) => {
     if (updated.id !== currentUserId.current) return;
@@ -106,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     settingsRequest.current = controller;
     setSettingsState("loading");
     try {
-      const result = await fetchMySettings(controller.signal);
+      const result = await fetchMySettings(controller.signal, userId);
       if (controller.signal.aborted || currentUserId.current !== userId) return;
       setSettings(result);
       setSettingsState("success");
@@ -119,19 +159,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (user?.id) void reloadSettings();
+    if (!isLoading && user?.id) void reloadSettings();
     return () => settingsRequest.current?.abort();
-  }, [user?.id, reloadSettings]);
+  }, [user?.id, isLoading, sessionVersion, reloadSettings]);
 
   const saveLanguage = useCallback(async (language: UserLanguage) => {
-    const userId = currentUserId.current;
-    if (!userId) return false;
+    // Capture the rendered account, not a newer principal from a pending React render.
+    const userId = user?.id;
+    if (isLoading || !userId || currentUserId.current !== userId) return false;
     settingsRequest.current?.abort();
     const controller = new AbortController();
     settingsRequest.current = controller;
     setIsSavingLanguage(true);
     try {
-      const result = await updateMyLanguage(language, controller.signal);
+      const result = await updateMyLanguage(language, userId, controller.signal);
       if (controller.signal.aborted || currentUserId.current !== userId) return false;
       setSettings(result);
       setSettingsState("success");
@@ -143,27 +184,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       if (settingsRequest.current === controller) setIsSavingLanguage(false);
     }
-  }, []);
+  }, [user?.id, isLoading]);
 
   // 로그아웃 함수
   const logout = useCallback(async () => {
+    const userId = currentUserId.current;
+    invalidateAuth();
+    // Keep the session visible until the server confirms it revoked the cookie session.
+    await apiLogout();
+    // Notify other tabs even if revalidation or a newer account replaced this local identity.
+    announceSessionChange();
+    if (currentUserId.current !== userId) {
+      // Our cookie response may also have cleared that newer principal. Recheck,
+      // rather than preserving stale UI or blindly clearing a later valid login.
+      await refreshSession(false);
+      return;
+    }
     invalidateAuth();
     currentUserId.current = null;
+    knownUserId.current = null;
+    setSessionVersion((version) => version + 1);
     clearSettings();
     setIsAuthenticated(false);
     setUser(null);
-    try {
-      await apiLogout();
-    } finally {
-      router.push("/login");
-    }
-  }, [router, clearSettings, invalidateAuth]);
+    router.replace("/login");
+  }, [router, clearSettings, invalidateAuth, refreshSession]);
 
   return (
     <AuthContext.Provider
       value={{
         isAuthenticated,
         isLoading,
+        sessionVersion,
         user,
         logout,
         refreshAuth,

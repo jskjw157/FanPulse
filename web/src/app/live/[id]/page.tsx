@@ -20,7 +20,7 @@ export default function LiveDetailPage() {
   if (state === 'loading') {
     return (
       <div className="min-h-screen bg-white">
-        <header className="sticky top-0 z-50 bg-white border-b px-4 py-3">
+        <header className="sticky top-16 z-50 bg-white border-b px-4 py-3">
           <button
             onClick={() => router.back()}
             className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
@@ -53,7 +53,7 @@ export default function LiveDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-50 bg-white border-b px-4 py-3">
+      <header className="sticky top-16 z-50 bg-white border-b px-4 py-3">
         <button
           onClick={() => router.back()}
           className="flex items-center gap-1 text-gray-600 hover:text-gray-900"

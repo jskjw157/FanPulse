@@ -48,6 +48,21 @@ export interface NewsSummaryApiDto {
   publishedAt: string;
 }
 
+function isHttpSourceUrl(value: unknown): value is string {
+  if (!isNonEmptyString(value)) return false;
+
+  try {
+    const url = new URL(value);
+    return (
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      url.username === '' &&
+      url.password === ''
+    );
+  } catch {
+    return false;
+  }
+}
+
 function isHttpsUrl(value: unknown): value is string {
   if (!isNonEmptyString(value)) return false;
 
@@ -70,7 +85,7 @@ export function isNewsApiDto(value: unknown): value is NewsApiDto {
     isUuid(value.artistId) &&
     isNonEmptyString(value.title) &&
     isNonEmptyString(value.content) &&
-    isHttpsUrl(value.sourceUrl) &&
+    isHttpSourceUrl(value.sourceUrl) &&
     isNonEmptyString(value.sourceName) &&
     isNullableHttpsUrl(value.thumbnailUrl) &&
     typeof value.category === 'string' &&

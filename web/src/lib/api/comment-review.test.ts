@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/lib/api-client';
+import { SESSION_INVALIDATED } from '@/lib/session-sync';
 import {
   decideCommentReview,
   fetchCommentReviewHistory,
@@ -7,7 +8,12 @@ import {
   fetchPendingCommentReviews,
 } from './comment-review';
 
-vi.mock('@/lib/api-client', () => ({ apiClient: { get: vi.fn(), post: vi.fn() } }));
+vi.mock('@/lib/api-client', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/api-client')>(),
+  apiClient: { get: vi.fn(), post: vi.fn() },
+}));
+
+const expectedUserId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 const comment = {
   id: '44444444-4444-4444-4444-444444444444',
@@ -34,7 +40,7 @@ const history = {
 describe('private comment review API', () => {
   beforeEach(() => vi.resetAllMocks());
 
-  it('parses a raw author page and never sends caller identity', async () => {
+  it('keeps the legacy author page and signal contract without an identity assertion', async () => {
     const signal = new AbortController().signal;
     vi.mocked(apiClient.get).mockResolvedValue({ data: page });
     await expect(fetchMyCommentReviews(comment.postId, 0, 20, signal)).resolves.toEqual({
@@ -44,6 +50,44 @@ describe('private comment review API', () => {
       params: { postId: comment.postId, page: 0, size: 20 }, signal,
       headers: { 'Cache-Control': 'no-store' },
     });
+  });
+
+  it('asserts the displayed identity after the signal without dropping no-store', async () => {
+    const signal = new AbortController().signal;
+    const data = { ...page, page: 1, size: 2, totalElements: 3, totalPages: 2 };
+    vi.mocked(apiClient.get).mockResolvedValue({ data });
+    await expect(fetchMyCommentReviews(comment.postId, 1, 2, signal, expectedUserId)).resolves.toEqual({
+      items: [comment], page: 1, size: 2, totalElements: 3, totalPages: 2,
+    });
+    expect(apiClient.get).toHaveBeenCalledExactlyOnceWith('/comments/mine', {
+      params: { postId: comment.postId, page: 1, size: 2 }, signal,
+      headers: { 'Cache-Control': 'no-store', 'X-Expected-User-Id': expectedUserId },
+    });
+    expect(apiClient.post).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [412, 'EXPECTED_USER_MISMATCH'],
+    [428, 'EXPECTED_USER_REQUIRED'],
+  ] as const)('invalidates an author read on HTTP %s without retrying or writing', async (status, code) => {
+    const error = { isAxiosError: true, response: { status, data: {
+      title: 'Expected User Precondition', status, errorCode: code,
+    } } };
+    vi.mocked(apiClient.get).mockRejectedValue(error);
+    const invalidated = vi.fn();
+    window.addEventListener(SESSION_INVALIDATED, invalidated);
+    try {
+      await expect(fetchMyCommentReviews(comment.postId, 0, 20, undefined, expectedUserId))
+        .rejects.toMatchObject({ status, code });
+      expect(invalidated).toHaveBeenCalledTimes(1);
+      expect(apiClient.get).toHaveBeenCalledExactlyOnceWith('/comments/mine', {
+        params: { postId: comment.postId, page: 0, size: 20 }, signal: undefined,
+        headers: { 'Cache-Control': 'no-store', 'X-Expected-User-Id': expectedUserId },
+      });
+      expect(apiClient.post).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener(SESSION_INVALIDATED, invalidated);
+    }
   });
 
   it.each(['PENDING', 'BLOCKED', 'APPROVED'])('accepts own %s comments without changing the public parser', async (status) => {

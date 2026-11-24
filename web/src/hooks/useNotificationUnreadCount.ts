@@ -10,8 +10,8 @@ export function notifyUnreadCountChanged(userId: string, reloadList = false) {
   window.dispatchEvent(new CustomEvent<NotificationChange>(NOTIFICATION_CHANGED, { detail: { userId, reloadList } }));
 }
 
-export function useNotificationUnreadCount(userId: string | undefined) {
-  const scope = useMemo(() => ({ userId }), [userId]);
+export function useNotificationUnreadCount(userId: string | undefined, sessionVersion = 0) {
+  const scope = useMemo(() => ({ userId, sessionVersion }), [userId, sessionVersion]);
   const [snapshot, setSnapshot] = useState<{ scope: typeof scope; count: number | null; error: boolean }>({ scope, count: null, error: false });
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function useNotificationUnreadCount(userId: string | undefined) {
       const request = new AbortController();
       controller = request;
       try {
-        const count = await fetchNotificationUnreadCount(request.signal);
+        const count = await fetchNotificationUnreadCount(request.signal, userId);
         if (!request.signal.aborted) setSnapshot({ scope, count, error: false });
       } catch {
         if (!request.signal.aborted) setSnapshot({ scope, count: null, error: true });
@@ -33,11 +33,10 @@ export function useNotificationUnreadCount(userId: string | undefined) {
     };
     void refresh();
     window.addEventListener(NOTIFICATION_CHANGED, onChanged);
-    window.addEventListener('focus', refresh);
+    // AuthProvider revalidates identity on focus before opening a new private scope.
     return () => {
       controller?.abort();
       window.removeEventListener(NOTIFICATION_CHANGED, onChanged);
-      window.removeEventListener('focus', refresh);
     };
   }, [scope, userId]);
 
